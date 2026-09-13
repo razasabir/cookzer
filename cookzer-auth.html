@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <style>
+    :root {
+      --cream: #F7F2E9;
+      --card-bg: #FFFFFF;
+      --ink: #2B2620;
+      --ink-soft: #6B6255;
+      --olive: #4E5A3E;
+      --olive-dark: #3A4530;
+      --mustard: #D9A441;
+      --brick: #A94E2E;
+      --line: #E7DFCF;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      font-family: 'Work Sans', sans-serif;
+      color: var(--ink);
+      background: var(--cream);
+      min-height: 100vh;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .auth-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 40px 32px;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .brand {
+      text-align: center;
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      font-size: 28px;
+      color: var(--olive-dark);
+      margin-bottom: 6px;
+    }
+
+    .brand span { color: var(--brick); }
+
+    .tagline {
+      text-align: center;
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-bottom: 28px;
+    }
+
+    .tabs {
+      display: flex;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      cursor: pointer;
+      background: var(--cream);
+    }
+
+    .tab.active {
+      background: var(--olive);
+      color: #fff;
+    }
+
+    form { display: none; flex-direction: column; gap: 14px; }
+    form.active { display: flex; }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--ink);
+      font-family: inherit;
+    }
+
+    .submit-btn {
+      background: var(--olive);
+      color: #fff;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 6px;
+    }
+
+    .submit-btn:hover { background: var(--olive-dark); }
+    .submit-btn:disabled { opacity: 0.6; cursor: default; }
+
+    .message {
+      font-size: 13px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .message.error {
+      display: block;
+      background: rgba(169, 78, 46, 0.1);
+      color: var(--brick);
+    }
+
+    .message.success {
+      display: block;
+      background: rgba(78, 90, 62, 0.1);
+      color: var(--olive-dark);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auth-card">
+    <div class="brand">Cook<span>zer</span></div>
+    <div class="tagline">A social network for people who cook.</div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="signin">Sign In</div>
+      <div class="tab" data-tab="signup">Sign Up</div>
+    </div>
+
+    <div class="message" id="message"></div>
+
+    <form id="signinForm" class="active">
+      <div>
+        <label>Email</label>
+        <input type="email" id="signinEmail" required autocomplete="email">
+      </div>
+      <div>
+        <label>Password</label>
+        <input type="password" id="signinPassword" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="submit-btn">Sign In</button>
+    </form>
+
+    <form id="signupForm">
+      <div>
+        <label>Display Name</label>
+        <input type="text" id="signupName" required autocomplete="name" placeholder="e.g. Sarah K.">
+      </div>
+      <div>
+        <label>Email</label>
+        <input type="email" id="signupEmail" required autocomplete="email">
+      </div>
+      <div>
+        <label>Password</label>
+        <input type="password" id="signupPassword" required autocomplete="new-password" minlength="6">
+      </div>
+      <button type="submit" class="submit-btn">Create Account</button>
+    </form>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const forms = { signin: document.getElementById('signinForm'), signup: document.getElementById('signupForm') };
+    const messageEl = document.getElementById('message');
+
+    function showMessage(text, type) {
+      messageEl.textContent = text;
+      messageEl.className = 'message ' + type;
+    }
+
+    function clearMessage() {
+      messageEl.className = 'message';
+      messageEl.textContent = '';
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+        Object.values(forms).forEach((f) => f.classList.remove('active'));
+        forms[tab.dataset.tab].classList.add('active');
+        clearMessage();
+      });
+    });
+
+    // If already signed in, skip straight to the app.
+    (async () => {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) window.location.href = 'index.html';
+    })();
+
+    forms.signin.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMessage();
+      const email = document.getElementById('signinEmail').value.trim();
+      const password = document.getElementById('signinPassword').value;
+
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) {
+        showMessage(error.message, 'error');
+        return;
+      }
+      window.location.href = 'index.html';
+    });
+
+    forms.signup.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMessage();
+      const displayName = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const password = document.getElementById('signupPassword').value;
+
+      const { data, error } = await sb.auth.signUp({
+        email,
+        password,
+        options: { data: { display_name: displayName } },
+      });
+
+      if (error) {
+        showMessage(error.message, 'error');
+        return;
+      }
+
+      if (data.session) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      showMessage('Account created — check your email to confirm it, then sign in.', 'success');
+    });
+  </script>
+
+</body>
+</html>
