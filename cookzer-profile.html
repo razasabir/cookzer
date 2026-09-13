@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <title>Raza K. — Cookzer Profile</title>
+  <title>Profile — Cookzer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -68,7 +68,7 @@
       border-radius: 18px;
       padding: 40px;
       text-align: center;
-      margin-bottom: 32px;
+      margin-bottom: 20px;
       width: 100%;
       max-width: 700px;
     }
@@ -85,6 +85,8 @@
       font-weight: 600;
       font-size: 48px;
       margin: 0 auto 20px;
+      background-size: cover;
+      background-position: center;
     }
 
   .profile-name {
@@ -93,6 +95,8 @@
       margin-bottom: 6px;
       font-family: 'Fraunces', serif;
     }
+
+  .profile-bio { font-size: 14px; color: var(--ink); margin-bottom: 6px; max-width: 480px; margin-left: auto; margin-right: auto; }
 
   .profile-location {
       font-size: 14px;
@@ -108,6 +112,7 @@
       padding: 20px 0;
       border-top: 1px solid var(--line);
       border-bottom: 1px solid var(--line);
+      flex-wrap: wrap;
     }
 
   .stat-item {
@@ -132,6 +137,7 @@
       display: flex;
       gap: 12px;
       justify-content: center;
+      flex-wrap: wrap;
     }
 
   .btn {
@@ -162,6 +168,25 @@
   .btn-secondary:hover {
       background: #f0e6d2;
     }
+
+  .kitchen-cv-panel {
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      color: #fff;
+      border-radius: 18px;
+      padding: 20px 28px;
+      margin-bottom: 20px;
+      width: 100%;
+      max-width: 700px;
+      text-align: left;
+    }
+
+  .kitchen-cv-panel .cv-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.85; margin-bottom: 6px; }
+
+  .kitchen-cv-panel h3 { font-family: 'Fraunces', serif; font-size: 18px; margin-bottom: 6px; }
+
+  .kitchen-cv-panel p { font-size: 13px; opacity: 0.95; line-height: 1.5; }
+
+  .open-to-work-pill { display: inline-block; background: #fff; color: var(--olive-dark); font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; margin-top: 8px; }
 
   /* Badges section */
     .section-title {
@@ -259,11 +284,11 @@
       border: 1px solid var(--line);
       transition: all 0.2s;
       display: flex;
-      align-items: center;
-      justify-content: center;
+      align-items: flex-end;
       font-size: 60px;
       background-size: cover;
       background-position: center;
+      text-decoration: none;
     }
 
   .post-card:hover {
@@ -272,82 +297,40 @@
     }
 
   .post-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0);
-      display: flex;
-      align-items: flex-end;
-      padding: 12px;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.55);
+      padding: 10px 12px;
       color: #fff;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
-      transition: all 0.2s;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
-  .post-card:hover .post-overlay {
-      background: rgba(0, 0, 0, 0.5);
+  .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 20px; width: 100%; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(43,38,32,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal-card { background: var(--card-bg); border-radius: 20px; max-width: 440px; width: 100%; padding: 24px; max-height: 90vh; overflow-y: auto; text-align: left; }
+
+  .modal-card h3 { font-family: 'Fraunces', serif; color: var(--olive-dark); margin-bottom: 16px; }
+
+  .modal-card .field { margin-bottom: 14px; }
+
+  .modal-card label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 5px; }
+
+  .modal-card input[type="text"], .modal-card textarea {
+      width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; font-family: inherit; font-size: 14px;
     }
 
-  /* List view */
-    .post-list {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
+  .modal-card textarea { min-height: 60px; resize: vertical; }
 
-  .post-item {
-      background: var(--card-bg);
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 16px;
-      display: flex;
-      gap: 16px;
-    }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; }
 
-  .post-item-image {
-      width: 120px;
-      height: 120px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #F3EEE3, #E5D9C8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 48px;
-      flex-shrink: 0;
-    }
+  .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
 
-  .post-item-content {
-      flex: 1;
-    }
-
-  .post-title {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--ink);
-      margin-bottom: 6px;
-      font-family: 'Fraunces', serif;
-    }
-
-  .post-description {
-      font-size: 13px;
-      color: var(--ink-soft);
-      line-height: 1.5;
-      margin-bottom: 10px;
-    }
-
-  .post-meta {
-      display: flex;
-      gap: 16px;
-      font-size: 12px;
-      color: var(--ink-soft);
-    }
-
-  .post-meta span {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-    }
+  .modal-actions button { flex: 1; padding: 10px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; }
 
   /* Responsive */
     @media (max-width: 900px) {
@@ -383,29 +366,13 @@
 <!-- Sidebar -->
 <div class="sidebar">
   <div class="sidebar-brand">Cook<span>zer</span></div>
-  
+
   <a href="index.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
   <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Cookbook</div></a>
   <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
   <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
   <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile active">Profile</div></a>
   <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
-  
-  <div class="sidebar-title" style="margin-top: 24px;">Your Network</div>
-  <div class="sidebar-item" style="display: flex; gap: 10px; align-items: center;">
-    <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #D9A441, #A94E2E); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 600;">SK</div>
-    <span>Sarah K.</span>
-  </div>
-  
-  <div class="sidebar-item" style="display: flex; gap: 10px; align-items: center;">
-    <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #D9A441, #A94E2E); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 600;">AM</div>
-    <span>Amina M.</span>
-  </div>
-  
-  <div class="sidebar-item" style="display: flex; gap: 10px; align-items: center;">
-    <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #D9A441, #A94E2E); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 600;">JM</div>
-    <span>Josh M.</span>
-  </div>
 </div>
 
 <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -424,98 +391,96 @@
 <!-- Main content -->
 <div class="main">
   <div class="profile-content">
-    
+
+    <div class="kitchen-cv-panel" id="kitchenCvPanel" hidden>
+      <div class="cv-eyebrow">Kitchen CV</div>
+      <h3 id="cvTitle"></h3>
+      <p id="cvBio"></p>
+      <div class="open-to-work-pill" id="openToWorkPill" hidden>Open to work</div>
+    </div>
+
     <!-- Profile Header -->
     <div class="profile-header">
-      <div class="profile-avatar">RZ</div>
-      <h1 class="profile-name">Raza K.</h1>
-      <p class="profile-location">Melbourne, Australia • Joined this year</p>
-      
+      <div class="profile-avatar" id="profileAvatar">--</div>
+      <h1 class="profile-name" id="profileName">Loading…</h1>
+      <p class="profile-bio" id="profileBio"></p>
+      <p class="profile-location" id="profileLocation"></p>
+
       <div class="profile-stats">
         <div class="stat-item">
-          <span class="stat-number">34</span>
+          <span class="stat-number" id="statRecipes">0</span>
           <span class="stat-label">Recipes posted</span>
         </div>
         <div class="stat-item">
-          <span class="stat-number">512</span>
+          <span class="stat-number" id="statFollowers">0</span>
           <span class="stat-label">Followers</span>
         </div>
         <div class="stat-item">
-          <span class="stat-number">128</span>
+          <span class="stat-number" id="statFollowing">0</span>
           <span class="stat-label">Following</span>
         </div>
+        <div class="stat-item">
+          <span class="stat-number" id="statRemade">0</span>
+          <span class="stat-label">Times remade</span>
+        </div>
       </div>
-      
-      <div class="profile-actions">
-        <button class="btn btn-secondary">Edit profile</button>
-        <button class="btn btn-secondary">Share</button>
-      </div>
+
+      <div class="profile-actions" id="profileActions"></div>
     </div>
-    
+
     <!-- Badges Section -->
     <div class="profile-section">
       <h2 class="section-title">Achievements</h2>
       <div class="badges-grid">
         <div class="badge-tile">
           <span class="badge-icon">🍳</span>
-          <span class="badge-label">30 recipes cooked</span>
+          <span class="badge-label" id="badgeCookIns">0 cook-ins logged</span>
         </div>
         <div class="badge-tile">
           <span class="badge-icon">🔥</span>
-          <span class="badge-label">5-week streak</span>
+          <span class="badge-label" id="badgeStreak">0-day streak</span>
         </div>
         <div class="badge-tile">
           <span class="badge-icon">🏆</span>
-          <span class="badge-label">Challenge winner</span>
+          <span class="badge-label" id="badgeChallenges">0 challenges joined</span>
         </div>
         <div class="badge-tile">
           <span class="badge-icon">👥</span>
-          <span class="badge-label">500+ followers</span>
+          <span class="badge-label" id="badgeFollowers">0 followers</span>
         </div>
       </div>
     </div>
-    
+
     <!-- Posts Section -->
     <div class="profile-section">
-      <h2 class="section-title">Your recipes</h2>
-      
+      <h2 class="section-title" id="recipesSectionTitle">Recipes</h2>
+
       <div class="tabs">
-        <div class="tab active">Grid view</div>
-        <div class="tab">List view</div>
-        <div class="tab">Saved</div>
+        <div class="tab active" data-view="grid">Grid view</div>
+        <div class="tab" data-view="list">List view</div>
+        <div class="tab" data-view="saved" id="savedTab">Saved</div>
       </div>
-      
-      <div class="posts-grid">
-        <div class="post-card" style="background-image: url('https://images.unsplash.com/photo-1609501676725-7186f017a4b1?w=400&h=400&fit=crop'); background-size: cover; background-position: center;">
-          <div class="post-overlay">Chicken Karahi</div>
-        </div>
-        <div class="post-card" style="background-image: url('https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=400&fit=crop'); background-size: cover; background-position: center;">
-          <div class="post-overlay">Lentil salad</div>
-        </div>
-        <div class="post-card" style="background-image: url('https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=400&fit=crop'); background-size: cover; background-position: center;">
-          <div class="post-overlay">Brown butter gnocchi</div>
-        </div>
-        <div class="post-card" style="background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=400&fit=crop'); background-size: cover; background-position: center;">
-          <div class="post-overlay">Dal with onions</div>
-        </div>
-        <div class="post-card" style="background-image: url('https://images.unsplash.com/photo-1599599810694-b5ac4dd64a73?w=400&h=400&fit=crop'); background-size: cover; background-position: center;">
-          <div class="post-overlay">Lamb tagine</div>
-        </div>
-        <div class="post-card" style="background-image: url('https://images.unsplash.com/photo-1552766336-b5e75a8b7d95?w=400&h=400&fit=crop'); background-size: cover; background-position: center;">
-          <div class="post-overlay">Falafel wrap</div>
-        </div>
-        <div class="post-card" style="background-image: url('https://images.unsplash.com/photo-1590003072023-cd271bfbf588?w=400&h=400&fit=crop'); background-size: cover; background-position: center;">
-          <div class="post-overlay">Miso ramen</div>
-        </div>
-        <div class="post-card" style="background-image: url('https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=400&fit=crop'); background-size: cover; background-position: center;">
-          <div class="post-overlay">Roasted chickpeas</div>
-        </div>
-        <div class="post-card" style="background-image: url('https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=400&h=400&fit=crop'); background-size: cover; background-position: center;">
-          <div class="post-overlay">Pickled veggies</div>
-        </div>
-      </div>
+
+      <div class="posts-grid" id="postsGrid"></div>
     </div>
-    
+
+  </div>
+</div>
+
+<!-- Edit profile modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-card">
+    <h3>Edit profile</h3>
+    <div class="field"><label>Display name</label><input type="text" id="editName"></div>
+    <div class="field"><label>Bio</label><textarea id="editBio"></textarea></div>
+    <div class="field"><label>Location</label><input type="text" id="editLocation"></div>
+    <div class="field checkbox-row"><input type="checkbox" id="editKitchenCv"><label style="margin:0;">Enable Kitchen CV mode</label></div>
+    <div class="field"><label>Kitchen CV title</label><input type="text" id="editCvTitle" placeholder="e.g. Line cook, 4 years"></div>
+    <div class="field"><label>Kitchen CV bio</label><textarea id="editCvBio" placeholder="Signature dishes, background..."></textarea></div>
+    <div class="field checkbox-row"><input type="checkbox" id="editOpenToWork"><label style="margin:0;">Open to work</label></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="editCancelBtn">Cancel</button>
+      <button class="btn-primary" id="editSaveBtn">Save changes</button>
     </div>
   </div>
 </div>
@@ -525,6 +490,232 @@
     document.querySelector('.sidebar').classList.toggle('open');
     document.querySelector('.sidebar-overlay').classList.toggle('open');
   }
+
+  const params = new URLSearchParams(location.search);
+  let currentUser = null;
+  let viewedProfile = null;
+  let viewedId = params.get('id');
+  let currentView = 'grid';
+
+  async function loadProfile() {
+    if (!viewedId) viewedId = currentUser.id;
+
+    const { data: profile } = await sb
+      .from('profiles')
+      .select('id, display_name, initials, bio, location, avatar_url, is_kitchen_cv, cv_title, cv_bio, open_to_work, created_at')
+      .eq('id', viewedId)
+      .single();
+
+    if (!profile) return;
+    viewedProfile = profile;
+    document.title = profile.display_name + ' — Cookzer';
+
+    const avatarEl = document.getElementById('profileAvatar');
+    if (profile.avatar_url) {
+      avatarEl.style.backgroundImage = "url('" + profile.avatar_url + "')";
+      avatarEl.textContent = '';
+    } else {
+      avatarEl.textContent = profile.initials;
+    }
+
+    document.getElementById('profileName').textContent = profile.display_name;
+    document.getElementById('profileBio').textContent = profile.bio || '';
+    const joined = new Date(profile.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' });
+    document.getElementById('profileLocation').textContent = (profile.location ? profile.location + ' • ' : '') + 'Joined ' + joined;
+
+    if (profile.is_kitchen_cv) {
+      document.getElementById('kitchenCvPanel').hidden = false;
+      document.getElementById('cvTitle').textContent = profile.cv_title || 'Kitchen professional';
+      document.getElementById('cvBio').textContent = profile.cv_bio || '';
+      document.getElementById('openToWorkPill').hidden = !profile.open_to_work;
+    }
+
+    const isOwn = viewedId === currentUser.id;
+    document.getElementById('savedTab').hidden = !isOwn;
+    document.getElementById('recipesSectionTitle').textContent = isOwn ? 'Your recipes' : profile.display_name.split(' ')[0] + "'s recipes";
+
+    const actions = document.getElementById('profileActions');
+    actions.innerHTML = '';
+    if (isOwn) {
+      const editBtn = document.createElement('button');
+      editBtn.className = 'btn btn-secondary';
+      editBtn.textContent = 'Edit profile';
+      editBtn.addEventListener('click', openEditModal);
+      const shareBtn = document.createElement('button');
+      shareBtn.className = 'btn btn-secondary';
+      shareBtn.textContent = 'Share';
+      shareBtn.addEventListener('click', shareProfile);
+      actions.appendChild(editBtn);
+      actions.appendChild(shareBtn);
+    } else {
+      const followBtn = document.createElement('button');
+      followBtn.className = 'btn btn-primary';
+      followBtn.id = 'followBtn';
+      actions.appendChild(followBtn);
+      await refreshFollowButton();
+
+      const shareBtn = document.createElement('button');
+      shareBtn.className = 'btn btn-secondary';
+      shareBtn.textContent = 'Share';
+      shareBtn.addEventListener('click', shareProfile);
+      actions.appendChild(shareBtn);
+    }
+
+    await loadStats();
+    await loadRecipesView();
+  }
+
+  async function refreshFollowButton() {
+    const { data: existing } = await sb
+      .from('follows')
+      .select('follower_id')
+      .eq('follower_id', currentUser.id)
+      .eq('followee_id', viewedId)
+      .maybeSingle();
+
+    const btn = document.getElementById('followBtn');
+    if (!btn) return;
+    btn.textContent = existing ? 'Following ✓' : 'Follow';
+    btn.onclick = async () => {
+      if (existing) {
+        await sb.from('follows').delete().eq('follower_id', currentUser.id).eq('followee_id', viewedId);
+      } else {
+        await sb.from('follows').insert({ follower_id: currentUser.id, followee_id: viewedId });
+      }
+      await refreshFollowButton();
+      await loadStats();
+    };
+  }
+
+  function shareProfile() {
+    const url = location.origin + location.pathname + '?id=' + viewedId;
+    navigator.clipboard.writeText(url).then(() => {
+      alert('Profile link copied: ' + url);
+    }).catch(() => {
+      prompt('Copy this profile link:', url);
+    });
+  }
+
+  async function loadStats() {
+    const { count: recipeCount } = await sb.from('recipes').select('*', { count: 'exact', head: true }).eq('author_id', viewedId);
+    const { count: followerCount } = await sb.from('follows').select('*', { count: 'exact', head: true }).eq('followee_id', viewedId);
+    const { count: followingCount } = await sb.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', viewedId);
+
+    const { data: myRecipes } = await sb.from('recipes').select('id').eq('author_id', viewedId);
+    const myRecipeIds = (myRecipes || []).map((r) => r.id);
+    let remadeCount = 0;
+    if (myRecipeIds.length > 0) {
+      const { count } = await sb.from('posts').select('*', { count: 'exact', head: true }).eq('kind', 'remake').in('recipe_id', myRecipeIds);
+      remadeCount = count || 0;
+    }
+
+    document.getElementById('statRecipes').textContent = recipeCount || 0;
+    document.getElementById('statFollowers').textContent = followerCount || 0;
+    document.getElementById('statFollowing').textContent = followingCount || 0;
+    document.getElementById('statRemade').textContent = remadeCount;
+    document.getElementById('badgeFollowers').textContent = (followerCount || 0) + ' followers';
+
+    const { data: cookIns } = await sb.from('posts').select('created_at').eq('author_id', viewedId).eq('kind', 'cook_in').order('created_at', { ascending: false });
+    document.getElementById('badgeCookIns').textContent = (cookIns ? cookIns.length : 0) + ' cook-ins logged';
+    document.getElementById('badgeStreak').textContent = computeStreak(cookIns || []) + '-day streak';
+
+    const { count: challengeCount } = await sb.from('challenge_entries').select('*', { count: 'exact', head: true }).eq('user_id', viewedId);
+    document.getElementById('badgeChallenges').textContent = (challengeCount || 0) + ' challenges joined';
+  }
+
+  function computeStreak(cookIns) {
+    const days = new Set(cookIns.map((c) => new Date(c.created_at).toDateString()));
+    let streak = 0;
+    const cursor = new Date();
+    while (days.has(cursor.toDateString())) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
+  }
+
+  document.querySelectorAll('.tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      if (tab.hidden) return;
+      document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentView = tab.dataset.view;
+      loadRecipesView();
+    });
+  });
+
+  async function loadRecipesView() {
+    const grid = document.getElementById('postsGrid');
+    grid.innerHTML = '';
+
+    let items = [];
+    if (currentView === 'saved') {
+      const { data } = await sb.from('saved_recipes').select('recipe_id, recipes(id, title)').eq('user_id', currentUser.id);
+      items = (data || []).filter((s) => s.recipes).map((s) => ({ id: s.recipes.id, title: s.recipes.title }));
+    } else {
+      const { data } = await sb.from('recipes').select('id, title').eq('author_id', viewedId).order('created_at', { ascending: false });
+      items = data || [];
+    }
+
+    if (items.length === 0) {
+      grid.innerHTML = '<div class="empty-note">Nothing here yet.</div>';
+      return;
+    }
+
+    items.forEach((item) => {
+      const a = document.createElement('a');
+      a.className = 'post-card';
+      a.href = 'cookzer-recipe.html?id=' + item.id;
+      const overlay = document.createElement('div');
+      overlay.className = 'post-overlay';
+      overlay.textContent = item.title;
+      a.appendChild(overlay);
+      grid.appendChild(a);
+    });
+  }
+
+  // ----- Edit profile modal -----
+  const editModal = document.getElementById('editModal');
+  function openEditModal() {
+    document.getElementById('editName').value = viewedProfile.display_name || '';
+    document.getElementById('editBio').value = viewedProfile.bio || '';
+    document.getElementById('editLocation').value = viewedProfile.location || '';
+    document.getElementById('editKitchenCv').checked = !!viewedProfile.is_kitchen_cv;
+    document.getElementById('editCvTitle').value = viewedProfile.cv_title || '';
+    document.getElementById('editCvBio').value = viewedProfile.cv_bio || '';
+    document.getElementById('editOpenToWork').checked = !!viewedProfile.open_to_work;
+    editModal.classList.add('open');
+  }
+  document.getElementById('editCancelBtn').addEventListener('click', () => editModal.classList.remove('open'));
+
+  document.getElementById('editSaveBtn').addEventListener('click', async () => {
+    const name = document.getElementById('editName').value.trim();
+    if (!name) return;
+    const payload = {
+      display_name: name,
+      initials: name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(),
+      bio: document.getElementById('editBio').value.trim() || null,
+      location: document.getElementById('editLocation').value.trim() || null,
+      is_kitchen_cv: document.getElementById('editKitchenCv').checked,
+      cv_title: document.getElementById('editCvTitle').value.trim() || null,
+      cv_bio: document.getElementById('editCvBio').value.trim() || null,
+      open_to_work: document.getElementById('editOpenToWork').checked,
+    };
+    const { error } = await sb.from('profiles').update(payload).eq('id', currentUser.id);
+    if (error) {
+      alert('Could not save: ' + error.message);
+      return;
+    }
+    editModal.classList.remove('open');
+    await loadProfile();
+  });
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    await loadProfile();
+  })();
 </script>
 </body>
 </html>
