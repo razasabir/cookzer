@@ -532,7 +532,149 @@
       color: var(--brick);
       font-weight: 600;
     }
-    
+
+    /* Top Recipes widget */
+    .top-recipes {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      margin-bottom: 20px;
+    }
+
+    .top-recipe-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .top-recipe-item:last-child {
+      border-bottom: none;
+    }
+
+    .top-recipe-rank {
+      font-weight: 600;
+      color: var(--brick);
+      min-width: 20px;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .top-recipe-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #F3EEE3, #E5D9C8);
+      flex-shrink: 0;
+    }
+
+    .top-recipe-meta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .top-recipe-title {
+      font-size: 12px;
+      color: var(--ink);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .top-recipe-author {
+      font-size: 11px;
+      color: var(--ink-soft);
+    }
+
+    .top-recipe-hearts {
+      font-size: 12px;
+      color: var(--brick);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    /* Trending Ingredients widget */
+    .trending-ingredients {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px 12px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .ingredient-tag {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      padding: 6px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      color: var(--olive-dark);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .ingredient-tag .trend-up {
+      color: var(--olive);
+      font-size: 10px;
+    }
+
+    /* Top Contributors widget */
+    .top-contributors {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      margin-bottom: 20px;
+    }
+
+    .contributor-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .contributor-item:last-child {
+      border-bottom: none;
+    }
+
+    .contributor-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .contributor-name {
+      flex: 1;
+      font-size: 12px;
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .contributor-stat {
+      font-size: 11px;
+      color: var(--ink-soft);
+    }
+
     /* Scrollbar styling */
     ::-webkit-scrollbar {
       width: 8px;
@@ -797,6 +939,66 @@
         <div class="leaderboard-avatar">JM</div>
         <div class="leaderboard-name">Josh M.</div>
         <div class="leaderboard-hearts">54 ❤️</div>
+      </div>
+    </div>
+
+    <div class="widget-title">Top Recipes This Week</div>
+    <div class="top-recipes">
+      <a href="cookzer-recipe.html" class="top-recipe-item">
+        <div class="top-recipe-rank">1</div>
+        <div class="top-recipe-thumb" style="background-image: url('https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=100&h=100&fit=crop'); background-size: cover;"></div>
+        <div class="top-recipe-meta">
+          <div class="top-recipe-title">Brown butter gnocchi</div>
+          <div class="top-recipe-author">Josh M.</div>
+        </div>
+        <div class="top-recipe-hearts">91 ❤️</div>
+      </a>
+      <div class="top-recipe-item">
+        <div class="top-recipe-rank">2</div>
+        <div class="top-recipe-thumb" style="background-image: url('https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=100&h=100&fit=crop'); background-size: cover;"></div>
+        <div class="top-recipe-meta">
+          <div class="top-recipe-title">Lentil salad under $2</div>
+          <div class="top-recipe-author">Amina M.</div>
+        </div>
+        <div class="top-recipe-hearts">58 ❤️</div>
+      </div>
+      <a href="cookzer-recipe.html" class="top-recipe-item">
+        <div class="top-recipe-rank">3</div>
+        <div class="top-recipe-thumb" style="background-image: url('https://images.unsplash.com/photo-1609501676725-7186f017a4b1?w=100&h=100&fit=crop'); background-size: cover;"></div>
+        <div class="top-recipe-meta">
+          <div class="top-recipe-title">Chicken Karahi</div>
+          <div class="top-recipe-author">Sarah K.</div>
+        </div>
+        <div class="top-recipe-hearts">24 ❤️</div>
+      </a>
+    </div>
+
+    <div class="widget-title">Trending Ingredients</div>
+    <div class="trending-ingredients">
+      <div class="ingredient-tag"><span class="trend-up">▲</span> Chicken</div>
+      <div class="ingredient-tag"><span class="trend-up">▲</span> Garlic</div>
+      <div class="ingredient-tag"><span class="trend-up">▲</span> Tomatoes</div>
+      <div class="ingredient-tag"><span class="trend-up">▲</span> Basil</div>
+      <div class="ingredient-tag"><span class="trend-up">▲</span> Chili</div>
+      <div class="ingredient-tag"><span class="trend-up">▲</span> Lentils</div>
+    </div>
+
+    <div class="widget-title">Top Contributors</div>
+    <div class="top-contributors">
+      <div class="contributor-item">
+        <div class="contributor-avatar">SK</div>
+        <div class="contributor-name">Sarah K.</div>
+        <div class="contributor-stat">18 recipes</div>
+      </div>
+      <div class="contributor-item">
+        <div class="contributor-avatar">JM</div>
+        <div class="contributor-name">Josh M.</div>
+        <div class="contributor-stat">14 recipes</div>
+      </div>
+      <div class="contributor-item">
+        <div class="contributor-avatar">AM</div>
+        <div class="contributor-name">Amina M.</div>
+        <div class="contributor-stat">11 recipes</div>
       </div>
     </div>
   </div>
