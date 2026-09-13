@@ -36,6 +36,14 @@ triages these into `roadmap.md` when it's time to build one.
   made.
 - **Nutrition & cost-per-serve info** — auto-estimate calories and cost
   per serving on a recipe (ties nicely into challenges like "Under $10").
+- **Recipe categories** — Breakfast, Lunch, Dinner, Dessert, Baking,
+  Appetizers, BBQ, etc. The primary way to browse once real recipes
+  exist. A `category` field on the recipes table.
+- **Dietary filters** — vegan, vegetarian, gluten-free, etc. as
+  multi-select tags on a recipe (a dish can be both "Dinner" and
+  "Vegan"), used to narrow a search rather than browse by — a different
+  UI pattern (filter chips over search results) than categories. A
+  `dietary_tags` field on the recipes table.
 
 ### Social / growth
 - **Follow / friend system** — right now the sidebar shows "recently
