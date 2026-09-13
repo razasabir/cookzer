@@ -289,77 +289,33 @@
     <!-- Challenge Hero -->
     <div class="challenge-hero">
       <div class="challenge-badge">Weekly Challenge</div>
-      <h2 class="challenge-title">Under $10 a serve</h2>
-      <p class="challenge-details">214 cooks entered so far • ends Sunday</p>
-      <button class="challenge-btn">Join the challenge</button>
+      <h2 class="challenge-title" id="challengeTitle">Loading…</h2>
+      <p class="challenge-details" id="challengeDetails"></p>
+      <button class="challenge-btn" id="joinBtn">Join the challenge</button>
     </div>
-    
+
     <!-- Filters -->
     <div class="filters-section">
-      <div class="filter-label">Filter recipes</div>
-      <div class="filter-chips">
-        <div class="filter-chip">Diet</div>
-        <div class="filter-chip">Cuisine</div>
-        <div class="filter-chip">Cook time</div>
-        <div class="filter-chip active">Budget</div>
+      <div class="filter-label">Filter recipes by category</div>
+      <div class="filter-chips" id="filterChips">
+        <div class="filter-chip active" data-category="">All</div>
+        <div class="filter-chip" data-category="Breakfast">Breakfast</div>
+        <div class="filter-chip" data-category="Lunch">Lunch</div>
+        <div class="filter-chip" data-category="Dinner">Dinner</div>
+        <div class="filter-chip" data-category="Dessert">Dessert</div>
+        <div class="filter-chip" data-category="Baking">Baking</div>
+        <div class="filter-chip" data-category="Appetizers">Appetizers</div>
+        <div class="filter-chip" data-category="BBQ">BBQ</div>
       </div>
     </div>
-    
+
     <!-- Leaderboard -->
     <div class="leaderboard-section">
       <div class="section-title">Top entries this week</div>
-      
-      <div class="leaderboard-item">
-        <div class="rank-badge">🥇</div>
-        <div class="avatar">LH</div>
-        <div class="entry-content">
-          <div class="entry-name">Layla H.</div>
-          <div class="entry-recipe">Lentil soup</div>
-        </div>
-        <div class="entry-hearts">96 ❤️</div>
-      </div>
-      
-      <div class="leaderboard-item">
-        <div class="rank-badge">🥈</div>
-        <div class="avatar">AT</div>
-        <div class="entry-content">
-          <div class="entry-name">Amina T.</div>
-          <div class="entry-recipe">Fridge rice</div>
-        </div>
-        <div class="entry-hearts">61 ❤️</div>
-      </div>
-      
-      <div class="leaderboard-item">
-        <div class="rank-badge">🥉</div>
-        <div class="avatar">JM</div>
-        <div class="entry-content">
-          <div class="entry-name">Josh M.</div>
-          <div class="entry-recipe">Onion dal</div>
-        </div>
-        <div class="entry-hearts">54 ❤️</div>
-      </div>
-      
-      <div class="leaderboard-item">
-        <div class="rank-badge">4</div>
-        <div class="avatar">SK</div>
-        <div class="entry-content">
-          <div class="entry-name">Sarah K.</div>
-          <div class="entry-recipe">Black bean tacos</div>
-        </div>
-        <div class="entry-hearts">42 ❤️</div>
-      </div>
-      
-      <div class="leaderboard-item">
-        <div class="rank-badge">5</div>
-        <div class="avatar">MR</div>
-        <div class="entry-content">
-          <div class="entry-name">Maya R.</div>
-          <div class="entry-recipe">Chickpea curry</div>
-        </div>
-        <div class="entry-hearts">38 ❤️</div>
-      </div>
+      <div id="leaderboardList"></div>
+      <div id="leaderboardEmpty" class="entry-recipe" style="text-align:center; padding:20px;" hidden>No entries yet — be the first to join.</div>
     </div>
-    
+
   </div>
 </div>
 
@@ -368,6 +324,146 @@
     document.querySelector('.sidebar').classList.toggle('open');
     document.querySelector('.sidebar-overlay').classList.toggle('open');
   }
+
+  let currentUser = null;
+  let activeChallenge = null;
+  let categoryFilter = '';
+
+  async function loadChallenge() {
+    const { data: challenges } = await sb
+      .from('challenges')
+      .select('id, title, description, ends_at')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (!challenges || challenges.length === 0) {
+      document.getElementById('challengeTitle').textContent = 'No active challenge';
+      return;
+    }
+    activeChallenge = challenges[0];
+    document.getElementById('challengeTitle').textContent = activeChallenge.title;
+
+    const { count: entryCount } = await sb
+      .from('challenge_entries')
+      .select('*', { count: 'exact', head: true })
+      .eq('challenge_id', activeChallenge.id);
+
+    const endsIn = Math.max(0, Math.ceil((new Date(activeChallenge.ends_at) - Date.now()) / 86400000));
+    document.getElementById('challengeDetails').textContent = (entryCount || 0) + ' cooks entered so far • ends in ' + endsIn + 'd';
+
+    const { data: mine } = await sb
+      .from('challenge_entries')
+      .select('id')
+      .eq('challenge_id', activeChallenge.id)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    const joinBtn = document.getElementById('joinBtn');
+    joinBtn.textContent = mine ? 'Joined ✓' : 'Join the challenge';
+    joinBtn.onclick = async () => {
+      const { error } = await sb.from('challenge_entries').upsert(
+        { challenge_id: activeChallenge.id, user_id: currentUser.id },
+        { onConflict: 'challenge_id,user_id' }
+      );
+      if (error) {
+        alert('Could not join: ' + error.message);
+        return;
+      }
+      await loadChallenge();
+    };
+
+    await loadLeaderboard();
+  }
+
+  document.querySelectorAll('.filter-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+      categoryFilter = chip.dataset.category || '';
+      loadLeaderboard();
+    });
+  });
+
+  async function loadLeaderboard() {
+    if (!activeChallenge) return;
+    const listEl = document.getElementById('leaderboardList');
+
+    let query = sb
+      .from('challenge_entries')
+      .select('user_id, post_id, profiles(id, display_name, initials), posts(recipe_id, recipes(id, title, category))')
+      .eq('challenge_id', activeChallenge.id)
+      .not('post_id', 'is', null);
+
+    const { data: entries } = await query;
+    let filtered = entries || [];
+    if (categoryFilter) {
+      filtered = filtered.filter((e) => e.posts && e.posts.recipes && e.posts.recipes.category === categoryFilter);
+    }
+
+    if (filtered.length === 0) {
+      listEl.innerHTML = '';
+      document.getElementById('leaderboardEmpty').hidden = false;
+      return;
+    }
+    document.getElementById('leaderboardEmpty').hidden = true;
+
+    const withHearts = await Promise.all(filtered.map(async (e) => {
+      const { count } = await sb.from('hearts').select('*', { count: 'exact', head: true }).eq('post_id', e.post_id);
+      return { ...e, hearts: count || 0 };
+    }));
+
+    withHearts.sort((a, b) => b.hearts - a.hearts);
+    const medals = ['🥇', '🥈', '🥉'];
+    listEl.innerHTML = '';
+    withHearts.forEach((e, i) => {
+      const item = document.createElement('div');
+      item.className = 'leaderboard-item';
+
+      const rank = document.createElement('div');
+      rank.className = 'rank-badge';
+      rank.textContent = medals[i] || (i + 1);
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = e.profiles ? e.profiles.initials : '??';
+
+      const content = document.createElement('div');
+      content.className = 'entry-content';
+      const name = document.createElement('div');
+      name.className = 'entry-name';
+      name.textContent = e.profiles ? e.profiles.display_name : 'Someone';
+      const recipeLine = document.createElement('div');
+      recipeLine.className = 'entry-recipe';
+      if (e.posts && e.posts.recipes) {
+        const link = document.createElement('a');
+        link.href = 'cookzer-recipe.html?id=' + e.posts.recipes.id;
+        link.style.color = 'inherit';
+        link.textContent = e.posts.recipes.title;
+        recipeLine.appendChild(link);
+      } else {
+        recipeLine.textContent = 'Entry post';
+      }
+      content.appendChild(name);
+      content.appendChild(recipeLine);
+
+      const hearts = document.createElement('div');
+      hearts.className = 'entry-hearts';
+      hearts.textContent = e.hearts + ' ❤️';
+
+      item.appendChild(rank);
+      item.appendChild(avatar);
+      item.appendChild(content);
+      item.appendChild(hearts);
+      listEl.appendChild(item);
+    });
+  }
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    await loadChallenge();
+  })();
 </script>
 </body>
 </html>
