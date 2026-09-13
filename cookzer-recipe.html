@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <title>Homemade Chicken Karahi — Cookzer</title>
+  <title>Recipe — Cookzer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -13,26 +13,9 @@
   <link rel="stylesheet" href="styles.css">
   <style>
   :root {
-      --cream: #F7F2E9;
-      --card-bg: #FFFFFF;
-      --ink: #2B2620;
-      --ink-soft: #6B6255;
-      --olive: #009246;
-      --olive-dark: #00733A;
-      --mustard: #D9A441;
-      --brick: #CE2B37;
-      --line: #E7DFCF;
-
-      /* Recipe-page accent palette (trattoria) */
       --forest: #00733A;
       --rosso: #CE2B37;
     }
-
-  body { display: flex; height: 100vh; overflow: hidden; }
-
-  .sidebar-title { padding: 0 16px; font-size: 12px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 12px; }
-
-  .brand-header { font-size: 24px; color: var(--olive-dark); letter-spacing: -0.5px; font-family: 'Fredoka', sans-serif; font-weight: 600; }
 
   .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--mustard), var(--brick)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; cursor: pointer; }
 
@@ -130,6 +113,7 @@
       border-top: 1px solid var(--line);
       border-bottom: 1px solid var(--line);
       margin-bottom: 48px;
+      flex-wrap: wrap;
     }
 
   .meta-item { text-align: center; }
@@ -149,6 +133,10 @@
     }
 
   section.block { margin-bottom: 56px; }
+
+  .dietary-tags-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
+
+  .dietary-pill { background: var(--cream); border: 1px solid var(--line); padding: 5px 12px; border-radius: 14px; font-size: 12px; color: var(--olive-dark); font-weight: 500; }
 
   /* Ingredients as a clean two-column table: name | qty */
     .ingredient-header-row {
@@ -195,6 +183,8 @@
 
   .ingredient-row.checked .name { color: var(--ink-soft); text-decoration: line-through; }
 
+  .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; }
+
   /* Steps */
     .step-list { list-style: none; counter-reset: step; }
 
@@ -224,6 +214,7 @@
       justify-content: center;
       gap: 12px;
       margin-top: 8px;
+      flex-wrap: wrap;
     }
 
   .action-pill {
@@ -241,6 +232,8 @@
     }
 
   .action-pill:hover { border-color: var(--forest); color: var(--forest); }
+
+  .action-pill.active { background: var(--forest); color: #fff; border-color: var(--forest); }
 
   /* Nutrition */
     .nutrition-line {
@@ -420,6 +413,12 @@
 
   .modal-btn.secondary { background: var(--cream); color: var(--ink-soft); border: 1px solid var(--line); }
 
+  .star-row { display: flex; justify-content: center; gap: 8px; font-size: 32px; margin-bottom: 18px; }
+
+  .star-row span { cursor: pointer; color: var(--line); }
+
+  .star-row span.filled { color: var(--mustard); }
+
   @media (max-width: 768px) {
       .sidebar { position: fixed; top: 0; left: -280px; height: 100vh; z-index: 100; transition: left 0.25s ease; }
       .sidebar.open { left: 0; }
@@ -450,7 +449,7 @@
     <div style="font-size: 22px; font-family: 'Fredoka', sans-serif; font-weight: 600; color: var(--olive-dark);">Cook<span style="color: var(--brick);">zer</span></div>
   </div>
 
-  <a href="index.html" style="text-decoration: none;"><div class="sidebar-item icon feed active">Feed</div></a>
+  <a href="index.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
   <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Cookbook</div></a>
   <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
   <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
@@ -467,33 +466,35 @@
   <div class="header-right">
     <button class="icon-btn">🔔</button>
     <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
-    <div class="avatar">RZ</div>
+    <div class="avatar">--</div>
   </div>
 </div>
 
 <!-- Main -->
 <div class="main">
-  <div class="recipe-page">
+  <div class="recipe-page" id="recipePage" hidden>
     <a href="index.html" class="back-link">&larr; Back to feed</a>
 
-    <div class="eyebrow">Weeknight Dinner &middot; Spicy &middot; 30 Minutes</div>
-    <h1 class="recipe-title">Homemade Chicken Karahi</h1>
-    <p class="recipe-sub">Less chilli than the usual recipe, cooked down until the tomato and ginger melt into the oil — restaurant quality, no delivery fee.</p>
+    <div class="eyebrow" id="rEyebrow"></div>
+    <h1 class="recipe-title" id="rTitle"></h1>
+    <p class="recipe-sub" id="rDescription"></p>
     <div class="rule"></div>
 
+    <div class="dietary-tags-row" id="rDietaryTags"></div>
+
     <div class="byline">
-      <div class="byline-avatar">SK</div>
-      <div class="byline-name">Sarah K.</div>
-      <div class="byline-time">&middot; shared 2 hours ago</div>
+      <div class="byline-avatar" id="rByAvatar">--</div>
+      <div class="byline-name" id="rByName"></div>
+      <div class="byline-time" id="rByTime"></div>
     </div>
 
-    <div class="hero" style="background-image: url('https://images.unsplash.com/photo-1609501676725-7186f017a4b1?w=1000&h=700&fit=crop');"></div>
+    <div class="hero" id="rHero"></div>
 
     <div class="meta-row">
-      <div class="meta-item"><div class="meta-value">10 min</div><div class="meta-label">Prep Time</div></div>
-      <div class="meta-item"><div class="meta-value">20 min</div><div class="meta-label">Cook Time</div></div>
-      <div class="meta-item"><div class="meta-value">4</div><div class="meta-label">Serves</div></div>
-      <div class="meta-item"><div class="meta-value">🌶️🌶️</div><div class="meta-label">Spice Level</div></div>
+      <div class="meta-item"><div class="meta-value" id="rPrep">--</div><div class="meta-label">Prep Time</div></div>
+      <div class="meta-item"><div class="meta-value" id="rCook">--</div><div class="meta-label">Cook Time</div></div>
+      <div class="meta-item"><div class="meta-value" id="rServes">--</div><div class="meta-label">Serves</div></div>
+      <div class="meta-item"><div class="meta-value" id="rSpice">--</div><div class="meta-label">Spice Level</div></div>
     </div>
 
     <section class="block">
@@ -503,45 +504,22 @@
         <div>Ingredient</div>
         <div>Qty</div>
       </div>
-      <div class="ingredient-table" id="ingredientList">
-        <div class="ingredient-row"><input type="checkbox"><span class="name">Chicken, bone-in pieces</span><span class="qty">1 kg</span></div>
-        <div class="ingredient-row"><input type="checkbox"><span class="name">Ripe tomatoes, chopped</span><span class="qty">4 large</span></div>
-        <div class="ingredient-row"><input type="checkbox"><span class="name">Ginger, julienned</span><span class="qty">2 tbsp</span></div>
-        <div class="ingredient-row"><input type="checkbox"><span class="name">Garlic, crushed</span><span class="qty">4 cloves</span></div>
-        <div class="ingredient-row"><input type="checkbox"><span class="name">Green chillies, slit</span><span class="qty">3&ndash;4</span></div>
-        <div class="ingredient-row"><input type="checkbox"><span class="name">Cooking oil</span><span class="qty">1/2 cup</span></div>
-        <div class="ingredient-row"><input type="checkbox"><span class="name">Red chilli powder</span><span class="qty">1.5 tbsp</span></div>
-        <div class="ingredient-row"><input type="checkbox"><span class="name">Coriander powder</span><span class="qty">1 tbsp</span></div>
-        <div class="ingredient-row"><input type="checkbox"><span class="name">Salt</span><span class="qty">to taste</span></div>
-        <div class="ingredient-row"><input type="checkbox"><span class="name">Fresh coriander &amp; ginger, to finish</span><span class="qty">a handful</span></div>
-      </div>
+      <div class="ingredient-table" id="ingredientList"></div>
     </section>
 
     <section class="block">
       <div class="section-heading">Method</div>
-      <ol class="step-list">
-        <li class="step"><div class="step-text">Heat the oil in a wide, heavy pan (a karahi if you have one) over medium-high heat. Add the chicken and sear until the pieces are lightly browned on all sides, about 6&ndash;8 minutes.</div></li>
-        <li class="step"><div class="step-text">Add the garlic and half the ginger, stirring for a minute until fragrant. Add the chopped tomatoes and green chillies, then cover and cook until the tomatoes break down into a thick sauce, stirring occasionally, about 12&ndash;15 minutes.</div></li>
-        <li class="step"><div class="step-text">Stir in the red chilli powder, coriander powder, and salt. Cook uncovered until the oil visibly separates at the edges of the pan &mdash; that's the sign the masala is properly cooked through, not just simmered.</div></li>
-        <li class="step"><div class="step-text">Reduce the heat to low, cover, and let the chicken finish cooking in the sauce for 8&ndash;10 minutes, until tender and no longer pink at the bone.</div></li>
-        <li class="step"><div class="step-text">Finish with the remaining ginger and fresh coriander. Serve straight from the pan with warm naan or steamed rice.</div></li>
-      </ol>
+      <ol class="step-list" id="stepList"></ol>
     </section>
 
     <section class="block">
       <div class="section-heading">Nutrition <span class="nutrition-note">(per serving)</span></div>
-      <p class="nutrition-line">
-        <b>420</b> kcal &nbsp;|&nbsp; <b>18g</b> carbs &nbsp;|&nbsp; <b>38g</b> protein &nbsp;|&nbsp; <b>22g</b> fat &nbsp;|&nbsp; <b>3g</b> fiber
-      </p>
+      <p class="nutrition-line" id="nutritionLine"></p>
     </section>
 
     <section class="block">
       <div class="section-heading">Gallery</div>
       <div class="gallery-grid" id="galleryGrid">
-        <div class="gallery-thumb" style="background-image: url('https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=300&h=300&fit=crop');"></div>
-        <div class="gallery-thumb" style="background-image: url('https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=300&h=300&fit=crop');"></div>
-        <div class="gallery-thumb" style="background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop');"></div>
-        <div class="gallery-thumb" style="background-image: url('https://images.unsplash.com/photo-1552766336-b5e75a8b7d95?w=300&h=300&fit=crop');"></div>
         <div class="gallery-add" id="addPhotoTile">
           <div class="plus">+</div>
           <div>Add your photo</div>
@@ -550,10 +528,17 @@
     </section>
 
     <div class="actions-row">
-      <button class="action-pill">❤️ 24 Hearts</button>
-      <button class="action-pill">🔖 Save to Cookbook</button>
-      <button class="action-pill">💬 5 Comments</button>
+      <button class="action-pill" id="cookInBtn">🍳 I cooked this</button>
+      <button class="action-pill" id="saveBtn">🔖 Save to Cookbook</button>
+      <button class="action-pill" id="rateBtn">⭐ <span id="ratingSummary">Rate this</span></button>
+      <button class="action-pill" id="remakeBtn">🔁 Remake &amp; post</button>
     </div>
+  </div>
+
+  <div id="recipeNotFound" hidden style="max-width:480px;margin:80px auto;text-align:center;">
+    <h2 style="color:var(--forest);margin-bottom:10px;">Recipe not found</h2>
+    <p style="color:var(--ink-soft);margin-bottom:20px;">This recipe doesn't exist yet, or the link is missing an id.</p>
+    <a href="cookzer-recipe-new.html" style="color:var(--olive);font-weight:600;">Create a recipe &rarr;</a>
   </div>
 </div>
 
@@ -583,16 +568,252 @@
   </div>
 </div>
 
+<!-- Rating modal -->
+<div class="modal-overlay" id="rateModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title">Rate this recipe</div>
+      <button class="modal-close" id="rateModalCloseBtn" aria-label="Close">&times;</button>
+    </div>
+    <div class="star-row" id="starRow">
+      <span data-star="1">★</span><span data-star="2">★</span><span data-star="3">★</span><span data-star="4">★</span><span data-star="5">★</span>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" id="rateCancelBtn">Cancel</button>
+      <button class="modal-btn primary" id="rateSubmitBtn">Submit rating</button>
+    </div>
+  </div>
+</div>
+
 <script>
   function toggleSidebar() {
     document.querySelector('.sidebar').classList.toggle('open');
     document.querySelector('.sidebar-overlay').classList.toggle('open');
   }
 
-  document.querySelectorAll('.ingredient-row input[type="checkbox"]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      cb.closest('.ingredient-row').classList.toggle('checked', cb.checked);
+  const params = new URLSearchParams(location.search);
+  const recipeId = params.get('id');
+
+  let currentUser = null;
+  let recipe = null;
+  let selectedStar = 0;
+
+  function publicUrl(bucket, path) {
+    if (!path) return null;
+    return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  }
+
+  function timeAgo(iso) {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const hours = Math.floor(diffMs / 3600000);
+    if (hours < 1) return 'just now';
+    if (hours < 24) return hours + 'h ago';
+    return Math.floor(hours / 24) + 'd ago';
+  }
+
+  async function loadRecipe() {
+    if (!recipeId) {
+      document.getElementById('recipeNotFound').hidden = false;
+      return;
+    }
+
+    const { data, error } = await sb
+      .from('recipes')
+      .select('id, title, description, category, dietary_tags, prep_time_minutes, cook_time_minutes, servings, spice_level, ingredients, steps, nutrition, created_at, author_id, profiles(display_name, initials)')
+      .eq('id', recipeId)
+      .maybeSingle();
+
+    if (error || !data) {
+      document.getElementById('recipeNotFound').hidden = false;
+      return;
+    }
+
+    recipe = data;
+    document.getElementById('recipePage').hidden = false;
+    document.title = recipe.title + ' — Cookzer';
+
+    const tagline = [recipe.category, recipe.spice_level, (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0) ? ((recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0)) + ' Minutes' : null]
+      .filter(Boolean).join(' · ');
+    document.getElementById('rEyebrow').textContent = tagline || 'Recipe';
+    document.getElementById('rTitle').textContent = recipe.title;
+    document.getElementById('rDescription').textContent = recipe.description || '';
+
+    const tagsEl = document.getElementById('rDietaryTags');
+    tagsEl.innerHTML = '';
+    (recipe.dietary_tags || []).forEach((tag) => {
+      const pill = document.createElement('div');
+      pill.className = 'dietary-pill';
+      pill.textContent = tag;
+      tagsEl.appendChild(pill);
     });
+
+    document.getElementById('rByAvatar').textContent = recipe.profiles ? recipe.profiles.initials : 'C';
+    document.getElementById('rByName').textContent = recipe.profiles ? recipe.profiles.display_name : 'Cookzer community';
+    document.getElementById('rByTime').textContent = '· shared ' + timeAgo(recipe.created_at);
+
+    document.getElementById('rPrep').textContent = recipe.prep_time_minutes ? recipe.prep_time_minutes + ' min' : '--';
+    document.getElementById('rCook').textContent = recipe.cook_time_minutes ? recipe.cook_time_minutes + ' min' : '--';
+    document.getElementById('rServes').textContent = recipe.servings || '--';
+    document.getElementById('rSpice').textContent = recipe.spice_level || '--';
+
+    const ingList = document.getElementById('ingredientList');
+    ingList.innerHTML = '';
+    if ((recipe.ingredients || []).length === 0) {
+      ingList.innerHTML = '<div class="empty-note">No ingredients listed yet.</div>';
+    } else {
+      recipe.ingredients.forEach((ing) => {
+        const row = document.createElement('div');
+        row.className = 'ingredient-row';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.addEventListener('change', () => row.classList.toggle('checked', cb.checked));
+        const name = document.createElement('span');
+        name.className = 'name';
+        name.textContent = ing.name;
+        const qty = document.createElement('span');
+        qty.className = 'qty';
+        qty.textContent = ing.qty || '';
+        row.appendChild(cb);
+        row.appendChild(name);
+        row.appendChild(qty);
+        ingList.appendChild(row);
+      });
+    }
+
+    const stepList = document.getElementById('stepList');
+    stepList.innerHTML = '';
+    if ((recipe.steps || []).length === 0) {
+      stepList.innerHTML = '<div class="empty-note">No steps listed yet.</div>';
+    } else {
+      recipe.steps.forEach((text) => {
+        const li = document.createElement('li');
+        li.className = 'step';
+        const div = document.createElement('div');
+        div.className = 'step-text';
+        div.textContent = text;
+        li.appendChild(div);
+        stepList.appendChild(li);
+      });
+    }
+
+    const n = recipe.nutrition || {};
+    if (n.calories || n.protein || n.carbs || n.fat) {
+      const parts = [];
+      if (n.calories) parts.push('<b>' + n.calories + '</b> kcal');
+      if (n.carbs) parts.push('<b>' + n.carbs + 'g</b> carbs');
+      if (n.protein) parts.push('<b>' + n.protein + 'g</b> protein');
+      if (n.fat) parts.push('<b>' + n.fat + 'g</b> fat');
+      document.getElementById('nutritionLine').innerHTML = parts.join(' &nbsp;|&nbsp; ');
+    } else {
+      document.getElementById('nutritionLine').textContent = 'Not provided for this recipe yet.';
+    }
+
+    await loadGallery();
+    await loadRatingSummary();
+  }
+
+  async function loadGallery() {
+    const { data: photos } = await sb
+      .from('recipe_photos')
+      .select('id, storage_path, filter')
+      .eq('recipe_id', recipeId)
+      .order('created_at', { ascending: false });
+
+    const grid = document.getElementById('galleryGrid');
+    grid.querySelectorAll('.gallery-thumb').forEach((el) => el.remove());
+    const addTile = document.getElementById('addPhotoTile');
+
+    (photos || []).forEach((p) => {
+      const thumb = document.createElement('div');
+      thumb.className = 'gallery-thumb';
+      thumb.style.backgroundImage = "url('" + publicUrl('recipe-photos', p.storage_path) + "')";
+      thumb.style.filter = FILTER_CSS[p.filter] || 'none';
+      grid.insertBefore(thumb, addTile);
+    });
+  }
+
+  async function loadRatingSummary() {
+    const { data: reviews } = await sb.from('recipe_reviews').select('rating').eq('recipe_id', recipeId);
+    if (!reviews || reviews.length === 0) {
+      document.getElementById('ratingSummary').textContent = 'Rate this';
+      return;
+    }
+    const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+    document.getElementById('ratingSummary').textContent = avg.toFixed(1) + ' (' + reviews.length + ')';
+  }
+
+  document.getElementById('cookInBtn').addEventListener('click', async () => {
+    const { error } = await sb.from('posts').insert({ author_id: currentUser.id, kind: 'cook_in', recipe_id: recipeId });
+    if (error) {
+      alert('Could not log cook-in: ' + error.message);
+      return;
+    }
+    document.getElementById('cookInBtn').classList.add('active');
+    document.getElementById('cookInBtn').textContent = '✅ Cooked!';
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', async () => {
+    const { error } = await sb.from('saved_recipes').upsert(
+      { user_id: currentUser.id, recipe_id: recipeId },
+      { onConflict: 'user_id,recipe_id' }
+    );
+    if (error) {
+      alert('Could not save: ' + error.message);
+      return;
+    }
+    document.getElementById('saveBtn').classList.add('active');
+    document.getElementById('saveBtn').textContent = '🔖 Saved';
+  });
+
+  document.getElementById('remakeBtn').addEventListener('click', async () => {
+    const { error } = await sb.from('posts').insert({
+      author_id: currentUser.id,
+      kind: 'remake',
+      recipe_id: recipeId,
+      caption: 'Remade ' + recipe.title + '.',
+    });
+    if (error) {
+      alert('Could not post remake: ' + error.message);
+      return;
+    }
+    window.location.href = 'index.html';
+  });
+
+  // ----- Rating modal -----
+  const rateModal = document.getElementById('rateModal');
+  document.getElementById('rateBtn').addEventListener('click', () => {
+    selectedStar = 0;
+    renderStars();
+    rateModal.classList.add('open');
+  });
+  document.getElementById('rateModalCloseBtn').addEventListener('click', () => rateModal.classList.remove('open'));
+  document.getElementById('rateCancelBtn').addEventListener('click', () => rateModal.classList.remove('open'));
+
+  function renderStars() {
+    document.querySelectorAll('#starRow span').forEach((el) => {
+      el.classList.toggle('filled', Number(el.dataset.star) <= selectedStar);
+    });
+  }
+
+  document.querySelectorAll('#starRow span').forEach((el) => {
+    el.addEventListener('click', () => {
+      selectedStar = Number(el.dataset.star);
+      renderStars();
+    });
+  });
+
+  document.getElementById('rateSubmitBtn').addEventListener('click', async () => {
+    if (!selectedStar) return;
+    const { error } = await sb.from('recipe_reviews').upsert(
+      { recipe_id: recipeId, user_id: currentUser.id, rating: selectedStar },
+      { onConflict: 'recipe_id,user_id' }
+    );
+    if (error) {
+      alert('Could not save rating: ' + error.message);
+      return;
+    }
+    rateModal.classList.remove('open');
+    await loadRatingSummary();
   });
 
   // ----- Photo upload + filter picker -----
@@ -605,7 +826,9 @@
     { key: 'vintage', label: 'Vintage', css: 'sepia(0.4) contrast(0.9) brightness(0.95) saturate(0.75)' },
     { key: 'moody', label: 'Moody', css: 'contrast(1.25) brightness(0.85) saturate(0.85)' },
   ];
+  const FILTER_CSS = Object.fromEntries(FILTERS.map((f) => [f.key, f.css]));
 
+  let currentImageFile = null;
   let currentImageData = null;
   let currentFilter = FILTERS[0];
 
@@ -626,6 +849,7 @@
 
   function closeModal() {
     modalOverlay.classList.remove('open');
+    currentImageFile = null;
     currentImageData = null;
     currentFilter = FILTERS[0];
     fileInput.value = '';
@@ -638,6 +862,7 @@
   fileInput.addEventListener('change', () => {
     const file = fileInput.files[0];
     if (!file) return;
+    currentImageFile = file;
     const reader = new FileReader();
     reader.onload = (e) => {
       currentImageData = e.target.result;
@@ -678,15 +903,38 @@
     });
   }
 
-  postBtn.addEventListener('click', () => {
-    if (!currentImageData) return;
-    const thumb = document.createElement('div');
-    thumb.className = 'gallery-thumb';
-    thumb.style.backgroundImage = `url(${currentImageData})`;
-    thumb.style.filter = currentFilter.css;
-    document.getElementById('galleryGrid').insertBefore(thumb, document.getElementById('addPhotoTile'));
+  postBtn.addEventListener('click', async () => {
+    if (!currentImageFile) return;
+    const ext = (currentImageFile.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
+
+    const { error: uploadErr } = await sb.storage.from('recipe-photos').upload(path, currentImageFile);
+    if (uploadErr) {
+      alert('Upload failed: ' + uploadErr.message);
+      return;
+    }
+
+    const { error: insertErr } = await sb.from('recipe_photos').insert({
+      recipe_id: recipeId,
+      user_id: currentUser.id,
+      storage_path: path,
+      filter: currentFilter.key,
+    });
+    if (insertErr) {
+      alert('Could not save photo: ' + insertErr.message);
+      return;
+    }
+
+    await loadGallery();
     closeModal();
   });
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    await loadRecipe();
+  })();
 </script>
 </body>
 </html>

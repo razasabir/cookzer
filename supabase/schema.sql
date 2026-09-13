@@ -166,3 +166,9 @@ create policy "Participants can send messages in their conversations"
 
 -- Enable Realtime change events on messages so open threads update live.
 alter publication supabase_realtime add table public.messages;
+
+-- ============================================================
+-- Everything past auth + messenger (real feed, recipes, cookbook,
+-- planner, social graph, challenges, reviews) lives in
+-- supabase/migrations/003_platform_tables.sql — run in order after this file.
+-- ============================================================

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>New Recipe — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-guard.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+    .main { flex: 1; margin-left: 280px; margin-top: 60px; overflow-y: auto; }
+    .form-page { max-width: 640px; margin: 0 auto; padding: 40px 32px 96px; }
+    .form-page h1 { font-size: 26px; color: var(--olive-dark); margin-bottom: 24px; }
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); margin-bottom: 6px; }
+    .field input[type="text"], .field input[type="number"], .field select, .field textarea {
+      width: 100%; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px;
+      font-family: inherit; font-size: 14px; color: var(--ink); background: var(--card-bg);
+    }
+    .field textarea { resize: vertical; min-height: 60px; }
+    .row-2 { display: flex; gap: 14px; }
+    .row-2 > .field { flex: 1; }
+    .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip-toggle {
+      padding: 7px 14px; border: 1px solid var(--line); border-radius: 20px; background: var(--card-bg);
+      font-size: 13px; cursor: pointer; color: var(--ink);
+    }
+    .chip-toggle.active { background: var(--mustard); color: #fff; border-color: var(--mustard); }
+    .dynamic-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
+    .dynamic-row input { flex: 1; }
+    .remove-row-btn { background: none; border: none; color: var(--brick); font-size: 18px; cursor: pointer; flex-shrink: 0; }
+    .add-row-btn {
+      background: var(--cream); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px;
+      font-size: 13px; color: var(--olive); cursor: pointer;
+    }
+    .submit-btn {
+      background: var(--olive); color: #fff; border: none; padding: 12px 28px; border-radius: 14px;
+      font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 12px;
+    }
+    .submit-btn:hover { background: var(--olive-dark); }
+    @media (max-width: 768px) {
+      .sidebar { position: fixed; top: 0; left: -280px; height: 100vh; z-index: 100; transition: left 0.25s ease; }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+      .row-2 { flex-direction: column; gap: 0; }
+    }
+    @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+      .form-page { padding: 28px 16px 80px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div style="padding: 0 16px; margin-bottom: 20px;">
+    <div style="font-size: 22px; font-family: 'Fredoka', sans-serif; font-weight: 600; color: var(--olive-dark);">Cook<span style="color: var(--brick);">zer</span></div>
+  </div>
+  <a href="index.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Cookbook</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <a href="index.html" style="text-decoration: none;"><button class="icon-btn">✕</button></a>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="form-page">
+    <h1 id="formTitle">New recipe</h1>
+
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="rTitle" placeholder="Homemade Chicken Karahi">
+    </div>
+
+    <div class="field">
+      <label>Description</label>
+      <textarea id="rDescription" placeholder="A quick note about this dish..."></textarea>
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Category</label>
+        <select id="rCategory">
+          <option value="">None</option>
+          <option>Breakfast</option>
+          <option>Lunch</option>
+          <option>Dinner</option>
+          <option>Dessert</option>
+          <option>Baking</option>
+          <option>Appetizers</option>
+          <option>BBQ</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Spice level</label>
+        <select id="rSpice">
+          <option value="">None</option>
+          <option>Mild</option>
+          <option>Medium</option>
+          <option>Hot</option>
+          <option>Extra hot</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Dietary tags</label>
+      <div class="chip-group" id="dietaryChips">
+        <div class="chip-toggle" data-tag="Vegan">Vegan</div>
+        <div class="chip-toggle" data-tag="Vegetarian">Vegetarian</div>
+        <div class="chip-toggle" data-tag="Gluten-free">Gluten-free</div>
+        <div class="chip-toggle" data-tag="Dairy-free">Dairy-free</div>
+        <div class="chip-toggle" data-tag="Halal">Halal</div>
+        <div class="chip-toggle" data-tag="Low-carb">Low-carb</div>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="field"><label>Prep time (min)</label><input type="number" id="rPrep" min="0"></div>
+      <div class="field"><label>Cook time (min)</label><input type="number" id="rCook" min="0"></div>
+      <div class="field"><label>Servings</label><input type="number" id="rServings" min="1" value="4"></div>
+    </div>
+
+    <div class="field">
+      <label>Ingredients</label>
+      <div id="ingredientRows"></div>
+      <button class="add-row-btn" id="addIngredientBtn" type="button">+ Add ingredient</button>
+    </div>
+
+    <div class="field">
+      <label>Steps</label>
+      <div id="stepRows"></div>
+      <button class="add-row-btn" id="addStepBtn" type="button">+ Add step</button>
+    </div>
+
+    <div class="field">
+      <label>Nutrition (per serving, optional)</label>
+      <div class="row-2">
+        <input type="number" id="rCalories" placeholder="Calories" min="0">
+        <input type="number" id="rProtein" placeholder="Protein (g)" min="0">
+      </div>
+      <div class="row-2" style="margin-top:8px;">
+        <input type="number" id="rCarbs" placeholder="Carbs (g)" min="0">
+        <input type="number" id="rFat" placeholder="Fat (g)" min="0">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Cost per serve ($, optional)</label>
+      <input type="number" id="rCost" min="0" step="0.01">
+    </div>
+
+    <button class="submit-btn" id="submitBtn" type="button">Save recipe</button>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  let currentUser = null;
+  const selectedTags = new Set();
+
+  document.querySelectorAll('.chip-toggle').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const tag = chip.dataset.tag;
+      if (selectedTags.has(tag)) {
+        selectedTags.delete(tag);
+        chip.classList.remove('active');
+      } else {
+        selectedTags.add(tag);
+        chip.classList.add('active');
+      }
+    });
+  });
+
+  function addIngredientRow(name = '', qty = '') {
+    const row = document.createElement('div');
+    row.className = 'dynamic-row';
+    row.innerHTML =
+      '<input type="text" class="ing-name" placeholder="Ingredient">' +
+      '<input type="text" class="ing-qty" placeholder="Qty" style="max-width:100px;">' +
+      '<button class="remove-row-btn" type="button">✕</button>';
+    row.querySelector('.ing-name').value = name;
+    row.querySelector('.ing-qty').value = qty;
+    row.querySelector('.remove-row-btn').addEventListener('click', () => row.remove());
+    document.getElementById('ingredientRows').appendChild(row);
+  }
+
+  function addStepRow(text = '') {
+    const row = document.createElement('div');
+    row.className = 'dynamic-row';
+    row.innerHTML =
+      '<input type="text" class="step-text" placeholder="Describe this step">' +
+      '<button class="remove-row-btn" type="button">✕</button>';
+    row.querySelector('.step-text').value = text;
+    row.querySelector('.remove-row-btn').addEventListener('click', () => row.remove());
+    document.getElementById('stepRows').appendChild(row);
+  }
+
+  document.getElementById('addIngredientBtn').addEventListener('click', () => addIngredientRow());
+  document.getElementById('addStepBtn').addEventListener('click', () => addStepRow());
+  addIngredientRow();
+  addIngredientRow();
+  addStepRow();
+
+  const params = new URLSearchParams(location.search);
+  const shareToFeed = params.get('share') === '1';
+  if (shareToFeed) document.getElementById('formTitle').textContent = 'New recipe — shared to your feed';
+
+  document.getElementById('submitBtn').addEventListener('click', async () => {
+    const title = document.getElementById('rTitle').value.trim();
+    if (!title) {
+      alert('Give your recipe a title first.');
+      return;
+    }
+
+    const ingredients = Array.from(document.querySelectorAll('#ingredientRows .dynamic-row')).map((row) => ({
+      name: row.querySelector('.ing-name').value.trim(),
+      qty: row.querySelector('.ing-qty').value.trim(),
+    })).filter((i) => i.name);
+
+    const steps = Array.from(document.querySelectorAll('#stepRows .dynamic-row')).map((row) => row.querySelector('.step-text').value.trim()).filter(Boolean);
+
+    const nutrition = {};
+    const cal = document.getElementById('rCalories').value;
+    const pro = document.getElementById('rProtein').value;
+    const carb = document.getElementById('rCarbs').value;
+    const fat = document.getElementById('rFat').value;
+    if (cal) nutrition.calories = Number(cal);
+    if (pro) nutrition.protein = Number(pro);
+    if (carb) nutrition.carbs = Number(carb);
+    if (fat) nutrition.fat = Number(fat);
+
+    const payload = {
+      author_id: currentUser.id,
+      title,
+      description: document.getElementById('rDescription').value.trim() || null,
+      category: document.getElementById('rCategory').value || null,
+      dietary_tags: Array.from(selectedTags),
+      prep_time_minutes: Number(document.getElementById('rPrep').value) || null,
+      cook_time_minutes: Number(document.getElementById('rCook').value) || null,
+      servings: Number(document.getElementById('rServings').value) || null,
+      spice_level: document.getElementById('rSpice').value || null,
+      ingredients,
+      steps,
+      nutrition,
+      cost_per_serve: Number(document.getElementById('rCost').value) || null,
+    };
+
+    const { data: recipe, error } = await sb.from('recipes').insert(payload).select('id').single();
+    if (error) {
+      alert('Could not save recipe: ' + error.message);
+      return;
+    }
+
+    if (shareToFeed) {
+      await sb.from('posts').insert({
+        author_id: currentUser.id,
+        kind: 'post',
+        recipe_id: recipe.id,
+        caption: 'Just shared ' + title + '.',
+      });
+      window.location.href = 'index.html';
+    } else {
+      window.location.href = 'cookzer-recipe.html?id=' + recipe.id;
+    }
+  });
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+  })();
+</script>
+</body>
+</html>

@@ -20,6 +20,13 @@
       font-weight: 600;
     }
 
+  .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
   /* Main content */
     .main {
       flex: 1;
@@ -92,6 +99,14 @@
       margin-bottom: 8px;
       display: block;
     }
+
+  .folder.add-folder {
+      background: var(--cream);
+      border: 2px dashed var(--line);
+      color: var(--ink-soft);
+    }
+
+  .folder.add-folder:hover { border-color: var(--olive); color: var(--olive); }
 
   /* Recently saved section */
     .recently-saved {
@@ -223,6 +238,7 @@
   <div class="header-right">
     <button class="icon-btn">🔔</button>
     <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <div class="avatar">--</div>
   </div>
 </div>
 
@@ -234,83 +250,23 @@
     <!-- Folders -->
     <div class="folders-section">
       <div class="section-label">Your folders</div>
-      <div class="folders-grid">
-        <div class="folder">
-          <span class="folder-icon">🌙</span>
-          Weeknight dinners
-        </div>
-        <div class="folder">
-          <span class="folder-icon">✨</span>
-          Ramadan meals
-        </div>
-        <div class="folder">
-          <span class="folder-icon">👨‍👩‍👧‍👦</span>
-          Kids approved
-        </div>
-        <div class="folder">
-          <span class="folder-icon">🍽️</span>
-          Restaurant recreations
+      <div class="folders-grid" id="foldersGrid">
+        <div class="folder add-folder" id="addFolderTile">
+          <span class="folder-icon">+</span>
+          New folder
         </div>
       </div>
     </div>
-    
+
     <!-- Recently saved -->
     <div class="recently-saved">
       <div class="section-label">Recently saved</div>
-      
-      <div class="recipe-item">
-        <div class="recipe-thumb" style="background-image: url('https://images.unsplash.com/photo-1609501676725-7186f017a4b1?w=200&h=200&fit=crop'); background-size: cover;"></div>
-        <div class="recipe-content">
-          <div class="recipe-title">Chicken Karahi</div>
-          <div class="recipe-note">📝 less chilli next time</div>
-          <div class="recipe-folder">in Weeknight dinners</div>
-        </div>
-        <div class="recipe-actions">
-          <span class="action-icon">❤️</span>
-          <span class="action-icon">⋯</span>
-        </div>
-      </div>
-      
-      <div class="recipe-item">
-        <div class="recipe-thumb" style="background-image: url('https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=200&h=200&fit=crop'); background-size: cover;"></div>
-        <div class="recipe-content">
-          <div class="recipe-title">Lentil salad</div>
-          <div class="recipe-note">📝 freezes well, make double</div>
-          <div class="recipe-folder">in Weeknight dinners</div>
-        </div>
-        <div class="recipe-actions">
-          <span class="action-icon">❤️</span>
-          <span class="action-icon">⋯</span>
-        </div>
-      </div>
-      
-      <div class="recipe-item">
-        <div class="recipe-thumb" style="background-image: url('https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=200&h=200&fit=crop'); background-size: cover;"></div>
-        <div class="recipe-content">
-          <div class="recipe-title">Brown butter gnocchi</div>
-          <div class="recipe-note">📝 double the sage</div>
-          <div class="recipe-folder">in Restaurant recreations</div>
-        </div>
-        <div class="recipe-actions">
-          <span class="action-icon">❤️</span>
-          <span class="action-icon">⋯</span>
-        </div>
-      </div>
-      
-      <div class="recipe-item">
-        <div class="recipe-thumb" style="background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop'); background-size: cover;"></div>
-        <div class="recipe-content">
-          <div class="recipe-title">Dal with onions</div>
-          <div class="recipe-note">📝 add tomatoes for freshness</div>
-          <div class="recipe-folder">in Weeknight dinners</div>
-        </div>
-        <div class="recipe-actions">
-          <span class="action-icon">❤️</span>
-          <span class="action-icon">⋯</span>
-        </div>
+      <div id="savedRecipesList"></div>
+      <div id="savedEmpty" class="recipe-folder" style="text-align:center; padding: 20px;" hidden>
+        Nothing saved yet — hit "Save to Cookbook" on any recipe page.
       </div>
     </div>
-    
+
   </div>
 </div>
 
@@ -319,6 +275,134 @@
     document.querySelector('.sidebar').classList.toggle('open');
     document.querySelector('.sidebar-overlay').classList.toggle('open');
   }
+
+  let currentUser = null;
+  let folders = [];
+  let activeFolderId = null;
+
+  async function loadFolders() {
+    const { data } = await sb.from('cookbook_folders').select('id, name, emoji').eq('user_id', currentUser.id).order('created_at');
+    folders = data || [];
+    renderFolders();
+  }
+
+  function renderFolders() {
+    const grid = document.getElementById('foldersGrid');
+    grid.querySelectorAll('.folder:not(.add-folder)').forEach((el) => el.remove());
+    const addTile = document.getElementById('addFolderTile');
+
+    folders.forEach((f) => {
+      const div = document.createElement('div');
+      div.className = 'folder' + (f.id === activeFolderId ? '' : '');
+      div.style.opacity = (activeFolderId && activeFolderId !== f.id) ? '0.6' : '1';
+      div.innerHTML = '<span class="folder-icon"></span>';
+      div.querySelector('.folder-icon').textContent = f.emoji;
+      div.appendChild(document.createTextNode(f.name));
+      div.addEventListener('click', () => {
+        activeFolderId = activeFolderId === f.id ? null : f.id;
+        renderFolders();
+        loadSavedRecipes();
+      });
+      grid.insertBefore(div, addTile);
+    });
+  }
+
+  document.getElementById('addFolderTile').addEventListener('click', async () => {
+    const name = prompt('Folder name (e.g. Weeknight dinners):');
+    if (!name || !name.trim()) return;
+    const emoji = prompt('Pick an emoji for this folder (optional):', '📁') || '📁';
+    const { error } = await sb.from('cookbook_folders').insert({ user_id: currentUser.id, name: name.trim(), emoji });
+    if (error) {
+      alert('Could not create folder: ' + error.message);
+      return;
+    }
+    await loadFolders();
+  });
+
+  async function loadSavedRecipes() {
+    let query = sb
+      .from('saved_recipes')
+      .select('recipe_id, folder_id, note, recipes(id, title)')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+
+    if (activeFolderId) query = query.eq('folder_id', activeFolderId);
+
+    const { data: saved } = await query;
+    const listEl = document.getElementById('savedRecipesList');
+    listEl.innerHTML = '';
+    document.getElementById('savedEmpty').hidden = !!(saved && saved.length);
+
+    (saved || []).forEach((s) => {
+      if (!s.recipes) return;
+      const folder = folders.find((f) => f.id === s.folder_id);
+      const item = document.createElement('div');
+      item.className = 'recipe-item';
+
+      const thumb = document.createElement('div');
+      thumb.className = 'recipe-thumb';
+
+      const content = document.createElement('div');
+      content.className = 'recipe-content';
+      const titleLink = document.createElement('a');
+      titleLink.href = 'cookzer-recipe.html?id=' + s.recipe_id;
+      titleLink.style.textDecoration = 'none';
+      titleLink.style.color = 'inherit';
+      const title = document.createElement('div');
+      title.className = 'recipe-title';
+      title.textContent = s.recipes.title;
+      titleLink.appendChild(title);
+      content.appendChild(titleLink);
+
+      if (s.note) {
+        const note = document.createElement('div');
+        note.className = 'recipe-note';
+        note.textContent = '📝 ' + s.note;
+        content.appendChild(note);
+      }
+
+      const folderLabel = document.createElement('div');
+      folderLabel.className = 'recipe-folder';
+      folderLabel.textContent = folder ? 'in ' + folder.name : 'not in a folder';
+      content.appendChild(folderLabel);
+
+      const actions = document.createElement('div');
+      actions.className = 'recipe-actions';
+      const noteBtn = document.createElement('span');
+      noteBtn.className = 'action-icon';
+      noteBtn.textContent = '📝';
+      noteBtn.title = 'Edit note';
+      noteBtn.addEventListener('click', async () => {
+        const newNote = prompt('Note for this recipe:', s.note || '');
+        if (newNote === null) return;
+        await sb.from('saved_recipes').update({ note: newNote }).eq('user_id', currentUser.id).eq('recipe_id', s.recipe_id);
+        await loadSavedRecipes();
+      });
+      const removeBtn = document.createElement('span');
+      removeBtn.className = 'action-icon';
+      removeBtn.textContent = '🗑️';
+      removeBtn.title = 'Remove from cookbook';
+      removeBtn.addEventListener('click', async () => {
+        await sb.from('saved_recipes').delete().eq('user_id', currentUser.id).eq('recipe_id', s.recipe_id);
+        await loadSavedRecipes();
+      });
+      actions.appendChild(noteBtn);
+      actions.appendChild(removeBtn);
+
+      item.appendChild(thumb);
+      item.appendChild(content);
+      item.appendChild(actions);
+      listEl.appendChild(item);
+    });
+  }
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    await loadFolders();
+    await loadSavedRecipes();
+  })();
 </script>
 </body>
 </html>
