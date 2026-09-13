@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meal Planner — Cookzer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js"></script>
@@ -15,10 +15,10 @@
       --card-bg: #FFFFFF;
       --ink: #2B2620;
       --ink-soft: #6B6255;
-      --olive: #4E5A3E;
-      --olive-dark: #3A4530;
+      --olive: #009246;
+      --olive-dark: #00733A;
       --mustard: #D9A441;
-      --brick: #A94E2E;
+      --brick: #CE2B37;
       --line: #E7DFCF;
     }
     
@@ -60,7 +60,7 @@
       padding: 0 16px;
       margin-bottom: 20px;
       font-size: 22px;
-      font-family: 'Fraunces', serif;
+      font-family: 'Fredoka', sans-serif;
       font-weight: 600;
       color: var(--olive-dark);
       letter-spacing: -0.5px;
@@ -129,7 +129,7 @@
       font-size: 20px;
       color: var(--olive-dark);
       letter-spacing: -0.5px;
-      font-family: 'Fraunces', serif;
+      font-family: 'Fredoka', sans-serif;
       font-weight: 600;
     }
     
@@ -197,7 +197,7 @@
     .planner-day {
       background: var(--card-bg);
       border: 1px solid var(--line);
-      border-radius: 12px;
+      border-radius: 18px;
       padding: 16px;
       margin-bottom: 12px;
       display: flex;
@@ -237,7 +237,7 @@
       padding: 8px 16px;
       background: var(--cream);
       border: 1px solid var(--line);
-      border-radius: 6px;
+      border-radius: 12px;
       cursor: pointer;
       font-size: 14px;
       font-weight: 500;
@@ -261,7 +261,7 @@
       max-width: 700px;
       background: var(--card-bg);
       border: 2px solid var(--mustard);
-      border-radius: 12px;
+      border-radius: 18px;
       padding: 20px;
       margin-top: 32px;
       text-align: center;
@@ -285,7 +285,7 @@
     .ingredient-count {
       background: var(--cream);
       padding: 12px;
-      border-radius: 8px;
+      border-radius: 14px;
       margin-bottom: 16px;
       font-size: 13px;
       font-weight: 500;
@@ -297,7 +297,7 @@
       color: #fff;
       padding: 12px 28px;
       border: none;
-      border-radius: 6px;
+      border-radius: 12px;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
@@ -320,7 +320,7 @@
     
     ::-webkit-scrollbar-thumb {
       background: var(--line);
-      border-radius: 4px;
+      border-radius: 10px;
     }
     
     ::-webkit-scrollbar-thumb:hover {
