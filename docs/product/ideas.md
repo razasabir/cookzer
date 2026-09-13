@@ -24,6 +24,18 @@ triages these into `roadmap.md` when it's time to build one.
   parses it into a structured recipe on your profile/cookbook.
 - **Pantry-aware suggestions** — tell Cookzer what's in your fridge, get
   recipe matches from the community.
+- **Restaurant check-ins (undecided)** — when uploading a photo while
+  dining out, ask for one-time location permission, query a places API
+  for restaurants within ~100-200m, and show a suggest-and-confirm list
+  ("You might be at: X, Y, Z") rather than auto-tagging — GPS indoors
+  is often off by 10-50m. Confirmed restaurant gets stored on the post,
+  unlocking a "photos from this restaurant" browse view later.
+  Recommended API: Foursquare Places (built for exactly this, generous
+  free tier) over Google Places (more accurate, costs past a small free
+  quota) or OpenStreetMap (free, inconsistent restaurant data by
+  region). Flagged, not committed: like the AI assistant, needs a
+  server-side piece (API key can't be client-side) and has a
+  usage-based cost once used a lot.
 - **AI cooking assistant (undecided)** — a conversational way to deliver
   pantry-aware suggestions: "I have chicken, rice, and bell peppers,
   what can I make?" pulling from real community recipes. Flagged, not
