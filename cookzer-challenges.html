@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discover — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cream: #F7F2E9;
+      --card-bg: #FFFFFF;
+      --ink: #2B2620;
+      --ink-soft: #6B6255;
+      --olive: #4E5A3E;
+      --olive-dark: #3A4530;
+      --mustard: #D9A441;
+      --brick: #A94E2E;
+      --line: #E7DFCF;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      font-family: 'Work Sans', sans-serif;
+      color: var(--ink);
+      background: var(--cream);
+    }
+    
+    h1, h2, h3, .brand {
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+    }
+    
+    /* Layout */
+    body {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--card-bg);
+      border-right: 1px solid var(--line);
+      padding: 20px 0;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    
+    .sidebar-brand {
+      padding: 0 16px;
+      margin-bottom: 20px;
+      font-size: 22px;
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+    }
+    
+    .sidebar-brand span {
+      color: var(--brick);
+    }
+    
+    .sidebar-item {
+      padding: 10px 16px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+      font-size: 15px;
+      color: var(--ink-soft);
+    }
+    
+    .sidebar-item:hover {
+      background: var(--cream);
+      color: var(--olive);
+    }
+    
+    .sidebar-item.active {
+      border-left-color: var(--olive);
+      color: var(--olive-dark);
+      font-weight: 500;
+      background: rgba(78, 90, 62, 0.05);
+    }
+    
+    .sidebar-item.icon {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .sidebar-item.icon:before {
+      font-size: 20px;
+      min-width: 20px;
+    }
+    
+    .sidebar-item.feed:before { content: "📰"; }
+    .sidebar-item.cookbook:before { content: "📚"; }
+    .sidebar-item.planner:before { content: "📅"; }
+    .sidebar-item.challenges:before { content: "🏆"; }
+    .sidebar-item.profile:before { content: "👤"; }
+    
+    /* Header */
+    .header {
+      position: absolute;
+      top: 0;
+      left: 280px;
+      right: 0;
+      height: 60px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      justify-content: space-between;
+      z-index: 10;
+    }
+    
+    .brand-header {
+      font-size: 20px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+    }
+    
+    .brand-header span {
+      color: var(--brick);
+    }
+    
+    .header-right {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.2s;
+    }
+    
+    .icon-btn:hover {
+      background: #f0e6d2;
+    }
+    
+    /* Main content */
+    .main {
+      flex: 1;
+      margin-left: 280px;
+      margin-top: 60px;
+      overflow-y: auto;
+    }
+    
+    .discover-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .page-title {
+      font-size: 28px;
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      color: var(--olive-dark);
+      margin-bottom: 24px;
+      text-align: center;
+      width: 100%;
+    }
+    
+    /* Challenge hero */
+    .challenge-hero {
+      width: 100%;
+      max-width: 700px;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      color: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    
+    .challenge-badge {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      opacity: 0.9;
+    }
+    
+    .challenge-title {
+      font-size: 32px;
+      font-family: 'Fraunces', serif;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    
+    .challenge-details {
+      font-size: 14px;
+      margin-bottom: 20px;
+      opacity: 0.95;
+    }
+    
+    .challenge-btn {
+      background: #fff;
+      color: var(--olive);
+      padding: 12px 32px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .challenge-btn:hover {
+      background: var(--cream);
+      transform: translateY(-2px);
+    }
+    
+    /* Filters */
+    .filters-section {
+      width: 100%;
+      max-width: 700px;
+      margin-bottom: 32px;
+    }
+    
+    .filter-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    
+    .filter-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .filter-chip {
+      padding: 8px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink);
+      transition: all 0.2s;
+    }
+    
+    .filter-chip:hover {
+      border-color: var(--olive);
+      background: rgba(78, 90, 62, 0.05);
+    }
+    
+    .filter-chip.active {
+      background: var(--mustard);
+      color: #fff;
+      border-color: var(--mustard);
+    }
+    
+    /* Leaderboard */
+    .leaderboard-section {
+      width: 100%;
+      max-width: 700px;
+    }
+    
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+    
+    .leaderboard-item {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    
+    .leaderboard-item:hover {
+      border-color: var(--mustard);
+    }
+    
+    .rank-badge {
+      font-size: 24px;
+      min-width: 40px;
+      text-align: center;
+    }
+    
+    .avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    
+    .entry-content {
+      flex: 1;
+    }
+    
+    .entry-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 2px;
+    }
+    
+    .entry-recipe {
+      font-size: 12px;
+      color: var(--ink-soft);
+    }
+    
+    .entry-hearts {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--brick);
+      text-align: right;
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--line);
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--ink-soft);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-brand">Cook<span>zer</span></div>
+  
+  <a href="cookzer-homepage.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Cookbook</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges active">Challenges</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn">🔔</button>
+    <button class="icon-btn">💬</button>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+  <div class="discover-content">
+    <h1 class="page-title">Discover & Compete</h1>
+    
+    <!-- Challenge Hero -->
+    <div class="challenge-hero">
+      <div class="challenge-badge">Weekly Challenge</div>
+      <h2 class="challenge-title">Under $10 a serve</h2>
+      <p class="challenge-details">214 cooks entered so far • ends Sunday</p>
+      <button class="challenge-btn">Join the challenge</button>
+    </div>
+    
+    <!-- Filters -->
+    <div class="filters-section">
+      <div class="filter-label">Filter recipes</div>
+      <div class="filter-chips">
+        <div class="filter-chip">Diet</div>
+        <div class="filter-chip">Cuisine</div>
+        <div class="filter-chip">Cook time</div>
+        <div class="filter-chip active">Budget</div>
+      </div>
+    </div>
+    
+    <!-- Leaderboard -->
+    <div class="leaderboard-section">
+      <div class="section-title">Top entries this week</div>
+      
+      <div class="leaderboard-item">
+        <div class="rank-badge">🥇</div>
+        <div class="avatar">LH</div>
+        <div class="entry-content">
+          <div class="entry-name">Layla H.</div>
+          <div class="entry-recipe">Lentil soup</div>
+        </div>
+        <div class="entry-hearts">96 ❤️</div>
+      </div>
+      
+      <div class="leaderboard-item">
+        <div class="rank-badge">🥈</div>
+        <div class="avatar">AT</div>
+        <div class="entry-content">
+          <div class="entry-name">Amina T.</div>
+          <div class="entry-recipe">Fridge rice</div>
+        </div>
+        <div class="entry-hearts">61 ❤️</div>
+      </div>
+      
+      <div class="leaderboard-item">
+        <div class="rank-badge">🥉</div>
+        <div class="avatar">JM</div>
+        <div class="entry-content">
+          <div class="entry-name">Josh M.</div>
+          <div class="entry-recipe">Onion dal</div>
+        </div>
+        <div class="entry-hearts">54 ❤️</div>
+      </div>
+      
+      <div class="leaderboard-item">
+        <div class="rank-badge">4</div>
+        <div class="avatar">SK</div>
+        <div class="entry-content">
+          <div class="entry-name">Sarah K.</div>
+          <div class="entry-recipe">Black bean tacos</div>
+        </div>
+        <div class="entry-hearts">42 ❤️</div>
+      </div>
+      
+      <div class="leaderboard-item">
+        <div class="rank-badge">5</div>
+        <div class="avatar">MR</div>
+        <div class="entry-content">
+          <div class="entry-name">Maya R.</div>
+          <div class="entry-recipe">Chickpea curry</div>
+        </div>
+        <div class="entry-hearts">38 ❤️</div>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+</body>
+</html>
