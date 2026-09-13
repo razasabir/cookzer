@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Homemade Chicken Karahi — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cream: #F7F2E9;
+      --card-bg: #FFFFFF;
+      --ink: #2B2620;
+      --ink-soft: #6B6255;
+      --olive: #4E5A3E;
+      --olive-dark: #3A4530;
+      --mustard: #D9A441;
+      --brick: #A94E2E;
+      --line: #E7DFCF;
+
+      /* Recipe-page accent palette (trattoria) */
+      --forest: #1B4332;
+      --rosso: #A61E1E;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      font-family: 'Work Sans', sans-serif;
+      color: var(--ink);
+      background: var(--cream);
+    }
+
+    h1, h2, h3, .brand { font-family: 'Fraunces', serif; font-weight: 600; }
+
+    body { display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar */
+    .sidebar { width: 280px; background: var(--card-bg); border-right: 1px solid var(--line); padding: 20px 0; overflow-y: auto; flex-shrink: 0; }
+    .sidebar-title { padding: 0 16px; font-size: 12px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 12px; }
+    .sidebar-item { padding: 10px 16px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.2s; font-size: 15px; color: var(--ink-soft); }
+    .sidebar-item:hover { background: var(--cream); color: var(--olive); }
+    .sidebar-item.active { border-left-color: var(--olive); color: var(--olive-dark); font-weight: 500; background: rgba(78, 90, 62, 0.05); }
+    .sidebar-item.icon { display: flex; align-items: center; gap: 12px; }
+    .sidebar-item.icon:before { font-size: 20px; min-width: 20px; }
+    .sidebar-item.feed:before { content: "📰"; }
+    .sidebar-item.cookbook:before { content: "📚"; }
+    .sidebar-item.planner:before { content: "📅"; }
+    .sidebar-item.challenges:before { content: "🏆"; }
+    .sidebar-item.profile:before { content: "👤"; }
+    .sidebar-item.messenger:before { content: "💬"; }
+
+    /* Header */
+    .header { position: absolute; top: 0; left: 280px; right: 0; height: 60px; background: var(--card-bg); border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 24px; justify-content: space-between; z-index: 10; }
+    .brand-header { font-size: 24px; color: var(--olive-dark); letter-spacing: -0.5px; }
+    .brand-header span { color: var(--brick); }
+    .header-right { display: flex; gap: 16px; align-items: center; }
+    .icon-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--cream); border: 1px solid var(--line); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all 0.2s; }
+    .icon-btn:hover { background: #f0e6d2; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--mustard), var(--brick)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; cursor: pointer; }
+
+    /* Main */
+    .main { flex: 1; margin-left: 280px; margin-top: 60px; overflow-y: auto; }
+
+    .recipe-page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 56px 32px 96px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--ink-soft);
+      text-decoration: none;
+      margin-bottom: 40px;
+    }
+    .back-link:hover { color: var(--forest); }
+
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--rosso);
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .recipe-title {
+      font-size: 40px;
+      color: var(--forest);
+      text-align: center;
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
+
+    .recipe-sub {
+      text-align: center;
+      color: var(--ink-soft);
+      font-size: 15px;
+      font-style: italic;
+      font-family: 'Fraunces', serif;
+      max-width: 480px;
+      margin: 0 auto 28px;
+      line-height: 1.5;
+    }
+
+    .rule {
+      width: 60px;
+      height: 2px;
+      background: var(--forest);
+      margin: 0 auto 32px;
+    }
+
+    .byline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 36px;
+    }
+
+    .byline-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; font-size: 12px;
+    }
+
+    .byline-name { font-size: 13px; color: var(--ink); }
+    .byline-time { font-size: 12px; color: var(--ink-soft); }
+
+    .hero {
+      width: 100%;
+      height: 340px;
+      border-radius: 4px;
+      background: linear-gradient(135deg, #F3EEE3, #E5D9C8);
+      background-size: cover;
+      background-position: center;
+      margin-bottom: 40px;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      padding: 20px 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 48px;
+    }
+
+    .meta-item { text-align: center; }
+    .meta-value { font-family: 'Fraunces', serif; font-size: 20px; color: var(--forest); font-weight: 600; }
+    .meta-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-soft); margin-top: 4px; }
+
+    .section-heading {
+      font-size: 13px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--forest);
+      text-align: center;
+      margin-bottom: 28px;
+      position: relative;
+    }
+
+    section.block { margin-bottom: 56px; }
+
+    /* Ingredients as a menu-style list with leader lines to a checkbox */
+    .ingredient-list { list-style: none; }
+    .ingredient {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 10px 0;
+      font-size: 15px;
+      color: var(--ink);
+    }
+    .ingredient .name { white-space: nowrap; }
+    .ingredient .leader {
+      flex: 1;
+      border-bottom: 1px dotted var(--line);
+      height: 1px;
+      transform: translateY(-4px);
+    }
+    .ingredient .qty {
+      white-space: nowrap;
+      color: var(--ink-soft);
+      font-size: 13px;
+    }
+    .ingredient input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: var(--forest);
+      flex-shrink: 0;
+    }
+    .ingredient.checked .name { color: var(--ink-soft); text-decoration: line-through; }
+
+    /* Steps */
+    .step-list { list-style: none; counter-reset: step; }
+    .step {
+      counter-increment: step;
+      display: flex;
+      gap: 20px;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .step:last-child { border-bottom: none; }
+    .step::before {
+      content: counter(step);
+      font-family: 'Fraunces', serif;
+      font-size: 22px;
+      color: var(--rosso);
+      min-width: 32px;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 15px; line-height: 1.65; color: var(--ink); padding-top: 3px; }
+
+    .actions-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .action-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: var(--card-bg);
+      color: var(--ink-soft);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .action-pill:hover { border-color: var(--forest); color: var(--forest); }
+
+    /* Mobile nav */
+    .menu-toggle { display: none; width: 36px; height: 36px; border-radius: 50%; background: var(--cream); border: 1px solid var(--line); cursor: pointer; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(43, 38, 32, 0.4); z-index: 90; }
+
+    @media (max-width: 768px) {
+      .sidebar { position: fixed; top: 0; left: -280px; height: 100vh; z-index: 100; transition: left 0.25s ease; }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+      .recipe-page { padding: 40px 20px 72px; }
+      .recipe-title { font-size: 30px; }
+      .hero { height: 220px; }
+      .meta-row { gap: 24px; }
+    }
+
+    @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+      .meta-row { gap: 16px; }
+      .meta-value { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div style="padding: 0 16px; margin-bottom: 20px;">
+    <div style="font-size: 22px; font-family: 'Fraunces', serif; font-weight: 600; color: var(--olive-dark);">Cook<span style="color: var(--brick);">zer</span></div>
+  </div>
+
+  <a href="index.html" style="text-decoration: none;"><div class="sidebar-item icon feed active">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Cookbook</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Header -->
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <div class="avatar">RZ</div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="recipe-page">
+    <a href="index.html" class="back-link">&larr; Back to feed</a>
+
+    <div class="eyebrow">Weeknight Dinner &middot; Spicy &middot; 30 Minutes</div>
+    <h1 class="recipe-title">Homemade Chicken Karahi</h1>
+    <p class="recipe-sub">Less chilli than the usual recipe, cooked down until the tomato and ginger melt into the oil — restaurant quality, no delivery fee.</p>
+    <div class="rule"></div>
+
+    <div class="byline">
+      <div class="byline-avatar">SK</div>
+      <div class="byline-name">Sarah K.</div>
+      <div class="byline-time">&middot; shared 2 hours ago</div>
+    </div>
+
+    <div class="hero" style="background-image: url('https://images.unsplash.com/photo-1609501676725-7186f017a4b1?w=1000&h=700&fit=crop');"></div>
+
+    <div class="meta-row">
+      <div class="meta-item"><div class="meta-value">30 min</div><div class="meta-label">Total Time</div></div>
+      <div class="meta-item"><div class="meta-value">4</div><div class="meta-label">Servings</div></div>
+      <div class="meta-item"><div class="meta-value">Medium</div><div class="meta-label">Difficulty</div></div>
+      <div class="meta-item"><div class="meta-value">🌶️🌶️</div><div class="meta-label">Spice Level</div></div>
+    </div>
+
+    <section class="block">
+      <div class="section-heading">Ingredients</div>
+      <ul class="ingredient-list" id="ingredientList">
+        <li class="ingredient"><input type="checkbox"><span class="name">Chicken, bone-in pieces</span><span class="leader"></span><span class="qty">1 kg</span></li>
+        <li class="ingredient"><input type="checkbox"><span class="name">Ripe tomatoes, chopped</span><span class="leader"></span><span class="qty">4 large</span></li>
+        <li class="ingredient"><input type="checkbox"><span class="name">Ginger, julienned</span><span class="leader"></span><span class="qty">2 tbsp</span></li>
+        <li class="ingredient"><input type="checkbox"><span class="name">Garlic, crushed</span><span class="leader"></span><span class="qty">4 cloves</span></li>
+        <li class="ingredient"><input type="checkbox"><span class="name">Green chillies, slit</span><span class="leader"></span><span class="qty">3&ndash;4</span></li>
+        <li class="ingredient"><input type="checkbox"><span class="name">Cooking oil</span><span class="leader"></span><span class="qty">1/2 cup</span></li>
+        <li class="ingredient"><input type="checkbox"><span class="name">Red chilli powder</span><span class="leader"></span><span class="qty">1.5 tbsp</span></li>
+        <li class="ingredient"><input type="checkbox"><span class="name">Coriander powder</span><span class="leader"></span><span class="qty">1 tbsp</span></li>
+        <li class="ingredient"><input type="checkbox"><span class="name">Salt</span><span class="leader"></span><span class="qty">to taste</span></li>
+        <li class="ingredient"><input type="checkbox"><span class="name">Fresh coriander &amp; ginger, to finish</span><span class="leader"></span><span class="qty">a handful</span></li>
+      </ul>
+    </section>
+
+    <section class="block">
+      <div class="section-heading">Method</div>
+      <ol class="step-list">
+        <li class="step"><div class="step-text">Heat the oil in a wide, heavy pan (a karahi if you have one) over medium-high heat. Add the chicken and sear until the pieces are lightly browned on all sides, about 6&ndash;8 minutes.</div></li>
+        <li class="step"><div class="step-text">Add the garlic and half the ginger, stirring for a minute until fragrant. Add the chopped tomatoes and green chillies, then cover and cook until the tomatoes break down into a thick sauce, stirring occasionally, about 12&ndash;15 minutes.</div></li>
+        <li class="step"><div class="step-text">Stir in the red chilli powder, coriander powder, and salt. Cook uncovered until the oil visibly separates at the edges of the pan &mdash; that's the sign the masala is properly cooked through, not just simmered.</div></li>
+        <li class="step"><div class="step-text">Reduce the heat to low, cover, and let the chicken finish cooking in the sauce for 8&ndash;10 minutes, until tender and no longer pink at the bone.</div></li>
+        <li class="step"><div class="step-text">Finish with the remaining ginger and fresh coriander. Serve straight from the pan with warm naan or steamed rice.</div></li>
+      </ol>
+    </section>
+
+    <div class="actions-row">
+      <button class="action-pill">❤️ 24 Hearts</button>
+      <button class="action-pill">🔖 Save to Cookbook</button>
+      <button class="action-pill">💬 5 Comments</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  document.querySelectorAll('.ingredient input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('.ingredient').classList.toggle('checked', cb.checked);
+    });
+  });
+</script>
+</body>
+</html>
