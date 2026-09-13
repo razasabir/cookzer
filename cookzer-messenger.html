@@ -963,22 +963,31 @@
     }
 
     if (!conversationId) {
-      const { data: newConv, error: convErr } = await sb
+      // Generate the id client-side and skip .select() on the insert:
+      // right after creating the conversation, the creator isn't a
+      // participant of it yet (that's the next statement), so the
+      // conversations SELECT policy would deny reading the row back,
+      // which Postgres/PostgREST reports as an insert RLS violation.
+      conversationId = crypto.randomUUID();
+
+      const { error: convErr } = await sb
         .from('conversations')
-        .insert({ created_by: currentUser.id })
-        .select()
-        .single();
+        .insert({ id: conversationId, created_by: currentUser.id });
 
       if (convErr) {
         alert('Could not start conversation: ' + convErr.message);
         return;
       }
 
-      conversationId = newConv.id;
-      await sb.from('conversation_participants').insert([
+      const { error: partErr } = await sb.from('conversation_participants').insert([
         { conversation_id: conversationId, user_id: currentUser.id },
         { conversation_id: conversationId, user_id: person.id },
       ]);
+
+      if (partErr) {
+        alert('Could not add participants: ' + partErr.message);
+        return;
+      }
     }
 
     newMsgPanel.classList.remove('open');
