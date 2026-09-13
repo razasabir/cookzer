@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Messenger — Cookzer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js"></script>
@@ -15,10 +15,10 @@
       --card-bg: #FFFFFF;
       --ink: #2B2620;
       --ink-soft: #6B6255;
-      --olive: #4E5A3E;
-      --olive-dark: #3A4530;
+      --olive: #009246;
+      --olive-dark: #00733A;
       --mustard: #D9A441;
-      --brick: #A94E2E;
+      --brick: #CE2B37;
       --line: #E7DFCF;
     }
 
@@ -125,6 +125,8 @@
       font-size: 24px;
       color: var(--olive-dark);
       letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
     }
 
     .brand-header span {
@@ -205,7 +207,7 @@
       color: var(--olive);
       background: var(--cream);
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 18px;
       padding: 6px 12px;
       cursor: pointer;
     }
@@ -225,7 +227,7 @@
       width: 100%;
       padding: 8px 12px;
       border: 1px solid var(--line);
-      border-radius: 16px;
+      border-radius: 20px;
       font-size: 13px;
       font-family: inherit;
       color: var(--ink);
@@ -239,7 +241,7 @@
       gap: 10px;
       padding: 8px 6px;
       cursor: pointer;
-      border-radius: 8px;
+      border-radius: 14px;
       font-size: 13px;
     }
 
@@ -401,7 +403,7 @@
 
     .bubble {
       padding: 10px 14px;
-      border-radius: 16px;
+      border-radius: 20px;
       font-size: 14px;
       line-height: 1.4;
       overflow-wrap: break-word;
@@ -492,7 +494,7 @@
 
     ::-webkit-scrollbar-thumb {
       background: var(--line);
-      border-radius: 4px;
+      border-radius: 10px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
@@ -560,7 +562,7 @@
 <!-- Sidebar -->
 <div class="sidebar">
   <div style="padding: 0 16px; margin-bottom: 20px;">
-    <div style="font-size: 22px; font-family: 'Fraunces', serif; font-weight: 600; color: var(--olive-dark);">Cook<span style="color: var(--brick);">zer</span></div>
+    <div style="font-size: 22px; font-family: 'Fredoka', sans-serif; font-weight: 600; color: var(--olive-dark);">Cook<span style="color: var(--brick);">zer</span></div>
   </div>
 
   <a href="index.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
