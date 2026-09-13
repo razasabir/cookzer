@@ -10,167 +10,25 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js"></script>
+  <link rel="stylesheet" href="styles.css">
   <style>
-    :root {
-      --cream: #F7F2E9;
-      --card-bg: #FFFFFF;
-      --ink: #2B2620;
-      --ink-soft: #6B6255;
-      --olive: #009246;
-      --olive-dark: #00733A;
-      --mustard: #D9A441;
-      --brick: #CE2B37;
-      --line: #E7DFCF;
-    }
-    
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    html, body {
-      font-family: 'Work Sans', sans-serif;
-      color: var(--ink);
-      background: var(--cream);
-    }
-    
-    h1, h2, h3, .brand {
-      font-family: 'Fraunces', serif;
-      font-weight: 600;
-    }
-    
-    /* Layout */
-    body {
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-    }
-    
-    /* Sidebar */
-    .sidebar {
-      width: 280px;
-      background: var(--card-bg);
-      border-right: 1px solid var(--line);
-      padding: 20px 0;
-      overflow-y: auto;
-      flex-shrink: 0;
-    }
-    
-    .sidebar-brand {
-      padding: 0 16px;
-      margin-bottom: 20px;
-      font-size: 22px;
-      font-family: 'Fredoka', sans-serif;
-      font-weight: 600;
-      color: var(--olive-dark);
-      letter-spacing: -0.5px;
-    }
-    
-    .sidebar-brand span {
-      color: var(--brick);
-    }
-    
-    .sidebar-item {
-      padding: 10px 16px;
-      cursor: pointer;
-      border-left: 3px solid transparent;
-      transition: all 0.2s;
-      font-size: 15px;
-      color: var(--ink-soft);
-    }
-    
-    .sidebar-item:hover {
-      background: var(--cream);
-      color: var(--olive);
-    }
-    
-    .sidebar-item.active {
-      border-left-color: var(--olive);
-      color: var(--olive-dark);
-      font-weight: 500;
-      background: rgba(78, 90, 62, 0.05);
-    }
-    
-    .sidebar-item.icon {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    
-    .sidebar-item.icon:before {
-      font-size: 20px;
-      min-width: 20px;
-    }
-    
-    .sidebar-item.feed:before { content: "📰"; }
-    .sidebar-item.cookbook:before { content: "📚"; }
-    .sidebar-item.planner:before { content: "📅"; }
-    .sidebar-item.challenges:before { content: "🏆"; }
-    .sidebar-item.profile:before { content: "👤"; }
-    .sidebar-item.messenger:before { content: "💬"; }
-    
-    /* Header */
-    .header {
-      position: absolute;
-      top: 0;
-      left: 280px;
-      right: 0;
-      height: 60px;
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--line);
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
-      justify-content: space-between;
-      z-index: 10;
-    }
-    
-    .brand-header {
+  .brand-header {
       font-size: 20px;
       color: var(--olive-dark);
       letter-spacing: -0.5px;
       font-family: 'Fredoka', sans-serif;
       font-weight: 600;
     }
-    
-    .brand-header span {
-      color: var(--brick);
-    }
-    
-    .header-right {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-    }
-    
-    .icon-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--cream);
-      border: 1px solid var(--line);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      transition: all 0.2s;
-    }
-    
-    .icon-btn:hover {
-      background: #f0e6d2;
-    }
-    
-    /* Main content */
+
+  /* Main content */
     .main {
       flex: 1;
       margin-left: 280px;
       margin-top: 60px;
       overflow-y: auto;
     }
-    
-    .cookbook-content {
+
+  .cookbook-content {
       max-width: 900px;
       margin: 0 auto;
       padding: 24px;
@@ -178,8 +36,8 @@
       flex-direction: column;
       align-items: center;
     }
-    
-    .page-title {
+
+  .page-title {
       font-size: 28px;
       font-family: 'Fraunces', serif;
       font-weight: 600;
@@ -188,15 +46,15 @@
       text-align: center;
       width: 100%;
     }
-    
-    /* Folders section */
+
+  /* Folders section */
     .folders-section {
       width: 100%;
       max-width: 700px;
       margin-bottom: 32px;
     }
-    
-    .section-label {
+
+  .section-label {
       font-size: 14px;
       font-weight: 600;
       color: var(--ink-soft);
@@ -204,15 +62,15 @@
       letter-spacing: 0.5px;
       margin-bottom: 12px;
     }
-    
-    .folders-grid {
+
+  .folders-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 12px;
       margin-bottom: 24px;
     }
-    
-    .folder {
+
+  .folder {
       background: linear-gradient(135deg, var(--mustard), #E8C055);
       color: #fff;
       padding: 16px;
@@ -223,25 +81,25 @@
       font-weight: 500;
       font-size: 14px;
     }
-    
-    .folder:hover {
+
+  .folder:hover {
       transform: translateY(-4px);
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
     }
-    
-    .folder-icon {
+
+  .folder-icon {
       font-size: 32px;
       margin-bottom: 8px;
       display: block;
     }
-    
-    /* Recently saved section */
+
+  /* Recently saved section */
     .recently-saved {
       width: 100%;
       max-width: 700px;
     }
-    
-    .recipe-item {
+
+  .recipe-item {
       background: var(--card-bg);
       border: 1px solid var(--line);
       border-radius: 18px;
@@ -251,12 +109,12 @@
       margin-bottom: 12px;
       transition: all 0.2s;
     }
-    
-    .recipe-item:hover {
+
+  .recipe-item:hover {
       border-color: var(--mustard);
     }
-    
-    .recipe-thumb {
+
+  .recipe-thumb {
       width: 80px;
       height: 80px;
       border-radius: 14px;
@@ -269,20 +127,20 @@
       background-size: cover;
       background-position: center;
     }
-    
-    .recipe-content {
+
+  .recipe-content {
       flex: 1;
     }
-    
-    .recipe-title {
+
+  .recipe-title {
       font-size: 14px;
       font-weight: 600;
       color: var(--ink);
       margin-bottom: 4px;
       font-family: 'Fraunces', serif;
     }
-    
-    .recipe-note {
+
+  .recipe-note {
       font-size: 12px;
       color: var(--brick);
       font-weight: 500;
@@ -292,74 +150,33 @@
       border-radius: 10px;
       display: inline-block;
     }
-    
-    .recipe-folder {
+
+  .recipe-folder {
       font-size: 12px;
       color: var(--ink-soft);
     }
-    
-    .recipe-actions {
+
+  .recipe-actions {
       display: flex;
       gap: 8px;
       font-size: 16px;
     }
-    
-    .action-icon {
+
+  .action-icon {
       cursor: pointer;
       transition: all 0.2s;
     }
-    
-    .action-icon:hover {
+
+  .action-icon:hover {
       transform: scale(1.2);
     }
-    
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-    
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-      background: var(--line);
-      border-radius: 10px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--ink-soft);
-    }
 
-    /* Mobile nav */
-    .menu-toggle {
-      display: none;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--cream);
-      border: 1px solid var(--line);
-      cursor: pointer;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-
-    .sidebar-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(43, 38, 32, 0.4);
-      z-index: 90;
-    }
-
-    /* Responsive */
+  /* Responsive */
     @media (max-width: 900px) {
       .right-sidebar { display: none; }
     }
 
-    @media (max-width: 768px) {
+  @media (max-width: 768px) {
       .sidebar {
         position: fixed;
         top: 0;
@@ -377,7 +194,7 @@
       .brand-header { font-size: 18px; }
     }
 
-    @media (max-width: 480px) {
+  @media (max-width: 480px) {
       .header { padding: 0 12px; }
       .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
     }

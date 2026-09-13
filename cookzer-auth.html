@@ -9,36 +9,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabase-config.js"></script>
+  <link rel="stylesheet" href="styles.css">
   <style>
-    :root {
-      --cream: #F7F2E9;
-      --card-bg: #FFFFFF;
-      --ink: #2B2620;
-      --ink-soft: #6B6255;
-      --olive: #009246;
-      --olive-dark: #00733A;
-      --mustard: #D9A441;
-      --brick: #CE2B37;
-      --line: #E7DFCF;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    html, body {
+  html, body {
       font-family: 'Work Sans', sans-serif;
       color: var(--ink);
       background: var(--cream);
       min-height: 100vh;
     }
 
-    body {
+  body {
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 24px;
     }
 
-    .auth-card {
+  .auth-card {
       background: var(--card-bg);
       border: 1px solid var(--line);
       border-radius: 20px;
@@ -47,7 +34,7 @@
       max-width: 380px;
     }
 
-    .brand {
+  .brand {
       text-align: center;
       font-family: 'Fredoka', sans-serif;
       font-weight: 600;
@@ -56,16 +43,16 @@
       margin-bottom: 6px;
     }
 
-    .brand span { color: var(--brick); }
+  .brand span { color: var(--brick); }
 
-    .tagline {
+  .tagline {
       text-align: center;
       font-size: 13px;
       color: var(--ink-soft);
       margin-bottom: 28px;
     }
 
-    .tabs {
+  .tabs {
       display: flex;
       border: 1px solid var(--line);
       border-radius: 16px;
@@ -73,7 +60,7 @@
       margin-bottom: 24px;
     }
 
-    .tab {
+  .tab {
       flex: 1;
       text-align: center;
       padding: 10px;
@@ -84,15 +71,16 @@
       background: var(--cream);
     }
 
-    .tab.active {
+  .tab.active {
       background: var(--olive);
       color: #fff;
     }
 
-    form { display: none; flex-direction: column; gap: 14px; }
-    form.active { display: flex; }
+  form { display: none; flex-direction: column; gap: 14px; }
 
-    label {
+  form.active { display: flex; }
+
+  label {
       font-size: 12px;
       font-weight: 600;
       color: var(--ink-soft);
@@ -102,7 +90,7 @@
       display: block;
     }
 
-    input {
+  input {
       width: 100%;
       padding: 10px 14px;
       background: var(--cream);
@@ -113,7 +101,7 @@
       font-family: inherit;
     }
 
-    .submit-btn {
+  .submit-btn {
       background: var(--olive);
       color: #fff;
       border: none;
@@ -126,23 +114,24 @@
       margin-top: 6px;
     }
 
-    .submit-btn:hover { background: var(--olive-dark); }
-    .submit-btn:disabled { opacity: 0.6; cursor: default; }
+  .submit-btn:hover { background: var(--olive-dark); }
 
-    .message {
+  .submit-btn:disabled { opacity: 0.6; cursor: default; }
+
+  .message {
       font-size: 13px;
       padding: 10px 12px;
       border-radius: 14px;
       display: none;
     }
 
-    .message.error {
+  .message.error {
       display: block;
       background: rgba(169, 78, 46, 0.1);
       color: var(--brick);
     }
 
-    .message.success {
+  .message.success {
       display: block;
       background: rgba(78, 90, 62, 0.1);
       color: var(--olive-dark);
