@@ -202,6 +202,8 @@
     font-size: 14.5px;
   }
 
+  code { overflow-wrap: break-word; word-break: break-word; }
+
   p { max-width: 68ch; }
 
   /* ---------- Status pills ---------- */
@@ -551,7 +553,21 @@
         <div class="shipped-item"><div class="s-num">07</div><div class="s-text"><b>Sitewide theme reskin</b><span>Lighter Italian green/red palette, Fredoka wordmark, every corner radius bumped rounder, new favicon — applied consistently across all 8 pages.</span></div></div>
         <div class="shipped-item"><div class="s-num">08</div><div class="s-text"><b>Feed homepage widgets</b><span>Top Recipes This Week, Trending Ingredients, and Top Contributors added to the feed sidebar.</span></div></div>
         <div class="shipped-item"><div class="s-num">09</div><div class="s-text"><b>Recipe page redesign v2</b><span>Table-style ingredients with quantities, split prep/cook time, a nutrition line, a photo gallery, and a working upload-with-filters picker (7 CSS filter presets).</span></div></div>
+        <div class="shipped-item"><div class="s-num">10</div><div class="s-text"><b>Shared stylesheet (Phase 0)</b><span>Extracted the byte-identical reset/sidebar/header/scrollbar CSS duplicated across all 8 pages into one linked <code>styles.css</code>.</span></div></div>
+        <div class="shipped-item"><div class="s-num">11</div><div class="s-text"><b>Real feed + Cook-ins (Phase 1)</b><span>Posts, hearts, and comments are real Supabase tables now — the composer creates real posts (with photo upload), hearting and commenting work, and Cook-in/Remake posts render distinctly in the feed.</span></div></div>
+        <div class="shipped-item"><div class="s-num">12</div><div class="s-text"><b>Real recipes, cookbook &amp; planner (Phase 2)</b><span>A real <code>recipes</code> table, a dynamic recipe page (<code>?id=</code>) with persisted gallery photos, a recipe-creation form with categories/dietary tags, real cookbook folders + saved recipes, and a real per-date meal planner.</span></div></div>
+        <div class="shipped-item"><div class="s-num">13</div><div class="s-text"><b>Social graph, real profile &amp; Kitchen CV (Phase 3)</b><span>Follow/unfollow, a profile page driven entirely by real data and stats (recipes posted, followers, times remade, cook-in streak), an Edit profile modal, and a toggleable Kitchen CV mode.</span></div></div>
+        <div class="shipped-item"><div class="s-num">14</div><div class="s-text"><b>Shopping list from Meal Planner (Phase 4)</b><span>Consolidates ingredients across a week's planned recipes into one list, grouped by ingredient name.</span></div></div>
+        <div class="shipped-item"><div class="s-num">15</div><div class="s-text"><b>Real challenges backend (Phase 5)</b><span>A real Join button, category filter chips that actually filter, and a leaderboard computed from real challenge entries and heart counts.</span></div></div>
       </div>
+      <p class="section-dek" style="margin-top:20px;">
+        <b>⚠️ One manual step still needed:</b> items 11-15 depend on
+        <code>supabase/migrations/003_platform_tables.sql</code>, which has to
+        be run once in the Supabase SQL Editor (Dashboard → SQL Editor →
+        paste the file's contents → Run) before any of this works live —
+        no tool in this pipeline can execute SQL directly against the
+        project.
+      </p>
     </section>
 
     <!-- ================= PHASES ================= -->
@@ -559,37 +575,36 @@
       <div class="section-eyebrow">Progress</div>
       <h2>Execution plan</h2>
       <p class="section-dek">
-        The feed is still 100% hardcoded — no real posts, hearts, or comments
-        exist yet. Everything below phase 1 depends on fixing that first.
-        Phases run in this order; each new idea gets folded into the phase
-        whose infrastructure it already needs, rather than tacked on as a
-        separate list.
+        Phases 0-5 are now built (see the manual SQL step noted above) —
+        each new idea from research/backlog got folded into the phase
+        whose infrastructure it already needed, rather than tacked on as a
+        separate list. What's left is the parked phase below, plus
+        whatever surfaces from real usage once the migration is run.
       </p>
       <div class="phase-list">
         <div class="phase-card">
           <div class="phase-num">0</div>
           <div class="phase-body">
-            <h3>Shared stylesheet</h3>
-            <p>Extract one <code>styles.css</code> before more features pile onto 8 duplicated <code>&lt;style&gt;</code> blocks — the RLS bugs and a font-link typo both came from editing the same CSS in lockstep across files.</p>
+            <h3>Shared stylesheet <span class="pill shipped">Shipped</span></h3>
+            <p>Extracted one <code>styles.css</code> before more features piled onto 8 duplicated <code>&lt;style&gt;</code> blocks — the RLS bugs and a font-link typo both came from editing the same CSS in lockstep across files.</p>
             <div class="phase-tags"><span class="tag">Technical debt</span></div>
           </div>
         </div>
         <div class="phase-card">
           <div class="phase-num">1</div>
           <div class="phase-body">
-            <h3>Real feed</h3>
-            <p><code>posts</code> / <code>hearts</code> / <code>comments</code> tables with RLS. The composer creates real posts, hearts persist, comments work. This is the actual unlock — everything social depends on it.</p>
+            <h3>Real feed <span class="pill shipped">Shipped</span></h3>
+            <p><code>posts</code> / <code>hearts</code> / <code>comments</code> tables with RLS. The composer creates real posts, hearts persist, comments work — the actual unlock everything social depended on.</p>
             <div class="phase-tags"><span class="tag">Cook-ins</span></div>
           </div>
         </div>
         <div class="phase-card">
           <div class="phase-num">2</div>
           <div class="phase-body">
-            <h3>Real recipes</h3>
+            <h3>Real recipes <span class="pill shipped">Shipped</span></h3>
             <p>A <code>recipes</code> table, a dynamic recipe detail page, posts that attach real recipes, and a cookbook that pulls real saved recipes instead of demo data.</p>
             <div class="phase-tags">
               <span class="tag">Remakes</span>
-              <span class="tag">Cooking Diary + Lists</span>
               <span class="tag">Recipe categories</span>
               <span class="tag">Dietary filters</span>
             </div>
@@ -598,8 +613,8 @@
         <div class="phase-card">
           <div class="phase-num">3</div>
           <div class="phase-body">
-            <h3>Social graph</h3>
-            <p>Follow/unfollow, a personalized feed, and a real profile page showing actual posts and stats instead of static placeholder content.</p>
+            <h3>Social graph <span class="pill shipped">Shipped</span></h3>
+            <p>Follow/unfollow and a real profile page showing actual posts and stats instead of static placeholder content.</p>
             <div class="phase-tags">
               <span class="tag">Kitchen CV mode</span>
               <span class="tag">Profile stats</span>
@@ -609,15 +624,15 @@
         <div class="phase-card">
           <div class="phase-num">4</div>
           <div class="phase-body">
-            <h3>Shopping list from Meal Planner</h3>
-            <p>Contained, high-value, and independent of the social graph — a good candidate to pull forward if momentum stalls elsewhere.</p>
+            <h3>Shopping list from Meal Planner <span class="pill shipped">Shipped</span></h3>
+            <p>Consolidates ingredients across a week's planned recipes into one list.</p>
           </div>
         </div>
         <div class="phase-card">
           <div class="phase-num">5</div>
           <div class="phase-body">
-            <h3>Engagement extras</h3>
-            <p>Ratings &amp; reviews, recipe import from URL, badges, and Trend Radar challenges (live trending-dish detection spawning mini-challenges instead of one manually-curated weekly theme).</p>
+            <h3>Engagement extras <span class="pill shipped">Shipped (partial)</span></h3>
+            <p>Ratings ("I made this" + star rating) and a real challenges backend (join, filter, leaderboard) are shipped. Recipe import from URL and full Trend Radar (auto-spawning challenges from live trending dishes) are not — both need a server-side piece and are still tracked in the backlog/flagged sections below.</p>
           </div>
         </div>
         <div class="phase-card parked">
