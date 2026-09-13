@@ -24,6 +24,19 @@ triages these into `roadmap.md` when it's time to build one.
   parses it into a structured recipe on your profile/cookbook.
 - **Pantry-aware suggestions** — tell Cookzer what's in your fridge, get
   recipe matches from the community.
+- **Health section (undecided)** — a dedicated nav-level area (like
+  Feed/Cookbook/Planner) for macro and calorie tracking: a personal
+  dashboard aggregating nutrition totals across planned/cooked meals,
+  building on the per-recipe Nutrition section already shipped on the
+  recipe page and tying into Meal Planner and the Cook-ins idea above.
+  Flagged, not committed: computing *real* macros from an arbitrary
+  ingredient list needs either a nutrition database API (USDA
+  FoodData Central is free; Edamam/Spoonacular are paid but richer) to
+  look up each ingredient and sum, or manual entry by the recipe author
+  (simpler, no API, but relies on the author's accuracy). That
+  data-source choice needs a decision before this is buildable for real
+  — the current recipe page's Nutrition line is hand-entered, not
+  calculated.
 - **Restaurant check-ins (undecided)** — when uploading a photo while
   dining out, ask for one-time location permission, query a places API
   for restaurants within ~100-200m, and show a suggest-and-confirm list
@@ -154,6 +167,58 @@ social-first. **Cook-ins + Cooking Diary/Lists** are the highest-leverage
 twist: cheap to build on the schema Phase 1/2 already require, and the
 one thing none of these competitors do well. Slotted into the roadmap's
 execution plan below.
+
+## 2026-09-13 — "Now" bucket: buildable without the Phase 1-3 backend
+
+Requested explicitly: ideas that don't depend on the phased execution
+plan below and can be built directly on what exists today (static pages
++ the real auth/messenger backend already shipped). Not yet built —
+this is the list, not a commitment to build all 20.
+
+### Zero backend, pure client-side
+1. **Dark mode toggle** — the CSS variable architecture already exists
+   on all 8 pages; needs a `data-theme` switch + localStorage preference.
+2. **Recipe scaling** — adjust "Serves 4" and auto-multiply every
+   ingredient quantity on the recipe page.
+3. **Print/PDF recipe view** — a print-optimized stylesheet + "Print
+   recipe" button, browser handles the rest.
+4. **Share recipe link** — copy-to-clipboard button
+   (`navigator.clipboard`).
+5. **Keyboard shortcuts** — "/" to focus search, "Esc" to close
+   modals/sidebar.
+6. **First-time welcome modal** — one-time onboarding walkthrough after
+   signup, localStorage-gated.
+7. **Skeleton loading shimmer** — polish for feed cards, cosmetic now,
+   meaningful once real data lands.
+8. **Confetti animation** on joining a challenge — small delight, pure
+   CSS/JS.
+9. **Live challenge countdown** — "Ends in 2d 14h," ticking via JS.
+10. **Cookbook folder polish** — hover states, empty-folder
+    illustrations on the existing page.
+
+### Small, isolated backend additions — skip the big feed overhaul entirely
+11. **Message read receipts** — `last_read_at` already exists in the
+    messenger schema; needs a "Seen" indicator surfaced.
+12. **Message emoji reactions** — one small new table, fully isolated
+    from the feed/posts rework.
+13. **"Save for later" bookmarking** — localStorage now, trivial swap
+    to a real table later.
+14. **"Copy last week's plan"** on Meal Planner — localStorage-based
+    duplication.
+15. **Drag-and-drop meal slots** in Meal Planner — client-side
+    reordering, localStorage-persisted.
+
+### Make the demo feel more alive
+16. **Weekly nutrition summary** on Meal Planner — sum estimated
+    calories across planned meals.
+17. **Achievement badge preview row** on Profile — a few "coming soon"
+    badges previewing Phase 3 gamification.
+18. **Cover photo/banner picker** on Profile — preset gradient banners,
+    localStorage choice.
+19. **Past Challenges archive** — timeline/gallery of previous weekly
+    challenges.
+20. **"Feeling:" mood tag** on the composer — "Comfort food / Quick &
+    easy / Fancy tonight" quick-tap options.
 
 ### Technical foundation (from webdev/coder, not user-facing)
 - **Shared stylesheet** — all 5 pages currently duplicate an identical
