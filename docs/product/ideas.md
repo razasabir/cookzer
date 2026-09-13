@@ -107,6 +107,14 @@ Source: [Culinary Agents](https://culinaryagents.com/about)
   industry users — culinary background, signature dishes, an "open to
   work" flag — so a real post history doubles as a portfolio.
 
+### Profile stats (decided 2026-09-13, user-approved)
+Not a single composite "rating" score — that invites gaming and feels
+judgmental for what's supposed to be a warm community. Instead: raw
+stats on the profile page, like a game profile card — recipes shared,
+challenges won, times remade by others (ties into the Remakes idea
+above), current cook-in streak. Fits naturally alongside Kitchen CV mode
+since both are profile-page additions once real data exists.
+
 ### Recommendation
 Don't try to out-recipe Cookpad or out-import Samsung Food/SideChef —
 that's a database-size and integrations war Cookzer can't win right now.
