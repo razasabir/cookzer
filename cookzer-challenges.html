@@ -10,167 +10,25 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js"></script>
+  <link rel="stylesheet" href="styles.css">
   <style>
-    :root {
-      --cream: #F7F2E9;
-      --card-bg: #FFFFFF;
-      --ink: #2B2620;
-      --ink-soft: #6B6255;
-      --olive: #009246;
-      --olive-dark: #00733A;
-      --mustard: #D9A441;
-      --brick: #CE2B37;
-      --line: #E7DFCF;
-    }
-    
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    html, body {
-      font-family: 'Work Sans', sans-serif;
-      color: var(--ink);
-      background: var(--cream);
-    }
-    
-    h1, h2, h3, .brand {
-      font-family: 'Fraunces', serif;
-      font-weight: 600;
-    }
-    
-    /* Layout */
-    body {
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-    }
-    
-    /* Sidebar */
-    .sidebar {
-      width: 280px;
-      background: var(--card-bg);
-      border-right: 1px solid var(--line);
-      padding: 20px 0;
-      overflow-y: auto;
-      flex-shrink: 0;
-    }
-    
-    .sidebar-brand {
-      padding: 0 16px;
-      margin-bottom: 20px;
-      font-size: 22px;
-      font-family: 'Fredoka', sans-serif;
-      font-weight: 600;
-      color: var(--olive-dark);
-      letter-spacing: -0.5px;
-    }
-    
-    .sidebar-brand span {
-      color: var(--brick);
-    }
-    
-    .sidebar-item {
-      padding: 10px 16px;
-      cursor: pointer;
-      border-left: 3px solid transparent;
-      transition: all 0.2s;
-      font-size: 15px;
-      color: var(--ink-soft);
-    }
-    
-    .sidebar-item:hover {
-      background: var(--cream);
-      color: var(--olive);
-    }
-    
-    .sidebar-item.active {
-      border-left-color: var(--olive);
-      color: var(--olive-dark);
-      font-weight: 500;
-      background: rgba(78, 90, 62, 0.05);
-    }
-    
-    .sidebar-item.icon {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    
-    .sidebar-item.icon:before {
-      font-size: 20px;
-      min-width: 20px;
-    }
-    
-    .sidebar-item.feed:before { content: "📰"; }
-    .sidebar-item.cookbook:before { content: "📚"; }
-    .sidebar-item.planner:before { content: "📅"; }
-    .sidebar-item.challenges:before { content: "🏆"; }
-    .sidebar-item.profile:before { content: "👤"; }
-    .sidebar-item.messenger:before { content: "💬"; }
-    
-    /* Header */
-    .header {
-      position: absolute;
-      top: 0;
-      left: 280px;
-      right: 0;
-      height: 60px;
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--line);
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
-      justify-content: space-between;
-      z-index: 10;
-    }
-    
-    .brand-header {
+  .brand-header {
       font-size: 20px;
       color: var(--olive-dark);
       letter-spacing: -0.5px;
       font-family: 'Fredoka', sans-serif;
       font-weight: 600;
     }
-    
-    .brand-header span {
-      color: var(--brick);
-    }
-    
-    .header-right {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-    }
-    
-    .icon-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--cream);
-      border: 1px solid var(--line);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      transition: all 0.2s;
-    }
-    
-    .icon-btn:hover {
-      background: #f0e6d2;
-    }
-    
-    /* Main content */
+
+  /* Main content */
     .main {
       flex: 1;
       margin-left: 280px;
       margin-top: 60px;
       overflow-y: auto;
     }
-    
-    .discover-content {
+
+  .discover-content {
       max-width: 900px;
       margin: 0 auto;
       padding: 24px;
@@ -178,8 +36,8 @@
       flex-direction: column;
       align-items: center;
     }
-    
-    .page-title {
+
+  .page-title {
       font-size: 28px;
       font-family: 'Fraunces', serif;
       font-weight: 600;
@@ -188,8 +46,8 @@
       text-align: center;
       width: 100%;
     }
-    
-    /* Challenge hero */
+
+  /* Challenge hero */
     .challenge-hero {
       width: 100%;
       max-width: 700px;
@@ -200,8 +58,8 @@
       text-align: center;
       margin-bottom: 32px;
     }
-    
-    .challenge-badge {
+
+  .challenge-badge {
       font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -209,21 +67,21 @@
       margin-bottom: 12px;
       opacity: 0.9;
     }
-    
-    .challenge-title {
+
+  .challenge-title {
       font-size: 32px;
       font-family: 'Fraunces', serif;
       margin-bottom: 12px;
       font-weight: 600;
     }
-    
-    .challenge-details {
+
+  .challenge-details {
       font-size: 14px;
       margin-bottom: 20px;
       opacity: 0.95;
     }
-    
-    .challenge-btn {
+
+  .challenge-btn {
       background: #fff;
       color: var(--olive);
       padding: 12px 32px;
@@ -234,20 +92,20 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    
-    .challenge-btn:hover {
+
+  .challenge-btn:hover {
       background: var(--cream);
       transform: translateY(-2px);
     }
-    
-    /* Filters */
+
+  /* Filters */
     .filters-section {
       width: 100%;
       max-width: 700px;
       margin-bottom: 32px;
     }
-    
-    .filter-label {
+
+  .filter-label {
       font-size: 12px;
       font-weight: 600;
       color: var(--ink-soft);
@@ -255,15 +113,15 @@
       letter-spacing: 0.5px;
       margin-bottom: 12px;
     }
-    
-    .filter-chips {
+
+  .filter-chips {
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
       justify-content: center;
     }
-    
-    .filter-chip {
+
+  .filter-chip {
       padding: 8px 16px;
       background: var(--card-bg);
       border: 1px solid var(--line);
@@ -274,25 +132,25 @@
       color: var(--ink);
       transition: all 0.2s;
     }
-    
-    .filter-chip:hover {
+
+  .filter-chip:hover {
       border-color: var(--olive);
       background: rgba(78, 90, 62, 0.05);
     }
-    
-    .filter-chip.active {
+
+  .filter-chip.active {
       background: var(--mustard);
       color: #fff;
       border-color: var(--mustard);
     }
-    
-    /* Leaderboard */
+
+  /* Leaderboard */
     .leaderboard-section {
       width: 100%;
       max-width: 700px;
     }
-    
-    .section-title {
+
+  .section-title {
       font-size: 14px;
       font-weight: 600;
       color: var(--ink-soft);
@@ -300,8 +158,8 @@
       letter-spacing: 0.5px;
       margin-bottom: 16px;
     }
-    
-    .leaderboard-item {
+
+  .leaderboard-item {
       background: var(--card-bg);
       border: 1px solid var(--line);
       border-radius: 18px;
@@ -312,18 +170,18 @@
       margin-bottom: 12px;
       transition: all 0.2s;
     }
-    
-    .leaderboard-item:hover {
+
+  .leaderboard-item:hover {
       border-color: var(--mustard);
     }
-    
-    .rank-badge {
+
+  .rank-badge {
       font-size: 24px;
       min-width: 40px;
       text-align: center;
     }
-    
-    .avatar {
+
+  .avatar {
       width: 50px;
       height: 50px;
       border-radius: 50%;
@@ -336,77 +194,36 @@
       font-size: 16px;
       flex-shrink: 0;
     }
-    
-    .entry-content {
+
+  .entry-content {
       flex: 1;
     }
-    
-    .entry-name {
+
+  .entry-name {
       font-size: 14px;
       font-weight: 600;
       color: var(--ink);
       margin-bottom: 2px;
     }
-    
-    .entry-recipe {
+
+  .entry-recipe {
       font-size: 12px;
       color: var(--ink-soft);
     }
-    
-    .entry-hearts {
+
+  .entry-hearts {
       font-size: 14px;
       font-weight: 600;
       color: var(--brick);
       text-align: right;
     }
-    
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-    
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-      background: var(--line);
-      border-radius: 10px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--ink-soft);
-    }
 
-    /* Mobile nav */
-    .menu-toggle {
-      display: none;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--cream);
-      border: 1px solid var(--line);
-      cursor: pointer;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-
-    .sidebar-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(43, 38, 32, 0.4);
-      z-index: 90;
-    }
-
-    /* Responsive */
+  /* Responsive */
     @media (max-width: 900px) {
       .right-sidebar { display: none; }
     }
 
-    @media (max-width: 768px) {
+  @media (max-width: 768px) {
       .sidebar {
         position: fixed;
         top: 0;
@@ -424,7 +241,7 @@
       .brand-header { font-size: 18px; }
     }
 
-    @media (max-width: 480px) {
+  @media (max-width: 480px) {
       .header { padding: 0 12px; }
       .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
     }
