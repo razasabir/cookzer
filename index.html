@@ -818,10 +818,13 @@
     header.appendChild(meta);
     card.appendChild(header);
 
-    if (post.photo_path) {
+    const cardImageUrl = post.photo_path
+      ? publicUrl('post-photos', post.photo_path)
+      : (post.recipes && post.recipes.hero_photo_path ? publicUrl('recipe-photos', post.recipes.hero_photo_path) : null);
+    if (cardImageUrl) {
       const img = document.createElement('div');
       img.className = 'card-image';
-      img.style.backgroundImage = "url('" + publicUrl('post-photos', post.photo_path) + "')";
+      img.style.backgroundImage = "url('" + cardImageUrl + "')";
       card.appendChild(img);
     }
 
@@ -999,7 +1002,7 @@
 
     const { data: posts, error } = await sb
       .from('posts')
-      .select('id, kind, recipe_id, caption, photo_path, created_at, profiles(display_name, initials), recipes(title)')
+      .select('id, kind, recipe_id, caption, photo_path, created_at, profiles(display_name, initials), recipes(title, hero_photo_path)')
       .order('created_at', { ascending: false })
       .limit(30);
 
@@ -1091,7 +1094,7 @@
 
     const { data: posts } = await sb
       .from('posts')
-      .select('id, recipe_id, created_at, profiles(display_name), recipes(title)')
+      .select('id, recipe_id, created_at, profiles(display_name), recipes(title, hero_photo_path)')
       .not('recipe_id', 'is', null)
       .gte('created_at', weekAgo);
 
@@ -1115,6 +1118,9 @@
         '<div class="top-recipe-hearts">' + p.hearts + ' ❤️</div>';
       a.querySelector('.top-recipe-title').textContent = p.recipes ? p.recipes.title : 'Recipe';
       a.querySelector('.top-recipe-author').textContent = p.profiles ? p.profiles.display_name : '';
+      if (p.recipes && p.recipes.hero_photo_path) {
+        a.querySelector('.top-recipe-thumb').style.backgroundImage = "url('" + publicUrl('recipe-photos', p.recipes.hero_photo_path) + "')";
+      }
       listEl.appendChild(a);
     });
   }
