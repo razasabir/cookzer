@@ -24,6 +24,16 @@ triages these into `roadmap.md` when it's time to build one.
   parses it into a structured recipe on your profile/cookbook.
 - **Pantry-aware suggestions** — tell Cookzer what's in your fridge, get
   recipe matches from the community.
+- **AI cooking assistant (undecided)** — a conversational way to deliver
+  pantry-aware suggestions: "I have chicken, rice, and bell peppers,
+  what can I make?" pulling from real community recipes. Flagged, not
+  committed: this would be the first feature needing a server-side
+  piece (an LLM API key can't live in client-side code the way the
+  Supabase publishable key does — needs a small Vercel serverless
+  function) and it carries an ongoing per-message cost that could push
+  past the ~$25/mo budget ceiling if it gets used a lot. Not slotted
+  into the execution plan phases below until a build/no-build call is
+  made.
 - **Nutrition & cost-per-serve info** — auto-estimate calories and cost
   per serving on a recipe (ties nicely into challenges like "Under $10").
 
