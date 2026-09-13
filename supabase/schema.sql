@@ -100,15 +100,31 @@ create policy "Participants can view participant rows for their conversations"
   on public.conversation_participants for select
   using (public.is_conversation_participant(conversation_id, auth.uid()));
 
+-- A plain "exists (select ... from conversations where created_by = ...)"
+-- here runs into the same chicken-and-egg problem as the participant
+-- recursion above: conversations' own SELECT policy hides the row from
+-- the creator until they're already a participant of it - which is
+-- exactly what this insert is trying to establish. A SECURITY DEFINER
+-- function checks created_by with RLS bypassed, breaking the deadlock.
+create function public.is_conversation_creator(_conversation_id uuid, _user_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.conversations
+    where id = _conversation_id and created_by = _user_id
+  );
+$$;
+
 -- A user can add themself, or the conversation's creator can add the other party.
 create policy "Add self or add participants to a conversation you created"
   on public.conversation_participants for insert
   with check (
     user_id = auth.uid()
-    or exists (
-      select 1 from public.conversations c
-      where c.id = conversation_id and c.created_by = auth.uid()
-    )
+    or public.is_conversation_creator(conversation_id, auth.uid())
   );
 
 create policy "Participants can update their own last_read_at"
