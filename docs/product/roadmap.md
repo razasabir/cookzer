@@ -2,12 +2,18 @@
 
 ## Execution plan (current)
 1. **Shared stylesheet** — extract `styles.css` before more features pile onto 8 duplicated `<style>` blocks.
-2. **Real feed** — `posts`/`hearts`/`comments` tables + RLS. The composer creates real posts, hearts persist, comments work. Everything else in the backlog depends on this.
-3. **Real recipes** — `recipes` table, dynamic recipe detail page, posts attach real recipes, cookbook pulls real saved recipes.
-4. **Social graph** — follow/unfollow, personalized feed, real profile page.
+2. **Real feed** — `posts`/`hearts`/`comments` tables + RLS. The composer creates real posts, hearts persist, comments work. Everything else in the backlog depends on this. Ship **Cook-ins** alongside (one-tap "I cooked this," lower friction than a full post, builds a streak) — see competitive research below for why this is prioritized over pure recipe-database features.
+3. **Real recipes** — `recipes` table, dynamic recipe detail page, posts attach real recipes, cookbook pulls real saved recipes. Ship **Remakes** (cooking someone else's recipe as a first-class credited post type, feeds a "Most Remade" leaderboard) and **Cooking Diary + Lists** (evolve My Cookbook into a running diary + curatable public Lists) alongside, since both need real recipes to attach to.
+4. **Social graph** — follow/unfollow, personalized feed, real profile page. Ship **Kitchen CV mode** alongside (toggleable professional profile for industry users — culinary background, signature dishes, "open to work" flag) since it's a profile-page extension.
 5. **Shopping list from Meal Planner** — contained, high value, independent of the social graph.
-6. **Engagement extras** — ratings/reviews, recipe import from URL, badges.
+6. **Engagement extras** — ratings/reviews, recipe import from URL, badges, **Trend Radar challenges** (live trending-dish detection spawning mini-challenges, instead of one manually-curated weekly challenge).
 7. **Parked** (needs a business decision, not just build time): marketplace (payments), sponsored challenges (sales motion), video posts (storage/bandwidth cost), groups (bigger scope).
+
+Items 2-6's new additions (Cook-ins, Remakes, Cooking Diary + Lists,
+Kitchen CV mode, Trend Radar) come from competitive research across
+Cookpad, TikTok food discovery, Untappd, Letterboxd, and Culinary Agents
+— see `docs/product/ideas.md` for what each platform does and the full
+reasoning behind each twist.
 
 
 ## Positioning
