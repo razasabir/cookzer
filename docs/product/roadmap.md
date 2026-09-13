@@ -1,5 +1,15 @@
 # Cookzer roadmap
 
+## Execution plan (current)
+1. **Shared stylesheet** — extract `styles.css` before more features pile onto 8 duplicated `<style>` blocks.
+2. **Real feed** — `posts`/`hearts`/`comments` tables + RLS. The composer creates real posts, hearts persist, comments work. Everything else in the backlog depends on this.
+3. **Real recipes** — `recipes` table, dynamic recipe detail page, posts attach real recipes, cookbook pulls real saved recipes.
+4. **Social graph** — follow/unfollow, personalized feed, real profile page.
+5. **Shopping list from Meal Planner** — contained, high value, independent of the social graph.
+6. **Engagement extras** — ratings/reviews, recipe import from URL, badges.
+7. **Parked** (needs a business decision, not just build time): marketplace (payments), sponsored challenges (sales motion), video posts (storage/bandwidth cost), groups (bigger scope).
+
+
 ## Positioning
 Cookzer is a social network for cooks — Facebook/LinkedIn, vertical to
 cooking. Identity, connections, and communication between users are core
