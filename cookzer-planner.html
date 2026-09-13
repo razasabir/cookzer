@@ -20,6 +20,13 @@
       font-weight: 600;
     }
 
+  .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
   /* Main content */
     .main {
       flex: 1;
@@ -113,6 +120,16 @@
       color: var(--ink-soft);
       font-style: italic;
     }
+
+  .meal-remove-btn {
+      background: none; border: none; color: var(--ink-soft); font-size: 16px; cursor: pointer;
+    }
+
+  .shopping-list { text-align: left; background: var(--cream); border-radius: 14px; padding: 14px; margin-bottom: 16px; }
+
+  .shopping-list-item { font-size: 13px; padding: 4px 0; color: var(--ink); border-bottom: 1px solid var(--line); }
+
+  .shopping-list-item:last-child { border-bottom: none; }
 
   /* Cart section */
     .cart-section {
@@ -220,6 +237,7 @@
   <div class="header-right">
     <button class="icon-btn">🔔</button>
     <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <div class="avatar">--</div>
   </div>
 </div>
 
@@ -228,70 +246,14 @@
   <div class="planner-content">
     <h1 class="page-title">This week's plan</h1>
     
-    <div class="planner-grid">
-      <div class="planner-day">
-        <div class="day-label">Mon</div>
-        <div class="meal-slot">
-          <div class="meal-name">Chicken Karahi</div>
-          <div class="meal-source">from your cookbook</div>
-        </div>
-      </div>
-      
-      <div class="planner-day">
-        <div class="day-label">Tue</div>
-        <div class="meal-slot">
-          <div class="meal-name">Lentil salad</div>
-          <div class="meal-source">from your cookbook</div>
-        </div>
-      </div>
-      
-      <div class="planner-day">
-        <div class="day-label">Wed</div>
-        <div class="meal-slot">
-          <div class="empty-meal">Not planned yet</div>
-        </div>
-        <button class="meal-add-btn">+ Add meal</button>
-      </div>
-      
-      <div class="planner-day">
-        <div class="day-label">Thu</div>
-        <div class="meal-slot">
-          <div class="meal-name">Brown butter gnocchi</div>
-          <div class="meal-source">restaurant recreation</div>
-        </div>
-      </div>
-      
-      <div class="planner-day">
-        <div class="day-label">Fri</div>
-        <div class="meal-slot">
-          <div class="empty-meal">Not planned yet</div>
-        </div>
-        <button class="meal-add-btn">+ Add meal</button>
-      </div>
-      
-      <div class="planner-day">
-        <div class="day-label">Sat</div>
-        <div class="meal-slot">
-          <div class="meal-name">Under-$10 challenge dish</div>
-          <div class="meal-source">weekly challenge</div>
-        </div>
-      </div>
-      
-      <div class="planner-day">
-        <div class="day-label">Sun</div>
-        <div class="meal-slot">
-          <div class="empty-meal">Not planned yet</div>
-        </div>
-        <button class="meal-add-btn">+ Add meal</button>
-      </div>
-    </div>
-    
-    <!-- Cart section -->
+    <div class="planner-grid" id="plannerGrid"></div>
+
+    <!-- Shopping list (Phase 4) -->
     <div class="cart-section">
       <div class="cart-title">This week's basket</div>
-      <div class="cart-description">5 planned meals share 9 ingredients. Send the rest straight to your cart.</div>
-      <div class="ingredient-count">🥘 9 shared ingredients • 🛒 Ready to shop</div>
-      <button class="cart-btn">Add to grocery cart</button>
+      <div class="cart-description">Generate a consolidated shopping list from every planned meal that has a real recipe attached.</div>
+      <div id="shoppingListBox"></div>
+      <button class="cart-btn" id="generateListBtn">Generate shopping list</button>
     </div>
   </div>
 </div>
@@ -301,6 +263,198 @@
     document.querySelector('.sidebar').classList.toggle('open');
     document.querySelector('.sidebar-overlay').classList.toggle('open');
   }
+
+  let currentUser = null;
+  const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  function mondayOfThisWeek() {
+    const now = new Date();
+    const day = now.getDay(); // 0 = Sun
+    const diff = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setHours(0, 0, 0, 0);
+    monday.setDate(now.getDate() + diff);
+    return monday;
+  }
+
+  function weekDates() {
+    const monday = mondayOfThisWeek();
+    return DAY_LABELS.map((_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return d.toISOString().slice(0, 10);
+    });
+  }
+
+  let entriesByDate = {};
+
+  async function loadWeek() {
+    const dates = weekDates();
+    const { data } = await sb
+      .from('meal_plan_entries')
+      .select('id, plan_date, recipe_id, free_text, source_note, recipes(id, title)')
+      .eq('user_id', currentUser.id)
+      .in('plan_date', dates);
+
+    entriesByDate = {};
+    (data || []).forEach((e) => {
+      entriesByDate[e.plan_date] = e;
+    });
+
+    renderWeek(dates);
+  }
+
+  function renderWeek(dates) {
+    const grid = document.getElementById('plannerGrid');
+    grid.innerHTML = '';
+
+    dates.forEach((date, i) => {
+      const entry = entriesByDate[date];
+      const row = document.createElement('div');
+      row.className = 'planner-day';
+
+      const label = document.createElement('div');
+      label.className = 'day-label';
+      label.textContent = DAY_LABELS[i];
+      row.appendChild(label);
+
+      const slot = document.createElement('div');
+      slot.className = 'meal-slot';
+
+      if (entry) {
+        const name = document.createElement('div');
+        name.className = 'meal-name';
+        if (entry.recipes) {
+          const link = document.createElement('a');
+          link.href = 'cookzer-recipe.html?id=' + entry.recipe_id;
+          link.style.color = 'inherit';
+          link.style.textDecoration = 'none';
+          link.textContent = entry.recipes.title;
+          name.appendChild(link);
+        } else {
+          name.textContent = entry.free_text || 'Planned meal';
+        }
+        const source = document.createElement('div');
+        source.className = 'meal-source';
+        source.textContent = entry.source_note || (entry.recipes ? 'from your recipes' : '');
+        slot.appendChild(name);
+        slot.appendChild(source);
+        row.appendChild(slot);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'meal-remove-btn';
+        removeBtn.textContent = '✕';
+        removeBtn.addEventListener('click', async () => {
+          await sb.from('meal_plan_entries').delete().eq('id', entry.id);
+          await loadWeek();
+        });
+        row.appendChild(removeBtn);
+      } else {
+        const empty = document.createElement('div');
+        empty.className = 'empty-meal';
+        empty.textContent = 'Not planned yet';
+        slot.appendChild(empty);
+        row.appendChild(slot);
+
+        const addBtn = document.createElement('button');
+        addBtn.className = 'meal-add-btn';
+        addBtn.textContent = '+ Add meal';
+        addBtn.addEventListener('click', () => openAddMeal(date));
+        row.appendChild(addBtn);
+      }
+
+      grid.appendChild(row);
+    });
+  }
+
+  async function openAddMeal(date) {
+    const { data: recipes } = await sb
+      .from('recipes')
+      .select('id, title')
+      .or('author_id.eq.' + currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    let choice = null;
+    if (recipes && recipes.length > 0) {
+      const listText = recipes.map((r, i) => (i + 1) + '. ' + r.title).join('\n');
+      const pick = prompt('Pick a recipe by number, or type a plain meal name:\n' + listText);
+      if (pick === null) return;
+      const idx = parseInt(pick, 10) - 1;
+      if (!isNaN(idx) && recipes[idx]) {
+        choice = { recipe_id: recipes[idx].id };
+      } else if (pick.trim()) {
+        choice = { free_text: pick.trim() };
+      }
+    } else {
+      const text = prompt('What are you planning to cook? (create recipes to attach real ones)');
+      if (!text || !text.trim()) return;
+      choice = { free_text: text.trim() };
+    }
+    if (!choice) return;
+
+    const { error } = await sb.from('meal_plan_entries').insert({
+      user_id: currentUser.id,
+      plan_date: date,
+      ...choice,
+    });
+    if (error) {
+      alert('Could not add meal: ' + error.message);
+      return;
+    }
+    await loadWeek();
+  }
+
+  document.getElementById('generateListBtn').addEventListener('click', async () => {
+    const dates = weekDates();
+    const { data: entries } = await sb
+      .from('meal_plan_entries')
+      .select('recipe_id, recipes(ingredients)')
+      .eq('user_id', currentUser.id)
+      .in('plan_date', dates)
+      .not('recipe_id', 'is', null);
+
+    const box = document.getElementById('shoppingListBox');
+    if (!entries || entries.length === 0) {
+      box.innerHTML = '<div class="ingredient-count">No planned meals have a recipe attached yet — add one from your recipes.</div>';
+      return;
+    }
+
+    const combined = {};
+    entries.forEach((e) => {
+      (e.recipes && e.recipes.ingredients || []).forEach((ing) => {
+        const name = (ing.name || '').trim();
+        if (!name) return;
+        if (!combined[name]) combined[name] = [];
+        if (ing.qty) combined[name].push(ing.qty);
+      });
+    });
+
+    const names = Object.keys(combined);
+    if (names.length === 0) {
+      box.innerHTML = '<div class="ingredient-count">Those recipes don\'t have ingredients listed yet.</div>';
+      return;
+    }
+
+    const list = document.createElement('div');
+    list.className = 'shopping-list';
+    names.forEach((name) => {
+      const row = document.createElement('div');
+      row.className = 'shopping-list-item';
+      const qtys = combined[name];
+      row.textContent = name + (qtys.length ? ' — ' + qtys.join(' + ') : '');
+      list.appendChild(row);
+    });
+    box.innerHTML = '';
+    box.appendChild(list);
+  });
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    await loadWeek();
+  })();
 </script>
 </body>
 </html>

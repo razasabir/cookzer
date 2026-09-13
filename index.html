@@ -627,7 +627,7 @@
   <div class="header-right">
     <button class="icon-btn">🔔</button>
     <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
-    <div class="avatar">RZ</div>
+    <div class="avatar">--</div>
   </div>
 </div>
 
@@ -637,205 +637,56 @@
     <!-- Composer -->
     <div class="composer">
       <div class="composer-header">
-        <div class="composer-avatar">RZ</div>
+        <div class="composer-avatar" id="composerAvatar">--</div>
         <div class="composer-input">
-          <input type="text" placeholder="Share what you cooked today...">
+          <input type="text" id="postCaption" placeholder="Share what you cooked today..." maxlength="500">
         </div>
       </div>
+      <img id="composerPhotoPreview" hidden style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:10px;">
+      <input type="file" id="composerPhotoInput" accept="image/*" hidden>
       <div class="composer-actions">
-        <button class="composer-btn">📸 Photo</button>
-        <button class="composer-btn">📝 Recipe</button>
-        <button class="composer-btn">🏆 Challenge</button>
+        <button class="composer-btn" id="composerPhotoBtn" type="button">📸 Photo</button>
+        <a href="cookzer-recipe-new.html?share=1" style="text-decoration:none;flex:1;"><button class="composer-btn" type="button" style="width:100%;">📝 Recipe</button></a>
+        <button class="composer-btn" id="composerChallengeBtn" type="button">🏆 Challenge</button>
+      </div>
+      <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+        <button class="challenge-btn" id="composerPostBtn" type="button" style="background:var(--olive); color:#fff;">Post</button>
       </div>
     </div>
-    
-    <!-- Feed Card 1 -->
-    <div class="feed-card">
-      <div class="card-header">
-        <div class="card-avatar">SK</div>
-        <div class="card-meta">
-          <div class="card-name">Sarah K.</div>
-          <div class="card-time">2 hours ago</div>
-        </div>
-        <div class="card-more">⋯</div>
-      </div>
-      <div class="card-image" style="background-image: url('https://images.unsplash.com/photo-1609501676725-7186f017a4b1?w=600&h=400&fit=crop'); background-size: cover; background-position: center;"></div>
-      <div class="card-content">
-        <a href="cookzer-recipe.html" style="text-decoration: none; color: inherit;"><div class="card-title">Homemade Chicken Karahi</div></a>
-        <div class="card-description">Finally nailed this recipe! Less chilli than usual and it turned out perfect. Restaurant quality without the delivery fee.</div>
-        <div class="card-tags">
-          <div class="tag">Weeknight dinner</div>
-          <div class="tag">Spicy</div>
-          <div class="tag">30 mins</div>
-        </div>
-        <div class="card-stats">
-          <div>❤️ 24 hearts</div>
-          <div>💬 5 comments</div>
-          <div>🔖 12 saved</div>
-        </div>
-        <div class="card-actions">
-          <button class="action-btn">❤️ Heart</button>
-          <button class="action-btn">💬 Comment</button>
-          <button class="action-btn">🔖 Save</button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Feed Card 2 -->
-    <div class="feed-card">
-      <div class="card-header">
-        <div class="card-avatar">AM</div>
-        <div class="card-meta">
-          <div class="card-name">Amina M.</div>
-          <div class="card-time">5 hours ago</div>
-        </div>
-        <div class="card-more">⋯</div>
-      </div>
-      <div class="card-image" style="background-image: url('https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=600&h=400&fit=crop'); background-size: cover; background-position: center;"></div>
-      <div class="card-content">
-        <div class="card-title">Lentil salad under $2 per serve</div>
-        <div class="card-description">Just submitted this to the Under $10 challenge! Made 4 servings for $7.50 total. Tastes like a restaurant salad.</div>
-        <div class="card-tags">
-          <div class="tag">Challenge entry</div>
-          <div class="tag">Budget-friendly</div>
-          <div class="tag">Vegan</div>
-        </div>
-        <div class="card-stats">
-          <div>❤️ 58 hearts</div>
-          <div>💬 12 comments</div>
-          <div>🔖 34 saved</div>
-        </div>
-        <div class="card-actions">
-          <button class="action-btn">❤️ Heart</button>
-          <button class="action-btn">💬 Comment</button>
-          <button class="action-btn">🔖 Save</button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Feed Card 3 -->
-    <div class="feed-card">
-      <div class="card-header">
-        <div class="card-avatar">JM</div>
-        <div class="card-meta">
-          <div class="card-name">Josh M.</div>
-          <div class="card-time">8 hours ago</div>
-        </div>
-        <div class="card-more">⋯</div>
-      </div>
-      <div class="card-image" style="background-image: url('https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=600&h=400&fit=crop'); background-size: cover; background-position: center;"></div>
-      <div class="card-content">
-        <div class="card-title">Brown butter gnocchi (restaurant recreation)</div>
-        <div class="card-description">Recreated the gnocchi from Aria last weekend. Had to double the sage like Sarah suggested. Everyone loved it!</div>
-        <div class="card-tags">
-          <div class="tag">Restaurant recreation</div>
-          <div class="tag">Impressive</div>
-          <div class="tag">Italian</div>
-        </div>
-        <div class="card-stats">
-          <div>❤️ 91 hearts</div>
-          <div>💬 18 comments</div>
-          <div>🔖 67 saved</div>
-        </div>
-        <div class="card-actions">
-          <button class="action-btn">❤️ Heart</button>
-          <button class="action-btn">💬 Comment</button>
-          <button class="action-btn">🔖 Save</button>
-        </div>
-      </div>
-    </div>
+
+    <!-- Feed cards rendered by JS -->
+    <div id="feedList"></div>
+    <div id="feedEmpty" class="card-description" style="text-align:center; padding: 24px;" hidden>No posts yet — be the first to share what you cooked today.</div>
   </div>
-  
+
   <!-- Right sidebar -->
   <div class="right-sidebar">
     <div class="widget-title">This week's challenge</div>
-    <div class="challenge-banner">
+    <div class="challenge-banner" id="challengeBanner">
       <div class="challenge-badge">Weekly Challenge</div>
-      <div class="challenge-title">Under $10 a serve</div>
-      <div class="challenge-desc">214 entries • ends Sunday</div>
-      <button class="challenge-btn">Join challenge</button>
+      <div class="challenge-title" id="challengeTitle">Loading…</div>
+      <div class="challenge-desc" id="challengeDesc"></div>
+      <button class="challenge-btn" id="joinChallengeBtn" type="button">Join challenge</button>
     </div>
-    
+
     <div class="widget-title">Leaderboard</div>
-    <div class="leaderboard">
-      <div class="leaderboard-item">
-        <div class="leaderboard-rank">🥇</div>
-        <div class="leaderboard-avatar">LH</div>
-        <div class="leaderboard-name">Layla H.</div>
-        <div class="leaderboard-hearts">96 ❤️</div>
-      </div>
-      <div class="leaderboard-item">
-        <div class="leaderboard-rank">🥈</div>
-        <div class="leaderboard-avatar">AT</div>
-        <div class="leaderboard-name">Amina T.</div>
-        <div class="leaderboard-hearts">61 ❤️</div>
-      </div>
-      <div class="leaderboard-item">
-        <div class="leaderboard-rank">🥉</div>
-        <div class="leaderboard-avatar">JM</div>
-        <div class="leaderboard-name">Josh M.</div>
-        <div class="leaderboard-hearts">54 ❤️</div>
-      </div>
+    <div class="leaderboard" id="leaderboardList">
+      <div class="leaderboard-item"><div class="leaderboard-name" style="color:var(--ink-soft);">No entries yet this week.</div></div>
     </div>
 
     <div class="widget-title">Top Recipes This Week</div>
-    <div class="top-recipes">
-      <a href="cookzer-recipe.html" class="top-recipe-item">
-        <div class="top-recipe-rank">1</div>
-        <div class="top-recipe-thumb" style="background-image: url('https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=100&h=100&fit=crop'); background-size: cover;"></div>
-        <div class="top-recipe-meta">
-          <div class="top-recipe-title">Brown butter gnocchi</div>
-          <div class="top-recipe-author">Josh M.</div>
-        </div>
-        <div class="top-recipe-hearts">91 ❤️</div>
-      </a>
-      <div class="top-recipe-item">
-        <div class="top-recipe-rank">2</div>
-        <div class="top-recipe-thumb" style="background-image: url('https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=100&h=100&fit=crop'); background-size: cover;"></div>
-        <div class="top-recipe-meta">
-          <div class="top-recipe-title">Lentil salad under $2</div>
-          <div class="top-recipe-author">Amina M.</div>
-        </div>
-        <div class="top-recipe-hearts">58 ❤️</div>
-      </div>
-      <a href="cookzer-recipe.html" class="top-recipe-item">
-        <div class="top-recipe-rank">3</div>
-        <div class="top-recipe-thumb" style="background-image: url('https://images.unsplash.com/photo-1609501676725-7186f017a4b1?w=100&h=100&fit=crop'); background-size: cover;"></div>
-        <div class="top-recipe-meta">
-          <div class="top-recipe-title">Chicken Karahi</div>
-          <div class="top-recipe-author">Sarah K.</div>
-        </div>
-        <div class="top-recipe-hearts">24 ❤️</div>
-      </a>
+    <div class="top-recipes" id="topRecipesList">
+      <div class="top-recipe-item"><div class="top-recipe-meta"><div class="top-recipe-author">No recipes shared yet.</div></div></div>
     </div>
 
     <div class="widget-title">Trending Ingredients</div>
-    <div class="trending-ingredients">
-      <div class="ingredient-tag"><span class="trend-up">▲</span> Chicken</div>
-      <div class="ingredient-tag"><span class="trend-up">▲</span> Garlic</div>
-      <div class="ingredient-tag"><span class="trend-up">▲</span> Tomatoes</div>
-      <div class="ingredient-tag"><span class="trend-up">▲</span> Basil</div>
-      <div class="ingredient-tag"><span class="trend-up">▲</span> Chili</div>
-      <div class="ingredient-tag"><span class="trend-up">▲</span> Lentils</div>
+    <div class="trending-ingredients" id="trendingIngredients">
+      <div class="ingredient-tag">Nothing trending yet</div>
     </div>
 
     <div class="widget-title">Top Contributors</div>
-    <div class="top-contributors">
-      <div class="contributor-item">
-        <div class="contributor-avatar">SK</div>
-        <div class="contributor-name">Sarah K.</div>
-        <div class="contributor-stat">18 recipes</div>
-      </div>
-      <div class="contributor-item">
-        <div class="contributor-avatar">JM</div>
-        <div class="contributor-name">Josh M.</div>
-        <div class="contributor-stat">14 recipes</div>
-      </div>
-      <div class="contributor-item">
-        <div class="contributor-avatar">AM</div>
-        <div class="contributor-name">Amina M.</div>
-        <div class="contributor-stat">11 recipes</div>
-      </div>
+    <div class="top-contributors" id="topContributorsList">
+      <div class="contributor-item"><div class="contributor-name" style="color:var(--ink-soft);">No contributors yet.</div></div>
     </div>
   </div>
 </div>
@@ -845,6 +696,501 @@
     document.querySelector('.sidebar').classList.toggle('open');
     document.querySelector('.sidebar-overlay').classList.toggle('open');
   }
+
+  let currentUser = null;
+  let activeChallenge = null;
+  let pendingPhotoFile = null;
+
+  function timeAgo(iso) {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + ' min' + (mins === 1 ? '' : 's') + ' ago';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + ' hour' + (hours === 1 ? '' : 's') + ' ago';
+    const days = Math.floor(hours / 24);
+    return days + ' day' + (days === 1 ? '' : 's') + ' ago';
+  }
+
+  function publicUrl(bucket, path) {
+    if (!path) return null;
+    return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  }
+
+  async function uploadPostPhoto(file) {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
+    const { error } = await sb.storage.from('post-photos').upload(path, file);
+    if (error) {
+      alert('Photo upload failed: ' + error.message);
+      return null;
+    }
+    return path;
+  }
+
+  document.getElementById('composerPhotoBtn').addEventListener('click', () => {
+    document.getElementById('composerPhotoInput').click();
+  });
+
+  document.getElementById('composerPhotoInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingPhotoFile = file;
+    const preview = document.getElementById('composerPhotoPreview');
+    preview.src = URL.createObjectURL(file);
+    preview.hidden = false;
+  });
+
+  document.getElementById('composerChallengeBtn').addEventListener('click', () => {
+    document.getElementById('composerChallengeBtn').classList.toggle('active-challenge-tag');
+    const btn = document.getElementById('composerChallengeBtn');
+    if (btn.classList.contains('active-challenge-tag')) {
+      btn.style.background = 'var(--mustard)';
+      btn.style.color = '#fff';
+    } else {
+      btn.style.background = '';
+      btn.style.color = '';
+    }
+  });
+
+  document.getElementById('composerPostBtn').addEventListener('click', createPost);
+
+  async function createPost() {
+    const captionInput = document.getElementById('postCaption');
+    const caption = captionInput.value.trim();
+    if (!caption && !pendingPhotoFile) return;
+
+    let photoPath = null;
+    if (pendingPhotoFile) {
+      photoPath = await uploadPostPhoto(pendingPhotoFile);
+    }
+
+    const { data: inserted, error } = await sb
+      .from('posts')
+      .insert({ author_id: currentUser.id, kind: 'post', caption: caption || null, photo_path: photoPath })
+      .select('id')
+      .single();
+
+    if (error) {
+      alert('Could not post: ' + error.message);
+      return;
+    }
+
+    const taggedForChallenge = document.getElementById('composerChallengeBtn').classList.contains('active-challenge-tag');
+    if (taggedForChallenge && activeChallenge) {
+      await sb.from('challenge_entries').upsert(
+        { challenge_id: activeChallenge.id, user_id: currentUser.id, post_id: inserted.id },
+        { onConflict: 'challenge_id,user_id' }
+      );
+    }
+
+    captionInput.value = '';
+    pendingPhotoFile = null;
+    document.getElementById('composerPhotoPreview').hidden = true;
+    document.getElementById('composerChallengeBtn').classList.remove('active-challenge-tag');
+    document.getElementById('composerChallengeBtn').style.background = '';
+    document.getElementById('composerChallengeBtn').style.color = '';
+
+    await loadFeed();
+  }
+
+  function cardShell(post) {
+    const card = document.createElement('div');
+    card.className = 'feed-card';
+
+    const header = document.createElement('div');
+    header.className = 'card-header';
+    const avatar = document.createElement('div');
+    avatar.className = 'card-avatar';
+    avatar.textContent = post.profiles ? post.profiles.initials : '??';
+    const meta = document.createElement('div');
+    meta.className = 'card-meta';
+    const name = document.createElement('div');
+    name.className = 'card-name';
+    name.textContent = (post.profiles ? post.profiles.display_name : 'Someone') +
+      (post.kind === 'cook_in' ? ' cooked this' : post.kind === 'remake' ? ' remade this' : '');
+    const time = document.createElement('div');
+    time.className = 'card-time';
+    time.textContent = timeAgo(post.created_at);
+    meta.appendChild(name);
+    meta.appendChild(time);
+    header.appendChild(avatar);
+    header.appendChild(meta);
+    card.appendChild(header);
+
+    if (post.photo_path) {
+      const img = document.createElement('div');
+      img.className = 'card-image';
+      img.style.backgroundImage = "url('" + publicUrl('post-photos', post.photo_path) + "')";
+      card.appendChild(img);
+    }
+
+    const content = document.createElement('div');
+    content.className = 'card-content';
+
+    if (post.recipes) {
+      const titleLink = document.createElement('a');
+      titleLink.href = 'cookzer-recipe.html?id=' + post.recipe_id;
+      titleLink.style.textDecoration = 'none';
+      titleLink.style.color = 'inherit';
+      const title = document.createElement('div');
+      title.className = 'card-title';
+      title.textContent = post.recipes.title;
+      titleLink.appendChild(title);
+      content.appendChild(titleLink);
+    }
+
+    if (post.caption) {
+      const desc = document.createElement('div');
+      desc.className = 'card-description';
+      desc.textContent = post.caption;
+      content.appendChild(desc);
+    }
+
+    const stats = document.createElement('div');
+    stats.className = 'card-stats';
+    const heartStat = document.createElement('div');
+    heartStat.id = 'heartCount-' + post.id;
+    heartStat.textContent = '❤️ 0 hearts';
+    const commentStat = document.createElement('div');
+    commentStat.id = 'commentCount-' + post.id;
+    commentStat.textContent = '💬 0 comments';
+    stats.appendChild(heartStat);
+    stats.appendChild(commentStat);
+    content.appendChild(stats);
+
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+    const heartBtn = document.createElement('button');
+    heartBtn.className = 'action-btn';
+    heartBtn.id = 'heartBtn-' + post.id;
+    heartBtn.textContent = '❤️ Heart';
+    heartBtn.addEventListener('click', () => toggleHeart(post.id));
+    const commentBtn = document.createElement('button');
+    commentBtn.className = 'action-btn';
+    commentBtn.textContent = '💬 Comment';
+    commentBtn.addEventListener('click', () => toggleCommentBox(post.id));
+    actions.appendChild(heartBtn);
+    actions.appendChild(commentBtn);
+    content.appendChild(actions);
+
+    const commentBox = document.createElement('div');
+    commentBox.id = 'commentBox-' + post.id;
+    commentBox.hidden = true;
+    commentBox.style.marginTop = '10px';
+    content.appendChild(commentBox);
+
+    card.appendChild(content);
+    return card;
+  }
+
+  async function refreshPostStats(postId) {
+    const { count: heartCount } = await sb
+      .from('hearts')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', postId);
+    const { count: commentCount } = await sb
+      .from('comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', postId);
+    const { data: mine } = await sb
+      .from('hearts')
+      .select('post_id')
+      .eq('post_id', postId)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    const heartEl = document.getElementById('heartCount-' + postId);
+    const commentEl = document.getElementById('commentCount-' + postId);
+    const heartBtn = document.getElementById('heartBtn-' + postId);
+    if (heartEl) heartEl.textContent = '❤️ ' + (heartCount || 0) + ' hearts';
+    if (commentEl) commentEl.textContent = '💬 ' + (commentCount || 0) + ' comments';
+    if (heartBtn) {
+      heartBtn.textContent = mine ? '❤️ Hearted' : '❤️ Heart';
+      heartBtn.style.color = mine ? 'var(--brick)' : '';
+    }
+  }
+
+  async function toggleHeart(postId) {
+    const { data: mine } = await sb
+      .from('hearts')
+      .select('post_id')
+      .eq('post_id', postId)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    if (mine) {
+      await sb.from('hearts').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+    } else {
+      await sb.from('hearts').insert({ post_id: postId, user_id: currentUser.id });
+    }
+    await refreshPostStats(postId);
+  }
+
+  async function toggleCommentBox(postId) {
+    const box = document.getElementById('commentBox-' + postId);
+    if (!box.hidden) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+    await renderComments(postId, box);
+  }
+
+  async function renderComments(postId, box) {
+    box.innerHTML = '';
+    const { data: comments } = await sb
+      .from('comments')
+      .select('id, text, created_at, profiles(display_name, initials)')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+
+    (comments || []).forEach((c) => {
+      const row = document.createElement('div');
+      row.style.fontSize = '13px';
+      row.style.marginBottom = '6px';
+      const strong = document.createElement('b');
+      strong.textContent = (c.profiles ? c.profiles.display_name : 'Someone') + ': ';
+      row.appendChild(strong);
+      row.appendChild(document.createTextNode(c.text));
+      box.appendChild(row);
+    });
+
+    const inputRow = document.createElement('div');
+    inputRow.style.display = 'flex';
+    inputRow.style.gap = '8px';
+    inputRow.style.marginTop = '8px';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Write a comment...';
+    input.style.flex = '1';
+    input.style.padding = '8px 12px';
+    input.style.border = '1px solid var(--line)';
+    input.style.borderRadius = '16px';
+    input.style.fontFamily = 'inherit';
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitComment(postId, input, box);
+    });
+    const sendBtn = document.createElement('button');
+    sendBtn.className = 'action-btn';
+    sendBtn.textContent = 'Send';
+    sendBtn.addEventListener('click', () => submitComment(postId, input, box));
+    inputRow.appendChild(input);
+    inputRow.appendChild(sendBtn);
+    box.appendChild(inputRow);
+  }
+
+  async function submitComment(postId, input, box) {
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    const { error } = await sb.from('comments').insert({ post_id: postId, author_id: currentUser.id, text });
+    if (error) {
+      alert('Could not comment: ' + error.message);
+      return;
+    }
+    await renderComments(postId, box);
+    await refreshPostStats(postId);
+  }
+
+  async function loadFeed() {
+    const listEl = document.getElementById('feedList');
+    listEl.innerHTML = '';
+
+    const { data: posts, error } = await sb
+      .from('posts')
+      .select('id, kind, recipe_id, caption, photo_path, created_at, profiles(display_name, initials), recipes(title)')
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    document.getElementById('feedEmpty').hidden = !!(posts && posts.length);
+
+    if (error || !posts) return;
+
+    posts.forEach((post) => {
+      const card = cardShell(post);
+      listEl.appendChild(card);
+      refreshPostStats(post.id);
+    });
+  }
+
+  async function loadChallenge() {
+    const { data: challenges } = await sb
+      .from('challenges')
+      .select('id, title, description, ends_at')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (!challenges || challenges.length === 0) return;
+    activeChallenge = challenges[0];
+
+    document.getElementById('challengeTitle').textContent = activeChallenge.title;
+    const { count: entryCount } = await sb
+      .from('challenge_entries')
+      .select('*', { count: 'exact', head: true })
+      .eq('challenge_id', activeChallenge.id);
+    const endsIn = Math.max(0, Math.ceil((new Date(activeChallenge.ends_at) - Date.now()) / 86400000));
+    document.getElementById('challengeDesc').textContent = (entryCount || 0) + ' entries • ends in ' + endsIn + 'd';
+
+    document.getElementById('joinChallengeBtn').addEventListener('click', async () => {
+      const { error } = await sb
+        .from('challenge_entries')
+        .upsert({ challenge_id: activeChallenge.id, user_id: currentUser.id }, { onConflict: 'challenge_id,user_id' });
+      if (error) {
+        alert('Could not join: ' + error.message);
+        return;
+      }
+      document.getElementById('joinChallengeBtn').textContent = 'Joined ✓';
+      await loadChallenge();
+      await loadLeaderboard();
+    });
+
+    await loadLeaderboard();
+  }
+
+  async function loadLeaderboard() {
+    if (!activeChallenge) return;
+    const listEl = document.getElementById('leaderboardList');
+
+    const { data: entries } = await sb
+      .from('challenge_entries')
+      .select('user_id, post_id, profiles(display_name, initials)')
+      .eq('challenge_id', activeChallenge.id)
+      .not('post_id', 'is', null);
+
+    if (!entries || entries.length === 0) {
+      listEl.innerHTML = '<div class="leaderboard-item"><div class="leaderboard-name" style="color:var(--ink-soft);">No entries yet this week.</div></div>';
+      return;
+    }
+
+    const withHearts = await Promise.all(entries.map(async (e) => {
+      const { count } = await sb.from('hearts').select('*', { count: 'exact', head: true }).eq('post_id', e.post_id);
+      return { ...e, hearts: count || 0 };
+    }));
+
+    withHearts.sort((a, b) => b.hearts - a.hearts);
+    const medals = ['🥇', '🥈', '🥉'];
+    listEl.innerHTML = '';
+    withHearts.slice(0, 5).forEach((e, i) => {
+      const item = document.createElement('div');
+      item.className = 'leaderboard-item';
+      item.innerHTML =
+        '<div class="leaderboard-rank">' + (medals[i] || (i + 1)) + '</div>' +
+        '<div class="leaderboard-avatar"></div>' +
+        '<div class="leaderboard-name"></div>' +
+        '<div class="leaderboard-hearts">' + e.hearts + ' ❤️</div>';
+      item.querySelector('.leaderboard-avatar').textContent = e.profiles ? e.profiles.initials : '??';
+      item.querySelector('.leaderboard-name').textContent = e.profiles ? e.profiles.display_name : 'Someone';
+      listEl.appendChild(item);
+    });
+  }
+
+  async function loadTopRecipes() {
+    const listEl = document.getElementById('topRecipesList');
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+
+    const { data: posts } = await sb
+      .from('posts')
+      .select('id, recipe_id, created_at, profiles(display_name), recipes(title)')
+      .not('recipe_id', 'is', null)
+      .gte('created_at', weekAgo);
+
+    if (!posts || posts.length === 0) return;
+
+    const withHearts = await Promise.all(posts.map(async (p) => {
+      const { count } = await sb.from('hearts').select('*', { count: 'exact', head: true }).eq('post_id', p.id);
+      return { ...p, hearts: count || 0 };
+    }));
+
+    withHearts.sort((a, b) => b.hearts - a.hearts);
+    listEl.innerHTML = '';
+    withHearts.slice(0, 3).forEach((p, i) => {
+      const a = document.createElement('a');
+      a.className = 'top-recipe-item';
+      a.href = 'cookzer-recipe.html?id=' + p.recipe_id;
+      a.innerHTML =
+        '<div class="top-recipe-rank">' + (i + 1) + '</div>' +
+        '<div class="top-recipe-thumb"></div>' +
+        '<div class="top-recipe-meta"><div class="top-recipe-title"></div><div class="top-recipe-author"></div></div>' +
+        '<div class="top-recipe-hearts">' + p.hearts + ' ❤️</div>';
+      a.querySelector('.top-recipe-title').textContent = p.recipes ? p.recipes.title : 'Recipe';
+      a.querySelector('.top-recipe-author').textContent = p.profiles ? p.profiles.display_name : '';
+      listEl.appendChild(a);
+    });
+  }
+
+  async function loadTrendingIngredients() {
+    const { data: recipes } = await sb
+      .from('recipes')
+      .select('ingredients')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (!recipes || recipes.length === 0) return;
+
+    const counts = {};
+    recipes.forEach((r) => {
+      (r.ingredients || []).forEach((ing) => {
+        const name = (ing.name || '').trim();
+        if (!name) return;
+        counts[name] = (counts[name] || 0) + 1;
+      });
+    });
+
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    if (top.length === 0) return;
+
+    const listEl = document.getElementById('trendingIngredients');
+    listEl.innerHTML = '';
+    top.forEach(([name]) => {
+      const tag = document.createElement('div');
+      tag.className = 'ingredient-tag';
+      tag.innerHTML = '<span class="trend-up">▲</span> ';
+      tag.appendChild(document.createTextNode(name));
+      listEl.appendChild(tag);
+    });
+  }
+
+  async function loadTopContributors() {
+    const { data: posts } = await sb
+      .from('posts')
+      .select('author_id, profiles(display_name, initials)')
+      .not('recipe_id', 'is', null);
+
+    if (!posts || posts.length === 0) return;
+
+    const counts = {};
+    posts.forEach((p) => {
+      if (!counts[p.author_id]) counts[p.author_id] = { count: 0, profile: p.profiles };
+      counts[p.author_id].count++;
+    });
+
+    const top = Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 3);
+    const listEl = document.getElementById('topContributorsList');
+    listEl.innerHTML = '';
+    top.forEach((c) => {
+      const item = document.createElement('div');
+      item.className = 'contributor-item';
+      item.innerHTML = '<div class="contributor-avatar"></div><div class="contributor-name"></div><div class="contributor-stat">' + c.count + ' recipes</div>';
+      item.querySelector('.contributor-avatar').textContent = c.profile ? c.profile.initials : '??';
+      item.querySelector('.contributor-name').textContent = c.profile ? c.profile.display_name : 'Someone';
+      listEl.appendChild(item);
+    });
+  }
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const { data: profile } = await sb.from('profiles').select('display_name, initials').eq('id', user.id).single();
+    currentUser = { id: user.id, ...(profile || { display_name: user.email, initials: '??' }) };
+    document.getElementById('composerAvatar').textContent = currentUser.initials;
+
+    await loadFeed();
+    await loadChallenge();
+    await loadTopRecipes();
+    await loadTrendingIngredients();
+    await loadTopContributors();
+  })();
 </script>
 </body>
 </html>
