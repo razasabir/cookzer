@@ -193,6 +193,62 @@
       font-size: 18px;
       font-weight: 600;
       color: var(--olive-dark);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .new-msg-btn {
+      font-family: 'Work Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--olive);
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+
+    .new-msg-btn:hover { background: #f0e6d2; }
+
+    .new-msg-panel {
+      display: none;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--cream);
+    }
+
+    .new-msg-panel.open { display: block; }
+
+    .new-msg-panel input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--ink);
+      background: var(--card-bg);
+      margin-bottom: 8px;
+    }
+
+    .new-msg-result {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 6px;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .new-msg-result:hover { background: var(--card-bg); }
+
+    .new-msg-empty {
+      font-size: 12px;
+      color: var(--ink-soft);
+      padding: 4px 6px;
     }
 
     .conversation {
@@ -542,7 +598,14 @@
 <div class="main">
   <div class="messenger" id="messenger">
     <div class="msg-list" id="convList">
-      <div class="msg-list-header">Messages</div>
+      <div class="msg-list-header">
+        Messages
+        <button class="new-msg-btn" id="newMsgBtn" type="button">+ New</button>
+      </div>
+      <div class="new-msg-panel" id="newMsgPanel">
+        <input type="text" id="newMsgSearch" placeholder="Search people by name...">
+        <div id="newMsgResults"></div>
+      </div>
       <!-- conversation items rendered by JS -->
     </div>
 
@@ -558,83 +621,83 @@
     document.querySelector('.sidebar-overlay').classList.toggle('open');
   }
 
-  const STORAGE_KEY = 'cookzer_messenger_threads';
-
-  const defaultConversations = [
-    {
-      id: 'sarah-k',
-      name: 'Sarah K.',
-      initials: 'SK',
-      messages: [
-        { from: 'them', text: "Hey! Loved your karahi post — how much chilli did you end up using?", time: '10:12 AM' },
-        { from: 'me', text: "Thank you! I halved it from the usual recipe, about 1.5 tbsp for the whole pot.", time: '10:15 AM' },
-        { from: 'them', text: "Perfect, trying it this weekend 🌽", time: '10:16 AM' }
-      ],
-      unread: true
-    },
-    {
-      id: 'amina-m',
-      name: 'Amina M.',
-      initials: 'AM',
-      messages: [
-        { from: 'them', text: "Your lentil salad entry is so good, what's the dressing?", time: 'Yesterday' },
-        { from: 'me', text: "Lemon, olive oil, cumin, and a bit of the chilli oil from the karahi post actually!", time: 'Yesterday' }
-      ],
-      unread: true
-    },
-    {
-      id: 'josh-m',
-      name: 'Josh M.',
-      initials: 'JM',
-      messages: [
-        { from: 'me', text: "Doubled the sage on the gnocchi like you suggested — incredible, thank you!", time: 'Mon' },
-        { from: 'them', text: "Knew it would work 😎 brown butter fixes everything", time: 'Mon' }
-      ],
-      unread: false
-    },
-    {
-      id: 'layla-h',
-      name: 'Layla H.',
-      initials: 'LH',
-      messages: [
-        { from: 'them', text: "Congrats on top of the leaderboard this week!", time: 'Sun' },
-        { from: 'me', text: "Ha, you're right behind me — good luck next week 🏆", time: 'Sun' }
-      ],
-      unread: false
-    }
-  ];
-
-  function loadConversations() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch (e) {}
-    saveConversations(defaultConversations);
-    return defaultConversations;
-  }
-
-  function saveConversations(convs) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(convs));
-    } catch (e) {}
-  }
-
-  let conversations = loadConversations();
+  let currentUser = null;
+  let conversations = []; // [{ id, name, initials, otherId, lastText, lastTime, unread }]
   let activeId = null;
+  let activeChannel = null;
 
-  function lastMessage(conv) {
-    return conv.messages[conv.messages.length - 1];
+  function formatTime(iso) {
+    const d = new Date(iso);
+    const now = new Date();
+    const sameDay = d.toDateString() === now.toDateString();
+    if (sameDay) return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  }
+
+  async function loadConversations() {
+    const { data: mine, error: mineErr } = await sb
+      .from('conversation_participants')
+      .select('conversation_id, last_read_at')
+      .eq('user_id', currentUser.id);
+
+    if (mineErr || !mine || mine.length === 0) {
+      conversations = [];
+      return;
+    }
+
+    const convIds = mine.map((m) => m.conversation_id);
+    const readMap = Object.fromEntries(mine.map((m) => [m.conversation_id, m.last_read_at]));
+
+    const { data: others } = await sb
+      .from('conversation_participants')
+      .select('conversation_id, user_id, profiles(display_name, initials)')
+      .in('conversation_id', convIds)
+      .neq('user_id', currentUser.id);
+
+    const { data: allMessages } = await sb
+      .from('messages')
+      .select('conversation_id, text, created_at')
+      .in('conversation_id', convIds)
+      .order('created_at', { ascending: false });
+
+    const latestByConv = {};
+    (allMessages || []).forEach((m) => {
+      if (!latestByConv[m.conversation_id]) latestByConv[m.conversation_id] = m;
+    });
+
+    conversations = (others || []).map((o) => {
+      const last = latestByConv[o.conversation_id];
+      const lastReadAt = readMap[o.conversation_id];
+      return {
+        id: o.conversation_id,
+        otherId: o.user_id,
+        name: o.profiles ? o.profiles.display_name : 'Unknown',
+        initials: o.profiles ? o.profiles.initials : '??',
+        lastText: last ? last.text : 'Say hello!',
+        lastTime: last ? formatTime(last.created_at) : '',
+        unread: !!(last && (!lastReadAt || new Date(last.created_at) > new Date(lastReadAt))),
+      };
+    });
+
+    conversations.sort((a, b) => (a.lastTime < b.lastTime ? 1 : -1));
   }
 
   function renderList() {
     const listEl = document.getElementById('convList');
-    listEl.querySelectorAll('.conversation').forEach(el => el.remove());
+    listEl.querySelectorAll('.conversation').forEach((el) => el.remove());
 
-    conversations.forEach(conv => {
-      const last = lastMessage(conv);
+    if (conversations.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'new-msg-empty';
+      empty.style.padding = '16px';
+      empty.textContent = 'No conversations yet — click "+ New" to message someone.';
+      listEl.appendChild(empty);
+      return;
+    }
+
+    conversations.forEach((conv) => {
       const item = document.createElement('div');
       item.className = 'conversation' + (conv.id === activeId ? ' active' : '') + (conv.unread ? ' unread' : '');
-      item.setAttribute('data-id', conv.id);
 
       const avatar = document.createElement('div');
       avatar.className = 'conv-avatar';
@@ -650,7 +713,7 @@
       nameEl.textContent = conv.name;
       const timeEl = document.createElement('div');
       timeEl.className = 'conv-time';
-      timeEl.textContent = last ? last.time : '';
+      timeEl.textContent = conv.lastTime;
       nameRow.appendChild(nameEl);
       nameRow.appendChild(timeEl);
 
@@ -659,7 +722,7 @@
       previewRow.style.alignItems = 'center';
       const preview = document.createElement('div');
       preview.className = 'conv-preview';
-      preview.textContent = last ? last.text : '';
+      preview.textContent = conv.lastText;
       previewRow.appendChild(preview);
       if (conv.unread) {
         const dot = document.createElement('div');
@@ -678,11 +741,31 @@
     });
   }
 
-  function renderThread() {
+  function appendBubble(messagesEl, msg) {
+    const row = document.createElement('div');
+    row.className = 'bubble-row ' + (msg.sender_id === currentUser.id ? 'sent' : 'received');
+    const bubbleWrap = document.createElement('div');
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = msg.text;
+
+    const time = document.createElement('div');
+    time.className = 'bubble-time';
+    time.textContent = formatTime(msg.created_at);
+
+    bubbleWrap.appendChild(bubble);
+    bubbleWrap.appendChild(time);
+    row.appendChild(bubbleWrap);
+    messagesEl.appendChild(row);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  async function renderThread() {
     const threadEl = document.getElementById('thread');
     threadEl.innerHTML = '';
 
-    const conv = conversations.find(c => c.id === activeId);
+    const conv = conversations.find((c) => c.id === activeId);
     if (!conv) {
       const empty = document.createElement('div');
       empty.className = 'thread-empty';
@@ -711,25 +794,6 @@
     messagesEl.className = 'thread-messages';
     messagesEl.id = 'threadMessages';
 
-    conv.messages.forEach(msg => {
-      const row = document.createElement('div');
-      row.className = 'bubble-row ' + (msg.from === 'me' ? 'sent' : 'received');
-      const bubbleWrap = document.createElement('div');
-
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble';
-      bubble.textContent = msg.text;
-
-      const time = document.createElement('div');
-      time.className = 'bubble-time';
-      time.textContent = msg.time;
-
-      bubbleWrap.appendChild(bubble);
-      bubbleWrap.appendChild(time);
-      row.appendChild(bubbleWrap);
-      messagesEl.appendChild(row);
-    });
-
     const inputBar = document.createElement('div');
     inputBar.className = 'thread-input';
 
@@ -737,7 +801,7 @@
     input.type = 'text';
     input.placeholder = 'Write a message...';
     input.id = 'messageInput';
-    input.addEventListener('keydown', e => {
+    input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') sendMessage();
     });
 
@@ -753,42 +817,186 @@
     threadEl.appendChild(messagesEl);
     threadEl.appendChild(inputBar);
 
+    const { data: messages } = await sb
+      .from('messages')
+      .select('id, sender_id, text, created_at')
+      .eq('conversation_id', activeId)
+      .order('created_at', { ascending: true });
+
+    (messages || []).forEach((m) => appendBubble(messagesEl, m));
     messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    if (activeChannel) sb.removeChannel(activeChannel);
+    activeChannel = sb
+      .channel('messages:' + activeId)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: 'conversation_id=eq.' + activeId },
+        (payload) => {
+          const el = document.getElementById('threadMessages');
+          if (el) appendBubble(el, payload.new);
+        }
+      )
+      .subscribe();
   }
 
-  function openConversation(id) {
+  async function openConversation(id) {
     activeId = id;
-    const conv = conversations.find(c => c.id === id);
+    const conv = conversations.find((c) => c.id === id);
     if (conv) conv.unread = false;
-    saveConversations(conversations);
+
+    await sb
+      .from('conversation_participants')
+      .update({ last_read_at: new Date().toISOString() })
+      .eq('conversation_id', id)
+      .eq('user_id', currentUser.id);
+
     renderList();
-    renderThread();
+    await renderThread();
     document.getElementById('messenger').classList.add('thread-open');
   }
 
   function closeThread() {
     document.getElementById('messenger').classList.remove('thread-open');
+    if (activeChannel) {
+      sb.removeChannel(activeChannel);
+      activeChannel = null;
+    }
   }
 
-  function sendMessage() {
+  async function sendMessage() {
     const input = document.getElementById('messageInput');
     if (!input) return;
     const text = input.value.trim();
-    if (!text) return;
+    if (!text || !activeId) return;
 
-    const conv = conversations.find(c => c.id === activeId);
-    if (!conv) return;
-
-    conv.messages.push({ from: 'me', text: text, time: 'Just now' });
-    saveConversations(conversations);
     input.value = '';
-    renderThread();
+    const { error } = await sb
+      .from('messages')
+      .insert({ conversation_id: activeId, sender_id: currentUser.id, text });
+
+    if (error) {
+      alert('Could not send message: ' + error.message);
+      return;
+    }
+
+    await loadConversations();
     renderList();
     document.getElementById('messageInput').focus();
   }
 
-  renderList();
-  renderThread();
+  // ----- New Message search -----
+  const newMsgBtn = document.getElementById('newMsgBtn');
+  const newMsgPanel = document.getElementById('newMsgPanel');
+  const newMsgSearch = document.getElementById('newMsgSearch');
+  const newMsgResults = document.getElementById('newMsgResults');
+  let searchTimer = null;
+
+  newMsgBtn.addEventListener('click', () => {
+    newMsgPanel.classList.toggle('open');
+    if (newMsgPanel.classList.contains('open')) newMsgSearch.focus();
+  });
+
+  newMsgSearch.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    const q = newMsgSearch.value.trim();
+    searchTimer = setTimeout(() => runSearch(q), 250);
+  });
+
+  async function runSearch(query) {
+    newMsgResults.innerHTML = '';
+    if (!query) return;
+
+    const { data: results } = await sb
+      .from('profiles')
+      .select('id, display_name, initials')
+      .ilike('display_name', '%' + query + '%')
+      .neq('id', currentUser.id)
+      .limit(10);
+
+    if (!results || results.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'new-msg-empty';
+      empty.textContent = 'No one found by that name.';
+      newMsgResults.appendChild(empty);
+      return;
+    }
+
+    results.forEach((person) => {
+      const row = document.createElement('div');
+      row.className = 'new-msg-result';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'conv-avatar';
+      avatar.style.width = '32px';
+      avatar.style.height = '32px';
+      avatar.style.fontSize = '11px';
+      avatar.textContent = person.initials;
+
+      const name = document.createElement('div');
+      name.textContent = person.display_name;
+
+      row.appendChild(avatar);
+      row.appendChild(name);
+      row.addEventListener('click', () => startConversation(person));
+
+      newMsgResults.appendChild(row);
+    });
+  }
+
+  async function startConversation(person) {
+    // Look for an existing conversation shared with this person.
+    const { data: mine } = await sb
+      .from('conversation_participants')
+      .select('conversation_id')
+      .eq('user_id', currentUser.id);
+    const myIds = (mine || []).map((m) => m.conversation_id);
+
+    let conversationId = null;
+    if (myIds.length > 0) {
+      const { data: shared } = await sb
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('user_id', person.id)
+        .in('conversation_id', myIds);
+      if (shared && shared.length > 0) conversationId = shared[0].conversation_id;
+    }
+
+    if (!conversationId) {
+      const { data: newConv, error: convErr } = await sb
+        .from('conversations')
+        .insert({ created_by: currentUser.id })
+        .select()
+        .single();
+
+      if (convErr) {
+        alert('Could not start conversation: ' + convErr.message);
+        return;
+      }
+
+      conversationId = newConv.id;
+      await sb.from('conversation_participants').insert([
+        { conversation_id: conversationId, user_id: currentUser.id },
+        { conversation_id: conversationId, user_id: person.id },
+      ]);
+    }
+
+    newMsgPanel.classList.remove('open');
+    newMsgSearch.value = '';
+    newMsgResults.innerHTML = '';
+
+    await loadConversations();
+    await openConversation(conversationId);
+  }
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return; // auth-guard.js already redirects; nothing more to do
+    currentUser = user;
+    await loadConversations();
+    renderList();
+    renderThread();
+  })();
 </script>
 </body>
 </html>
