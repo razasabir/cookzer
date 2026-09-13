@@ -48,6 +48,13 @@
       font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 12px;
     }
     .submit-btn:hover { background: var(--olive-dark); }
+    .photo-dropzone {
+      border: 2px dashed var(--line); border-radius: 14px; padding: 24px; text-align: center;
+      cursor: pointer; color: var(--ink-soft); font-size: 13px; transition: all 0.2s;
+    }
+    .photo-dropzone:hover { border-color: var(--olive); color: var(--olive); }
+    .photo-preview { width: 100%; max-height: 260px; object-fit: cover; border-radius: 14px; margin-bottom: 10px; display: none; }
+    .photo-remove-btn { background: none; border: none; color: var(--brick); font-size: 12px; cursor: pointer; display: none; }
     @media (max-width: 768px) {
       .sidebar { position: fixed; top: 0; left: -280px; height: 100vh; z-index: 100; transition: left 0.25s ease; }
       .sidebar.open { left: 0; }
@@ -102,6 +109,14 @@
     <div class="field">
       <label>Description</label>
       <textarea id="rDescription" placeholder="A quick note about this dish..."></textarea>
+    </div>
+
+    <div class="field">
+      <label>Cover photo (optional)</label>
+      <img class="photo-preview" id="photoPreview" alt="Cover photo preview">
+      <div class="photo-dropzone" id="photoDropzone">📷 Click to add a photo of your dish</div>
+      <input type="file" accept="image/*" id="photoInput" hidden>
+      <button class="photo-remove-btn" id="photoRemoveBtn" type="button">Remove photo</button>
     </div>
 
     <div class="row-2">
@@ -188,7 +203,33 @@
   }
 
   let currentUser = null;
+  let selectedPhotoFile = null;
   const selectedTags = new Set();
+
+  const photoDropzone = document.getElementById('photoDropzone');
+  const photoInput = document.getElementById('photoInput');
+  const photoPreview = document.getElementById('photoPreview');
+  const photoRemoveBtn = document.getElementById('photoRemoveBtn');
+
+  photoDropzone.addEventListener('click', () => photoInput.click());
+
+  photoInput.addEventListener('change', () => {
+    const file = photoInput.files[0];
+    if (!file) return;
+    selectedPhotoFile = file;
+    photoPreview.src = URL.createObjectURL(file);
+    photoPreview.style.display = 'block';
+    photoDropzone.style.display = 'none';
+    photoRemoveBtn.style.display = 'inline-block';
+  });
+
+  photoRemoveBtn.addEventListener('click', () => {
+    selectedPhotoFile = null;
+    photoInput.value = '';
+    photoPreview.style.display = 'none';
+    photoDropzone.style.display = 'block';
+    photoRemoveBtn.style.display = 'none';
+  });
 
   document.querySelectorAll('.chip-toggle').forEach((chip) => {
     chip.addEventListener('click', () => {
@@ -281,6 +322,17 @@
     if (error) {
       alert('Could not save recipe: ' + error.message);
       return;
+    }
+
+    if (selectedPhotoFile) {
+      const ext = (selectedPhotoFile.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
+      const { error: uploadErr } = await sb.storage.from('recipe-photos').upload(path, selectedPhotoFile);
+      if (uploadErr) {
+        alert('Recipe saved, but the cover photo failed to upload: ' + uploadErr.message);
+      } else {
+        await sb.from('recipes').update({ hero_photo_path: path }).eq('id', recipe.id);
+      }
     }
 
     if (shareToFeed) {
