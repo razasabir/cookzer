@@ -78,15 +78,27 @@ create policy "Authenticated users can create conversations"
   on public.conversations for insert
   with check (auth.role() = 'authenticated' and created_by = auth.uid());
 
+-- A plain "exists (select ... from conversation_participants)" here would
+-- make Postgres re-evaluate this same policy while evaluating itself,
+-- causing "infinite recursion detected in policy for relation
+-- conversation_participants". A SECURITY DEFINER function breaks the loop
+-- by checking membership with RLS bypassed for that one lookup.
+create function public.is_conversation_participant(_conversation_id uuid, _user_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.conversation_participants
+    where conversation_id = _conversation_id and user_id = _user_id
+  );
+$$;
+
 create policy "Participants can view participant rows for their conversations"
   on public.conversation_participants for select
-  using (
-    exists (
-      select 1 from public.conversation_participants cp2
-      where cp2.conversation_id = conversation_participants.conversation_id
-        and cp2.user_id = auth.uid()
-    )
-  );
+  using (public.is_conversation_participant(conversation_id, auth.uid()));
 
 -- A user can add themself, or the conversation's creator can add the other party.
 create policy "Add self or add participants to a conversation you created"
