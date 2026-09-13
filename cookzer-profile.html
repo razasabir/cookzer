@@ -496,6 +496,57 @@
     ::-webkit-scrollbar-thumb:hover {
       background: var(--ink-soft);
     }
+
+    /* Mobile nav */
+    .menu-toggle {
+      display: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(43, 38, 32, 0.4);
+      z-index: 90;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .right-sidebar { display: none; }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        height: 100vh;
+        z-index: 100;
+        transition: left 0.25s ease;
+      }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .search-bar { display: none; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+    }
+
+    @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+    }
   </style>
 </head>
 <body>
@@ -527,8 +578,11 @@
   </div>
 </div>
 
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
 <!-- Header -->
 <div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
   <div class="brand-header">Cook<span>zer</span></div>
   <div class="header-right">
     <button class="icon-btn">🔔</button>
@@ -635,5 +689,11 @@
   </div>
 </div>
 
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+</script>
 </body>
 </html>
