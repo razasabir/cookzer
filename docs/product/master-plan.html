@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cookzer Master Plan</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F7F2E9;
+    --card: #FFFFFF;
+    --ink: #2B2620;
+    --ink-soft: #6B6255;
+    --ink-faint: #A69C89;
+    --green: #009246;
+    --green-dark: #00733A;
+    --red: #CE2B37;
+    --gold: #D9A441;
+    --line: #E7DFCF;
+    --line-strong: #D6CBB0;
+    --shipped-bg: rgba(0, 146, 70, 0.1);
+    --progress-bg: rgba(217, 164, 65, 0.16);
+    --backlog-bg: rgba(107, 98, 85, 0.08);
+    --flagged-bg: rgba(206, 43, 55, 0.08);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --cream: #1C1812;
+      --card: #262019;
+      --ink: #F2ECDD;
+      --ink-soft: #C2B7A2;
+      --ink-faint: #7D735F;
+      --green: #2FB86A;
+      --green-dark: #4FD98A;
+      --red: #EF6A63;
+      --gold: #E6BB6A;
+      --line: #3B3327;
+      --line-strong: #4B4030;
+      --shipped-bg: rgba(47, 184, 106, 0.14);
+      --progress-bg: rgba(230, 187, 106, 0.14);
+      --backlog-bg: rgba(194, 183, 162, 0.08);
+      --flagged-bg: rgba(239, 106, 99, 0.14);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --cream: #1C1812;
+    --card: #262019;
+    --ink: #F2ECDD;
+    --ink-soft: #C2B7A2;
+    --ink-faint: #7D735F;
+    --green: #2FB86A;
+    --green-dark: #4FD98A;
+    --red: #EF6A63;
+    --gold: #E6BB6A;
+    --line: #3B3327;
+    --line-strong: #4B4030;
+    --shipped-bg: rgba(47, 184, 106, 0.14);
+    --progress-bg: rgba(230, 187, 106, 0.14);
+    --backlog-bg: rgba(194, 183, 162, 0.08);
+    --flagged-bg: rgba(239, 106, 99, 0.14);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  ::selection { background: var(--green); color: #fff; }
+
+  a { color: var(--green-dark); }
+
+  h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; font-weight: 600; text-wrap: balance; color: var(--ink); }
+
+  .layout {
+    display: flex;
+    max-width: 1180px;
+    margin: 0 auto;
+    align-items: flex-start;
+  }
+
+  /* ---------- Sidebar / TOC ---------- */
+  .toc-rail {
+    width: 250px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 32px 20px 40px 24px;
+    border-right: 1px solid var(--line);
+  }
+
+  .toc-brand {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin-bottom: 2px;
+  }
+  .toc-brand .zer { color: var(--red); }
+  .toc-brand .cook { color: var(--green-dark); }
+
+  .toc-subtitle {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--ink-faint);
+    margin-bottom: 28px;
+  }
+
+  .toc-list { list-style: none; margin: 0; padding: 0; }
+  .toc-list a {
+    display: block;
+    padding: 7px 10px;
+    margin-bottom: 2px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+  }
+  .toc-list a:hover { background: var(--backlog-bg); color: var(--ink); }
+  .toc-list .toc-heading {
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 18px 0 6px 10px;
+    font-weight: 600;
+  }
+  .toc-list .toc-heading:first-child { margin-top: 0; }
+
+  /* ---------- Main content ---------- */
+  .content {
+    flex: 1;
+    min-width: 0;
+    padding: 48px 40px 120px;
+    max-width: 800px;
+  }
+
+  header.masthead { margin-bottom: 56px; }
+
+  .masthead-eyebrow {
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--red);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .masthead h1 {
+    font-size: 40px;
+    line-height: 1.1;
+    margin: 0 0 14px;
+  }
+
+  .masthead-lede {
+    font-size: 17px;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    margin: 0 0 20px;
+  }
+
+  .masthead-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--ink-faint);
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+  }
+  .masthead-meta b { color: var(--ink-soft); font-weight: 600; }
+
+  section.plan-section { margin-bottom: 64px; scroll-margin-top: 24px; }
+
+  .section-eyebrow {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--green-dark);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  section.plan-section h2 { font-size: 26px; margin: 0 0 6px; }
+
+  .section-dek {
+    color: var(--ink-soft);
+    max-width: 68ch;
+    margin: 0 0 28px;
+    font-size: 14.5px;
+  }
+
+  p { max-width: 68ch; }
+
+  /* ---------- Status pills ---------- */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .pill.shipped { background: var(--shipped-bg); color: var(--green-dark); }
+  .pill.progress { background: var(--progress-bg); color: var(--gold); }
+  .pill.backlog { background: var(--backlog-bg); color: var(--ink-soft); }
+  .pill.flagged { background: var(--flagged-bg); color: var(--red); }
+  .pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* ---------- Decision cards ---------- */
+  .decision-grid { display: flex; flex-direction: column; gap: 14px; }
+  .decision-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .decision-card .d-title {
+    font-weight: 600;
+    font-size: 14.5px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .decision-card .d-body { color: var(--ink-soft); font-size: 13.5px; margin: 0; }
+
+  /* ---------- Shipped checklist ---------- */
+  .shipped-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+  .shipped-item {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--green);
+    border-radius: 10px;
+  }
+  .shipped-item .s-num {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--green-dark);
+    min-width: 20px;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .shipped-item .s-text { font-size: 13.5px; }
+  .shipped-item .s-text b { display: block; font-size: 14.5px; margin-bottom: 2px; }
+  .shipped-item .s-text span { color: var(--ink-soft); }
+
+  /* ---------- Phase timeline ---------- */
+  .phase-list { display: flex; flex-direction: column; gap: 16px; }
+  .phase-card {
+    display: flex;
+    gap: 18px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px 22px;
+  }
+  .phase-card.parked { opacity: 0.75; border-style: dashed; }
+  .phase-num {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    color: var(--line-strong);
+    min-width: 34px;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .phase-card:not(.parked) .phase-num { color: var(--green); }
+  .phase-body h3 { font-size: 16.5px; margin: 0 0 6px; }
+  .phase-body p { margin: 0 0 8px; color: var(--ink-soft); font-size: 13.5px; }
+  .phase-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-size: 11px;
+    background: var(--backlog-bg);
+    color: var(--ink-soft);
+    padding: 3px 9px;
+    border-radius: 8px;
+  }
+
+  /* ---------- Backlog category ---------- */
+  .backlog-category { margin-bottom: 30px; }
+  .backlog-category h3 {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 12px;
+  }
+  .backlog-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13.5px;
+  }
+  .backlog-item:last-child { border-bottom: none; }
+  .backlog-item .b-name { font-weight: 600; flex-shrink: 0; }
+  .backlog-item .b-desc { color: var(--ink-soft); min-width: 0; overflow-wrap: break-word; }
+
+  /* ---------- Flagged decision items ---------- */
+  .flagged-card {
+    background: var(--flagged-bg);
+    border: 1px solid rgba(206, 43, 55, 0.25);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .flagged-card h3 { font-size: 15px; margin: 0 0 6px; display:flex; align-items:center; gap:10px; }
+  .flagged-card p { margin: 0; color: var(--ink-soft); font-size: 13.5px; }
+  .flagged-card .decision-needed {
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--red);
+  }
+
+  /* ---------- Research cards ---------- */
+  .research-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+  }
+  .research-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .research-card h3 { font-size: 14.5px; margin: 0 0 6px; }
+  .research-card p { font-size: 13px; color: var(--ink-soft); margin: 0 0 8px; }
+  .research-card .twist {
+    font-size: 12.5px;
+    background: var(--shipped-bg);
+    color: var(--green-dark);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-weight: 500;
+  }
+
+  /* ---------- Now bucket ---------- */
+  .now-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+  }
+  .now-item {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--gold);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+  .now-item b { display: block; font-size: 13.5px; margin-bottom: 2px; }
+  .now-item span { color: var(--ink-soft); }
+
+  /* ---------- Tech reference ---------- */
+  .table-scroll { overflow-x: auto; }
+  .tech-table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 13.5px; }
+  .tech-table th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ink-faint);
+    padding: 0 12px 8px 0;
+    border-bottom: 2px solid var(--green);
+  }
+  .tech-table td {
+    padding: 10px 12px 10px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  .tech-table td:first-child { font-weight: 600; white-space: nowrap; }
+  .tech-table td:last-child { color: var(--ink-soft); }
+
+  .gotcha-list { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+  .gotcha {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 13px;
+  }
+  .gotcha b { display: block; color: var(--ink); font-size: 13.5px; margin-bottom: 4px; }
+  .gotcha span { color: var(--ink-soft); }
+
+  .swatch-row { display: flex; gap: 14px; flex-wrap: wrap; margin: 16px 0 8px; }
+  .swatch { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-soft); }
+  .swatch-dot { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line); flex-shrink: 0; }
+
+  footer.plan-footer {
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+    font-size: 12px;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 880px) {
+    .toc-rail { display: none; }
+    .content { padding: 32px 20px 100px; max-width: 100%; }
+    .masthead h1 { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <nav class="toc-rail">
+    <div class="toc-brand"><span class="cook">Cook</span><span class="zer">zer</span></div>
+    <div class="toc-subtitle">Master Plan</div>
+    <ul class="toc-list">
+      <li class="toc-heading">Foundation</li>
+      <li><a href="#vision">Vision &amp; positioning</a></li>
+      <li><a href="#decisions">Decisions log</a></li>
+      <li class="toc-heading">Progress</li>
+      <li><a href="#shipped">What's shipped</a></li>
+      <li><a href="#phases">Execution plan</a></li>
+      <li class="toc-heading">What's next</li>
+      <li><a href="#backlog">Full backlog</a></li>
+      <li><a href="#flagged">Needs a decision</a></li>
+      <li><a href="#now">Now bucket (20)</a></li>
+      <li class="toc-heading">Reference</li>
+      <li><a href="#research">Competitive research</a></li>
+      <li><a href="#tech">Technical reference</a></li>
+    </ul>
+  </nav>
+
+  <main class="content">
+
+    <header class="masthead">
+      <div class="masthead-eyebrow">Living document — updated as decisions are made</div>
+      <h1>Cookzer Master Plan</h1>
+      <p class="masthead-lede">
+        A social network for cooks — Facebook and LinkedIn, vertical to cooking.
+        This is the single reference for what Cookzer is, what's shipped, what's
+        decided, and what's next. Every phase and idea here traces back to an
+        actual conversation and decision, not a guess.
+      </p>
+      <div class="masthead-meta">
+        <div><b>Positioning:</b> home cooks to industry pros</div>
+        <div><b>Monetization:</b> none yet — growth first</div>
+        <div><b>Infra budget:</b> up to ~$25/mo</div>
+        <div><b>Stack:</b> static HTML + Supabase + Vercel</div>
+      </div>
+    </header>
+
+    <!-- ================= VISION ================= -->
+    <section class="plan-section" id="vision">
+      <div class="section-eyebrow">Foundation</div>
+      <h2>Vision &amp; positioning</h2>
+      <p class="section-dek">
+        The reframe that changes priority order: Cookzer is not a recipe app
+        with a social layer bolted on. It's a social network for cooks, the
+        same category shape as Facebook or LinkedIn, just vertical to cooking.
+        Identity, connections, and communication between users are core
+        infrastructure — not features to add once the "real" product exists.
+      </p>
+      <div class="decision-grid">
+        <div class="decision-card">
+          <div class="d-title">Target users <span class="pill shipped">Decided</span></div>
+          <p class="d-body">Spans three groups at once: everyday home cooks (share/get inspiration), aspiring &amp; semi-pro cooks (building a following, small food businesses), and professional chefs/industry (the "LinkedIn for cooking" half — networking, reputation, eventually jobs).</p>
+        </div>
+        <div class="decision-card">
+          <div class="d-title">Why mobile-responsive shipped first</div>
+          <p class="d-body">Nothing else matters if the site is unusable on a phone. Verified with Playwright at 390px width before any feature work continued.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DECISIONS ================= -->
+    <section class="plan-section" id="decisions">
+      <div class="section-eyebrow">Foundation</div>
+      <h2>Decisions log</h2>
+      <p class="section-dek">Every real call made so far, with the reasoning — so nothing gets re-litigated later.</p>
+      <div class="decision-grid">
+        <div class="decision-card">
+          <div class="d-title">Backend: Supabase <span class="pill shipped">Shipped</span></div>
+          <p class="d-body">Postgres + built-in Auth + Realtime, on a free tier that fits the ~$25/mo ceiling as it grows. Chosen over Firebase because the relational model + Row Level Security fit user-scoped data (messages, posts, blocks) cleanly, and it integrates natively with Vercel.</p>
+        </div>
+        <div class="decision-card">
+          <div class="d-title">Auth methods <span class="pill shipped">Shipped (partial)</span></div>
+          <p class="d-body">Email/password shipped and live. Google OAuth deliberately deferred — needs a separate Google Cloud OAuth client the user hasn't set up yet. Ships as a fast-follow once that credential exists.</p>
+        </div>
+        <div class="decision-card">
+          <div class="d-title">Auth scope: whole site, not just Messenger <span class="pill shipped">Shipped</span></div>
+          <p class="d-body">Every page redirects to sign-in if there's no session — a bigger, deliberate call over gating only Messenger, made once real accounts existed.</p>
+        </div>
+        <div class="decision-card">
+          <div class="d-title">Client credentials: publishable key committed to the repo <span class="pill shipped">Shipped</span></div>
+          <p class="d-body">Safe by design — Supabase's publishable/anon key is meant to be public, protected by RLS policies, not secrecy. Avoids needing a build step just to inject env vars into static HTML.</p>
+        </div>
+        <div class="decision-card">
+          <div class="d-title">Moderation: basic block/report from day one <span class="pill backlog">Decided, not yet built</span></div>
+          <p class="d-body">Agreed before launch, not an afterthought — even before there's staffing behind it. Not yet implemented; tracked in the backlog.</p>
+        </div>
+        <div class="decision-card">
+          <div class="d-title">Logo &amp; theme: Fredoka, lighter Italian green/red <span class="pill shipped">Shipped</span></div>
+          <p class="d-body">Six directions explored; Option 3 (bold two-tone wordmark) won, rendered in Fredoka. Palette shifted from an initial deep forest/rosso to a lighter Italian-flag-inspired green (#009246) and red (#CE2B37) — see Technical reference for full tokens.</p>
+        </div>
+        <div class="decision-card">
+          <div class="d-title">Profile reputation: raw stats, not a single rating <span class="pill backlog">Decided, not yet built</span></div>
+          <p class="d-body">Rejected a single composite "rating" score — invites gaming and feels judgmental for a community meant to be warm, not purely competitive. Instead: recipes shared, challenges won, times remade, cook-in streak, shown like a game profile card.</p>
+        </div>
+        <div class="decision-card">
+          <div class="d-title">No fake profiles or bots to simulate traffic <span class="pill shipped">Decided</span></div>
+          <p class="d-body">Rejected outright — presenting fabricated activity as real people is deceptive and carries real trust/legal risk. Honest alternative: seed with real accounts (founder + beta testers) or a clearly labeled "sample content" state.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SHIPPED ================= -->
+    <section class="plan-section" id="shipped">
+      <div class="section-eyebrow">Progress</div>
+      <h2>What's shipped</h2>
+      <p class="section-dek">In build order. Every item below is live on cookzer.com today.</p>
+      <div class="shipped-list">
+        <div class="shipped-item"><div class="s-num">01</div><div class="s-text"><b>Team skills</b><span>Eight project-scoped roles (PM, BA, Designer, Creative, Web Developer, Coder, Tester, Marketer) so work moves through a consistent pipeline.</span></div></div>
+        <div class="shipped-item"><div class="s-num">02</div><div class="s-text"><b>Mobile-responsive shell</b><span>Off-canvas hamburger drawer across all pages — the site was completely unusable below ~900px before this.</span></div></div>
+        <div class="shipped-item"><div class="s-num">03</div><div class="s-text"><b>Direct Messenger</b><span>Full two-pane inbox UI, message bubbles, unread state — first shipped on local demo data, then rewired onto real Supabase tables with Realtime delivery and a "New Message" search over real profiles.</span></div></div>
+        <div class="shipped-item"><div class="s-num">04</div><div class="s-text"><b>Real accounts &amp; sitewide login</b><span>Supabase schema (profiles, conversations, messages) with Row Level Security; email/password sign-up and sign-in gating every page.</span></div></div>
+        <div class="shipped-item"><div class="s-num">05</div><div class="s-text"><b>Two RLS bugs found and fixed live</b><span>Infinite recursion in a self-referencing policy, and a chicken-and-egg visibility bug on insert — both fixed with SECURITY DEFINER helper functions.</span></div></div>
+        <div class="shipped-item"><div class="s-num">06</div><div class="s-text"><b>First real recipe page</b><span>Homemade Chicken Karahi — the first recipe to exist as its own detail page rather than just a feed caption.</span></div></div>
+        <div class="shipped-item"><div class="s-num">07</div><div class="s-text"><b>Sitewide theme reskin</b><span>Lighter Italian green/red palette, Fredoka wordmark, every corner radius bumped rounder, new favicon — applied consistently across all 8 pages.</span></div></div>
+        <div class="shipped-item"><div class="s-num">08</div><div class="s-text"><b>Feed homepage widgets</b><span>Top Recipes This Week, Trending Ingredients, and Top Contributors added to the feed sidebar.</span></div></div>
+        <div class="shipped-item"><div class="s-num">09</div><div class="s-text"><b>Recipe page redesign v2</b><span>Table-style ingredients with quantities, split prep/cook time, a nutrition line, a photo gallery, and a working upload-with-filters picker (7 CSS filter presets).</span></div></div>
+      </div>
+    </section>
+
+    <!-- ================= PHASES ================= -->
+    <section class="plan-section" id="phases">
+      <div class="section-eyebrow">Progress</div>
+      <h2>Execution plan</h2>
+      <p class="section-dek">
+        The feed is still 100% hardcoded — no real posts, hearts, or comments
+        exist yet. Everything below phase 1 depends on fixing that first.
+        Phases run in this order; each new idea gets folded into the phase
+        whose infrastructure it already needs, rather than tacked on as a
+        separate list.
+      </p>
+      <div class="phase-list">
+        <div class="phase-card">
+          <div class="phase-num">0</div>
+          <div class="phase-body">
+            <h3>Shared stylesheet</h3>
+            <p>Extract one <code>styles.css</code> before more features pile onto 8 duplicated <code>&lt;style&gt;</code> blocks — the RLS bugs and a font-link typo both came from editing the same CSS in lockstep across files.</p>
+            <div class="phase-tags"><span class="tag">Technical debt</span></div>
+          </div>
+        </div>
+        <div class="phase-card">
+          <div class="phase-num">1</div>
+          <div class="phase-body">
+            <h3>Real feed</h3>
+            <p><code>posts</code> / <code>hearts</code> / <code>comments</code> tables with RLS. The composer creates real posts, hearts persist, comments work. This is the actual unlock — everything social depends on it.</p>
+            <div class="phase-tags"><span class="tag">Cook-ins</span></div>
+          </div>
+        </div>
+        <div class="phase-card">
+          <div class="phase-num">2</div>
+          <div class="phase-body">
+            <h3>Real recipes</h3>
+            <p>A <code>recipes</code> table, a dynamic recipe detail page, posts that attach real recipes, and a cookbook that pulls real saved recipes instead of demo data.</p>
+            <div class="phase-tags">
+              <span class="tag">Remakes</span>
+              <span class="tag">Cooking Diary + Lists</span>
+              <span class="tag">Recipe categories</span>
+              <span class="tag">Dietary filters</span>
+            </div>
+          </div>
+        </div>
+        <div class="phase-card">
+          <div class="phase-num">3</div>
+          <div class="phase-body">
+            <h3>Social graph</h3>
+            <p>Follow/unfollow, a personalized feed, and a real profile page showing actual posts and stats instead of static placeholder content.</p>
+            <div class="phase-tags">
+              <span class="tag">Kitchen CV mode</span>
+              <span class="tag">Profile stats</span>
+            </div>
+          </div>
+        </div>
+        <div class="phase-card">
+          <div class="phase-num">4</div>
+          <div class="phase-body">
+            <h3>Shopping list from Meal Planner</h3>
+            <p>Contained, high-value, and independent of the social graph — a good candidate to pull forward if momentum stalls elsewhere.</p>
+          </div>
+        </div>
+        <div class="phase-card">
+          <div class="phase-num">5</div>
+          <div class="phase-body">
+            <h3>Engagement extras</h3>
+            <p>Ratings &amp; reviews, recipe import from URL, badges, and Trend Radar challenges (live trending-dish detection spawning mini-challenges instead of one manually-curated weekly theme).</p>
+          </div>
+        </div>
+        <div class="phase-card parked">
+          <div class="phase-num">—</div>
+          <div class="phase-body">
+            <h3>Parked — needs a business decision, not just build time</h3>
+            <p>Marketplace (needs payments infrastructure), sponsored challenges (needs a sales motion), video posts (storage/bandwidth cost), cooking clubs/groups (bigger scope). None of these are "no" — they're waiting on a call only the user can make.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= BACKLOG ================= -->
+    <section class="plan-section" id="backlog">
+      <div class="section-eyebrow">What's next</div>
+      <h2>Full backlog</h2>
+      <p class="section-dek">Everything not yet built, organized by what it's for.</p>
+
+      <div class="backlog-category">
+        <h3>Core engagement</h3>
+        <div class="backlog-item"><span class="b-name">Comments &amp; replies</span><span class="b-desc">— feed shows counts today; no read/write yet.</span></div>
+        <div class="backlog-item"><span class="b-name">Recipe ratings &amp; reviews</span><span class="b-desc">— "I made this" stamp + star rating.</span></div>
+        <div class="backlog-item"><span class="b-name">Video posts</span><span class="b-desc">— short cook-along clips; parked pending a storage/bandwidth cost call.</span></div>
+      </div>
+
+      <div class="backlog-category">
+        <h3>Utility &amp; planning</h3>
+        <div class="backlog-item"><span class="b-name">Recipe import from URL</span><span class="b-desc">— paste a link, get a structured recipe.</span></div>
+        <div class="backlog-item"><span class="b-name">Pantry-aware suggestions</span><span class="b-desc">— match what's in your fridge to community recipes.</span></div>
+        <div class="backlog-item"><span class="b-name">Nutrition &amp; cost-per-serve</span><span class="b-desc">— auto-estimate calories/cost; ties into "Under $10" style challenges.</span></div>
+      </div>
+
+      <div class="backlog-category">
+        <h3>Social &amp; growth</h3>
+        <div class="backlog-item"><span class="b-name">Follow / friend system</span><span class="b-desc">— personalized feed, needs the social graph (Phase 3).</span></div>
+        <div class="backlog-item"><span class="b-name">Cooking clubs / groups</span><span class="b-desc">— parked, bigger scope than current build pace.</span></div>
+        <div class="backlog-item"><span class="b-name">Badges beyond challenges</span><span class="b-desc">— streaks, "tried 10 cuisines," lighter-weight recognition.</span></div>
+      </div>
+
+      <div class="backlog-category">
+        <h3>From competitive research</h3>
+        <div class="backlog-item"><span class="b-name">Remakes</span><span class="b-desc">— cooking someone else's recipe as a credited post type, feeds a "Most Remade" leaderboard. Inspired by Cookpad's Cooksnaps.</span></div>
+        <div class="backlog-item"><span class="b-name">Cook-ins</span><span class="b-desc">— one-tap "I cooked this," lower friction than a full post, builds a streak. Inspired by Untappd check-ins.</span></div>
+        <div class="backlog-item"><span class="b-name">Cooking Diary + Lists</span><span class="b-desc">— evolve My Cookbook into a running diary plus curatable public Lists. Inspired by Letterboxd.</span></div>
+        <div class="backlog-item"><span class="b-name">Kitchen CV mode</span><span class="b-desc">— toggleable professional profile for industry users; post history doubles as a portfolio. Inspired by Culinary Agents.</span></div>
+        <div class="backlog-item"><span class="b-name">Trend Radar challenges</span><span class="b-desc">— live trending-dish detection spawning mini-challenges. Inspired by TikTok's food-discovery algorithm.</span></div>
+      </div>
+
+      <div class="backlog-category">
+        <h3>Recipe discovery</h3>
+        <div class="backlog-item"><span class="b-name">Recipe categories</span><span class="b-desc">— Breakfast/Lunch/Dinner/Dessert/Baking/Appetizers/BBQ — the primary browse mechanism.</span></div>
+        <div class="backlog-item"><span class="b-name">Dietary filters</span><span class="b-desc">— vegan/vegetarian/gluten-free as multi-select search tags, not a browse category.</span></div>
+      </div>
+
+      <div class="backlog-category">
+        <h3>Technical foundation</h3>
+        <div class="backlog-item"><span class="b-name">Shared stylesheet</span><span class="b-desc">— Phase 0, not yet built.</span></div>
+      </div>
+    </section>
+
+    <!-- ================= FLAGGED ================= -->
+    <section class="plan-section" id="flagged">
+      <div class="section-eyebrow">What's next</div>
+      <h2>Needs a decision</h2>
+      <p class="section-dek">Ideas that are genuinely good but each carry a real cost or architecture call that hasn't been made yet — not slotted into the execution plan until someone decides.</p>
+
+      <div class="flagged-card">
+        <h3>AI cooking assistant <span class="pill flagged">Flagged</span></h3>
+        <p>A conversational way to deliver pantry-aware suggestions — "I have chicken, rice, and peppers, what can I make?" pulling from real community recipes.</p>
+        <div class="decision-needed">Needs: a server-side piece (LLM API key can't be client-side like the Supabase key) + an ongoing per-message cost that could exceed the ~$25/mo ceiling if used heavily.</div>
+      </div>
+
+      <div class="flagged-card">
+        <h3>Restaurant check-ins <span class="pill flagged">Flagged</span></h3>
+        <p>Upload a photo while dining out, get a suggest-and-confirm list of nearby restaurants via a places API (Foursquare recommended over Google Places or OpenStreetMap).</p>
+        <div class="decision-needed">Needs: a places-API key kept server-side + a usage-based cost once used a lot.</div>
+      </div>
+
+      <div class="flagged-card">
+        <h3>Health section <span class="pill flagged">Flagged</span></h3>
+        <p>A dedicated macro/calorie tracking dashboard aggregating nutrition across planned and cooked meals, building on the recipe page's Nutrition line.</p>
+        <div class="decision-needed">Needs: a nutrition-database API decision (USDA FoodData Central is free; Edamam/Spoonacular are paid but richer) or manual entry by recipe authors — the current Nutrition line is hand-entered, not calculated.</div>
+      </div>
+    </section>
+
+    <!-- ================= NOW BUCKET ================= -->
+    <section class="plan-section" id="now">
+      <div class="section-eyebrow">What's next</div>
+      <h2>Now bucket <span class="pill progress" style="vertical-align: 2px;">20 ideas</span></h2>
+      <p class="section-dek">Buildable directly on what exists today — no dependency on the phased plan above. Not a build commitment, just triaged and ready whenever there's a gap to fill.</p>
+
+      <div class="backlog-category">
+        <h3>Zero backend, pure client-side</h3>
+        <div class="now-grid">
+          <div class="now-item"><b>Dark mode toggle</b><span>CSS variables already exist on all 8 pages.</span></div>
+          <div class="now-item"><b>Recipe scaling</b><span>Adjust servings, auto-multiply every ingredient qty.</span></div>
+          <div class="now-item"><b>Print / PDF recipe view</b><span>Print-optimized stylesheet + button.</span></div>
+          <div class="now-item"><b>Share recipe link</b><span>Copy-to-clipboard, one click.</span></div>
+          <div class="now-item"><b>Keyboard shortcuts</b><span>"/" to search, "Esc" to close.</span></div>
+          <div class="now-item"><b>Welcome modal</b><span>One-time onboarding after signup.</span></div>
+          <div class="now-item"><b>Skeleton loading shimmer</b><span>Feed card polish.</span></div>
+          <div class="now-item"><b>Confetti on joining a challenge</b><span>Small delight moment.</span></div>
+          <div class="now-item"><b>Live challenge countdown</b><span>"Ends in 2d 14h," ticking.</span></div>
+          <div class="now-item"><b>Cookbook folder polish</b><span>Hover states, empty-state art.</span></div>
+        </div>
+      </div>
+
+      <div class="backlog-category">
+        <h3>Small, isolated backend additions</h3>
+        <div class="now-grid">
+          <div class="now-item"><b>Message read receipts</b><span><code>last_read_at</code> already exists — just surface it.</span></div>
+          <div class="now-item"><b>Message emoji reactions</b><span>One small table, fully isolated.</span></div>
+          <div class="now-item"><b>Save for later</b><span>localStorage now, swap to a real table later.</span></div>
+          <div class="now-item"><b>Copy last week's plan</b><span>localStorage-based duplication.</span></div>
+          <div class="now-item"><b>Drag-and-drop meal slots</b><span>Client-side reordering.</span></div>
+        </div>
+      </div>
+
+      <div class="backlog-category">
+        <h3>Make the demo feel more alive</h3>
+        <div class="now-grid">
+          <div class="now-item"><b>Weekly nutrition summary</b><span>Sum calories across planned meals.</span></div>
+          <div class="now-item"><b>Achievement badge preview</b><span>"Coming soon" badges on Profile.</span></div>
+          <div class="now-item"><b>Cover photo picker</b><span>Preset gradient banners on Profile.</span></div>
+          <div class="now-item"><b>Past Challenges archive</b><span>Timeline of previous weekly challenges.</span></div>
+          <div class="now-item"><b>"Feeling:" mood tag</b><span>Quick-tap options on the composer.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RESEARCH ================= -->
+    <section class="plan-section" id="research">
+      <div class="section-eyebrow">Reference</div>
+      <h2>Competitive research</h2>
+      <p class="section-dek">Five real platforms researched for mechanics worth adapting, not copying. Full recommendation: don't compete on recipe-database size or import integrations — that's a war against Cookpad and Samsung Food that can't be won right now. The real gap is that none of the pure recipe apps have Untappd/Letterboxd-style logging, streaks, and identity-through-taste, and Cookzer is already social-first.</p>
+      <div class="research-grid">
+        <div class="research-card">
+          <h3>Cookpad</h3>
+          <p>World's largest UGC recipe community. Standout: "Cooksnaps" — cook someone's recipe, post your result attached to the original.</p>
+          <div class="twist">→ Remakes: credited, first-class, feeds a leaderboard</div>
+        </div>
+        <div class="research-card">
+          <h3>TikTok food discovery</h3>
+          <p>37% of people find food via social feeds; algorithms surface live trending dishes, not evergreen categories.</p>
+          <div class="twist">→ Trend Radar: live trends spawn mini-challenges</div>
+        </div>
+        <div class="research-card">
+          <h3>Untappd</h3>
+          <p>Beer check-ins — a low-friction tap-and-rate, separate from a full review, with streaks and badges.</p>
+          <div class="twist">→ Cook-ins: one-tap "I cooked this," builds a streak</div>
+        </div>
+        <div class="research-card">
+          <h3>Letterboxd</h3>
+          <p>Film logging — an automatic diary plus curatable public Lists. Identity through taste, not just posts.</p>
+          <div class="twist">→ Cooking Diary + Lists on My Cookbook</div>
+        </div>
+        <div class="research-card">
+          <h3>Culinary Agents</h3>
+          <p>"LinkedIn for chefs" — a professional network + job board where profiles double as a resume.</p>
+          <div class="twist">→ Kitchen CV mode for industry users</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TECH REFERENCE ================= -->
+    <section class="plan-section" id="tech">
+      <div class="section-eyebrow">Reference</div>
+      <h2>Technical reference</h2>
+
+      <div class="table-scroll">
+        <table class="tech-table">
+          <tr><th>Layer</th><th>Choice</th></tr>
+          <tr><td>Frontend</td><td>Static HTML/CSS/JS, no build step, 8 pages</td></tr>
+          <tr><td>Hosting</td><td>Vercel, auto-deploy on push to <code>main</code></td></tr>
+          <tr><td>Domain</td><td>cookzer.com, DNS managed in GoDaddy</td></tr>
+          <tr><td>Backend</td><td>Supabase — Postgres, Auth, Realtime (project: tmzjliznexgmteubxall)</td></tr>
+          <tr><td>Client → Supabase</td><td>UMD CDN build + a committed public config file (publishable key only)</td></tr>
+          <tr><td>Repo workflow</td><td>Feature branch → PR → squash merge → auto-deploy</td></tr>
+        </table>
+      </div>
+
+      <h3 style="margin-top: 32px; font-size: 15px;">Brand tokens</h3>
+      <div class="swatch-row">
+        <div class="swatch"><div class="swatch-dot" style="background:#009246"></div>Green #009246</div>
+        <div class="swatch"><div class="swatch-dot" style="background:#00733A"></div>Green Dark #00733A</div>
+        <div class="swatch"><div class="swatch-dot" style="background:#CE2B37"></div>Red #CE2B37</div>
+        <div class="swatch"><div class="swatch-dot" style="background:#D9A441"></div>Gold #D9A441</div>
+        <div class="swatch"><div class="swatch-dot" style="background:#F7F2E9;border-color:#ccc"></div>Cream #F7F2E9</div>
+      </div>
+      <p style="font-size: 13px; color: var(--ink-soft);">Wordmark: Fredoka. Section headings: Fraunces. Body/UI: Work Sans.</p>
+
+      <h3 style="margin-top: 32px; font-size: 15px;">Hard-won lessons</h3>
+      <div class="gotcha-list">
+        <div class="gotcha"><b>RLS self-reference = infinite recursion</b><span>A policy that queries its own table inside its own USING clause makes Postgres re-apply that policy to evaluate itself, forever. Fix: a <code>SECURITY DEFINER</code> function that checks membership with RLS bypassed for that one internal lookup.</span></div>
+        <div class="gotcha"><b>Insert-then-.select() chicken-and-egg</b><span><code>.insert({...}).select()</code> tries to read the new row back immediately — but if the SELECT policy requires state the insert itself is establishing (e.g. "you must already be a participant"), it fails. Fix: generate the ID client-side with <code>crypto.randomUUID()</code> and skip <code>.select()</code> entirely.</span></div>
+        <div class="gotcha"><b>Supabase's default email sender is rate-limited</b><span>Fine for a couple of test signups, not production. Needs a real SMTP provider (Resend, SendGrid, Postmark) before any public launch.</span></div>
+        <div class="gotcha"><b>New Supabase key system</b><span>"Publishable" replaces the old "anon" key, "Secret" replaces "service_role" — same purpose, new names. Only the publishable key belongs in client code.</span></div>
+      </div>
+    </section>
+
+    <footer class="plan-footer">
+      Cookzer Master Plan — compiled from every product decision made in this
+      build. Update this file whenever a phase ships or a new decision is made;
+      it's the one document meant to be followed, not the transcript it came from.
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>
