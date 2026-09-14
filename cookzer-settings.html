@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>Settings — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="notifications-shared.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .brand-header {
+      font-size: 20px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+    }
+
+  .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
+  .main { flex: 1; margin-top: 60px; overflow-y: auto; }
+
+  .settings-content {
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+  .page-title {
+      font-size: 28px;
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      color: var(--olive-dark);
+      margin-bottom: 24px;
+    }
+
+  .settings-section {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+  .settings-section h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 16px;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+  .settings-section .section-dek {
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      margin-bottom: 16px;
+    }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); margin-bottom: 6px; }
+  .field input[type="text"], .field input[type="email"], .field input[type="password"] {
+      width: 100%; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px;
+      font-family: inherit; font-size: 14px; color: var(--ink); background: var(--cream);
+    }
+
+  .field-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .field-row .field { flex: 1; min-width: 180px; margin-bottom: 0; }
+
+  .settings-btn {
+      background: var(--olive);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+  .settings-btn.secondary {
+      background: var(--cream);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+  .settings-btn.danger { background: var(--brick); }
+
+  .settings-status { font-size: 12.5px; color: var(--ink-soft); margin-top: 8px; }
+
+  .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-row-label { font-size: 14px; color: var(--ink); }
+  .toggle-row-dek { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+  .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch-slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: var(--line); border-radius: 22px; transition: 0.2s;
+    }
+  .switch-slider:before {
+      position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+      background: #fff; border-radius: 50%; transition: 0.2s;
+    }
+  .switch input:checked + .switch-slider { background: var(--olive); }
+  .switch input:checked + .switch-slider:before { transform: translateX(18px); }
+
+  .settings-link-row {
+      display: block;
+      font-size: 14px;
+      color: var(--olive-dark);
+      text-decoration: none;
+      font-weight: 600;
+      padding: 6px 0;
+    }
+
+  @media (max-width: 900px) { .right-sidebar { display: none; } }
+  @media (max-width: 768px) {
+      .sidebar { position: fixed; top: 0; left: -280px; height: 100vh; height: 100dvh; z-index: 100; transition: left 0.25s ease; }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+    }
+  @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-health.html" style="text-decoration: none;"><div class="sidebar-item icon health">Health</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-groups.html" style="text-decoration: none;"><div class="sidebar-item icon groups">Groups</div></a>
+  <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants">Restaurants</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn" id="notifBellBtn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="settings-content">
+    <h1 class="page-title">Settings</h1>
+
+    <div class="settings-section">
+      <h2>Account</h2>
+      <div class="section-dek">Your name, as shown across the site, and your sign-in details.</div>
+      <div class="field">
+        <label>Display name</label>
+        <div class="field-row">
+          <input type="text" id="displayNameInput" placeholder="Your name">
+          <button class="settings-btn secondary" id="saveNameBtn" type="button">Save</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <div class="field-row">
+          <input type="email" id="emailInput" placeholder="you@example.com">
+          <button class="settings-btn secondary" id="saveEmailBtn" type="button">Update</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>New password</label>
+        <div class="field-row">
+          <input type="password" id="passwordInput" placeholder="At least 6 characters">
+          <button class="settings-btn secondary" id="savePasswordBtn" type="button">Update</button>
+        </div>
+      </div>
+      <div class="settings-status" id="accountStatus"></div>
+    </div>
+
+    <div class="settings-section">
+      <h2>Notifications</h2>
+      <div class="section-dek">Which activity shows up in your notification bell and the Notifications page. These are in-app only — Cookzer doesn't send emails or push notifications yet.</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-row-label">New followers</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="prefFollows"><span class="switch-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-row-label">Hearts on your posts</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="prefHearts"><span class="switch-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-row-label">Comments on your posts</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="prefComments"><span class="switch-slider"></span></label>
+      </div>
+      <div class="settings-status" id="prefsStatus"></div>
+    </div>
+
+    <div class="settings-section">
+      <h2>Invite a co-cook</h2>
+      <div class="section-dek">Bring a friend onto Cookzer — opens your own email app with an invite drafted, or copy the link to share anywhere.</div>
+      <div class="field">
+        <label>Their email (optional)</label>
+        <div class="field-row">
+          <input type="email" id="inviteEmailInput" placeholder="friend@example.com">
+          <button class="settings-btn secondary" id="inviteEmailBtn" type="button">Email invite</button>
+          <button class="settings-btn secondary" id="copyInviteBtn" type="button">Copy link</button>
+        </div>
+      </div>
+      <div class="settings-status" id="inviteStatus"></div>
+    </div>
+
+    <div class="settings-section">
+      <h2>Privacy &amp; safety</h2>
+      <a class="settings-link-row" href="cookzer-cocooks.html">Manage blocked accounts →</a>
+      <div class="section-dek" style="margin-top:6px;">Report a post or profile from the "⋯" menu wherever you see it.</div>
+    </div>
+
+    <div class="settings-section">
+      <h2>Sign out</h2>
+      <button class="settings-btn danger" id="signOutBtn" type="button">Sign out of Cookzer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  let currentUser = null;
+
+  document.getElementById('saveNameBtn').addEventListener('click', async () => {
+    const name = document.getElementById('displayNameInput').value.trim();
+    const status = document.getElementById('accountStatus');
+    if (!name) { status.textContent = 'Name can\'t be empty.'; return; }
+    const { error } = await sb.from('profiles').update({ display_name: name }).eq('id', currentUser.id);
+    status.textContent = error ? 'Could not save: ' + error.message : 'Saved.';
+  });
+
+  document.getElementById('saveEmailBtn').addEventListener('click', async () => {
+    const email = document.getElementById('emailInput').value.trim();
+    const status = document.getElementById('accountStatus');
+    if (!email) return;
+    const { error } = await sb.auth.updateUser({ email });
+    status.textContent = error ? 'Could not update: ' + error.message : 'Check your new email inbox to confirm the change.';
+  });
+
+  document.getElementById('savePasswordBtn').addEventListener('click', async () => {
+    const password = document.getElementById('passwordInput').value;
+    const status = document.getElementById('accountStatus');
+    if (!password || password.length < 6) { status.textContent = 'Password must be at least 6 characters.'; return; }
+    const { error } = await sb.auth.updateUser({ password });
+    status.textContent = error ? 'Could not update: ' + error.message : 'Password updated.';
+    if (!error) document.getElementById('passwordInput').value = '';
+  });
+
+  async function savePrefs() {
+    const status = document.getElementById('prefsStatus');
+    const prefs = {
+      user_id: currentUser.id,
+      notify_follows: document.getElementById('prefFollows').checked,
+      notify_hearts: document.getElementById('prefHearts').checked,
+      notify_comments: document.getElementById('prefComments').checked,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await sb.from('notification_prefs').upsert(prefs, { onConflict: 'user_id' });
+    status.textContent = error ? 'Could not save: ' + error.message : 'Saved.';
+  }
+
+  ['prefFollows', 'prefHearts', 'prefComments'].forEach((id) => {
+    document.getElementById(id).addEventListener('change', savePrefs);
+  });
+
+  document.getElementById('inviteEmailBtn').addEventListener('click', () => {
+    const email = document.getElementById('inviteEmailInput').value.trim();
+    const subject = encodeURIComponent('Cook with me on Cookzer');
+    const body = encodeURIComponent('Join me on Cookzer — a social network for cooks. Sign up here: ' + location.origin + '/index.html');
+    window.location.href = 'mailto:' + email + '?subject=' + subject + '&body=' + body;
+  });
+
+  document.getElementById('copyInviteBtn').addEventListener('click', async () => {
+    const url = location.origin + '/index.html';
+    const status = document.getElementById('inviteStatus');
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        status.textContent = 'Link copied: ' + url;
+        return;
+      }
+    } catch (e) { /* fall through */ }
+    prompt('Copy this invite link:', url);
+  });
+
+  document.getElementById('signOutBtn').addEventListener('click', async () => {
+    if (!confirm('Sign out of Cookzer?')) return;
+    await sb.auth.signOut();
+    window.location.href = 'cookzer-auth.html';
+  });
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+
+    document.getElementById('emailInput').value = user.email || '';
+
+    const { data: profile } = await sb.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
+    if (profile) document.getElementById('displayNameInput').value = profile.display_name || '';
+
+    const prefs = await window.CookzerNotifications.loadPrefs(user.id);
+    document.getElementById('prefFollows').checked = prefs.notify_follows;
+    document.getElementById('prefHearts').checked = prefs.notify_hearts;
+    document.getElementById('prefComments').checked = prefs.notify_comments;
+  })();
+</script>
+</body>
+</html>
