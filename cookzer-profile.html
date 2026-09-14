@@ -371,10 +371,34 @@
       padding: 16px;
     }
 
+  .activity-top-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
   .activity-time {
       font-size: 12px;
       color: var(--ink-soft);
-      margin-bottom: 8px;
+      flex: 1;
+    }
+
+  .activity-delete-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--ink-faint);
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+    }
+
+  .activity-delete-btn:hover {
+      background: var(--cream);
+      color: var(--brick);
     }
 
   .activity-caption {
@@ -921,13 +945,27 @@
         const card = document.createElement('div');
         card.className = 'activity-card';
 
+        const topRow = document.createElement('div');
+        topRow.className = 'activity-top-row';
         const time = document.createElement('div');
         time.className = 'activity-time';
         let kindLabel = '';
         if (post.kind === 'cook_in') kindLabel = 'Cooked this · ';
         else if (post.kind === 'remake') kindLabel = 'Remade this · ';
         time.textContent = kindLabel + formatActivityTime(post.created_at) + (post.restaurant_name ? ' · 📍 ' + post.restaurant_name : '');
-        card.appendChild(time);
+        topRow.appendChild(time);
+
+        if (viewedId === currentUser.id) {
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = 'activity-delete-btn';
+          deleteBtn.title = 'Delete post';
+          deleteBtn.type = 'button';
+          deleteBtn.textContent = '🗑';
+          deleteBtn.addEventListener('click', () => deletePost(post.id, card));
+          topRow.appendChild(deleteBtn);
+        }
+
+        card.appendChild(topRow);
 
         if (post.video_uid) {
           const media = document.createElement('div');
@@ -1029,6 +1067,21 @@
       a.appendChild(overlay);
       grid.appendChild(a);
     });
+  }
+
+  async function deletePost(postId, cardEl) {
+    if (!confirm('Delete this post? This can\'t be undone.')) return;
+
+    const { error } = await sb.from('posts').delete().eq('id', postId);
+    if (error) {
+      alert('Could not delete post: ' + error.message);
+      return;
+    }
+
+    cardEl.remove();
+    if (!document.getElementById('activityList').children.length) {
+      document.getElementById('activityList').innerHTML = '<div class="empty-note">No activity yet.</div>';
+    }
   }
 
   // ----- Edit profile modal -----
