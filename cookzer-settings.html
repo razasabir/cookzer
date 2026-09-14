@@ -233,6 +233,18 @@
         </div>
         <label class="switch"><input type="checkbox" id="prefComments"><span class="switch-slider"></span></label>
       </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-row-label">Someone remakes your recipe</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="prefRemakes"><span class="switch-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-row-label">Someone joins your challenge</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="prefChallengeJoins"><span class="switch-slider"></span></label>
+      </div>
       <div class="settings-status" id="prefsStatus"></div>
     </div>
 
@@ -303,13 +315,15 @@
       notify_follows: document.getElementById('prefFollows').checked,
       notify_hearts: document.getElementById('prefHearts').checked,
       notify_comments: document.getElementById('prefComments').checked,
+      notify_remakes: document.getElementById('prefRemakes').checked,
+      notify_challenge_joins: document.getElementById('prefChallengeJoins').checked,
       updated_at: new Date().toISOString(),
     };
     const { error } = await sb.from('notification_prefs').upsert(prefs, { onConflict: 'user_id' });
     status.textContent = error ? 'Could not save: ' + error.message : 'Saved.';
   }
 
-  ['prefFollows', 'prefHearts', 'prefComments'].forEach((id) => {
+  ['prefFollows', 'prefHearts', 'prefComments', 'prefRemakes', 'prefChallengeJoins'].forEach((id) => {
     document.getElementById(id).addEventListener('change', savePrefs);
   });
 
@@ -353,6 +367,8 @@
     document.getElementById('prefFollows').checked = prefs.notify_follows;
     document.getElementById('prefHearts').checked = prefs.notify_hearts;
     document.getElementById('prefComments').checked = prefs.notify_comments;
+    document.getElementById('prefRemakes').checked = prefs.notify_remakes;
+    document.getElementById('prefChallengeJoins').checked = prefs.notify_challenge_joins;
   })();
 </script>
 </body>
