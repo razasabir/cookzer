@@ -1581,7 +1581,7 @@
 
     const { data: posts, error } = await sb
       .from('posts')
-      .select('id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles(display_name, initials), recipes(title, hero_photo_path)')
+      .select('id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles!posts_author_id_fkey(display_name, initials), recipes!posts_recipe_id_fkey(title, hero_photo_path)')
       .order('created_at', { ascending: false })
       .limit(30);
 
@@ -1685,7 +1685,7 @@
 
     const { data: posts } = await sb
       .from('posts')
-      .select('id, recipe_id, created_at, profiles(display_name), recipes(title, hero_photo_path)')
+      .select('id, recipe_id, created_at, profiles!posts_author_id_fkey(display_name), recipes!posts_recipe_id_fkey(title, hero_photo_path)')
       .not('recipe_id', 'is', null)
       .gte('created_at', weekAgo);
 
@@ -1751,7 +1751,7 @@
   async function loadTopContributors() {
     const { data: posts } = await sb
       .from('posts')
-      .select('author_id, profiles(display_name, initials)')
+      .select('author_id, profiles!posts_author_id_fkey(display_name, initials)')
       .not('recipe_id', 'is', null);
 
     if (!posts || posts.length === 0) return;

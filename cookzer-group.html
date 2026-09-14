@@ -622,7 +622,7 @@
   async function loadGroupFeed() {
     const { data: posts } = await sb
       .from('posts')
-      .select('id, caption, photo_path, created_at, profiles(display_name, initials)')
+      .select('id, caption, photo_path, created_at, profiles!posts_author_id_fkey(display_name, initials)')
       .eq('group_id', groupId)
       .order('created_at', { ascending: false });
 

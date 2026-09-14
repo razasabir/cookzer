@@ -908,7 +908,7 @@
     if (currentView === 'activity') {
       const { data: posts } = await sb
         .from('posts')
-        .select('id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, recipes(title, hero_photo_path)')
+        .select('id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, recipes!posts_recipe_id_fkey(title, hero_photo_path)')
         .eq('author_id', viewedId)
         .order('created_at', { ascending: false });
 
@@ -983,7 +983,7 @@
     if (currentView === 'bookmarks') {
       const { data } = await sb
         .from('post_bookmarks')
-        .select('post_id, posts(id, caption, recipe_id, recipes(title))')
+        .select('post_id, posts(id, caption, recipe_id, recipes!posts_recipe_id_fkey(title))')
         .eq('user_id', currentUser.id);
       const items = (data || []).filter((b) => b.posts);
       if (items.length === 0) {

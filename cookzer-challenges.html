@@ -407,7 +407,7 @@
 
     let query = sb
       .from('challenge_entries')
-      .select('user_id, post_id, profiles(id, display_name, initials), posts(recipe_id, recipes(id, title, category))')
+      .select('user_id, post_id, profiles(id, display_name, initials), posts(recipe_id, recipes!posts_recipe_id_fkey(id, title, category))')
       .eq('challenge_id', activeChallenge.id)
       .not('post_id', 'is', null);
 
