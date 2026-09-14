@@ -11,6 +11,14 @@ function loadEstimator() {
   return fakeWindow.CookzerNutrition.estimateForRecipe;
 }
 
+function loadCostEstimator() {
+  delete require.cache[require.resolve('../nutrition-data.js')];
+  const fakeWindow = {};
+  global.window = fakeWindow;
+  require('../nutrition-data.js');
+  return fakeWindow.CookzerNutrition.estimateCostForRecipe;
+}
+
 test.describe('nutrition estimate lookup table', () => {
   test('estimates plausible per-serving calories for a real recipe', () => {
     const estimateForRecipe = loadEstimator();
@@ -70,5 +78,34 @@ test.describe('nutrition estimate lookup table', () => {
     });
     expect(blankQty).not.toBeNull();
     expect(blankQty.calories).toBeGreaterThan(0);
+  });
+});
+
+test.describe('cost-per-serve estimate lookup table', () => {
+  test('estimates a plausible per-serving cost for a real recipe', () => {
+    const estimateCostForRecipe = loadCostEstimator();
+    const result = estimateCostForRecipe({
+      servings: 4,
+      ingredients: [
+        { name: 'Chicken breast', qty: '600 g' },
+        { name: 'Olive oil', qty: '2 tbsp' },
+        { name: 'Garlic', qty: '3 cloves' },
+        { name: 'Lemon', qty: '1' },
+      ],
+    });
+    expect(result).not.toBeNull();
+    expect(result).toBeGreaterThan(0.5);
+    expect(result).toBeLessThan(10);
+  });
+
+  test('returns null when nothing matches, and scales down as servings go up', () => {
+    const estimateCostForRecipe = loadCostEstimator();
+    expect(estimateCostForRecipe({ servings: 2, ingredients: [{ name: 'unobtainium dust', qty: '2 cups' }] })).toBeNull();
+    expect(estimateCostForRecipe(null)).toBeNull();
+
+    const recipe = { ingredients: [{ name: 'Rice', qty: '400 g' }] };
+    const perServing1 = estimateCostForRecipe({ ...recipe, servings: 1 });
+    const perServing4 = estimateCostForRecipe({ ...recipe, servings: 4 });
+    expect(perServing1).toBeCloseTo(perServing4 * 4, 2);
   });
 });

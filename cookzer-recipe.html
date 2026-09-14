@@ -574,6 +574,11 @@
     </section>
 
     <section class="block">
+      <div class="section-heading">Cost <span class="nutrition-note">(per serving)</span></div>
+      <p class="nutrition-line" id="costLine"></p>
+    </section>
+
+    <section class="block">
       <div class="section-heading">Gallery</div>
       <div class="gallery-grid" id="galleryGrid">
         <div class="gallery-add" id="addPhotoTile">
@@ -795,7 +800,7 @@
 
     const { data, error } = await sb
       .from('recipes')
-      .select('id, title, description, category, dietary_tags, prep_time_minutes, cook_time_minutes, servings, spice_level, ingredients, steps, nutrition, hero_photo_path, created_at, author_id, profiles!recipes_author_id_fkey(display_name, initials)')
+      .select('id, title, description, category, dietary_tags, prep_time_minutes, cook_time_minutes, servings, spice_level, ingredients, steps, nutrition, cost_per_serve, hero_photo_path, created_at, author_id, profiles!recipes_author_id_fkey(display_name, initials)')
       .eq('id', recipeId)
       .maybeSingle();
 
@@ -925,6 +930,19 @@
           ' <span class="nutrition-note">— estimated from ingredients, not entered by the cook</span>';
       } else {
         nutritionLineEl.textContent = 'Not provided for this recipe yet.';
+      }
+    }
+
+    const costLineEl = document.getElementById('costLine');
+    if (recipe.cost_per_serve) {
+      costLineEl.innerHTML = '<b>$' + Number(recipe.cost_per_serve).toFixed(2) + '</b> per serving';
+    } else {
+      const costEstimate = window.CookzerNutrition ? window.CookzerNutrition.estimateCostForRecipe(recipe) : null;
+      if (costEstimate != null) {
+        costLineEl.innerHTML = '<b>~$' + costEstimate.toFixed(2) + '</b> per serving' +
+          ' <span class="nutrition-note">— estimated from ingredients, not entered by the cook</span>';
+      } else {
+        costLineEl.textContent = 'Not provided for this recipe yet.';
       }
     }
 

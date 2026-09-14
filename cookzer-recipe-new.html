@@ -265,6 +265,11 @@
         <button class="add-row-btn" id="estimateNutritionBtn" type="button" style="margin-top:10px;">Estimate from ingredients</button>
         <div id="estimateNutritionStatus" style="font-size:12px; color:var(--ink-soft); margin-top:6px;"></div>
       </div>
+      <div class="field">
+        <label>Cost per serve ($, optional)</label>
+        <button class="add-row-btn" id="estimateCostBtn" type="button">Estimate from ingredients</button>
+        <div id="estimateCostStatus" style="font-size:12px; color:var(--ink-soft); margin-top:6px;"></div>
+      </div>
     </div>
 
     <!-- Step 3: Steps & photos -->
@@ -508,6 +513,26 @@
     document.getElementById('rFat').value = estimate.fat;
     status.style.color = 'var(--ink-soft)';
     status.textContent = 'Filled in from a lookup-table estimate — adjust anything that looks off.';
+  });
+
+  document.getElementById('estimateCostBtn').addEventListener('click', () => {
+    const status = document.getElementById('estimateCostStatus');
+    const ingredients = Array.from(document.querySelectorAll('#ingredientRows .dynamic-row')).map((row) => ({
+      name: row.querySelector('.ing-name').value.trim(),
+      qty: row.querySelector('.ing-qty').value.trim(),
+    })).filter((i) => i.name);
+    const servings = Number(document.getElementById('rServings').value) || 1;
+
+    const cost = window.CookzerNutrition ? window.CookzerNutrition.estimateCostForRecipe({ ingredients, servings }) : null;
+    if (cost == null) {
+      status.style.color = 'var(--brick)';
+      status.textContent = 'Not enough recognized ingredients to estimate — fill this in by hand instead.';
+      return;
+    }
+
+    document.getElementById('rCost').value = cost.toFixed(2);
+    status.style.color = 'var(--ink-soft)';
+    status.textContent = 'Filled in from a lookup-table estimate ($' + cost.toFixed(2) + '/serve) — adjust if it looks off.';
   });
 
   document.getElementById('importUrlBtn').addEventListener('click', async () => {
