@@ -13,6 +13,7 @@
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
   <script src="countdown.js"></script>
+  <script src="confetti.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
   .sidebar-title {
@@ -550,6 +551,35 @@
       color: var(--ink-soft);
     }
 
+  /* Welcome modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(43, 38, 32, 0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      max-width: 420px;
+      width: 100%;
+      padding: 28px;
+    }
+
+  .modal-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      font-size: 20px;
+      color: var(--olive-dark);
+    }
+
   /* Scrollbar styling */
     ::-webkit-scrollbar {
       width: 8px;
@@ -692,6 +722,18 @@
     <div class="top-contributors" id="topContributorsList">
       <div class="contributor-item"><div class="contributor-name" style="color:var(--ink-soft);">No contributors yet.</div></div>
     </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="welcomeModal">
+  <div class="modal-card">
+    <div class="modal-title">Welcome to Cookzer 👋</div>
+    <p style="font-size:14px; color:var(--ink-soft); line-height:1.6; margin:12px 0 20px;">
+      This is your feed — post what you cook, save real recipes, plan your week,
+      and connect with other cooks. Hit <b>Recipe</b> in the composer to create
+      your first one, or explore what's already been shared.
+    </p>
+    <button class="challenge-btn" id="welcomeDismissBtn" style="background:var(--olive); color:#fff; width:100%;">Got it, let's cook</button>
   </div>
 </div>
 
@@ -1050,7 +1092,9 @@
         alert('Could not join: ' + error.message);
         return;
       }
-      document.getElementById('joinChallengeBtn').textContent = 'Joined ✓';
+      const btn = document.getElementById('joinChallengeBtn');
+      if (btn.textContent !== 'Joined ✓') burstConfetti();
+      btn.textContent = 'Joined ✓';
       await loadChallenge();
       await loadLeaderboard();
     });
@@ -1203,7 +1247,26 @@
     await loadTopRecipes();
     await loadTrendingIngredients();
     await loadTopContributors();
+    showWelcomeModalIfFirstVisit();
   })();
+
+  function showWelcomeModalIfFirstVisit() {
+    let seen = false;
+    try {
+      seen = localStorage.getItem('cookzer-welcomed') === '1';
+    } catch (e) {
+      // Storage blocked — just skip the modal rather than show it every load.
+      return;
+    }
+    if (seen) return;
+    document.getElementById('welcomeModal').classList.add('open');
+  }
+
+  const welcomeModal = document.getElementById('welcomeModal');
+  document.getElementById('welcomeDismissBtn').addEventListener('click', () => {
+    welcomeModal.classList.remove('open');
+    try { localStorage.setItem('cookzer-welcomed', '1'); } catch (e) { /* nothing to persist to */ }
+  });
 </script>
 </body>
 </html>
