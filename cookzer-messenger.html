@@ -604,10 +604,13 @@
     return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
   }
 
+  const REACTION_EMOJIS = ['❤️', '😂', '👍', '😮', '😢'];
+
   function appendBubble(messagesEl, msg) {
     const row = document.createElement('div');
     row.className = 'bubble-row ' + (msg.sender_id === currentUser.id ? 'sent' : 'received');
     row.dataset.createdAt = msg.created_at;
+    row.dataset.messageId = msg.id || '';
     const bubbleWrap = document.createElement('div');
     bubbleWrap.className = 'bubble-wrap';
 
@@ -630,11 +633,114 @@
     const time = document.createElement('div');
     time.className = 'bubble-time';
     time.textContent = formatTime(msg.created_at);
-
     bubbleWrap.appendChild(time);
+
+    if (msg.id) {
+      const reactionsRow = document.createElement('div');
+      reactionsRow.className = 'reactions-row';
+      reactionsRow.id = 'reactions-' + msg.id;
+      reactionsRow.style.display = 'flex';
+      reactionsRow.style.gap = '4px';
+      reactionsRow.style.marginTop = '2px';
+      reactionsRow.style.flexWrap = 'wrap';
+
+      const addBtn = document.createElement('button');
+      addBtn.textContent = '🙂+';
+      addBtn.type = 'button';
+      addBtn.style.background = 'none';
+      addBtn.style.border = 'none';
+      addBtn.style.cursor = 'pointer';
+      addBtn.style.fontSize = '11px';
+      addBtn.style.color = 'var(--ink-soft)';
+      addBtn.addEventListener('click', () => toggleReactionPicker(msg.id, reactionsRow));
+      reactionsRow.appendChild(addBtn);
+      bubbleWrap.appendChild(reactionsRow);
+    }
+
     row.appendChild(bubbleWrap);
     messagesEl.appendChild(row);
     messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  async function loadReactions(messageIds) {
+    if (!messageIds || messageIds.length === 0) return;
+    const { data } = await sb
+      .from('message_reactions')
+      .select('message_id, user_id, emoji')
+      .in('message_id', messageIds);
+
+    const byMessage = {};
+    (data || []).forEach((r) => {
+      if (!byMessage[r.message_id]) byMessage[r.message_id] = [];
+      byMessage[r.message_id].push(r);
+    });
+
+    messageIds.forEach((id) => renderReactionSummary(id, byMessage[id] || []));
+  }
+
+  function renderReactionSummary(messageId, reactions) {
+    const row = document.getElementById('reactions-' + messageId);
+    if (!row) return;
+    row.querySelectorAll('.reaction-pill').forEach((el) => el.remove());
+
+    const counts = {};
+    reactions.forEach((r) => { counts[r.emoji] = (counts[r.emoji] || 0) + 1; });
+    const mine = reactions.find((r) => r.user_id === currentUser.id);
+
+    Object.entries(counts).forEach(([emoji, count]) => {
+      const pill = document.createElement('span');
+      pill.className = 'reaction-pill';
+      pill.textContent = emoji + ' ' + count;
+      pill.style.fontSize = '11px';
+      pill.style.background = 'var(--cream)';
+      pill.style.border = '1px solid var(--line)';
+      pill.style.borderRadius = '10px';
+      pill.style.padding = '1px 6px';
+      pill.style.cursor = 'pointer';
+      if (mine && mine.emoji === emoji) pill.style.borderColor = 'var(--olive)';
+      pill.addEventListener('click', () => setReaction(messageId, mine && mine.emoji === emoji ? null : emoji));
+      row.insertBefore(pill, row.firstChild);
+    });
+  }
+
+  async function setReaction(messageId, emoji) {
+    if (emoji === null) {
+      await sb.from('message_reactions').delete().eq('message_id', messageId).eq('user_id', currentUser.id);
+    } else {
+      await sb.from('message_reactions').upsert(
+        { message_id: messageId, user_id: currentUser.id, emoji },
+        { onConflict: 'message_id,user_id' }
+      );
+    }
+    const { data } = await sb.from('message_reactions').select('message_id, user_id, emoji').eq('message_id', messageId);
+    renderReactionSummary(messageId, data || []);
+  }
+
+  function toggleReactionPicker(messageId, reactionsRow) {
+    const existing = reactionsRow.querySelector('.reaction-picker');
+    if (existing) {
+      existing.remove();
+      return;
+    }
+    const picker = document.createElement('div');
+    picker.className = 'reaction-picker';
+    picker.style.display = 'flex';
+    picker.style.gap = '4px';
+    REACTION_EMOJIS.forEach((emoji) => {
+      const btn = document.createElement('button');
+      btn.textContent = emoji;
+      btn.type = 'button';
+      btn.style.background = 'none';
+      btn.style.border = 'none';
+      btn.style.cursor = 'pointer';
+      btn.style.fontSize = '14px';
+      btn.addEventListener('click', async () => {
+        picker.remove();
+        await setReaction(messageId, emoji);
+      });
+      picker.appendChild(btn);
+    });
+    reactionsRow.appendChild(picker);
   }
 
   // Shows "Seen" under the most recent message I sent, if the other
@@ -757,6 +863,7 @@
     (messages || []).forEach((m) => appendBubble(messagesEl, m));
     messagesEl.scrollTop = messagesEl.scrollHeight;
     await markSeenReceipt(messagesEl, conv);
+    await loadReactions((messages || []).map((m) => m.id));
 
     if (activeChannel) sb.removeChannel(activeChannel);
     activeChannel = sb

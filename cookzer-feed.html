@@ -156,6 +156,49 @@
       color: var(--olive);
     }
 
+  .composer-mood-chip {
+      padding: 5px 12px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      font-size: 12px;
+      color: var(--ink-soft);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+  .composer-mood-chip:hover { border-color: var(--mustard); }
+
+  .composer-mood-chip.active { background: var(--mustard); color: #fff; border-color: var(--mustard); }
+
+  #feedList {
+      width: 100%;
+    }
+
+  .skeleton-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      margin-bottom: 24px;
+      overflow: hidden;
+      width: 100%;
+      padding: 16px;
+    }
+
+  .skeleton-line {
+      height: 14px;
+      border-radius: 7px;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, var(--line) 25%, var(--cream) 50%, var(--line) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.4s ease-in-out infinite;
+    }
+
+  @keyframes skeleton-shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
   /* Feed cards */
     .feed-card {
       background: var(--card-bg);
@@ -692,6 +735,11 @@
         📍 <span id="restaurantTagName"></span>
         <button type="button" id="restaurantTagRemove" style="background:none; border:none; color:var(--brick); cursor:pointer; font-size:13px;">✕</button>
       </div>
+      <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">
+        <div class="composer-mood-chip" data-mood="Comfort food">🍲 Comfort food</div>
+        <div class="composer-mood-chip" data-mood="Quick and easy">⚡ Quick &amp; easy</div>
+        <div class="composer-mood-chip" data-mood="Fancy tonight">✨ Fancy tonight</div>
+      </div>
       <div style="display:flex; justify-content:flex-end; margin-top:10px;">
         <button class="challenge-btn" id="composerPostBtn" type="button" style="background:var(--olive); color:#fff;">Post</button>
       </div>
@@ -807,6 +855,20 @@
       btn.style.background = '';
       btn.style.color = '';
     }
+  });
+
+  let selectedMood = null;
+  document.querySelectorAll('.composer-mood-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const isActive = chip.classList.contains('active');
+      document.querySelectorAll('.composer-mood-chip').forEach((c) => c.classList.remove('active'));
+      if (isActive) {
+        selectedMood = null;
+      } else {
+        chip.classList.add('active');
+        selectedMood = chip.dataset.mood;
+      }
+    });
   });
 
   document.getElementById('composerPostBtn').addEventListener('click', createPost);
@@ -944,8 +1006,12 @@
 
   async function createPost() {
     const captionInput = document.getElementById('postCaption');
-    const caption = captionInput.value.trim();
+    let caption = captionInput.value.trim();
     if (!caption && !pendingPhotoFile) return;
+
+    if (selectedMood) {
+      caption = caption ? selectedMood + ' — ' + caption : selectedMood;
+    }
 
     let photoPath = null;
     if (pendingPhotoFile) {
@@ -980,6 +1046,8 @@
     document.getElementById('restaurantTag').hidden = true;
     document.getElementById('restaurantPanel').hidden = true;
     selectedRestaurant = null;
+    document.querySelectorAll('.composer-mood-chip').forEach((c) => c.classList.remove('active'));
+    selectedMood = null;
 
     await loadFeed();
   }
@@ -1063,8 +1131,14 @@
     commentBtn.className = 'action-btn';
     commentBtn.textContent = '💬 Comment';
     commentBtn.addEventListener('click', () => toggleCommentBox(post.id));
+    const bookmarkBtn = document.createElement('button');
+    bookmarkBtn.className = 'action-btn';
+    bookmarkBtn.id = 'bookmarkBtn-' + post.id;
+    bookmarkBtn.textContent = '🔖 Save';
+    bookmarkBtn.addEventListener('click', () => toggleBookmark(post.id));
     actions.appendChild(heartBtn);
     actions.appendChild(commentBtn);
+    actions.appendChild(bookmarkBtn);
     content.appendChild(actions);
 
     const commentBox = document.createElement('div');
@@ -1093,15 +1167,43 @@
       .eq('user_id', currentUser.id)
       .maybeSingle();
 
+    const { data: bookmarked } = await sb
+      .from('post_bookmarks')
+      .select('post_id')
+      .eq('post_id', postId)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
     const heartEl = document.getElementById('heartCount-' + postId);
     const commentEl = document.getElementById('commentCount-' + postId);
     const heartBtn = document.getElementById('heartBtn-' + postId);
+    const bookmarkBtn = document.getElementById('bookmarkBtn-' + postId);
     if (heartEl) heartEl.textContent = '❤️ ' + (heartCount || 0) + ' hearts';
     if (commentEl) commentEl.textContent = '💬 ' + (commentCount || 0) + ' comments';
     if (heartBtn) {
       heartBtn.textContent = mine ? '❤️ Hearted' : '❤️ Heart';
       heartBtn.style.color = mine ? 'var(--brick)' : '';
     }
+    if (bookmarkBtn) {
+      bookmarkBtn.textContent = bookmarked ? '🔖 Saved' : '🔖 Save';
+      bookmarkBtn.style.color = bookmarked ? 'var(--olive)' : '';
+    }
+  }
+
+  async function toggleBookmark(postId) {
+    const { data: bookmarked } = await sb
+      .from('post_bookmarks')
+      .select('post_id')
+      .eq('post_id', postId)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    if (bookmarked) {
+      await sb.from('post_bookmarks').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+    } else {
+      await sb.from('post_bookmarks').insert({ post_id: postId, user_id: currentUser.id });
+    }
+    await refreshPostStats(postId);
   }
 
   async function toggleHeart(postId) {
@@ -1186,9 +1288,24 @@
     await refreshPostStats(postId);
   }
 
-  async function loadFeed() {
+  function showFeedSkeleton() {
     const listEl = document.getElementById('feedList');
     listEl.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const card = document.createElement('div');
+      card.className = 'skeleton-card';
+      card.innerHTML =
+        '<div class="skeleton-line" style="width:40%;"></div>' +
+        '<div class="skeleton-line" style="width:90%; height:140px;"></div>' +
+        '<div class="skeleton-line" style="width:70%;"></div>' +
+        '<div class="skeleton-line" style="width:50%;"></div>';
+      listEl.appendChild(card);
+    }
+  }
+
+  async function loadFeed() {
+    const listEl = document.getElementById('feedList');
+    showFeedSkeleton();
 
     const { data: posts, error } = await sb
       .from('posts')
@@ -1196,6 +1313,7 @@
       .order('created_at', { ascending: false })
       .limit(30);
 
+    listEl.innerHTML = '';
     document.getElementById('feedEmpty').hidden = !!(posts && posts.length);
 
     if (error || !posts) return;
