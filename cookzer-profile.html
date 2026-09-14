@@ -475,6 +475,16 @@
 <div class="modal-overlay" id="editModal">
   <div class="modal-card">
     <h3>Edit profile</h3>
+    <div class="field">
+      <label>Profile photo</label>
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div class="profile-avatar" id="editAvatarPreview" style="width:64px; height:64px; font-size:22px; margin:0;">--</div>
+        <div>
+          <button type="button" class="btn-secondary" id="editAvatarBtn" style="padding:7px 14px; font-size:13px;">Change photo</button>
+          <input type="file" id="editAvatarInput" accept="image/*" hidden>
+        </div>
+      </div>
+    </div>
     <div class="field"><label>Display name</label><input type="text" id="editName"></div>
     <div class="field"><label>Bio</label><textarea id="editBio"></textarea></div>
     <div class="field"><label>Location</label><input type="text" id="editLocation"></div>
@@ -680,6 +690,8 @@
 
   // ----- Edit profile modal -----
   const editModal = document.getElementById('editModal');
+  let selectedAvatarFile = null;
+
   function openEditModal() {
     document.getElementById('editName').value = viewedProfile.display_name || '';
     document.getElementById('editBio').value = viewedProfile.bio || '';
@@ -688,18 +700,58 @@
     document.getElementById('editCvTitle').value = viewedProfile.cv_title || '';
     document.getElementById('editCvBio').value = viewedProfile.cv_bio || '';
     document.getElementById('editOpenToWork').checked = !!viewedProfile.open_to_work;
+    selectedAvatarFile = null;
+    const preview = document.getElementById('editAvatarPreview');
+    if (viewedProfile.avatar_url) {
+      preview.style.backgroundImage = "url('" + viewedProfile.avatar_url + "')";
+      preview.style.backgroundSize = 'cover';
+      preview.style.backgroundPosition = 'center';
+      preview.textContent = '';
+    } else {
+      preview.style.backgroundImage = '';
+      preview.textContent = viewedProfile.initials;
+    }
     editModal.classList.add('open');
   }
   document.getElementById('editCancelBtn').addEventListener('click', () => editModal.classList.remove('open'));
 
+  document.getElementById('editAvatarBtn').addEventListener('click', () => {
+    document.getElementById('editAvatarInput').click();
+  });
+
+  document.getElementById('editAvatarInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    selectedAvatarFile = file;
+    const preview = document.getElementById('editAvatarPreview');
+    preview.style.backgroundImage = "url('" + URL.createObjectURL(file) + "')";
+    preview.style.backgroundSize = 'cover';
+    preview.style.backgroundPosition = 'center';
+    preview.textContent = '';
+  });
+
   document.getElementById('editSaveBtn').addEventListener('click', async () => {
     const name = document.getElementById('editName').value.trim();
     if (!name) return;
+
+    let avatarUrl = viewedProfile.avatar_url || null;
+    if (selectedAvatarFile) {
+      const ext = (selectedAvatarFile.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
+      const { error: uploadErr } = await sb.storage.from('avatars').upload(path, selectedAvatarFile);
+      if (uploadErr) {
+        alert('Could not upload photo: ' + uploadErr.message);
+        return;
+      }
+      avatarUrl = sb.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+    }
+
     const payload = {
       display_name: name,
       initials: name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(),
       bio: document.getElementById('editBio').value.trim() || null,
       location: document.getElementById('editLocation').value.trim() || null,
+      avatar_url: avatarUrl,
       is_kitchen_cv: document.getElementById('editKitchenCv').checked,
       cv_title: document.getElementById('editCvTitle').value.trim() || null,
       cv_bio: document.getElementById('editCvBio').value.trim() || null,

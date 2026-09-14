@@ -382,6 +382,23 @@
         await sb.from('saved_recipes').update({ note: newNote }).eq('user_id', currentUser.id).eq('recipe_id', s.recipe_id);
         await loadSavedRecipes();
       });
+      const moveBtn = document.createElement('span');
+      moveBtn.className = 'action-icon';
+      moveBtn.textContent = '📁';
+      moveBtn.title = 'Move to a cookbook';
+      moveBtn.addEventListener('click', async () => {
+        if (folders.length === 0) {
+          alert('Create a cookbook folder first (the "+ New folder" tile above).');
+          return;
+        }
+        const listText = folders.map((f, i) => (i + 1) + '. ' + f.emoji + ' ' + f.name).join('\n');
+        const pick = prompt('Move to which cookbook? Enter a number, or 0 for no folder:\n' + listText, folder ? String(folders.indexOf(folder) + 1) : '0');
+        if (pick === null) return;
+        const idx = parseInt(pick, 10);
+        const newFolderId = idx > 0 && folders[idx - 1] ? folders[idx - 1].id : null;
+        await sb.from('saved_recipes').update({ folder_id: newFolderId }).eq('user_id', currentUser.id).eq('recipe_id', s.recipe_id);
+        await loadSavedRecipes();
+      });
       const removeBtn = document.createElement('span');
       removeBtn.className = 'action-icon';
       removeBtn.textContent = '🗑️';
@@ -391,6 +408,7 @@
         await loadSavedRecipes();
       });
       actions.appendChild(noteBtn);
+      actions.appendChild(moveBtn);
       actions.appendChild(removeBtn);
 
       item.appendChild(thumb);
