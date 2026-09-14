@@ -127,6 +127,23 @@
       background: none; border: none; color: var(--ink-soft); font-size: 16px; cursor: pointer;
     }
 
+  .drag-handle {
+      color: var(--ink-soft);
+      font-size: 16px;
+      cursor: grab;
+      padding: 0 2px;
+      line-height: 1;
+    }
+
+  .planner-day.dragging {
+      opacity: 0.4;
+    }
+
+  .planner-day.drag-over {
+      border-color: var(--olive);
+      box-shadow: 0 0 0 2px var(--olive) inset;
+    }
+
   .shopping-list { text-align: left; background: var(--cream); border-radius: 14px; padding: 14px; margin-bottom: 16px; }
 
   .shopping-list-item { font-size: 13px; padding: 4px 0; color: var(--ink); border-bottom: 1px solid var(--line); }
@@ -395,6 +412,35 @@
       const entry = entriesByDate[date];
       const row = document.createElement('div');
       row.className = 'planner-day';
+      row.dataset.date = date;
+
+      row.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        row.classList.add('drag-over');
+      });
+      row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+      row.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        row.classList.remove('drag-over');
+        const sourceDate = e.dataTransfer.getData('text/plain');
+        if (!sourceDate || sourceDate === date) return;
+        await swapMeals(sourceDate, date);
+      });
+
+      if (entry) {
+        const handle = document.createElement('span');
+        handle.className = 'drag-handle';
+        handle.textContent = '⠿';
+        handle.draggable = true;
+        handle.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', date);
+          e.dataTransfer.effectAllowed = 'move';
+          row.classList.add('dragging');
+        });
+        handle.addEventListener('dragend', () => row.classList.remove('dragging'));
+        row.appendChild(handle);
+      }
 
       const label = document.createElement('div');
       label.className = 'day-label';
@@ -448,6 +494,20 @@
 
       grid.appendChild(row);
     });
+  }
+
+  async function swapMeals(sourceDate, targetDate) {
+    const sourceEntry = entriesByDate[sourceDate];
+    const targetEntry = entriesByDate[targetDate];
+    if (!sourceEntry) return;
+
+    if (targetEntry) {
+      await sb.from('meal_plan_entries').update({ plan_date: targetDate }).eq('id', sourceEntry.id);
+      await sb.from('meal_plan_entries').update({ plan_date: sourceDate }).eq('id', targetEntry.id);
+    } else {
+      await sb.from('meal_plan_entries').update({ plan_date: targetDate }).eq('id', sourceEntry.id);
+    }
+    await loadWeek();
   }
 
   async function openAddMeal(date) {
