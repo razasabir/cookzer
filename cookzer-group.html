@@ -113,6 +113,68 @@
       border: 1px solid var(--line);
     }
 
+  .header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+  .admin-btn {
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--cream);
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+  .admin-btn.danger { color: var(--brick); }
+
+  .members-section {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+
+  .members-section-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--ink-soft);
+      margin-bottom: 10px;
+    }
+
+  .member-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-top: 1px solid var(--line);
+    }
+
+  .member-row:first-child { border-top: none; }
+
+  .member-avatar {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; font-size: 12px;
+    }
+
+  .member-name { flex: 1; font-size: 13.5px; color: var(--ink); text-decoration: none; }
+  .member-name:hover { color: var(--olive-dark); }
+  .member-owner-tag { font-size: 11px; color: var(--ink-soft); }
+
+  .member-remove-btn {
+      background: none;
+      border: none;
+      color: var(--brick);
+      font-size: 12px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
   /* Composer (simplified: caption + photo) */
     .composer {
       background: var(--card-bg);
@@ -352,10 +414,19 @@
             <div class="group-name" id="groupName">Loading…</div>
             <div class="group-member-count" id="groupMemberCount"></div>
           </div>
-          <button class="join-btn" id="joinGroupBtn" type="button">Join</button>
+          <div class="header-actions">
+            <button class="join-btn" id="joinGroupBtn" type="button">Join</button>
+            <button class="admin-btn" id="editGroupBtn" type="button" hidden>Edit</button>
+            <button class="admin-btn danger" id="deleteGroupBtn" type="button" hidden>Delete</button>
+          </div>
         </div>
         <div class="group-desc" id="groupDesc"></div>
       </div>
+    </div>
+
+    <div class="members-section">
+      <div class="members-section-title">Members</div>
+      <div id="membersList"></div>
     </div>
 
     <div class="composer">
@@ -406,10 +477,12 @@
     return days + ' day' + (days === 1 ? '' : 's') + ' ago';
   }
 
+  let isCreator = false;
+
   async function loadGroup() {
     const { data: group } = await sb
       .from('groups')
-      .select('id, name, description, cover_gradient')
+      .select('id, name, description, cover_gradient, created_by')
       .eq('id', groupId)
       .single();
 
@@ -424,8 +497,72 @@
     document.getElementById('groupDesc').textContent = group.description || '';
     document.getElementById('groupDesc').hidden = !group.description;
 
-    const { count: memberCount } = await sb.from('group_members').select('*', { count: 'exact', head: true }).eq('group_id', groupId);
-    document.getElementById('groupMemberCount').textContent = (memberCount || 0) + (memberCount === 1 ? ' member' : ' members');
+    isCreator = group.created_by === currentUser.id;
+    document.getElementById('editGroupBtn').hidden = !isCreator;
+    document.getElementById('deleteGroupBtn').hidden = !isCreator;
+
+    document.getElementById('editGroupBtn').onclick = async () => {
+      const name = prompt('Group name:', group.name);
+      if (!name || !name.trim()) return;
+      const description = prompt('Group description (optional):', group.description || '');
+      const { error } = await sb.from('groups').update({ name: name.trim(), description: (description || '').trim() || null }).eq('id', groupId);
+      if (error) alert('Could not save: ' + error.message);
+      else await loadGroup();
+    };
+
+    document.getElementById('deleteGroupBtn').onclick = async () => {
+      if (!confirm('Delete "' + group.name + '"? This removes all its posts and can\'t be undone.')) return;
+      const { error } = await sb.from('groups').delete().eq('id', groupId);
+      if (error) { alert('Could not delete: ' + error.message); return; }
+      window.location.href = 'cookzer-groups.html';
+    };
+
+    const { data: members } = await sb
+      .from('group_members')
+      .select('user_id, profiles(display_name, initials)')
+      .eq('group_id', groupId)
+      .order('joined_at', { ascending: true });
+
+    document.getElementById('groupMemberCount').textContent = (members ? members.length : 0) + ((members && members.length === 1) ? ' member' : ' members');
+
+    const membersListEl = document.getElementById('membersList');
+    membersListEl.innerHTML = '';
+    (members || []).filter((m) => m.profiles).forEach((m) => {
+      const row = document.createElement('div');
+      row.className = 'member-row';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'member-avatar';
+      avatar.textContent = m.profiles.initials || '??';
+
+      const name = document.createElement('a');
+      name.className = 'member-name';
+      name.href = 'cookzer-profile.html?id=' + m.user_id;
+      name.textContent = m.profiles.display_name || 'Someone';
+
+      row.appendChild(avatar);
+      row.appendChild(name);
+
+      if (m.user_id === group.created_by) {
+        const tag = document.createElement('span');
+        tag.className = 'member-owner-tag';
+        tag.textContent = 'Owner';
+        row.appendChild(tag);
+      } else if (isCreator) {
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'member-remove-btn';
+        removeBtn.type = 'button';
+        removeBtn.textContent = 'Remove';
+        removeBtn.addEventListener('click', async () => {
+          if (!confirm('Remove ' + (m.profiles.display_name || 'this member') + ' from the group?')) return;
+          await sb.from('group_members').delete().eq('group_id', groupId).eq('user_id', m.user_id);
+          await loadGroup();
+        });
+        row.appendChild(removeBtn);
+      }
+
+      membersListEl.appendChild(row);
+    });
 
     const { data: mine } = await sb
       .from('group_members')
