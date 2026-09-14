@@ -224,6 +224,41 @@
       transform: translateY(-4px);
     }
 
+  .milestone-tile {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+  .milestone-tile:hover {
+      transform: translateY(-4px);
+    }
+
+  .milestone-tile.locked {
+      opacity: 0.45;
+      filter: grayscale(1);
+    }
+
+  .milestone-tile.unlocked {
+      border-color: var(--mustard);
+    }
+
+  .milestone-caption {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink);
+      margin-top: 4px;
+    }
+
+  .milestone-status {
+      font-size: 11px;
+      color: var(--ink-soft);
+      margin-top: 2px;
+    }
+
   .badge-icon {
       font-size: 40px;
       margin-bottom: 8px;
@@ -461,6 +496,12 @@
       </div>
     </div>
 
+    <!-- Milestones (locked/unlocked achievement preview) -->
+    <div class="profile-section">
+      <h2 class="section-title">Milestones</h2>
+      <div class="badges-grid" id="milestonesGrid"></div>
+    </div>
+
     <!-- Posts Section -->
     <div class="profile-section">
       <h2 class="section-title" id="recipesSectionTitle">Recipes</h2>
@@ -684,6 +725,46 @@
 
     const { count: challengeCount } = await sb.from('challenge_entries').select('*', { count: 'exact', head: true }).eq('user_id', viewedId);
     document.getElementById('badgeChallenges').textContent = (challengeCount || 0) + ' challenges joined';
+
+    renderMilestoneBadges({
+      cookIns: cookIns ? cookIns.length : 0,
+      streak: computeStreak(cookIns || []),
+      recipeCount: recipeCount || 0,
+      challengeCount: challengeCount || 0,
+      followerCount: followerCount || 0,
+    });
+  }
+
+  const MILESTONES = [
+    { icon: '🌱', label: 'First Cook-in', check: (s) => s.cookIns >= 1, hint: 'Log your first cook-in' },
+    { icon: '🔥', label: '5-Day Streak', check: (s) => s.streak >= 5, hint: 'Cook 5 days in a row' },
+    { icon: '📚', label: 'Recipe Creator', check: (s) => s.recipeCount >= 5, hint: 'Publish 5 recipes' },
+    { icon: '🏆', label: 'Challenge Champion', check: (s) => s.challengeCount >= 3, hint: 'Join 3 weekly challenges' },
+    { icon: '⭐', label: 'Community Favorite', check: (s) => s.followerCount >= 10, hint: 'Reach 10 followers' },
+    { icon: '👨‍🍳', label: 'Master Chef', check: (s) => s.cookIns >= 20, hint: 'Log 20 cook-ins' },
+  ];
+
+  function renderMilestoneBadges(stats) {
+    const grid = document.getElementById('milestonesGrid');
+    grid.innerHTML = '';
+    MILESTONES.forEach((m) => {
+      const unlocked = m.check(stats);
+      const tile = document.createElement('div');
+      tile.className = 'milestone-tile ' + (unlocked ? 'unlocked' : 'locked');
+      const icon = document.createElement('span');
+      icon.className = 'badge-icon';
+      icon.textContent = unlocked ? m.icon : '🔒';
+      const caption = document.createElement('div');
+      caption.className = 'milestone-caption';
+      caption.textContent = m.label;
+      const status = document.createElement('div');
+      status.className = 'milestone-status';
+      status.textContent = unlocked ? 'Unlocked' : m.hint;
+      tile.appendChild(icon);
+      tile.appendChild(caption);
+      tile.appendChild(status);
+      grid.appendChild(tile);
+    });
   }
 
   function computeStreak(cookIns) {
