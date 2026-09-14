@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabase-config.js"></script>
+  <script src="bunny-config.js"></script>
   <script src="auth-guard.js"></script>
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
@@ -26,7 +27,7 @@
 
   .avatar {
       width: 36px; height: 36px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
       display: flex; align-items: center; justify-content: center;
       color: #fff; font-weight: 600; cursor: pointer;
     }
@@ -79,7 +80,7 @@
       width: 120px;
       height: 120px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -204,7 +205,7 @@
   .badges-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-      gap: 16px;
+      gap: 12px;
       margin-bottom: 32px;
       width: 100%;
       max-width: 500px;
@@ -213,56 +214,78 @@
   .badge-tile {
       background: var(--card-bg);
       border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 20px;
+      border-radius: 14px;
+      padding: 16px 12px;
       text-align: center;
-      transition: all 0.2s;
+      transition: border-color 0.2s;
     }
 
   .badge-tile:hover {
-      border-color: var(--mustard);
-      transform: translateY(-4px);
+      border-color: var(--olive);
+    }
+
+  .badge-number {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--olive-dark);
+      font-family: 'Fraunces', serif;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+  .milestones-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 32px;
     }
 
   .milestone-tile {
       background: var(--card-bg);
       border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 20px;
-      text-align: center;
-      transition: all 0.2s;
-    }
-
-  .milestone-tile:hover {
-      transform: translateY(-4px);
-    }
-
-  .milestone-tile.locked {
-      opacity: 0.45;
-      filter: grayscale(1);
+      border-radius: 14px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: border-color 0.2s;
     }
 
   .milestone-tile.unlocked {
-      border-color: var(--mustard);
+      border-color: var(--olive);
     }
 
+  .milestone-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 2px solid var(--line);
+    }
+
+  .milestone-tile.unlocked .milestone-dot {
+      background: var(--olive);
+      border-color: var(--olive);
+    }
+
+  .milestone-text { flex: 1; min-width: 0; }
+
   .milestone-caption {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 500;
       color: var(--ink);
-      margin-top: 4px;
+    }
+
+  .milestone-tile.locked .milestone-caption {
+      color: var(--ink-soft);
     }
 
   .milestone-status {
       font-size: 11px;
       color: var(--ink-soft);
-      margin-top: 2px;
-    }
-
-  .badge-icon {
-      font-size: 40px;
-      margin-bottom: 8px;
-      display: block;
+      margin-top: 1px;
     }
 
   .badge-label {
@@ -331,6 +354,65 @@
   .post-card:hover {
       transform: translateY(-4px);
       border-color: var(--mustard);
+    }
+
+  .activity-list {
+      width: 100%;
+      max-width: 700px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+
+  .activity-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+  .activity-time {
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin-bottom: 8px;
+    }
+
+  .activity-caption {
+      font-size: 14px;
+      color: var(--ink);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+  .activity-media {
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+  .activity-media img {
+      width: 100%;
+      max-height: 360px;
+      object-fit: cover;
+      display: block;
+    }
+
+  .activity-media iframe {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border: 0;
+      display: block;
+      background: #000;
+    }
+
+  .activity-recipe-link {
+      display: block;
+      font-weight: 600;
+      color: var(--olive-dark);
+      text-decoration: none;
+      margin-top: 4px;
     }
 
   .post-overlay {
@@ -478,20 +560,20 @@
       <h2 class="section-title">Achievements</h2>
       <div class="badges-grid">
         <div class="badge-tile">
-          <span class="badge-icon">🍳</span>
-          <span class="badge-label" id="badgeCookIns">0 cook-ins logged</span>
+          <span class="badge-number" id="badgeCookInsNum">0</span>
+          <span class="badge-label">cook-ins logged</span>
         </div>
         <div class="badge-tile">
-          <span class="badge-icon">🔥</span>
-          <span class="badge-label" id="badgeStreak">0-day streak</span>
+          <span class="badge-number" id="badgeStreakNum">0</span>
+          <span class="badge-label">day streak</span>
         </div>
         <div class="badge-tile">
-          <span class="badge-icon">🏆</span>
-          <span class="badge-label" id="badgeChallenges">0 challenges joined</span>
+          <span class="badge-number" id="badgeChallengesNum">0</span>
+          <span class="badge-label">challenges joined</span>
         </div>
         <div class="badge-tile">
-          <span class="badge-icon">👥</span>
-          <span class="badge-label" id="badgeFollowers">0 followers</span>
+          <span class="badge-number" id="badgeFollowersNum">0</span>
+          <span class="badge-label">followers</span>
         </div>
       </div>
     </div>
@@ -499,7 +581,7 @@
     <!-- Milestones (locked/unlocked achievement preview) -->
     <div class="profile-section">
       <h2 class="section-title">Milestones</h2>
-      <div class="badges-grid" id="milestonesGrid"></div>
+      <div class="milestones-list" id="milestonesGrid"></div>
     </div>
 
     <!-- Posts Section -->
@@ -507,13 +589,15 @@
       <h2 class="section-title" id="recipesSectionTitle">Recipes</h2>
 
       <div class="tabs">
-        <div class="tab active" data-view="grid">Grid view</div>
+        <div class="tab active" data-view="activity" id="activityTab">Activity</div>
+        <div class="tab" data-view="grid">Grid view</div>
         <div class="tab" data-view="list">List view</div>
         <div class="tab" data-view="saved" id="savedTab">Saved</div>
         <div class="tab" data-view="bookmarks" id="bookmarksTab">Saved Posts</div>
       </div>
 
-      <div class="posts-grid" id="postsGrid"></div>
+      <div class="activity-list" id="activityList"></div>
+      <div class="posts-grid" id="postsGrid" hidden></div>
     </div>
 
   </div>
@@ -557,11 +641,22 @@
   let currentUser = null;
   let viewedProfile = null;
   let viewedId = params.get('id');
-  let currentView = 'grid';
+  let currentView = 'activity';
+
+  function publicUrl(bucket, path) {
+    if (!path) return null;
+    return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  }
+
+  function formatActivityTime(iso) {
+    return new Date(iso).toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    });
+  }
 
   const BANNER_PRESETS = [
     'linear-gradient(135deg, var(--olive), var(--olive-dark))',
-    'linear-gradient(135deg, var(--mustard), var(--brick))',
+    'linear-gradient(135deg, var(--olive), var(--olive-dark))',
     'linear-gradient(135deg, #6B8CBE, #3E5C8A)',
     'linear-gradient(135deg, #D97AA0, #A94E6E)',
     'linear-gradient(135deg, #8A6BBE, #5C3E8A)',
@@ -717,14 +812,14 @@
     document.getElementById('statFollowers').textContent = followerCount || 0;
     document.getElementById('statFollowing').textContent = followingCount || 0;
     document.getElementById('statRemade').textContent = remadeCount;
-    document.getElementById('badgeFollowers').textContent = (followerCount || 0) + ' followers';
+    document.getElementById('badgeFollowersNum').textContent = followerCount || 0;
 
     const { data: cookIns } = await sb.from('posts').select('created_at').eq('author_id', viewedId).eq('kind', 'cook_in').order('created_at', { ascending: false });
-    document.getElementById('badgeCookIns').textContent = (cookIns ? cookIns.length : 0) + ' cook-ins logged';
-    document.getElementById('badgeStreak').textContent = computeStreak(cookIns || []) + '-day streak';
+    document.getElementById('badgeCookInsNum').textContent = cookIns ? cookIns.length : 0;
+    document.getElementById('badgeStreakNum').textContent = computeStreak(cookIns || []);
 
     const { count: challengeCount } = await sb.from('challenge_entries').select('*', { count: 'exact', head: true }).eq('user_id', viewedId);
-    document.getElementById('badgeChallenges').textContent = (challengeCount || 0) + ' challenges joined';
+    document.getElementById('badgeChallengesNum').textContent = challengeCount || 0;
 
     renderMilestoneBadges({
       cookIns: cookIns ? cookIns.length : 0,
@@ -736,12 +831,12 @@
   }
 
   const MILESTONES = [
-    { icon: '🌱', label: 'First Cook-in', check: (s) => s.cookIns >= 1, hint: 'Log your first cook-in' },
-    { icon: '🔥', label: '5-Day Streak', check: (s) => s.streak >= 5, hint: 'Cook 5 days in a row' },
-    { icon: '📚', label: 'Recipe Creator', check: (s) => s.recipeCount >= 5, hint: 'Publish 5 recipes' },
-    { icon: '🏆', label: 'Challenge Champion', check: (s) => s.challengeCount >= 3, hint: 'Join 3 weekly challenges' },
-    { icon: '⭐', label: 'Community Favorite', check: (s) => s.followerCount >= 10, hint: 'Reach 10 followers' },
-    { icon: '👨‍🍳', label: 'Master Chef', check: (s) => s.cookIns >= 20, hint: 'Log 20 cook-ins' },
+    { label: 'First Cook-in', check: (s) => s.cookIns >= 1, hint: 'Log your first cook-in' },
+    { label: '5-Day Streak', check: (s) => s.streak >= 5, hint: 'Cook 5 days in a row' },
+    { label: 'Recipe Creator', check: (s) => s.recipeCount >= 5, hint: 'Publish 5 recipes' },
+    { label: 'Challenge Champion', check: (s) => s.challengeCount >= 3, hint: 'Join 3 weekly challenges' },
+    { label: 'Community Favorite', check: (s) => s.followerCount >= 10, hint: 'Reach 10 followers' },
+    { label: 'Master Chef', check: (s) => s.cookIns >= 20, hint: 'Log 20 cook-ins' },
   ];
 
   function renderMilestoneBadges(stats) {
@@ -751,18 +846,20 @@
       const unlocked = m.check(stats);
       const tile = document.createElement('div');
       tile.className = 'milestone-tile ' + (unlocked ? 'unlocked' : 'locked');
-      const icon = document.createElement('span');
-      icon.className = 'badge-icon';
-      icon.textContent = unlocked ? m.icon : '🔒';
+      const dot = document.createElement('span');
+      dot.className = 'milestone-dot';
+      const text = document.createElement('div');
+      text.className = 'milestone-text';
       const caption = document.createElement('div');
       caption.className = 'milestone-caption';
       caption.textContent = m.label;
       const status = document.createElement('div');
       status.className = 'milestone-status';
       status.textContent = unlocked ? 'Unlocked' : m.hint;
-      tile.appendChild(icon);
-      tile.appendChild(caption);
-      tile.appendChild(status);
+      text.appendChild(caption);
+      text.appendChild(status);
+      tile.appendChild(dot);
+      tile.appendChild(text);
       grid.appendChild(tile);
     });
   }
@@ -790,7 +887,79 @@
 
   async function loadRecipesView() {
     const grid = document.getElementById('postsGrid');
+    const activityList = document.getElementById('activityList');
     grid.innerHTML = '';
+    activityList.innerHTML = '';
+    grid.hidden = currentView === 'activity';
+    activityList.hidden = currentView !== 'activity';
+
+    if (currentView === 'activity') {
+      const { data: posts } = await sb
+        .from('posts')
+        .select('id, kind, recipe_id, caption, photo_path, video_uid, restaurant_name, created_at, recipes(title, hero_photo_path)')
+        .eq('author_id', viewedId)
+        .order('created_at', { ascending: false });
+
+      if (!posts || posts.length === 0) {
+        activityList.innerHTML = '<div class="empty-note">No activity yet.</div>';
+        return;
+      }
+
+      posts.forEach((post) => {
+        const card = document.createElement('div');
+        card.className = 'activity-card';
+
+        const time = document.createElement('div');
+        time.className = 'activity-time';
+        let kindLabel = '';
+        if (post.kind === 'cook_in') kindLabel = 'Cooked this · ';
+        else if (post.kind === 'remake') kindLabel = 'Remade this · ';
+        time.textContent = kindLabel + formatActivityTime(post.created_at) + (post.restaurant_name ? ' · 📍 ' + post.restaurant_name : '');
+        card.appendChild(time);
+
+        if (post.video_uid) {
+          const media = document.createElement('div');
+          media.className = 'activity-media';
+          const iframe = document.createElement('iframe');
+          iframe.src = 'https://player.mediadelivery.net/embed/' + BUNNY_LIBRARY_ID + '/' + post.video_uid;
+          iframe.loading = 'lazy';
+          iframe.allow = 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;';
+          iframe.allowFullscreen = true;
+          media.appendChild(iframe);
+          card.appendChild(media);
+        } else {
+          const photoUrl = post.photo_path
+            ? publicUrl('post-photos', post.photo_path)
+            : (post.recipes && post.recipes.hero_photo_path ? publicUrl('recipe-photos', post.recipes.hero_photo_path) : null);
+          if (photoUrl) {
+            const media = document.createElement('div');
+            media.className = 'activity-media';
+            const img = document.createElement('img');
+            img.src = photoUrl;
+            media.appendChild(img);
+            card.appendChild(media);
+          }
+        }
+
+        if (post.recipes) {
+          const link = document.createElement('a');
+          link.className = 'activity-recipe-link';
+          link.href = 'cookzer-recipe.html?id=' + post.recipe_id;
+          link.textContent = post.recipes.title;
+          card.appendChild(link);
+        }
+
+        if (post.caption) {
+          const caption = document.createElement('div');
+          caption.className = 'activity-caption';
+          caption.textContent = post.caption;
+          card.appendChild(caption);
+        }
+
+        activityList.appendChild(card);
+      });
+      return;
+    }
 
     if (currentView === 'bookmarks') {
       const { data } = await sb
