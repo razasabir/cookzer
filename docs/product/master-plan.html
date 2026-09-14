@@ -447,7 +447,7 @@
       <li><a href="#placeholders">Placeholder audit</a></li>
       <li class="toc-heading">What's next</li>
       <li><a href="#backlog">Full backlog</a></li>
-      <li><a href="#flagged">Needs a decision</a></li>
+      <li><a href="#flagged">Long-term expansion</a></li>
       <li><a href="#now">Now bucket (20)</a></li>
       <li class="toc-heading">Reference</li>
       <li><a href="#research">Competitive research</a></li>
@@ -559,12 +559,16 @@
         <div class="shipped-item"><div class="s-num">13</div><div class="s-text"><b>Social graph, real profile &amp; Kitchen CV (Phase 3)</b><span>Follow/unfollow, a profile page driven entirely by real data and stats (recipes posted, followers, times remade, cook-in streak), an Edit profile modal, and a toggleable Kitchen CV mode.</span></div></div>
         <div class="shipped-item"><div class="s-num">14</div><div class="s-text"><b>Shopping list from Meal Planner (Phase 4)</b><span>Consolidates ingredients across a week's planned recipes into one list, grouped by ingredient name.</span></div></div>
         <div class="shipped-item"><div class="s-num">15</div><div class="s-text"><b>Real challenges backend (Phase 5)</b><span>A real Join button, category filter chips that actually filter, and a leaderboard computed from real challenge entries and heart counts.</span></div></div>
+        <div class="shipped-item"><div class="s-num">16</div><div class="s-text"><b>Dark mode, recipe scaling, and a round of Now-bucket polish</b><span>Site-wide dark mode toggle, +/- recipe scaling with real quantity math, print/share on recipes, a live challenge countdown, message read receipts, keyboard shortcuts, a weekly nutrition summary, a first-time welcome modal, confetti on joining a challenge, copy-last-week's-plan, and a past challenges archive.</span></div></div>
+        <div class="shipped-item"><div class="s-num">17</div><div class="s-text"><b>Health section</b><span>A new nav-level page aggregating real nutrition totals (calories/protein/carbs/fat) across cook-ins, using each recipe's existing hand-entered nutrition line — no external nutrition database, resolving the decision this item was flagged on.</span></div></div>
+        <div class="shipped-item"><div class="s-num">18</div><div class="s-text"><b>Restaurant check-ins</b><span>An optional "Dining out" tag on a post: one-time geolocation permission, a free OpenStreetMap Overpass API lookup (no key, no billing account) for nearby named places within 200m, a suggest-and-confirm list, and a manual-entry fallback if location is denied or the lookup fails.</span></div></div>
       </div>
       <p class="section-dek" style="margin-top:20px;">
-        <b>⚠️ One manual step still needed:</b> items 11-15 depend on
-        <code>supabase/migrations/003_platform_tables.sql</code>, which has to
-        be run once in the Supabase SQL Editor (Dashboard → SQL Editor →
-        paste the file's contents → Run) before any of this works live —
+        <b>⚠️ One manual step still needed:</b> items 11-15 and 17-18 depend
+        on <code>supabase/migrations/003_platform_tables.sql</code> through
+        <code>006_restaurant_checkins.sql</code>, which have to be run in
+        order once in the Supabase SQL Editor (Dashboard → SQL Editor →
+        paste each file's contents → Run) before any of this works live —
         no tool in this pipeline can execute SQL directly against the
         project.
       </p>
@@ -639,7 +643,7 @@
           <div class="phase-num">—</div>
           <div class="phase-body">
             <h3>Parked — needs a business decision, not just build time</h3>
-            <p>Marketplace (needs payments infrastructure), sponsored challenges (needs a sales motion), video posts (storage/bandwidth cost), cooking clubs/groups (bigger scope). None of these are "no" — they're waiting on a call only the user can make.</p>
+            <p>Sponsored challenges (needs a sales motion), video posts (storage/bandwidth cost), cooking clubs/groups (bigger scope). None of these are "no" — they're waiting on a call only the user can make. (Marketplace and the AI cooking assistant moved to Long-term expansion below.)</p>
           </div>
         </div>
       </div>
@@ -764,28 +768,22 @@
       </div>
     </section>
 
-    <!-- ================= FLAGGED ================= -->
+    <!-- ================= LONG-TERM EXPANSION ================= -->
     <section class="plan-section" id="flagged">
       <div class="section-eyebrow">What's next</div>
-      <h2>Needs a decision</h2>
-      <p class="section-dek">Ideas that are genuinely good but each carry a real cost or architecture call that hasn't been made yet — not slotted into the execution plan until someone decides.</p>
+      <h2>Long-term expansion</h2>
+      <p class="section-dek">Genuinely good ideas, deliberately not being built yet — each needs a server-side piece, an ongoing cost, or a business decision (payments, a sales motion) that's bigger than a build call. Revisit once the platform has real usage to justify them.</p>
 
       <div class="flagged-card">
-        <h3>AI cooking assistant <span class="pill flagged">Flagged</span></h3>
+        <h3>AI cooking assistant <span class="pill flagged">Long-term</span></h3>
         <p>A conversational way to deliver pantry-aware suggestions — "I have chicken, rice, and peppers, what can I make?" pulling from real community recipes.</p>
         <div class="decision-needed">Needs: a server-side piece (LLM API key can't be client-side like the Supabase key) + an ongoing per-message cost that could exceed the ~$25/mo ceiling if used heavily.</div>
       </div>
 
       <div class="flagged-card">
-        <h3>Restaurant check-ins <span class="pill flagged">Flagged</span></h3>
-        <p>Upload a photo while dining out, get a suggest-and-confirm list of nearby restaurants via a places API (Foursquare recommended over Google Places or OpenStreetMap).</p>
-        <div class="decision-needed">Needs: a places-API key kept server-side + a usage-based cost once used a lot.</div>
-      </div>
-
-      <div class="flagged-card">
-        <h3>Health section <span class="pill flagged">Flagged</span></h3>
-        <p>A dedicated macro/calorie tracking dashboard aggregating nutrition across planned and cooked meals, building on the recipe page's Nutrition line.</p>
-        <div class="decision-needed">Needs: a nutrition-database API decision (USDA FoodData Central is free; Edamam/Spoonacular are paid but richer) or manual entry by recipe authors — the current Nutrition line is hand-entered, not calculated.</div>
+        <h3>Home-cook marketplace <span class="pill flagged">Long-term</span></h3>
+        <p>Let top-rated home cooks sell meals or meal kits locally.</p>
+        <div class="decision-needed">Needs: payments infrastructure and logistics — a much bigger bet than a build-time decision, flag to the user before ever scoping this.</div>
       </div>
     </section>
 

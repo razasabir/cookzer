@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>Health — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
+  .brand-header {
+      font-size: 20px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+    }
+
+  .main { flex: 1; margin-left: 280px; margin-top: 60px; overflow-y: auto; }
+
+  .health-content { max-width: 800px; margin: 0 auto; padding: 24px; }
+
+  .page-title {
+      font-size: 28px;
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      color: var(--olive-dark);
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+  .page-sub { text-align: center; color: var(--ink-soft); font-size: 13.5px; margin-bottom: 24px; }
+
+  .range-tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 28px; }
+
+  .range-tab {
+      padding: 8px 18px; border-radius: 20px; border: 1px solid var(--line); background: var(--card-bg);
+      cursor: pointer; font-size: 13px; font-weight: 500; color: var(--ink);
+    }
+
+  .range-tab.active { background: var(--olive); color: #fff; border-color: var(--olive); }
+
+  .stat-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 32px; }
+
+  .stat-tile {
+      background: var(--card-bg); border: 1px solid var(--line); border-radius: 16px; padding: 18px; text-align: center;
+    }
+
+  .stat-tile .value { font-family: 'Fraunces', serif; font-size: 22px; color: var(--olive-dark); font-weight: 600; }
+
+  .stat-tile .label { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+  .section-title {
+      font-size: 14px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 14px;
+    }
+
+  .day-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+
+  .day-row:last-child { border-bottom: none; }
+
+  .day-label { width: 90px; flex-shrink: 0; font-size: 13px; color: var(--ink); font-weight: 500; }
+
+  .day-bar-track { flex: 1; height: 10px; background: var(--cream); border-radius: 6px; overflow: hidden; }
+
+  .day-bar-fill { height: 100%; background: linear-gradient(90deg, var(--olive), var(--mustard)); }
+
+  .day-cal { width: 90px; text-align: right; font-size: 12px; color: var(--ink-soft); flex-shrink: 0; }
+
+  .meal-list { margin-top: 32px; }
+
+  .meal-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+
+  .meal-row:last-child { border-bottom: none; }
+
+  .meal-row a { color: var(--ink); text-decoration: none; font-weight: 500; }
+
+  .meal-row .meal-cal { color: var(--brick); font-weight: 600; }
+
+  .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 40px 20px; }
+
+  .nutrition-note-box {
+      background: var(--cream); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px;
+      font-size: 12px; color: var(--ink-soft); margin-top: 32px; line-height: 1.6;
+    }
+
+  @media (max-width: 768px) {
+      .sidebar { position: fixed; top: 0; left: -280px; height: 100vh; z-index: 100; transition: left 0.25s ease; }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+      .stat-tiles { grid-template-columns: repeat(2, 1fr); }
+    }
+
+  @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+      .day-label, .day-cal { width: 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-health.html" style="text-decoration: none;"><div class="sidebar-item icon health active">Health</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
+    <button class="icon-btn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="health-content">
+    <h1 class="page-title">Your Health</h1>
+    <p class="page-sub">Nutrition totals from what you've actually cooked — built from each recipe's hand-entered nutrition line, not an external database.</p>
+
+    <div class="range-tabs">
+      <div class="range-tab active" data-days="7">Last 7 days</div>
+      <div class="range-tab" data-days="30">Last 30 days</div>
+    </div>
+
+    <div class="stat-tiles">
+      <div class="stat-tile"><div class="value" id="statCalories">0</div><div class="label">Calories</div></div>
+      <div class="stat-tile"><div class="value" id="statProtein">0g</div><div class="label">Protein</div></div>
+      <div class="stat-tile"><div class="value" id="statCarbs">0g</div><div class="label">Carbs</div></div>
+      <div class="stat-tile"><div class="value" id="statFat">0g</div><div class="label">Fat</div></div>
+    </div>
+
+    <div class="section-title">Calories per day</div>
+    <div id="dayBreakdown"></div>
+    <div id="dayBreakdownEmpty" class="empty-note" hidden>No cook-ins with nutrition data in this range yet — tap "I cooked this" on a recipe page to start tracking.</div>
+
+    <div class="meal-list">
+      <div class="section-title">Meals counted</div>
+      <div id="mealList"></div>
+    </div>
+
+    <div class="nutrition-note-box">
+      📋 These numbers come from the nutrition line each recipe author entered by hand — Cookzer doesn't call an external nutrition database, so accuracy depends on how the recipe was filled in. Only cook-ins ("I cooked this") on recipes with a nutrition line are counted.
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  let currentUser = null;
+  let rangeDays = 7;
+
+  document.querySelectorAll('.range-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.range-tab').forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      rangeDays = Number(tab.dataset.days);
+      loadHealth();
+    });
+  });
+
+  async function loadHealth() {
+    const since = new Date(Date.now() - rangeDays * 86400000).toISOString();
+
+    const { data: cookIns } = await sb
+      .from('posts')
+      .select('id, created_at, recipe_id, recipes(id, title, nutrition)')
+      .eq('author_id', currentUser.id)
+      .eq('kind', 'cook_in')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false });
+
+    const withNutrition = (cookIns || []).filter((c) => c.recipes && c.recipes.nutrition && c.recipes.nutrition.calories);
+
+    const totals = withNutrition.reduce((sum, c) => {
+      const n = c.recipes.nutrition;
+      sum.calories += n.calories || 0;
+      sum.protein += n.protein || 0;
+      sum.carbs += n.carbs || 0;
+      sum.fat += n.fat || 0;
+      return sum;
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+    document.getElementById('statCalories').textContent = totals.calories;
+    document.getElementById('statProtein').textContent = totals.protein + 'g';
+    document.getElementById('statCarbs').textContent = totals.carbs + 'g';
+    document.getElementById('statFat').textContent = totals.fat + 'g';
+
+    const byDay = {};
+    withNutrition.forEach((c) => {
+      const day = new Date(c.created_at).toISOString().slice(0, 10);
+      byDay[day] = (byDay[day] || 0) + (c.recipes.nutrition.calories || 0);
+    });
+
+    const dayEntries = Object.entries(byDay).sort((a, b) => b[0].localeCompare(a[0]));
+    const breakdownEl = document.getElementById('dayBreakdown');
+    breakdownEl.innerHTML = '';
+    document.getElementById('dayBreakdownEmpty').hidden = dayEntries.length > 0;
+
+    const maxCal = Math.max(...dayEntries.map(([, cal]) => cal), 1);
+    dayEntries.forEach(([day, cal]) => {
+      const row = document.createElement('div');
+      row.className = 'day-row';
+      const label = new Date(day + 'T00:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+      row.innerHTML =
+        '<div class="day-label"></div>' +
+        '<div class="day-bar-track"><div class="day-bar-fill" style="width:' + Math.round((cal / maxCal) * 100) + '%;"></div></div>' +
+        '<div class="day-cal">' + cal + ' kcal</div>';
+      row.querySelector('.day-label').textContent = label;
+      breakdownEl.appendChild(row);
+    });
+
+    const mealListEl = document.getElementById('mealList');
+    mealListEl.innerHTML = '';
+    if (withNutrition.length === 0) {
+      mealListEl.innerHTML = '<div class="empty-note">Nothing tracked in this range yet.</div>';
+    } else {
+      withNutrition.forEach((c) => {
+        const row = document.createElement('div');
+        row.className = 'meal-row';
+        const dateStr = new Date(c.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' });
+        row.innerHTML =
+          '<a href="cookzer-recipe.html?id=' + c.recipe_id + '"></a>' +
+          '<div style="display:flex; gap:12px; align-items:center;"><span style="color:var(--ink-soft);"></span><span class="meal-cal"></span></div>';
+        row.querySelector('a').textContent = c.recipes.title;
+        row.querySelectorAll('span')[0].textContent = dateStr;
+        row.querySelectorAll('span')[1].textContent = c.recipes.nutrition.calories + ' kcal';
+        mealListEl.appendChild(row);
+      });
+    }
+  }
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    await loadHealth();
+  })();
+</script>
+</body>
+</html>
