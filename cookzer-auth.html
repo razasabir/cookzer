@@ -205,10 +205,16 @@
       });
     });
 
+    // Support ?tab=signup deep links (e.g. from the landing page CTA).
+    const requestedTab = new URLSearchParams(location.search).get('tab');
+    if (requestedTab === 'signup') {
+      document.querySelector('[data-tab="signup"]').click();
+    }
+
     // If already signed in, skip straight to the app.
     (async () => {
       const { data: { session } } = await sb.auth.getSession();
-      if (session) window.location.href = 'index.html';
+      if (session) window.location.href = 'cookzer-feed.html';
     })();
 
     forms.signin.addEventListener('submit', async (e) => {
@@ -222,7 +228,7 @@
         showMessage(error.message, 'error');
         return;
       }
-      window.location.href = 'index.html';
+      window.location.href = 'cookzer-feed.html';
     });
 
     forms.signup.addEventListener('submit', async (e) => {
@@ -244,7 +250,7 @@
       }
 
       if (data.session) {
-        window.location.href = 'index.html';
+        window.location.href = 'cookzer-feed.html';
         return;
       }
 

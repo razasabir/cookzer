@@ -658,7 +658,7 @@
       </p>
 
       <div class="backlog-category">
-        <h3>Feed (index.html)</h3>
+        <h3>Feed (cookzer-feed.html)</h3>
         <div class="backlog-item"><span class="b-name">Composer "Photo / Recipe / Challenge" buttons</span><span class="b-desc">— all three render but have no click handler at all; there is currently no way to actually create a post. Needs the <code>posts</code> table (Phase 1) plus, for the Recipe button, a way to attach an existing or new recipe (Phase 2).</span></div>
         <div class="backlog-item"><span class="b-name">Composer avatar shows hardcoded "RZ"</span><span class="b-desc">— every other page's avatar is wired by <code>auth-guard.js</code> to the real logged-in user's initials; the feed composer never got that treatment. Small fix, ship with Phase 1.</span></div>
         <div class="backlog-item"><span class="b-name">3 feed cards (Sarah K. / Amina M. / Josh M.)</span><span class="b-desc">— fully hardcoded HTML, not rows from a table. Only Sarah K.'s recipe title links anywhere. Replace with a real query against <code>posts</code> joined to <code>profiles</code>, ordered by <code>created_at</code> (Phase 1).</span></div>
