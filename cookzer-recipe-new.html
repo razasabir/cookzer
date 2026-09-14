@@ -11,6 +11,7 @@
 <script src="supabase-config.js"></script>
 <script src="auth-guard.js"></script>
 <script src="theme.js"></script>
+<script src="nutrition-data.js"></script>
 <script src="shortcuts.js"></script>
 <link rel="stylesheet" href="styles.css">
 <style>
@@ -256,6 +257,8 @@
           <input type="number" id="rCarbs" placeholder="Carbs (g)" min="0">
           <input type="number" id="rFat" placeholder="Fat (g)" min="0">
         </div>
+        <button class="add-row-btn" id="estimateNutritionBtn" type="button" style="margin-top:10px;">Estimate from ingredients</button>
+        <div id="estimateNutritionStatus" style="font-size:12px; color:var(--ink-soft); margin-top:6px;"></div>
       </div>
     </div>
 
@@ -478,6 +481,29 @@
       row.querySelector('.step-num').textContent = (i + 1) + '.';
     });
   }
+
+  document.getElementById('estimateNutritionBtn').addEventListener('click', () => {
+    const status = document.getElementById('estimateNutritionStatus');
+    const ingredients = Array.from(document.querySelectorAll('#ingredientRows .dynamic-row')).map((row) => ({
+      name: row.querySelector('.ing-name').value.trim(),
+      qty: row.querySelector('.ing-qty').value.trim(),
+    })).filter((i) => i.name);
+    const servings = Number(document.getElementById('rServings').value) || 1;
+
+    const estimate = window.CookzerNutrition ? window.CookzerNutrition.estimateForRecipe({ ingredients, servings }) : null;
+    if (!estimate) {
+      status.style.color = 'var(--brick)';
+      status.textContent = 'Not enough recognized ingredients to estimate — fill these in by hand instead.';
+      return;
+    }
+
+    document.getElementById('rCalories').value = estimate.calories;
+    document.getElementById('rProtein').value = estimate.protein;
+    document.getElementById('rCarbs').value = estimate.carbs;
+    document.getElementById('rFat').value = estimate.fat;
+    status.style.color = 'var(--ink-soft)';
+    status.textContent = 'Filled in from a lookup-table estimate — adjust anything that looks off.';
+  });
 
   document.getElementById('importUrlBtn').addEventListener('click', async () => {
     const urlInput = document.getElementById('importUrlInput');

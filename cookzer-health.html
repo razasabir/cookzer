@@ -11,6 +11,7 @@
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js"></script>
   <script src="theme.js"></script>
+<script src="nutrition-data.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -146,7 +147,7 @@
 <div class="main">
   <div class="health-content">
     <h1 class="page-title">Your Health</h1>
-    <p class="page-sub">Nutrition totals from what you've actually cooked — built from each recipe's hand-entered nutrition line, not an external database.</p>
+    <p class="page-sub">Nutrition totals from what you've actually cooked — from each recipe's hand-entered nutrition line, or an ingredient-based estimate when there isn't one.</p>
 
     <div class="range-tabs">
       <div class="range-tab active" data-days="7">Last 7 days</div>
@@ -170,7 +171,7 @@
     </div>
 
     <div class="nutrition-note-box">
-      📋 These numbers come from the nutrition line each recipe author entered by hand — Cookzer doesn't call an external nutrition database, so accuracy depends on how the recipe was filled in. Only cook-ins ("I cooked this") on recipes with a nutrition line are counted.
+      📋 These numbers use each recipe's hand-entered nutrition line where the author filled one in, and fall back to an estimate built from a lookup table of common ingredients otherwise (marked with "~"). Cookzer doesn't call an external nutrition database, so accuracy depends on how detailed the recipe's ingredients and quantities are — treat these as a general guide, not precise tracking.
     </div>
   </div>
 </div>
@@ -198,16 +199,33 @@
 
     const { data: cookIns } = await sb
       .from('posts')
-      .select('id, created_at, recipe_id, recipes!posts_recipe_id_fkey(id, title, nutrition)')
+      .select('id, created_at, recipe_id, recipes!posts_recipe_id_fkey(id, title, nutrition, ingredients, servings)')
       .eq('author_id', currentUser.id)
       .eq('kind', 'cook_in')
       .gte('created_at', since)
       .order('created_at', { ascending: false });
 
-    const withNutrition = (cookIns || []).filter((c) => c.recipes && c.recipes.nutrition && c.recipes.nutrition.calories);
+    // Prefer the author's hand-entered nutrition; fall back to an
+    // ingredient-based estimate so totals aren't missing entries just
+    // because a recipe's author skipped the nutrition fields.
+    (cookIns || []).forEach((c) => {
+      if (!c.recipes) return;
+      if (c.recipes.nutrition && c.recipes.nutrition.calories) {
+        c._nutrition = c.recipes.nutrition;
+        c._estimated = false;
+      } else {
+        const estimate = window.CookzerNutrition ? window.CookzerNutrition.estimateForRecipe(c.recipes) : null;
+        if (estimate) {
+          c._nutrition = estimate;
+          c._estimated = true;
+        }
+      }
+    });
+
+    const withNutrition = (cookIns || []).filter((c) => c._nutrition && c._nutrition.calories);
 
     const totals = withNutrition.reduce((sum, c) => {
-      const n = c.recipes.nutrition;
+      const n = c._nutrition;
       sum.calories += n.calories || 0;
       sum.protein += n.protein || 0;
       sum.carbs += n.carbs || 0;
@@ -223,7 +241,7 @@
     const byDay = {};
     withNutrition.forEach((c) => {
       const day = new Date(c.created_at).toISOString().slice(0, 10);
-      byDay[day] = (byDay[day] || 0) + (c.recipes.nutrition.calories || 0);
+      byDay[day] = (byDay[day] || 0) + (c._nutrition.calories || 0);
     });
 
     const dayEntries = Object.entries(byDay).sort((a, b) => b[0].localeCompare(a[0]));
@@ -258,7 +276,7 @@
           '<div style="display:flex; gap:12px; align-items:center;"><span style="color:var(--ink-soft);"></span><span class="meal-cal"></span></div>';
         row.querySelector('a').textContent = c.recipes.title;
         row.querySelectorAll('span')[0].textContent = dateStr;
-        row.querySelectorAll('span')[1].textContent = c.recipes.nutrition.calories + ' kcal';
+        row.querySelectorAll('span')[1].textContent = (c._estimated ? '~' : '') + c._nutrition.calories + ' kcal';
         mealListEl.appendChild(row);
       });
     }
