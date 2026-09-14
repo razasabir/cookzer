@@ -922,6 +922,7 @@
     <!-- Feed cards rendered by JS -->
     <div id="feedList"></div>
     <div id="feedEmpty" class="card-description" style="text-align:center; padding: 24px;" hidden>No posts yet — be the first to share what you cooked today.</div>
+    <button id="loadMoreBtn" class="action-btn" style="display:none; width:100%; margin:16px 0; padding:12px; text-align:center;" type="button">Load more</button>
   </div>
 
   <!-- Right sidebar -->
@@ -1727,31 +1728,94 @@
     }
   }
 
+  const FEED_PAGE_SIZE = 20;
+  let feedOffset = 0;
+  let feedLoadingMore = false;
+
   async function loadFeed() {
-    const listEl = document.getElementById('feedList');
+    feedOffset = 0;
     showFeedSkeleton();
+    await loadMorePosts({ replace: true });
+  }
+
+  async function loadMorePosts(opts) {
+    opts = opts || {};
+    if (feedLoadingMore) return;
+    feedLoadingMore = true;
+
+    const listEl = document.getElementById('feedList');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    loadMoreBtn.disabled = true;
+    loadMoreBtn.textContent = 'Loading…';
 
     const [{ data: rawPosts, error }, blockedIds] = await Promise.all([
       sb
         .from('posts')
         .select('id, author_id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles!posts_author_id_fkey(display_name, initials), recipes!posts_recipe_id_fkey(title, hero_photo_path)')
         .order('created_at', { ascending: false })
-        .limit(30),
+        .range(feedOffset, feedOffset + FEED_PAGE_SIZE - 1),
       window.blockedIdsReady || Promise.resolve(new Set()),
     ]);
 
-    const posts = (rawPosts || []).filter((p) => !blockedIds.has(p.author_id));
-
-    listEl.innerHTML = '';
-    document.getElementById('feedEmpty').hidden = !!(posts && posts.length);
-
     if (error) console.error('loadFeed failed:', error.message, error);
-    if (error || !posts) return;
+
+    const posts = (rawPosts || []).filter((p) => !blockedIds.has(p.author_id));
+    const gotFullPage = (rawPosts || []).length === FEED_PAGE_SIZE;
+    feedOffset += (rawPosts || []).length;
+
+    if (opts.replace) {
+      listEl.innerHTML = '';
+      document.getElementById('feedEmpty').hidden = posts.length > 0;
+    }
 
     posts.forEach((post) => {
       const card = cardShell(post);
       listEl.appendChild(card);
-      refreshPostStats(post.id);
+    });
+    await refreshAllPostStats(posts.map((p) => p.id));
+
+    loadMoreBtn.disabled = false;
+    loadMoreBtn.textContent = 'Load more';
+    loadMoreBtn.style.display = gotFullPage ? 'block' : 'none';
+    feedLoadingMore = false;
+  }
+
+  document.getElementById('loadMoreBtn').addEventListener('click', () => loadMorePosts());
+
+  // Batched replacement for calling refreshPostStats() once per post —
+  // that pattern fired 3 queries per post (N posts = 3N queries) on
+  // every feed load. This fetches hearts/comments for the whole visible
+  // page in 2 queries total, regardless of page size.
+  async function refreshAllPostStats(postIds) {
+    if (postIds.length === 0) return;
+
+    const [{ data: hearts }, { data: comments }] = await Promise.all([
+      sb.from('hearts').select('post_id, user_id').in('post_id', postIds),
+      sb.from('comments').select('post_id').in('post_id', postIds),
+    ]);
+
+    const heartCounts = {};
+    const myHearts = new Set();
+    (hearts || []).forEach((h) => {
+      heartCounts[h.post_id] = (heartCounts[h.post_id] || 0) + 1;
+      if (currentUser && h.user_id === currentUser.id) myHearts.add(h.post_id);
+    });
+    const commentCounts = {};
+    (comments || []).forEach((c) => {
+      commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1;
+    });
+
+    postIds.forEach((postId) => {
+      const heartEl = document.getElementById('heartCount-' + postId);
+      const commentEl = document.getElementById('commentCount-' + postId);
+      const heartBtn = document.getElementById('heartBtn-' + postId);
+      if (heartEl) heartEl.textContent = '❤️ ' + (heartCounts[postId] || 0) + ' hearts';
+      if (commentEl) commentEl.textContent = '💬 ' + (commentCounts[postId] || 0) + ' comments';
+      if (heartBtn) {
+        const mine = myHearts.has(postId);
+        heartBtn.textContent = mine ? '❤️ Hearted' : '❤️ Heart';
+        heartBtn.style.color = mine ? 'var(--brick)' : '';
+      }
     });
   }
 
