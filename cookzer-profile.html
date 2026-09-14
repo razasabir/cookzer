@@ -403,8 +403,14 @@
       <div class="open-to-work-pill" id="openToWorkPill" hidden>Open to work</div>
     </div>
 
+    <!-- Cover banner -->
+    <div class="profile-banner" id="profileBanner" style="width:100%; max-width:700px; height:110px; border-radius:18px; margin-bottom:-40px; position:relative; background:linear-gradient(135deg, var(--olive), var(--olive-dark));">
+      <button type="button" id="changeBannerBtn" hidden style="position:absolute; bottom:10px; right:10px; background:rgba(255,255,255,0.9); border:none; border-radius:10px; padding:6px 12px; font-size:12px; font-weight:600; color:var(--olive-dark); cursor:pointer;">🎨 Change cover</button>
+      <div id="bannerSwatches" hidden style="position:absolute; top:10px; right:10px; display:flex; gap:6px; background:rgba(255,255,255,0.9); padding:6px; border-radius:12px;"></div>
+    </div>
+
     <!-- Profile Header -->
-    <div class="profile-header">
+    <div class="profile-header" style="position:relative;">
       <div class="profile-avatar" id="profileAvatar">--</div>
       <h1 class="profile-name" id="profileName">Loading…</h1>
       <p class="profile-bio" id="profileBio"></p>
@@ -463,6 +469,7 @@
         <div class="tab active" data-view="grid">Grid view</div>
         <div class="tab" data-view="list">List view</div>
         <div class="tab" data-view="saved" id="savedTab">Saved</div>
+        <div class="tab" data-view="bookmarks" id="bookmarksTab">Saved Posts</div>
       </div>
 
       <div class="posts-grid" id="postsGrid"></div>
@@ -511,6 +518,46 @@
   let viewedId = params.get('id');
   let currentView = 'grid';
 
+  const BANNER_PRESETS = [
+    'linear-gradient(135deg, var(--olive), var(--olive-dark))',
+    'linear-gradient(135deg, var(--mustard), var(--brick))',
+    'linear-gradient(135deg, #6B8CBE, #3E5C8A)',
+    'linear-gradient(135deg, #D97AA0, #A94E6E)',
+    'linear-gradient(135deg, #8A6BBE, #5C3E8A)',
+    'linear-gradient(135deg, #4CA5A0, #2E706C)',
+  ];
+
+  function setupBanner(isOwn) {
+    const banner = document.getElementById('profileBanner');
+    const btn = document.getElementById('changeBannerBtn');
+    const swatchesEl = document.getElementById('bannerSwatches');
+    btn.hidden = !isOwn;
+
+    let saved = null;
+    try { saved = localStorage.getItem('cookzer-banner-' + viewedId); } catch (e) { /* no storage available */ }
+    if (saved) banner.style.background = saved;
+
+    if (!isOwn) return;
+
+    btn.onclick = () => { swatchesEl.hidden = !swatchesEl.hidden; };
+    swatchesEl.innerHTML = '';
+    BANNER_PRESETS.forEach((gradient) => {
+      const swatch = document.createElement('div');
+      swatch.style.width = '22px';
+      swatch.style.height = '22px';
+      swatch.style.borderRadius = '50%';
+      swatch.style.background = gradient;
+      swatch.style.cursor = 'pointer';
+      swatch.style.border = '2px solid #fff';
+      swatch.addEventListener('click', () => {
+        banner.style.background = gradient;
+        try { localStorage.setItem('cookzer-banner-' + viewedId, gradient); } catch (e) { /* per-viewer only, fine to skip */ }
+        swatchesEl.hidden = true;
+      });
+      swatchesEl.appendChild(swatch);
+    });
+  }
+
   async function loadProfile() {
     if (!viewedId) viewedId = currentUser.id;
 
@@ -545,7 +592,9 @@
     }
 
     const isOwn = viewedId === currentUser.id;
+    setupBanner(isOwn);
     document.getElementById('savedTab').hidden = !isOwn;
+    document.getElementById('bookmarksTab').hidden = !isOwn;
     document.getElementById('recipesSectionTitle').textContent = isOwn ? 'Your recipes' : profile.display_name.split(' ')[0] + "'s recipes";
 
     const actions = document.getElementById('profileActions');
@@ -661,6 +710,31 @@
   async function loadRecipesView() {
     const grid = document.getElementById('postsGrid');
     grid.innerHTML = '';
+
+    if (currentView === 'bookmarks') {
+      const { data } = await sb
+        .from('post_bookmarks')
+        .select('post_id, posts(id, caption, recipe_id, recipes(title))')
+        .eq('user_id', currentUser.id);
+      const items = (data || []).filter((b) => b.posts);
+      if (items.length === 0) {
+        grid.innerHTML = '<div class="empty-note">Nothing here yet.</div>';
+        return;
+      }
+      items.forEach((b) => {
+        const post = b.posts;
+        const label = post.recipes ? post.recipes.title : (post.caption || 'Saved post');
+        const tile = document.createElement(post.recipe_id ? 'a' : 'div');
+        tile.className = 'post-card';
+        if (post.recipe_id) tile.href = 'cookzer-recipe.html?id=' + post.recipe_id;
+        const overlay = document.createElement('div');
+        overlay.className = 'post-overlay';
+        overlay.textContent = label;
+        tile.appendChild(overlay);
+        grid.appendChild(tile);
+      });
+      return;
+    }
 
     let items = [];
     if (currentView === 'saved') {
