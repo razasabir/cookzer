@@ -13,6 +13,7 @@
   <script src="auth-guard.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
   <script src="theme.js"></script>
+  <script src="photo-lightbox.js"></script>
   <script src="shortcuts.js"></script>
   <script src="countdown.js"></script>
   <script src="confetti.js"></script>
@@ -1390,6 +1391,8 @@
         const img = document.createElement('div');
         img.className = 'card-image';
         img.style.backgroundImage = "url('" + cardImageUrl + "')";
+        img.style.cursor = 'zoom-in';
+        img.addEventListener('click', () => openPostLightbox(post, cardImageUrl));
         card.appendChild(img);
       }
     }
@@ -1464,6 +1467,24 @@
 
     card.appendChild(content);
     return card;
+  }
+
+  function openPostLightbox(post, imageUrl) {
+    const meta = [];
+    if (post.mood) meta.push({ label: 'Mood', value: post.mood });
+    if (post.restaurant_name) meta.push({ label: 'Restaurant', value: post.restaurant_name });
+
+    CookzerLightbox.open({
+      imageUrl,
+      authorName: post.profiles ? post.profiles.display_name : 'Someone',
+      authorInitials: post.profiles ? post.profiles.initials : '??',
+      authorHref: 'cookzer-profile.html?id=' + post.author_id,
+      timestamp: post.created_at,
+      caption: post.caption || '',
+      meta,
+      recipeTitle: post.recipes ? post.recipes.title : null,
+      recipeHref: post.recipe_id ? 'cookzer-recipe.html?id=' + post.recipe_id : null,
+    });
   }
 
   async function deletePost(postId, cardEl) {

@@ -11,6 +11,7 @@
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js"></script>
   <script src="theme.js"></script>
+  <script src="photo-lightbox.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -527,9 +528,19 @@
     card.appendChild(header);
 
     if (post.photo_path) {
+      const imageUrl = publicUrl('post-photos', post.photo_path);
       const img = document.createElement('div');
       img.className = 'card-image';
-      img.style.backgroundImage = "url('" + publicUrl('post-photos', post.photo_path) + "')";
+      img.style.backgroundImage = "url('" + imageUrl + "')";
+      img.style.cursor = 'zoom-in';
+      img.addEventListener('click', () => CookzerLightbox.open({
+        imageUrl,
+        authorName: post.profiles ? post.profiles.display_name : 'Someone',
+        authorInitials: post.profiles ? post.profiles.initials : '??',
+        authorHref: 'cookzer-profile.html?id=' + post.author_id,
+        timestamp: post.created_at,
+        caption: post.caption || '',
+      }));
       card.appendChild(img);
     }
 

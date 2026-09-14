@@ -12,6 +12,7 @@
   <script src="bunny-config.js"></script>
   <script src="auth-guard.js"></script>
   <script src="theme.js"></script>
+  <script src="photo-lightbox.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -1004,6 +1005,24 @@
             media.className = 'activity-media';
             const img = document.createElement('img');
             img.src = photoUrl;
+            img.style.cursor = 'zoom-in';
+            img.addEventListener('click', () => {
+              const meta = [];
+              if (post.mood) meta.push({ label: 'Mood', value: post.mood });
+              if (post.restaurant_name) meta.push({ label: 'Restaurant', value: post.restaurant_name });
+              CookzerLightbox.open({
+                imageUrl: photoUrl,
+                authorName: viewedProfile.display_name,
+                authorInitials: viewedProfile.initials,
+                authorAvatarUrl: viewedProfile.avatar_url || null,
+                authorHref: 'cookzer-profile.html?id=' + viewedId,
+                timestamp: post.created_at,
+                caption: post.caption || '',
+                meta,
+                recipeTitle: post.recipes ? post.recipes.title : null,
+                recipeHref: post.recipe_id ? 'cookzer-recipe.html?id=' + post.recipe_id : null,
+              });
+            });
             media.appendChild(img);
             card.appendChild(media);
           }
