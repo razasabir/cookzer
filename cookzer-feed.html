@@ -11,6 +11,8 @@
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js"></script>
   <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <script src="countdown.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
   .sidebar-title {
@@ -701,6 +703,7 @@
 
   let currentUser = null;
   let activeChallenge = null;
+  let challengeCountdownTimer = null;
   let pendingPhotoFile = null;
 
   function timeAgo(iso) {
@@ -1034,8 +1037,10 @@
       .from('challenge_entries')
       .select('*', { count: 'exact', head: true })
       .eq('challenge_id', activeChallenge.id);
-    const endsIn = Math.max(0, Math.ceil((new Date(activeChallenge.ends_at) - Date.now()) / 86400000));
-    document.getElementById('challengeDesc').textContent = (entryCount || 0) + ' entries • ends in ' + endsIn + 'd';
+    const descEl = document.getElementById('challengeDesc');
+    descEl.innerHTML = (entryCount || 0) + ' entries • ends in <span id="challengeCountdown"></span>';
+    if (challengeCountdownTimer) clearInterval(challengeCountdownTimer);
+    challengeCountdownTimer = startCountdown(document.getElementById('challengeCountdown'), activeChallenge.ends_at);
 
     document.getElementById('joinChallengeBtn').addEventListener('click', async () => {
       const { error } = await sb
