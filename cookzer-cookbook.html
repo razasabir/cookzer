@@ -45,21 +45,45 @@
       align-items: center;
     }
 
+  .page-header-row {
+      width: 100%;
+      max-width: 700px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
   .page-title {
       font-size: 28px;
       font-family: 'Fraunces', serif;
       font-weight: 600;
       color: var(--olive-dark);
-      margin-bottom: 24px;
-      text-align: center;
-      width: 100%;
     }
 
-  /* Folders section */
-    .folders-section {
+  .add-recipe-btn {
+      background: var(--olive);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.2s;
+    }
+
+  .add-recipe-btn:hover { background: var(--olive-dark); }
+
+  /* Hashtags section */
+    .hashtags-section {
       width: 100%;
       max-width: 700px;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
     }
 
   .section-label {
@@ -71,32 +95,28 @@
       margin-bottom: 12px;
     }
 
-  .folders-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 12px;
-      margin-bottom: 24px;
+  .hashtag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
-  .folder {
-      background: linear-gradient(135deg, var(--mustard), #E8C055);
-      color: #fff;
-      padding: 16px;
-      border-radius: 18px;
+  .hashtag-chip {
+      padding: 7px 14px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--card-bg);
+      font-size: 13px;
       cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
-      font-weight: 500;
-      font-size: 14px;
+      color: var(--ink);
     }
 
-  .folder:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-    }
+  .hashtag-chip:hover { border-color: var(--mustard); }
 
-  .folder.active {
-      box-shadow: 0 0 0 3px var(--olive);
+  .hashtag-chip.active {
+      background: var(--mustard);
+      color: #fff;
+      border-color: var(--mustard);
     }
 
   .empty-state {
@@ -117,20 +137,6 @@
       margin: 0 auto;
       line-height: 1.5;
     }
-
-  .folder-icon {
-      font-size: 32px;
-      margin-bottom: 8px;
-      display: block;
-    }
-
-  .folder.add-folder {
-      background: var(--cream);
-      border: 2px dashed var(--line);
-      color: var(--ink-soft);
-    }
-
-  .folder.add-folder:hover { border-color: var(--olive); color: var(--olive); }
 
   /* Recently saved section */
     .recently-saved {
@@ -190,9 +196,19 @@
       display: inline-block;
     }
 
-  .recipe-folder {
+  .recipe-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
       font-size: 12px;
       color: var(--ink-soft);
+    }
+
+  .recipe-tag-pill {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 2px 8px;
     }
 
   .recipe-actions {
@@ -274,17 +290,15 @@
 <!-- Main content -->
 <div class="main">
   <div class="cookbook-content">
-    <h1 class="page-title">My Recipes</h1>
-    
-    <!-- Folders -->
-    <div class="folders-section">
-      <div class="section-label">Your folders</div>
-      <div class="folders-grid" id="foldersGrid">
-        <div class="folder add-folder" id="addFolderTile">
-          <span class="folder-icon">+</span>
-          New folder
-        </div>
-      </div>
+    <div class="page-header-row">
+      <h1 class="page-title">My Recipes</h1>
+      <a class="add-recipe-btn" href="cookzer-recipe-new.html">+ Add recipe</a>
+    </div>
+
+    <!-- Hashtags -->
+    <div class="hashtags-section" id="hashtagsSection" hidden>
+      <div class="section-label">Filter by hashtag</div>
+      <div class="hashtag-row" id="hashtagRow"></div>
     </div>
 
     <!-- Recently saved -->
@@ -307,78 +321,70 @@
   }
 
   let currentUser = null;
-  let folders = [];
-  let activeFolderId = null;
+  let allSaved = [];
+  let activeTag = null;
 
   function publicUrl(bucket, path) {
     if (!path) return null;
     return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
   }
 
-  async function loadFolders() {
-    const { data } = await sb.from('cookbook_folders').select('id, name, emoji').eq('user_id', currentUser.id).order('created_at');
-    folders = data || [];
-    renderFolders();
-  }
+  function renderHashtags() {
+    const tagSet = new Set();
+    allSaved.forEach((s) => (s.tags || []).forEach((t) => tagSet.add(t)));
+    const tags = Array.from(tagSet).sort();
 
-  function renderFolders() {
-    const grid = document.getElementById('foldersGrid');
-    grid.querySelectorAll('.folder:not(.add-folder)').forEach((el) => el.remove());
-    const addTile = document.getElementById('addFolderTile');
+    const section = document.getElementById('hashtagsSection');
+    const row = document.getElementById('hashtagRow');
+    row.innerHTML = '';
 
-    folders.forEach((f) => {
-      const div = document.createElement('div');
-      div.className = 'folder' + (f.id === activeFolderId ? ' active' : '');
-      div.style.opacity = (activeFolderId && activeFolderId !== f.id) ? '0.6' : '1';
-      div.innerHTML = '<span class="folder-icon"></span>';
-      div.querySelector('.folder-icon').textContent = f.emoji;
-      div.appendChild(document.createTextNode(f.name));
-      div.addEventListener('click', () => {
-        activeFolderId = activeFolderId === f.id ? null : f.id;
-        renderFolders();
-        loadSavedRecipes();
+    if (tags.length === 0) {
+      section.hidden = true;
+      return;
+    }
+    section.hidden = false;
+
+    tags.forEach((tag) => {
+      const chip = document.createElement('div');
+      chip.className = 'hashtag-chip' + (activeTag === tag ? ' active' : '');
+      chip.textContent = '#' + tag;
+      chip.addEventListener('click', () => {
+        activeTag = activeTag === tag ? null : tag;
+        renderHashtags();
+        renderSavedList();
       });
-      grid.insertBefore(div, addTile);
+      row.appendChild(chip);
     });
   }
 
-  document.getElementById('addFolderTile').addEventListener('click', async () => {
-    const name = prompt('Folder name (e.g. Weeknight dinners):');
-    if (!name || !name.trim()) return;
-    const emoji = prompt('Pick an emoji for this folder (optional):', '📁') || '📁';
-    const { error } = await sb.from('cookbook_folders').insert({ user_id: currentUser.id, name: name.trim(), emoji });
-    if (error) {
-      alert('Could not create folder: ' + error.message);
-      return;
-    }
-    await loadFolders();
-  });
-
   async function loadSavedRecipes() {
-    let query = sb
+    const { data: saved, error } = await sb
       .from('saved_recipes')
-      .select('recipe_id, folder_id, note, recipes(id, title, hero_photo_path)')
+      .select('recipe_id, tags, note, recipes(id, title, hero_photo_path)')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false });
 
-    if (activeFolderId) query = query.eq('folder_id', activeFolderId);
-
-    const { data: saved, error } = await query;
     if (error) console.error('loadSavedRecipes failed:', error.message, error);
+    allSaved = saved || [];
+    renderHashtags();
+    renderSavedList();
+  }
+
+  function renderSavedList() {
+    const filtered = activeTag ? allSaved.filter((s) => (s.tags || []).includes(activeTag)) : allSaved;
+
     const listEl = document.getElementById('savedRecipesList');
     listEl.innerHTML = '';
-    const isEmpty = !(saved && saved.length);
+    const isEmpty = filtered.length === 0;
     document.getElementById('savedEmpty').hidden = !isEmpty;
     if (isEmpty) {
-      const activeFolder = folders.find((f) => f.id === activeFolderId);
-      document.getElementById('savedEmptyText').textContent = activeFolder
-        ? 'This cookbook is empty — save a recipe here from any recipe page, or move one in with the 📁 icon below.'
+      document.getElementById('savedEmptyText').textContent = activeTag
+        ? 'No recipes tagged #' + activeTag + ' yet.'
         : 'Nothing saved yet — hit "Save to Cookbook" on any recipe page.';
     }
 
-    (saved || []).forEach((s) => {
+    filtered.forEach((s) => {
       if (!s.recipes) return;
-      const folder = folders.find((f) => f.id === s.folder_id);
       const item = document.createElement('div');
       item.className = 'recipe-item';
 
@@ -410,10 +416,19 @@
         content.appendChild(note);
       }
 
-      const folderLabel = document.createElement('div');
-      folderLabel.className = 'recipe-folder';
-      folderLabel.textContent = folder ? 'in ' + folder.name : 'not in a folder';
-      content.appendChild(folderLabel);
+      const tagsRow = document.createElement('div');
+      tagsRow.className = 'recipe-tags';
+      if (s.tags && s.tags.length) {
+        s.tags.forEach((tag) => {
+          const pill = document.createElement('span');
+          pill.className = 'recipe-tag-pill';
+          pill.textContent = '#' + tag;
+          tagsRow.appendChild(pill);
+        });
+      } else {
+        tagsRow.textContent = 'No hashtags yet';
+      }
+      content.appendChild(tagsRow);
 
       const actions = document.createElement('div');
       actions.className = 'recipe-actions';
@@ -427,21 +442,18 @@
         await sb.from('saved_recipes').update({ note: newNote }).eq('user_id', currentUser.id).eq('recipe_id', s.recipe_id);
         await loadSavedRecipes();
       });
-      const moveBtn = document.createElement('span');
-      moveBtn.className = 'action-icon';
-      moveBtn.textContent = '📁';
-      moveBtn.title = 'Move to a cookbook';
-      moveBtn.addEventListener('click', async () => {
-        if (folders.length === 0) {
-          alert('Create a cookbook folder first (the "+ New folder" tile above).');
-          return;
-        }
-        const listText = folders.map((f, i) => (i + 1) + '. ' + f.emoji + ' ' + f.name).join('\n');
-        const pick = prompt('Move to which cookbook? Enter a number, or 0 for no folder:\n' + listText, folder ? String(folders.indexOf(folder) + 1) : '0');
-        if (pick === null) return;
-        const idx = parseInt(pick, 10);
-        const newFolderId = idx > 0 && folders[idx - 1] ? folders[idx - 1].id : null;
-        await sb.from('saved_recipes').update({ folder_id: newFolderId }).eq('user_id', currentUser.id).eq('recipe_id', s.recipe_id);
+      const tagBtn = document.createElement('span');
+      tagBtn.className = 'action-icon';
+      tagBtn.textContent = '🏷️';
+      tagBtn.title = 'Edit hashtags';
+      tagBtn.addEventListener('click', async () => {
+        const current = (s.tags || []).join(', ');
+        const input = prompt('Hashtags for this recipe, comma-separated (e.g. quick, mealprep, spicy):', current);
+        if (input === null) return;
+        const tags = Array.from(new Set(
+          input.split(',').map((t) => t.trim().replace(/^#/, '')).filter(Boolean)
+        ));
+        await sb.from('saved_recipes').update({ tags }).eq('user_id', currentUser.id).eq('recipe_id', s.recipe_id);
         await loadSavedRecipes();
       });
       const removeBtn = document.createElement('span');
@@ -453,7 +465,7 @@
         await loadSavedRecipes();
       });
       actions.appendChild(noteBtn);
-      actions.appendChild(moveBtn);
+      actions.appendChild(tagBtn);
       actions.appendChild(removeBtn);
 
       item.appendChild(thumb);
@@ -467,7 +479,6 @@
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
     currentUser = user;
-    await loadFolders();
     await loadSavedRecipes();
   })();
 </script>
