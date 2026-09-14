@@ -284,6 +284,23 @@
       flex: 1;
     }
 
+  .card-delete-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--ink-faint);
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+    }
+
+  .card-delete-btn:hover {
+      background: var(--cream);
+      color: var(--brick);
+    }
+
   .card-name {
       font-size: 13px;
       font-weight: 600;
@@ -1329,6 +1346,17 @@
     meta.appendChild(time);
     header.appendChild(avatar);
     header.appendChild(meta);
+
+    if (currentUser && post.author_id === currentUser.id) {
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'card-delete-btn';
+      deleteBtn.title = 'Delete post';
+      deleteBtn.type = 'button';
+      deleteBtn.textContent = '🗑';
+      deleteBtn.addEventListener('click', () => deletePost(post.id, card));
+      header.appendChild(deleteBtn);
+    }
+
     card.appendChild(header);
 
     if (post.video_uid) {
@@ -1421,6 +1449,19 @@
 
     card.appendChild(content);
     return card;
+  }
+
+  async function deletePost(postId, cardEl) {
+    if (!confirm('Delete this post? This can\'t be undone.')) return;
+
+    const { error } = await sb.from('posts').delete().eq('id', postId);
+    if (error) {
+      alert('Could not delete post: ' + error.message);
+      return;
+    }
+
+    cardEl.remove();
+    document.getElementById('feedEmpty').hidden = !!document.getElementById('feedList').children.length;
   }
 
   async function refreshPostStats(postId) {
@@ -1581,7 +1622,7 @@
 
     const { data: posts, error } = await sb
       .from('posts')
-      .select('id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles!posts_author_id_fkey(display_name, initials), recipes!posts_recipe_id_fkey(title, hero_photo_path)')
+      .select('id, author_id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles!posts_author_id_fkey(display_name, initials), recipes!posts_recipe_id_fkey(title, hero_photo_path)')
       .order('created_at', { ascending: false })
       .limit(30);
 
