@@ -480,10 +480,13 @@
     }
     document.getElementById('leaderboardEmpty').hidden = true;
 
-    const withHearts = await Promise.all(filtered.map(async (e) => {
-      const { count } = await sb.from('hearts').select('*', { count: 'exact', head: true }).eq('post_id', e.post_id);
-      return { ...e, hearts: count || 0 };
-    }));
+    const postIds = filtered.map((e) => e.post_id).filter(Boolean);
+    const { data: hearts } = postIds.length > 0
+      ? await sb.from('hearts').select('post_id').in('post_id', postIds)
+      : { data: [] };
+    const heartCounts = {};
+    (hearts || []).forEach((h) => { heartCounts[h.post_id] = (heartCounts[h.post_id] || 0) + 1; });
+    const withHearts = filtered.map((e) => ({ ...e, hearts: heartCounts[e.post_id] || 0 }));
 
     withHearts.sort((a, b) => b.hearts - a.hearts);
     const medals = ['🥇', '🥈', '🥉'];
@@ -547,10 +550,10 @@
     }
     section.hidden = false;
 
-    const withCounts = await Promise.all(past.map(async (c) => {
-      const { count } = await sb.from('challenge_entries').select('*', { count: 'exact', head: true }).eq('challenge_id', c.id);
-      return { ...c, count: count || 0 };
-    }));
+    const { data: entryRows } = await sb.from('challenge_entries').select('challenge_id').in('challenge_id', past.map((c) => c.id));
+    const entryCounts = {};
+    (entryRows || []).forEach((e) => { entryCounts[e.challenge_id] = (entryCounts[e.challenge_id] || 0) + 1; });
+    const withCounts = past.map((c) => ({ ...c, count: entryCounts[c.id] || 0 }));
 
     listEl.innerHTML = '';
     withCounts.forEach((c) => {
