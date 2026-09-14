@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>Groups — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .brand-header {
+      font-size: 20px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+    }
+
+  .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
+  .main {
+      flex: 1;
+      margin-top: 60px;
+      overflow-y: auto;
+    }
+
+  .groups-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+  .page-header-row {
+      width: 100%;
+      max-width: 780px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+  .page-title {
+      font-size: 28px;
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      color: var(--olive-dark);
+    }
+
+  .create-group-btn {
+      background: var(--olive);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+  .create-group-btn:hover { background: var(--olive-dark); }
+
+  .create-group-panel {
+      width: 100%;
+      max-width: 780px;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+  .create-group-panel.hidden { display: none; }
+
+  .create-group-panel label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 12px 0 6px;
+    }
+
+  .create-group-panel label:first-child { margin-top: 0; }
+
+  .create-group-panel input,
+  .create-group-panel textarea {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font-size: 14px;
+      color: var(--ink);
+      font-family: inherit;
+      resize: vertical;
+    }
+
+  .cover-swatch-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+  .cover-swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+
+  .cover-swatch.selected {
+      border-color: var(--ink);
+    }
+
+  .create-group-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+  .groups-grid {
+      width: 100%;
+      max-width: 780px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 16px;
+    }
+
+  .group-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s, border-color 0.2s;
+      display: block;
+    }
+
+  .group-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--olive);
+    }
+
+  .group-cover {
+      height: 70px;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+    }
+
+  .group-body {
+      padding: 14px 16px;
+    }
+
+  .group-name {
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+  .group-desc {
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      line-height: 1.4;
+      margin-bottom: 10px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+  .group-member-count {
+      font-size: 12px;
+      color: var(--ink-soft);
+    }
+
+  .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 24px; grid-column: 1 / -1; }
+
+  /* Responsive */
+    @media (max-width: 900px) {
+      .right-sidebar { display: none; }
+    }
+
+  @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        height: 100vh;
+        z-index: 100;
+        transition: left 0.25s ease;
+      }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .search-bar { display: none; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+    }
+
+  @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
+
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-health.html" style="text-decoration: none;"><div class="sidebar-item icon health">Health</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-groups.html" style="text-decoration: none;"><div class="sidebar-item icon groups active">Groups</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Header -->
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn" id="notifBellBtn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+  <div class="groups-content">
+    <div class="page-header-row">
+      <h1 class="page-title">Groups</h1>
+      <button class="create-group-btn" id="createGroupBtn" type="button">+ Create group</button>
+    </div>
+
+    <div class="create-group-panel hidden" id="createGroupPanel">
+      <label>Group name</label>
+      <input type="text" id="groupNameInput" placeholder="e.g. Slow Cooker Fanatics" maxlength="80">
+      <label>Description</label>
+      <textarea id="groupDescInput" rows="3" placeholder="What's this group about?" maxlength="300"></textarea>
+      <label>Cover color</label>
+      <div class="cover-swatch-row" id="coverSwatchRow"></div>
+      <div class="create-group-actions">
+        <button class="create-group-btn" id="cancelGroupBtn" type="button" style="background:var(--cream); color:var(--ink-soft);">Cancel</button>
+        <button class="create-group-btn" id="saveGroupBtn" type="button">Create</button>
+      </div>
+    </div>
+
+    <div class="groups-grid" id="groupsGrid"></div>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  let currentUser = null;
+
+  const COVER_PRESETS = [
+    'linear-gradient(135deg, var(--olive), var(--olive-dark))',
+    'linear-gradient(135deg, #6B8CBE, #3E5C8A)',
+    'linear-gradient(135deg, #D97AA0, #A94E6E)',
+    'linear-gradient(135deg, #8A6BBE, #5C3E8A)',
+    'linear-gradient(135deg, #4CA5A0, #2E706C)',
+  ];
+  let selectedCover = COVER_PRESETS[0];
+
+  const swatchRow = document.getElementById('coverSwatchRow');
+  COVER_PRESETS.forEach((gradient, i) => {
+    const swatch = document.createElement('div');
+    swatch.className = 'cover-swatch' + (i === 0 ? ' selected' : '');
+    swatch.style.background = gradient;
+    swatch.addEventListener('click', () => {
+      selectedCover = gradient;
+      swatchRow.querySelectorAll('.cover-swatch').forEach((s) => s.classList.remove('selected'));
+      swatch.classList.add('selected');
+    });
+    swatchRow.appendChild(swatch);
+  });
+
+  document.getElementById('createGroupBtn').addEventListener('click', () => {
+    document.getElementById('createGroupPanel').classList.toggle('hidden');
+  });
+  document.getElementById('cancelGroupBtn').addEventListener('click', () => {
+    document.getElementById('createGroupPanel').classList.add('hidden');
+  });
+
+  document.getElementById('saveGroupBtn').addEventListener('click', async () => {
+    const name = document.getElementById('groupNameInput').value.trim();
+    if (!name) return;
+    const description = document.getElementById('groupDescInput').value.trim();
+
+    const { data: group, error } = await sb
+      .from('groups')
+      .insert({ name, description: description || null, cover_gradient: selectedCover, created_by: currentUser.id })
+      .select('id')
+      .single();
+
+    if (error) {
+      alert('Could not create group: ' + error.message);
+      return;
+    }
+
+    await sb.from('group_members').insert({ group_id: group.id, user_id: currentUser.id, role: 'admin' });
+
+    window.location.href = 'cookzer-group.html?id=' + group.id;
+  });
+
+  async function loadGroups() {
+    const { data: groups } = await sb
+      .from('groups')
+      .select('id, name, description, cover_gradient, created_at')
+      .order('created_at', { ascending: false });
+
+    const grid = document.getElementById('groupsGrid');
+    grid.innerHTML = '';
+
+    if (!groups || groups.length === 0) {
+      grid.innerHTML = '<div class="empty-note">No groups yet — start one above.</div>';
+      return;
+    }
+
+    const withCounts = await Promise.all(groups.map(async (g) => {
+      const { count } = await sb.from('group_members').select('*', { count: 'exact', head: true }).eq('group_id', g.id);
+      return { ...g, memberCount: count || 0 };
+    }));
+
+    withCounts.forEach((g) => {
+      const card = document.createElement('a');
+      card.className = 'group-card';
+      card.href = 'cookzer-group.html?id=' + g.id;
+
+      const cover = document.createElement('div');
+      cover.className = 'group-cover';
+      cover.style.background = g.cover_gradient || COVER_PRESETS[0];
+
+      const body = document.createElement('div');
+      body.className = 'group-body';
+      const name = document.createElement('div');
+      name.className = 'group-name';
+      name.textContent = g.name;
+      const desc = document.createElement('div');
+      desc.className = 'group-desc';
+      desc.textContent = g.description || '';
+      const count = document.createElement('div');
+      count.className = 'group-member-count';
+      count.textContent = g.memberCount + (g.memberCount === 1 ? ' member' : ' members');
+
+      body.appendChild(name);
+      if (g.description) body.appendChild(desc);
+      body.appendChild(count);
+
+      card.appendChild(cover);
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+  }
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    await loadGroups();
+  })();
+</script>
+</body>
+</html>

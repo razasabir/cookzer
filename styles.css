@@ -109,6 +109,7 @@ body {
 .sidebar-item.planner:before { content: "📅"; }
 .sidebar-item.health:before { content: "🩺"; }
 .sidebar-item.challenges:before { content: "🏆"; }
+.sidebar-item.groups:before { content: "👥"; }
 .sidebar-item.profile:before { content: "👤"; }
 .sidebar-item.messenger:before { content: "💬"; }
 
