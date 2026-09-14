@@ -738,13 +738,31 @@
     rescaleIngredients();
   });
 
-  document.getElementById('shareBtn').addEventListener('click', () => {
+  document.getElementById('shareBtn').addEventListener('click', async () => {
     const url = location.origin + location.pathname + '?id=' + recipeId;
-    navigator.clipboard.writeText(url).then(() => {
-      alert('Recipe link copied: ' + url);
-    }).catch(() => {
-      prompt('Copy this recipe link:', url);
-    });
+    const title = document.getElementById('rTitle').textContent || 'A recipe on Cookzer';
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+        // Share failed (or isn't wired up in this browser) — fall through to clipboard.
+      }
+    }
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+        alert('Recipe link copied: ' + url);
+        return;
+      }
+    } catch (e) {
+      // Clipboard blocked (common in in-app browsers/webviews) — fall through to prompt.
+    }
+
+    prompt('Copy this recipe link:', url);
   });
 
   document.getElementById('printBtn').addEventListener('click', () => {
