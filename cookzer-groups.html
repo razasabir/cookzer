@@ -357,10 +357,10 @@
       return;
     }
 
-    const withCounts = await Promise.all(groups.map(async (g) => {
-      const { count } = await sb.from('group_members').select('*', { count: 'exact', head: true }).eq('group_id', g.id);
-      return { ...g, memberCount: count || 0 };
-    }));
+    const { data: memberRows } = await sb.from('group_members').select('group_id').in('group_id', groups.map((g) => g.id));
+    const memberCounts = {};
+    (memberRows || []).forEach((m) => { memberCounts[m.group_id] = (memberCounts[m.group_id] || 0) + 1; });
+    const withCounts = groups.map((g) => ({ ...g, memberCount: memberCounts[g.id] || 0 }));
 
     withCounts.forEach((g) => {
       const card = document.createElement('a');

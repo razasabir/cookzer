@@ -1878,10 +1878,10 @@
       return;
     }
 
-    const withHearts = await Promise.all(entries.map(async (e) => {
-      const { count } = await sb.from('hearts').select('*', { count: 'exact', head: true }).eq('post_id', e.post_id);
-      return { ...e, hearts: count || 0 };
-    }));
+    const { data: hearts } = await sb.from('hearts').select('post_id').in('post_id', entries.map((e) => e.post_id));
+    const heartCounts = {};
+    (hearts || []).forEach((h) => { heartCounts[h.post_id] = (heartCounts[h.post_id] || 0) + 1; });
+    const withHearts = entries.map((e) => ({ ...e, hearts: heartCounts[e.post_id] || 0 }));
 
     withHearts.sort((a, b) => b.hearts - a.hearts);
     const medals = ['🥇', '🥈', '🥉'];
@@ -1967,10 +1967,10 @@
 
     if (!posts || posts.length === 0) return;
 
-    const withHearts = await Promise.all(posts.map(async (p) => {
-      const { count } = await sb.from('hearts').select('*', { count: 'exact', head: true }).eq('post_id', p.id);
-      return { ...p, hearts: count || 0 };
-    }));
+    const { data: hearts } = await sb.from('hearts').select('post_id').in('post_id', posts.map((p) => p.id));
+    const heartCounts = {};
+    (hearts || []).forEach((h) => { heartCounts[h.post_id] = (heartCounts[h.post_id] || 0) + 1; });
+    const withHearts = posts.map((p) => ({ ...p, hearts: heartCounts[p.id] || 0 }));
 
     withHearts.sort((a, b) => b.hearts - a.hearts);
     listEl.innerHTML = '';

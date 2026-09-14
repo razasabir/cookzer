@@ -722,12 +722,16 @@
       return;
     }
 
-    const withRatings = await Promise.all(restaurants.map(async (r) => {
-      const { data: ratings } = await sb.from('restaurant_ratings').select('rating').eq('restaurant_id', r.id);
-      const rows = ratings || [];
-      const avg = rows.length ? rows.reduce((s, x) => s + x.rating, 0) / rows.length : 0;
+    const { data: allRatings } = await sb.from('restaurant_ratings').select('restaurant_id, rating').in('restaurant_id', restaurants.map((r) => r.id));
+    const ratingsByRestaurant = {};
+    (allRatings || []).forEach((rt) => {
+      (ratingsByRestaurant[rt.restaurant_id] = ratingsByRestaurant[rt.restaurant_id] || []).push(rt.rating);
+    });
+    const withRatings = restaurants.map((r) => {
+      const rows = ratingsByRestaurant[r.id] || [];
+      const avg = rows.length ? rows.reduce((s, x) => s + x, 0) / rows.length : 0;
       return { ...r, avg, count: rows.length };
-    }));
+    });
 
     withRatings.forEach((r) => {
       const card = document.createElement('div');
