@@ -906,8 +906,19 @@
   });
 
   document.getElementById('saveBtn').addEventListener('click', async () => {
+    const { data: folders } = await sb.from('cookbook_folders').select('id, name, emoji').eq('user_id', currentUser.id).order('created_at');
+
+    let folderId = null;
+    if (folders && folders.length > 0) {
+      const listText = folders.map((f, i) => (i + 1) + '. ' + f.emoji + ' ' + f.name).join('\n');
+      const pick = prompt('Save into which cookbook? Enter a number, or 0 for no folder:\n' + listText, '0');
+      if (pick === null) return;
+      const idx = parseInt(pick, 10);
+      if (idx > 0 && folders[idx - 1]) folderId = folders[idx - 1].id;
+    }
+
     const { error } = await sb.from('saved_recipes').upsert(
-      { user_id: currentUser.id, recipe_id: recipeId },
+      { user_id: currentUser.id, recipe_id: recipeId, folder_id: folderId },
       { onConflict: 'user_id,recipe_id' }
     );
     if (error) {

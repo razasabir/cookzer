@@ -328,6 +328,13 @@
       return;
     }
 
+    // Your own recipes show up in My Recipes right away, same as anything
+    // you'd save from someone else — no separate "authored" list to check.
+    await sb.from('saved_recipes').upsert(
+      { user_id: currentUser.id, recipe_id: recipe.id },
+      { onConflict: 'user_id,recipe_id' }
+    );
+
     if (selectedPhotoFile) {
       const ext = (selectedPhotoFile.name.split('.').pop() || 'jpg').toLowerCase();
       const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;

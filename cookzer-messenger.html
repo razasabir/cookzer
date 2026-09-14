@@ -482,6 +482,7 @@
   let conversations = []; // [{ id, name, initials, otherId, lastText, lastTime, unread }]
   let activeId = null;
   let activeChannel = null;
+  let pendingChatImage = null;
 
   function formatTime(iso) {
     const d = new Date(iso);
@@ -513,7 +514,7 @@
 
     const { data: allMessages } = await sb
       .from('messages')
-      .select('conversation_id, text, created_at')
+      .select('conversation_id, text, attachment_path, created_at')
       .in('conversation_id', convIds)
       .order('created_at', { ascending: false });
 
@@ -530,7 +531,7 @@
         otherId: o.user_id,
         name: o.profiles ? o.profiles.display_name : 'Unknown',
         initials: o.profiles ? o.profiles.initials : '??',
-        lastText: last ? last.text : 'Say hello!',
+        lastText: last ? (last.text || (last.attachment_path ? '📷 Photo' : '')) : 'Say hello!',
         lastTime: last ? formatTime(last.created_at) : '',
         unread: !!(last && (!lastReadAt || new Date(last.created_at) > new Date(lastReadAt))),
       };
@@ -598,6 +599,11 @@
     });
   }
 
+  function publicUrl(bucket, path) {
+    if (!path) return null;
+    return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  }
+
   function appendBubble(messagesEl, msg) {
     const row = document.createElement('div');
     row.className = 'bubble-row ' + (msg.sender_id === currentUser.id ? 'sent' : 'received');
@@ -605,15 +611,26 @@
     const bubbleWrap = document.createElement('div');
     bubbleWrap.className = 'bubble-wrap';
 
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
-    bubble.textContent = msg.text;
+    if (msg.attachment_path) {
+      const img = document.createElement('img');
+      img.src = publicUrl('message-attachments', msg.attachment_path);
+      img.style.maxWidth = '220px';
+      img.style.borderRadius = '16px';
+      img.style.display = 'block';
+      bubbleWrap.appendChild(img);
+    }
+
+    if (msg.text) {
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = msg.text;
+      bubbleWrap.appendChild(bubble);
+    }
 
     const time = document.createElement('div');
     time.className = 'bubble-time';
     time.textContent = formatTime(msg.created_at);
 
-    bubbleWrap.appendChild(bubble);
     bubbleWrap.appendChild(time);
     row.appendChild(bubbleWrap);
     messagesEl.appendChild(row);
@@ -685,6 +702,30 @@
     const inputBar = document.createElement('div');
     inputBar.className = 'thread-input';
 
+    const attachBtn = document.createElement('button');
+    attachBtn.type = 'button';
+    attachBtn.textContent = '📷';
+    attachBtn.title = 'Send an image';
+    attachBtn.style.background = 'none';
+    attachBtn.style.border = 'none';
+    attachBtn.style.fontSize = '20px';
+    attachBtn.style.cursor = 'pointer';
+    attachBtn.style.flexShrink = '0';
+
+    const attachInput = document.createElement('input');
+    attachInput.type = 'file';
+    attachInput.accept = 'image/*';
+    attachInput.hidden = true;
+    attachInput.id = 'messageAttachInput';
+    attachBtn.addEventListener('click', () => attachInput.click());
+    attachInput.addEventListener('change', () => {
+      const file = attachInput.files[0];
+      if (!file) return;
+      pendingChatImage = file;
+      attachBtn.textContent = '🖼️';
+      attachBtn.title = 'Image attached — click to change';
+    });
+
     const input = document.createElement('input');
     input.type = 'text';
     input.placeholder = 'Write a message...';
@@ -698,6 +739,8 @@
     sendBtn.textContent = 'Send';
     sendBtn.addEventListener('click', sendMessage);
 
+    inputBar.appendChild(attachBtn);
+    inputBar.appendChild(attachInput);
     inputBar.appendChild(input);
     inputBar.appendChild(sendBtn);
 
@@ -707,7 +750,7 @@
 
     const { data: messages } = await sb
       .from('messages')
-      .select('id, sender_id, text, created_at')
+      .select('id, sender_id, text, attachment_path, created_at')
       .eq('conversation_id', activeId)
       .order('created_at', { ascending: true });
 
@@ -757,12 +800,32 @@
     const input = document.getElementById('messageInput');
     if (!input) return;
     const text = input.value.trim();
-    if (!text || !activeId) return;
+    if (!text && !pendingChatImage) return;
+    if (!activeId) return;
+
+    let attachmentPath = null;
+    if (pendingChatImage) {
+      const ext = (pendingChatImage.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
+      const { error: uploadErr } = await sb.storage.from('message-attachments').upload(path, pendingChatImage);
+      if (uploadErr) {
+        alert('Could not send image: ' + uploadErr.message);
+        return;
+      }
+      attachmentPath = path;
+    }
 
     input.value = '';
+    pendingChatImage = null;
+    const attachBtn = document.querySelector('.thread-input button[title^="Image attached"], .thread-input button[title="Send an image"]');
+    if (attachBtn) {
+      attachBtn.textContent = '📷';
+      attachBtn.title = 'Send an image';
+    }
+
     const { error } = await sb
       .from('messages')
-      .insert({ conversation_id: activeId, sender_id: currentUser.id, text });
+      .insert({ conversation_id: activeId, sender_id: currentUser.id, text: text || '', attachment_path: attachmentPath });
 
     if (error) {
       alert('Could not send message: ' + error.message);

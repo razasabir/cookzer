@@ -17,7 +17,14 @@
 
   function wireAvatar(person) {
     document.querySelectorAll('.avatar').forEach((el) => {
-      el.textContent = person.initials;
+      if (person.avatar_url) {
+        el.style.backgroundImage = "url('" + person.avatar_url + "')";
+        el.style.backgroundSize = 'cover';
+        el.style.backgroundPosition = 'center';
+        el.textContent = '';
+      } else {
+        el.textContent = person.initials;
+      }
       el.title = person.display_name;
       el.style.cursor = 'pointer';
       el.addEventListener('click', async () => {
@@ -31,13 +38,14 @@
 
   const { data: profile } = await sb
     .from('profiles')
-    .select('display_name, initials')
+    .select('display_name, initials, avatar_url')
     .eq('id', session.user.id)
     .single();
 
   const person = profile || {
     display_name: session.user.email,
     initials: (session.user.email || '??').slice(0, 2).toUpperCase(),
+    avatar_url: null,
   };
 
   if (document.readyState === 'loading') {
