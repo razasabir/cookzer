@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>Group — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .brand-header {
+      font-size: 20px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+    }
+
+  .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
+  .main {
+      flex: 1;
+      margin-top: 60px;
+      overflow-y: auto;
+    }
+
+  .group-content {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+  .group-header {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+  .group-cover {
+      height: 100px;
+    }
+
+  .group-header-body {
+      padding: 20px;
+    }
+
+  .group-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+  .group-name {
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      font-size: 24px;
+      color: var(--ink);
+    }
+
+  .group-member-count {
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-top: 4px;
+    }
+
+  .group-desc {
+      font-size: 14px;
+      color: var(--ink);
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+
+  .join-btn {
+      padding: 10px 20px;
+      border-radius: 12px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--olive);
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+  .join-btn.joined {
+      background: var(--cream);
+      color: var(--ink-soft);
+      border: 1px solid var(--line);
+    }
+
+  /* Composer (simplified: caption + photo) */
+    .composer {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 24px;
+      width: 100%;
+    }
+
+  .composer-header {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+  .composer-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+  .composer-input { flex: 1; }
+
+  .composer-input input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--ink);
+      font-family: inherit;
+    }
+
+  .composer-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+  .composer-btn {
+      padding: 8px 14px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--ink-soft);
+    }
+
+  .composer-btn:hover { background: #f0e6d2; color: var(--olive); }
+
+  .post-btn {
+      background: var(--olive);
+      color: #fff;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+  /* Feed cards (mirrors cookzer-feed.html) */
+    .feed-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      width: 100%;
+    }
+
+  .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+  .card-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+  .card-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .card-time { font-size: 12px; color: var(--ink-soft); }
+
+  .card-image {
+      width: 100%;
+      height: 280px;
+      background-size: cover;
+      background-position: center;
+    }
+
+  .card-content { padding: 16px; }
+  .card-description { font-size: 13px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 12px; }
+
+  .card-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--ink-soft);
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+  .card-actions { display: flex; gap: 8px; }
+
+  .action-btn {
+      flex: 1;
+      padding: 8px;
+      background: none;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--ink-soft);
+    }
+
+  .action-btn:hover { background: var(--cream); }
+
+  .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 24px; }
+
+  @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        height: 100vh;
+        z-index: 100;
+        transition: left 0.25s ease;
+      }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .search-bar { display: none; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+    }
+
+  @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
+
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-health.html" style="text-decoration: none;"><div class="sidebar-item icon health">Health</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-groups.html" style="text-decoration: none;"><div class="sidebar-item icon groups active">Groups</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Header -->
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn" id="notifBellBtn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+  <div class="group-content">
+    <div class="group-header">
+      <div class="group-cover" id="groupCover"></div>
+      <div class="group-header-body">
+        <div class="group-title-row">
+          <div>
+            <div class="group-name" id="groupName">Loading…</div>
+            <div class="group-member-count" id="groupMemberCount"></div>
+          </div>
+          <button class="join-btn" id="joinGroupBtn" type="button">Join</button>
+        </div>
+        <div class="group-desc" id="groupDesc"></div>
+      </div>
+    </div>
+
+    <div class="composer">
+      <div class="composer-header">
+        <div class="composer-avatar" id="composerAvatar">--</div>
+        <div class="composer-input">
+          <input type="text" id="postCaption" placeholder="Share something with the group...">
+        </div>
+      </div>
+      <img id="composerPhotoPreview" hidden style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:10px;">
+      <input type="file" id="composerPhotoInput" accept="image/*" hidden>
+      <div class="composer-actions">
+        <button class="composer-btn" id="composerPhotoBtn" type="button">📸 Photo</button>
+        <button class="post-btn" id="composerPostBtn" type="button">Post</button>
+      </div>
+    </div>
+
+    <div id="groupFeed"></div>
+    <div class="empty-note" id="groupFeedEmpty" hidden>No posts in this group yet — be the first to share something.</div>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  const params = new URLSearchParams(location.search);
+  const groupId = params.get('id');
+  let currentUser = null;
+  let isMember = false;
+  let pendingPhotoFile = null;
+
+  function publicUrl(bucket, path) {
+    if (!path) return null;
+    return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  }
+
+  function timeAgo(iso) {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + ' min' + (mins === 1 ? '' : 's') + ' ago';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + ' hour' + (hours === 1 ? '' : 's') + ' ago';
+    const days = Math.floor(hours / 24);
+    return days + ' day' + (days === 1 ? '' : 's') + ' ago';
+  }
+
+  async function loadGroup() {
+    const { data: group } = await sb
+      .from('groups')
+      .select('id, name, description, cover_gradient')
+      .eq('id', groupId)
+      .single();
+
+    if (!group) {
+      document.getElementById('groupName').textContent = 'Group not found';
+      return;
+    }
+
+    document.title = group.name + ' — Cookzer';
+    document.getElementById('groupCover').style.background = group.cover_gradient || 'linear-gradient(135deg, var(--olive), var(--olive-dark))';
+    document.getElementById('groupName').textContent = group.name;
+    document.getElementById('groupDesc').textContent = group.description || '';
+    document.getElementById('groupDesc').hidden = !group.description;
+
+    const { count: memberCount } = await sb.from('group_members').select('*', { count: 'exact', head: true }).eq('group_id', groupId);
+    document.getElementById('groupMemberCount').textContent = (memberCount || 0) + (memberCount === 1 ? ' member' : ' members');
+
+    const { data: mine } = await sb
+      .from('group_members')
+      .select('user_id')
+      .eq('group_id', groupId)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    isMember = !!mine;
+    const joinBtn = document.getElementById('joinGroupBtn');
+    joinBtn.textContent = isMember ? 'Joined ✓' : 'Join';
+    joinBtn.className = 'join-btn' + (isMember ? ' joined' : '');
+    joinBtn.onclick = async () => {
+      if (isMember) {
+        await sb.from('group_members').delete().eq('group_id', groupId).eq('user_id', currentUser.id);
+      } else {
+        await sb.from('group_members').insert({ group_id: groupId, user_id: currentUser.id });
+      }
+      await loadGroup();
+    };
+  }
+
+  document.getElementById('composerPhotoBtn').addEventListener('click', () => {
+    document.getElementById('composerPhotoInput').click();
+  });
+
+  document.getElementById('composerPhotoInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingPhotoFile = file;
+    const preview = document.getElementById('composerPhotoPreview');
+    preview.src = URL.createObjectURL(file);
+    preview.hidden = false;
+  });
+
+  async function uploadPostPhoto(file) {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
+    const { error } = await sb.storage.from('post-photos').upload(path, file);
+    if (error) {
+      alert('Photo upload failed: ' + error.message);
+      return null;
+    }
+    return path;
+  }
+
+  document.getElementById('composerPostBtn').addEventListener('click', async () => {
+    const captionInput = document.getElementById('postCaption');
+    const caption = captionInput.value.trim();
+    if (!caption && !pendingPhotoFile) return;
+
+    let photoPath = null;
+    if (pendingPhotoFile) photoPath = await uploadPostPhoto(pendingPhotoFile);
+
+    const { error } = await sb
+      .from('posts')
+      .insert({ author_id: currentUser.id, kind: 'post', caption: caption || null, photo_path: photoPath, group_id: groupId });
+
+    if (error) {
+      alert('Could not post: ' + error.message);
+      return;
+    }
+
+    captionInput.value = '';
+    pendingPhotoFile = null;
+    document.getElementById('composerPhotoPreview').hidden = true;
+    await loadGroupFeed();
+  });
+
+  function cardShell(post) {
+    const card = document.createElement('div');
+    card.className = 'feed-card';
+
+    const header = document.createElement('div');
+    header.className = 'card-header';
+    const avatar = document.createElement('div');
+    avatar.className = 'card-avatar';
+    avatar.textContent = post.profiles ? post.profiles.initials : '??';
+    const meta = document.createElement('div');
+    const name = document.createElement('div');
+    name.className = 'card-name';
+    name.textContent = post.profiles ? post.profiles.display_name : 'Someone';
+    const time = document.createElement('div');
+    time.className = 'card-time';
+    time.textContent = timeAgo(post.created_at);
+    meta.appendChild(name);
+    meta.appendChild(time);
+    header.appendChild(avatar);
+    header.appendChild(meta);
+    card.appendChild(header);
+
+    if (post.photo_path) {
+      const img = document.createElement('div');
+      img.className = 'card-image';
+      img.style.backgroundImage = "url('" + publicUrl('post-photos', post.photo_path) + "')";
+      card.appendChild(img);
+    }
+
+    const content = document.createElement('div');
+    content.className = 'card-content';
+
+    if (post.caption) {
+      const desc = document.createElement('div');
+      desc.className = 'card-description';
+      desc.textContent = post.caption;
+      content.appendChild(desc);
+    }
+
+    const stats = document.createElement('div');
+    stats.className = 'card-stats';
+    const heartStat = document.createElement('div');
+    heartStat.id = 'heartCount-' + post.id;
+    heartStat.textContent = '❤️ 0 hearts';
+    const commentStat = document.createElement('div');
+    commentStat.id = 'commentCount-' + post.id;
+    commentStat.textContent = '💬 0 comments';
+    stats.appendChild(heartStat);
+    stats.appendChild(commentStat);
+    content.appendChild(stats);
+
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+    const heartBtn = document.createElement('button');
+    heartBtn.className = 'action-btn';
+    heartBtn.id = 'heartBtn-' + post.id;
+    heartBtn.textContent = '❤️ Heart';
+    heartBtn.addEventListener('click', () => toggleHeart(post.id));
+    const commentBtn = document.createElement('button');
+    commentBtn.className = 'action-btn';
+    commentBtn.textContent = '💬 Comment';
+    commentBtn.addEventListener('click', () => toggleCommentBox(post.id));
+    actions.appendChild(heartBtn);
+    actions.appendChild(commentBtn);
+    content.appendChild(actions);
+
+    const commentBox = document.createElement('div');
+    commentBox.id = 'commentBox-' + post.id;
+    commentBox.hidden = true;
+    commentBox.style.marginTop = '10px';
+    content.appendChild(commentBox);
+
+    card.appendChild(content);
+    return card;
+  }
+
+  async function refreshPostStats(postId) {
+    const { count: heartCount } = await sb.from('hearts').select('*', { count: 'exact', head: true }).eq('post_id', postId);
+    const { count: commentCount } = await sb.from('comments').select('*', { count: 'exact', head: true }).eq('post_id', postId);
+    const { data: mine } = await sb.from('hearts').select('post_id').eq('post_id', postId).eq('user_id', currentUser.id).maybeSingle();
+
+    const heartEl = document.getElementById('heartCount-' + postId);
+    const commentEl = document.getElementById('commentCount-' + postId);
+    const heartBtn = document.getElementById('heartBtn-' + postId);
+    if (heartEl) heartEl.textContent = '❤️ ' + (heartCount || 0) + ' hearts';
+    if (commentEl) commentEl.textContent = '💬 ' + (commentCount || 0) + ' comments';
+    if (heartBtn) {
+      heartBtn.textContent = mine ? '❤️ Hearted' : '❤️ Heart';
+      heartBtn.style.color = mine ? 'var(--brick)' : '';
+    }
+  }
+
+  async function toggleHeart(postId) {
+    const { data: mine } = await sb.from('hearts').select('post_id').eq('post_id', postId).eq('user_id', currentUser.id).maybeSingle();
+    if (mine) {
+      await sb.from('hearts').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+    } else {
+      await sb.from('hearts').insert({ post_id: postId, user_id: currentUser.id });
+    }
+    await refreshPostStats(postId);
+  }
+
+  async function toggleCommentBox(postId) {
+    const box = document.getElementById('commentBox-' + postId);
+    if (!box.hidden) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+    await renderComments(postId, box);
+  }
+
+  async function renderComments(postId, box) {
+    box.innerHTML = '';
+    const { data: comments } = await sb
+      .from('comments')
+      .select('id, text, created_at, profiles(display_name, initials)')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+
+    (comments || []).forEach((c) => {
+      const row = document.createElement('div');
+      row.style.fontSize = '13px';
+      row.style.marginBottom = '6px';
+      const strong = document.createElement('b');
+      strong.textContent = (c.profiles ? c.profiles.display_name : 'Someone') + ': ';
+      row.appendChild(strong);
+      row.appendChild(document.createTextNode(c.text));
+      box.appendChild(row);
+    });
+
+    const inputRow = document.createElement('div');
+    inputRow.style.display = 'flex';
+    inputRow.style.gap = '8px';
+    inputRow.style.marginTop = '8px';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Write a comment...';
+    input.style.flex = '1';
+    input.style.padding = '8px 12px';
+    input.style.border = '1px solid var(--line)';
+    input.style.borderRadius = '14px';
+    input.style.fontSize = '12px';
+    input.style.background = 'var(--cream)';
+    input.style.color = 'var(--ink)';
+    input.addEventListener('keydown', async (e) => {
+      if (e.key !== 'Enter' || !input.value.trim()) return;
+      const { error } = await sb.from('comments').insert({ post_id: postId, author_id: currentUser.id, text: input.value.trim() });
+      if (!error) {
+        input.value = '';
+        await renderComments(postId, box);
+        await refreshPostStats(postId);
+      }
+    });
+    inputRow.appendChild(input);
+    box.appendChild(inputRow);
+  }
+
+  async function loadGroupFeed() {
+    const { data: posts } = await sb
+      .from('posts')
+      .select('id, caption, photo_path, created_at, profiles(display_name, initials)')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: false });
+
+    const listEl = document.getElementById('groupFeed');
+    listEl.innerHTML = '';
+    document.getElementById('groupFeedEmpty').hidden = !!(posts && posts.length);
+
+    (posts || []).forEach((post) => {
+      listEl.appendChild(cardShell(post));
+      refreshPostStats(post.id);
+    });
+  }
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    if (!groupId) {
+      document.getElementById('groupName').textContent = 'No group specified';
+      return;
+    }
+    await loadGroup();
+    await loadGroupFeed();
+  })();
+</script>
+</body>
+</html>
