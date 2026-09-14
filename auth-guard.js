@@ -139,13 +139,58 @@
     });
   }
 
+  async function wireCoCooksWidget(userId) {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+
+    const widget = document.createElement('div');
+    widget.className = 'sidebar-cocooks-widget';
+
+    const label = document.createElement('div');
+    label.className = 'sidebar-cocooks-label';
+    label.textContent = 'Co-Cooks';
+    widget.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'sidebar-cocooks-row';
+    widget.appendChild(row);
+
+    const { data } = await sb
+      .from('follows')
+      .select('followee_id, profiles!follows_followee_id_fkey(id, display_name, initials)')
+      .eq('follower_id', userId)
+      .limit(7);
+
+    (data || []).forEach((f) => {
+      if (!f.profiles) return;
+      const a = document.createElement('a');
+      a.className = 'sidebar-cocook-avatar';
+      a.href = 'cookzer-profile.html?id=' + f.profiles.id;
+      a.title = f.profiles.display_name || 'Someone';
+      a.textContent = f.profiles.initials || '??';
+      row.appendChild(a);
+    });
+
+    const settingsBtn = document.createElement('a');
+    settingsBtn.className = 'sidebar-cocooks-settings';
+    settingsBtn.href = 'cookzer-cocooks.html';
+    settingsBtn.title = 'Co-Cooks';
+    settingsBtn.setAttribute('aria-label', 'Co-Cooks');
+    settingsBtn.textContent = '⚙️';
+    row.appendChild(settingsBtn);
+
+    sidebar.appendChild(widget);
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       wireAvatar(person);
       wireNotificationBell(session.user.id);
+      wireCoCooksWidget(session.user.id);
     });
   } else {
     wireAvatar(person);
     wireNotificationBell(session.user.id);
+    wireCoCooksWidget(session.user.id);
   }
 })();
