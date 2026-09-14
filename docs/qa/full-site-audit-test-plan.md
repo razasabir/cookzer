@@ -65,6 +65,29 @@ uses native `prompt()` dialogs rather than a proper modal (low-fidelity
 but functional); messenger read receipts are read-on-open only, no
 realtime push (documented limitation, not fake).
 
+## Bonus finding: sitewide layout gap + messenger two-pane break
+
+Found while investigating a user report that the Messenger page looked
+"ugly" — not a styling nitpick, a real layout bug affecting every page:
+
+- Every page's `.main` had `margin-left: 280px` stacked on top of
+  `.sidebar` already occupying 280px of real space in `body`'s flex row
+  (sidebar is `position: static`, not fixed, on desktop). This
+  double-counted the offset, leaving a dead 280px gap of empty
+  background between the sidebar and all content on every single page.
+- `cookzer-messenger.html`'s two-pane wrapper (`class="messenger"`) had
+  no CSS rule at all, so it fell back to default block behavior —
+  shrink-to-fit width, children stacking vertically instead of side by
+  side. Combined with the gap bug, the whole messenger UI rendered as a
+  squished, stacked column floating in empty space.
+
+**FIXED** — removed the redundant `margin-left` from `.main` on all 9
+affected pages (`margin-top`, needed to clear the absolutely-positioned
+header, was untouched; the mobile off-canvas breakpoint's own
+`margin-left: 0` override is unaffected), and added the missing flex
+rule for `.messenger` so the conversation list and thread render side
+by side and fill the available width.
+
 ## What this audit could NOT verify
 
 No live network access to Supabase or Bunny from this sandbox — every

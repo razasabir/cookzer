@@ -50,6 +50,55 @@
       color: var(--ink-soft);
     }
 
+  .search-wrap {
+      position: relative;
+    }
+
+  .search-results {
+      display: none;
+      position: absolute;
+      top: 40px;
+      left: 0;
+      width: 280px;
+      max-height: 360px;
+      overflow-y: auto;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      z-index: 150;
+      padding: 8px;
+    }
+
+  .search-results.open { display: block; }
+
+  .search-results-heading {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--ink-soft);
+      padding: 6px 8px 2px;
+    }
+
+  .search-result-row {
+      display: block;
+      padding: 8px;
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+  .search-result-row:hover {
+      background: var(--cream);
+    }
+
+  .search-empty {
+      padding: 10px 8px;
+      font-size: 13px;
+      color: var(--ink-soft);
+    }
+
   .avatar {
       width: 36px;
       height: 36px;
@@ -736,9 +785,12 @@
 <div class="header">
   <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
   <div class="brand-header">Cook<span>zer</span></div>
-  <input type="text" class="search-bar" placeholder="Search recipes, cooks...">
+  <div class="search-wrap">
+    <input type="text" class="search-bar" id="feedSearchInput" placeholder="Search recipes, cooks...">
+    <div class="search-results" id="searchResults"></div>
+  </div>
   <div class="header-right">
-    <button class="icon-btn">🔔</button>
+    <button class="icon-btn" id="notifBellBtn">🔔</button>
     <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
     <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
     <div class="avatar">--</div>
@@ -988,6 +1040,71 @@
   });
 
   const MOOD_EMOJI = { 'Comfort food': '🍲', 'Quick and easy': '⚡', 'Fancy tonight': '✨' };
+
+  async function runSearch(query) {
+    const resultsEl = document.getElementById('searchResults');
+    resultsEl.innerHTML = '<div class="search-empty">Searching…</div>';
+    resultsEl.classList.add('open');
+
+    const [recipesRes, peopleRes] = await Promise.all([
+      sb.from('recipes').select('id, title').ilike('title', '%' + query + '%').limit(5),
+      sb.from('profiles').select('id, display_name, initials').ilike('display_name', '%' + query + '%').limit(5),
+    ]);
+
+    const recipes = recipesRes.data || [];
+    const people = peopleRes.data || [];
+
+    resultsEl.innerHTML = '';
+    if (recipes.length === 0 && people.length === 0) {
+      resultsEl.innerHTML = '<div class="search-empty">No matches for "' + query + '".</div>';
+      return;
+    }
+
+    if (recipes.length > 0) {
+      const heading = document.createElement('div');
+      heading.className = 'search-results-heading';
+      heading.textContent = 'Recipes';
+      resultsEl.appendChild(heading);
+      recipes.forEach((r) => {
+        const row = document.createElement('a');
+        row.className = 'search-result-row';
+        row.href = 'cookzer-recipe.html?id=' + r.id;
+        row.textContent = r.title;
+        resultsEl.appendChild(row);
+      });
+    }
+
+    if (people.length > 0) {
+      const heading = document.createElement('div');
+      heading.className = 'search-results-heading';
+      heading.textContent = 'People';
+      resultsEl.appendChild(heading);
+      people.forEach((p) => {
+        const row = document.createElement('a');
+        row.className = 'search-result-row';
+        row.href = 'cookzer-profile.html?id=' + p.id;
+        row.textContent = p.display_name;
+        resultsEl.appendChild(row);
+      });
+    }
+  }
+
+  const searchInput = document.getElementById('feedSearchInput');
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const query = searchInput.value.trim();
+      if (query) runSearch(query);
+    } else if (e.key === 'Escape') {
+      document.getElementById('searchResults').classList.remove('open');
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    const resultsEl = document.getElementById('searchResults');
+    if (resultsEl.classList.contains('open') && !resultsEl.contains(e.target) && e.target !== searchInput) {
+      resultsEl.classList.remove('open');
+    }
+  });
 
   let selectedMood = null;
   document.querySelectorAll('.composer-mood-chip').forEach((chip) => {
