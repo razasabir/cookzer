@@ -714,7 +714,8 @@
         .from('posts')
         .select('id, author_id, caption, photo_path, created_at, profiles!posts_author_id_fkey(display_name, initials)')
         .eq('group_id', groupId)
-        .order('created_at', { ascending: false }),
+        .order('created_at', { ascending: false })
+        .limit(50),
       window.blockedIdsReady || Promise.resolve(new Set()),
     ]);
     const posts = (rawPosts || []).filter((p) => !blockedIds.has(p.author_id));
@@ -725,7 +726,42 @@
 
     (posts || []).forEach((post) => {
       listEl.appendChild(cardShell(post));
-      refreshPostStats(post.id);
+    });
+    await refreshAllPostStats(posts.map((p) => p.id));
+  }
+
+  // Batched replacement for refreshPostStats() per post — see the same
+  // fix on the main feed for why (N posts meant 3N queries).
+  async function refreshAllPostStats(postIds) {
+    if (postIds.length === 0) return;
+
+    const [{ data: hearts }, { data: comments }] = await Promise.all([
+      sb.from('hearts').select('post_id, user_id').in('post_id', postIds),
+      sb.from('comments').select('post_id').in('post_id', postIds),
+    ]);
+
+    const heartCounts = {};
+    const myHearts = new Set();
+    (hearts || []).forEach((h) => {
+      heartCounts[h.post_id] = (heartCounts[h.post_id] || 0) + 1;
+      if (currentUser && h.user_id === currentUser.id) myHearts.add(h.post_id);
+    });
+    const commentCounts = {};
+    (comments || []).forEach((c) => {
+      commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1;
+    });
+
+    postIds.forEach((postId) => {
+      const heartEl = document.getElementById('heartCount-' + postId);
+      const commentEl = document.getElementById('commentCount-' + postId);
+      const heartBtn = document.getElementById('heartBtn-' + postId);
+      if (heartEl) heartEl.textContent = '❤️ ' + (heartCounts[postId] || 0) + ' hearts';
+      if (commentEl) commentEl.textContent = '💬 ' + (commentCounts[postId] || 0) + ' comments';
+      if (heartBtn) {
+        const mine = myHearts.has(postId);
+        heartBtn.textContent = mine ? '❤️ Hearted' : '❤️ Heart';
+        heartBtn.style.color = mine ? 'var(--brick)' : '';
+      }
     });
   }
 
