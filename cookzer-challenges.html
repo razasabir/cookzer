@@ -321,6 +321,12 @@
       <div id="leaderboardEmpty" class="entry-recipe" style="text-align:center; padding:20px;" hidden>No entries yet — be the first to join.</div>
     </div>
 
+    <!-- Past challenges archive -->
+    <div class="leaderboard-section" id="pastChallengesSection" style="margin-top:32px;" hidden>
+      <div class="section-title">Past challenges</div>
+      <div id="pastChallengesList"></div>
+    </div>
+
   </div>
 </div>
 
@@ -467,11 +473,48 @@
     });
   }
 
+  async function loadPastChallenges() {
+    const { data: past } = await sb
+      .from('challenges')
+      .select('id, title, ends_at')
+      .lt('ends_at', new Date().toISOString())
+      .order('ends_at', { ascending: false })
+      .limit(10);
+
+    const section = document.getElementById('pastChallengesSection');
+    const listEl = document.getElementById('pastChallengesList');
+    if (!past || past.length === 0) {
+      section.hidden = true;
+      return;
+    }
+    section.hidden = false;
+
+    const withCounts = await Promise.all(past.map(async (c) => {
+      const { count } = await sb.from('challenge_entries').select('*', { count: 'exact', head: true }).eq('challenge_id', c.id);
+      return { ...c, count: count || 0 };
+    }));
+
+    listEl.innerHTML = '';
+    withCounts.forEach((c) => {
+      const item = document.createElement('div');
+      item.className = 'leaderboard-item';
+      const ended = new Date(c.ends_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+      item.innerHTML =
+        '<div class="rank-badge">🏁</div>' +
+        '<div class="entry-content"><div class="entry-name"></div><div class="entry-recipe">Ended ' + ended + '</div></div>' +
+        '<div class="entry-hearts"></div>';
+      item.querySelector('.entry-name').textContent = c.title;
+      item.querySelector('.entry-hearts').textContent = c.count + ' entries';
+      listEl.appendChild(item);
+    });
+  }
+
   (async function init() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
     currentUser = user;
     await loadChallenge();
+    await loadPastChallenges();
   })();
 </script>
 </body>

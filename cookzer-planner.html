@@ -248,7 +248,11 @@
 <div class="main">
   <div class="planner-content">
     <h1 class="page-title">This week's plan</h1>
-    
+
+    <div style="width:100%; max-width:700px; display:flex; justify-content:flex-end; margin-bottom:12px;">
+      <button class="meal-add-btn" id="copyLastWeekBtn" type="button">📋 Copy last week's plan</button>
+    </div>
+
     <div class="planner-grid" id="plannerGrid"></div>
 
     <!-- Weekly nutrition summary -->
@@ -296,6 +300,52 @@
   }
 
   let entriesByDate = {};
+
+  function lastWeekDates() {
+    return weekDates().map((d) => {
+      const date = new Date(d + 'T00:00:00');
+      date.setDate(date.getDate() - 7);
+      return date.toISOString().slice(0, 10);
+    });
+  }
+
+  document.getElementById('copyLastWeekBtn').addEventListener('click', async () => {
+    const thisWeek = weekDates();
+    const lastWeek = lastWeekDates();
+
+    const { data: lastWeekEntries } = await sb
+      .from('meal_plan_entries')
+      .select('plan_date, recipe_id, free_text, source_note')
+      .eq('user_id', currentUser.id)
+      .in('plan_date', lastWeek);
+
+    if (!lastWeekEntries || lastWeekEntries.length === 0) {
+      alert('No planned meals found for last week to copy.');
+      return;
+    }
+
+    const toInsert = lastWeekEntries
+      .filter((e) => !entriesByDate[thisWeek[lastWeek.indexOf(e.plan_date)]])
+      .map((e) => ({
+        user_id: currentUser.id,
+        plan_date: thisWeek[lastWeek.indexOf(e.plan_date)],
+        recipe_id: e.recipe_id,
+        free_text: e.free_text,
+        source_note: e.source_note,
+      }));
+
+    if (toInsert.length === 0) {
+      alert('This week already has meals planned on every day last week had one.');
+      return;
+    }
+
+    const { error } = await sb.from('meal_plan_entries').insert(toInsert);
+    if (error) {
+      alert('Could not copy last week: ' + error.message);
+      return;
+    }
+    await loadWeek();
+  });
 
   async function loadWeek() {
     const dates = weekDates();
