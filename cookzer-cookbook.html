@@ -96,6 +96,29 @@
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
     }
 
+  .folder.active {
+      box-shadow: 0 0 0 3px var(--olive);
+    }
+
+  .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--ink-soft);
+    }
+
+  .empty-state-icon {
+      font-size: 48px;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+  .empty-state-text {
+      font-size: 14px;
+      max-width: 320px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
   .folder-icon {
       font-size: 32px;
       margin-bottom: 8px;
@@ -266,8 +289,9 @@
     <div class="recently-saved">
       <div class="section-label">Recently saved</div>
       <div id="savedRecipesList"></div>
-      <div id="savedEmpty" class="recipe-folder" style="text-align:center; padding: 20px;" hidden>
-        Nothing saved yet — hit "Save to Cookbook" on any recipe page.
+      <div id="savedEmpty" class="empty-state" hidden>
+        <span class="empty-state-icon">🍽️</span>
+        <div class="empty-state-text" id="savedEmptyText">Nothing saved yet — hit "Save to Cookbook" on any recipe page.</div>
       </div>
     </div>
 
@@ -284,6 +308,11 @@
   let folders = [];
   let activeFolderId = null;
 
+  function publicUrl(bucket, path) {
+    if (!path) return null;
+    return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  }
+
   async function loadFolders() {
     const { data } = await sb.from('cookbook_folders').select('id, name, emoji').eq('user_id', currentUser.id).order('created_at');
     folders = data || [];
@@ -297,7 +326,7 @@
 
     folders.forEach((f) => {
       const div = document.createElement('div');
-      div.className = 'folder' + (f.id === activeFolderId ? '' : '');
+      div.className = 'folder' + (f.id === activeFolderId ? ' active' : '');
       div.style.opacity = (activeFolderId && activeFolderId !== f.id) ? '0.6' : '1';
       div.innerHTML = '<span class="folder-icon"></span>';
       div.querySelector('.folder-icon').textContent = f.emoji;
@@ -326,7 +355,7 @@
   async function loadSavedRecipes() {
     let query = sb
       .from('saved_recipes')
-      .select('recipe_id, folder_id, note, recipes(id, title)')
+      .select('recipe_id, folder_id, note, recipes(id, title, hero_photo_path)')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false });
 
@@ -335,7 +364,14 @@
     const { data: saved } = await query;
     const listEl = document.getElementById('savedRecipesList');
     listEl.innerHTML = '';
-    document.getElementById('savedEmpty').hidden = !!(saved && saved.length);
+    const isEmpty = !(saved && saved.length);
+    document.getElementById('savedEmpty').hidden = !isEmpty;
+    if (isEmpty) {
+      const activeFolder = folders.find((f) => f.id === activeFolderId);
+      document.getElementById('savedEmptyText').textContent = activeFolder
+        ? 'This cookbook is empty — save a recipe here from any recipe page, or move one in with the 📁 icon below.'
+        : 'Nothing saved yet — hit "Save to Cookbook" on any recipe page.';
+    }
 
     (saved || []).forEach((s) => {
       if (!s.recipes) return;
@@ -345,6 +381,12 @@
 
       const thumb = document.createElement('div');
       thumb.className = 'recipe-thumb';
+      const photoUrl = publicUrl('recipe-photos', s.recipes.hero_photo_path);
+      if (photoUrl) {
+        thumb.style.backgroundImage = "url('" + photoUrl + "')";
+      } else {
+        thumb.textContent = '🍽️';
+      }
 
       const content = document.createElement('div');
       content.className = 'recipe-content';
