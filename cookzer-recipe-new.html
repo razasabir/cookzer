@@ -76,9 +76,9 @@
 
 <div class="sidebar">
   <div style="padding: 0 16px; margin-bottom: 20px;">
-    <div style="font-size: 22px; font-family: 'Fredoka', sans-serif; font-weight: 600; color: var(--olive-dark);">Cook<span style="color: var(--brick);">zer</span></div>
+    <a href="cookzer-feed.html" style="text-decoration: none;"><div style="font-size: 22px; font-family: 'Fredoka', sans-serif; font-weight: 600; color: var(--olive-dark);">Cook<span style="color: var(--brick);">zer</span></div></a>
   </div>
-  <a href="index.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
   <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Cookbook</div></a>
   <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
   <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
@@ -92,7 +92,7 @@
   <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
   <div class="brand-header">Cook<span>zer</span></div>
   <div class="header-right">
-    <a href="index.html" style="text-decoration: none;"><button class="icon-btn">✕</button></a>
+    <a href="cookzer-feed.html" style="text-decoration: none;"><button class="icon-btn">✕</button></a>
     <div class="avatar">--</div>
   </div>
 </div>
@@ -342,7 +342,7 @@
         recipe_id: recipe.id,
         caption: 'Just shared ' + title + '.',
       });
-      window.location.href = 'index.html';
+      window.location.href = 'cookzer-feed.html';
     } else {
       window.location.href = 'cookzer-recipe.html?id=' + recipe.id;
     }

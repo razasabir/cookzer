@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>Cookzer — Cook Social</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-guard.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .sidebar-title {
+      padding: 0 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 16px 0 12px;
+    }
+
+  .brand-header {
+      font-size: 24px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+    }
+
+  .search-bar {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      width: 200px;
+      color: var(--ink-soft);
+    }
+
+  .search-bar::placeholder {
+      color: var(--ink-soft);
+    }
+
+  .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+  /* Main content */
+    .main {
+      flex: 1;
+      margin-left: 280px;
+      margin-top: 60px;
+      display: flex;
+      overflow: hidden;
+    }
+
+  .feed-container {
+      flex: 1;
+      max-width: 600px;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+  /* Post composer */
+    .composer {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 24px;
+      width: 100%;
+    }
+
+  .composer-header {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+  .composer-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+  .composer-input {
+      flex: 1;
+    }
+
+  .composer-input input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--ink);
+      font-family: inherit;
+    }
+
+  .composer-input input::placeholder {
+      color: var(--ink-soft);
+    }
+
+  .composer-actions {
+      display: flex;
+      gap: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+  .composer-btn {
+      flex: 1;
+      padding: 8px 12px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--ink-soft);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+  .composer-btn:hover {
+      background: #f0e6d2;
+      color: var(--olive);
+    }
+
+  /* Feed cards */
+    .feed-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      margin-bottom: 24px;
+      overflow: hidden;
+      width: 100%;
+    }
+
+  .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+  .card-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+  .card-meta {
+      flex: 1;
+    }
+
+  .card-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+  .card-time {
+      font-size: 12px;
+      color: var(--ink-soft);
+    }
+
+  .card-more {
+      cursor: pointer;
+      font-size: 20px;
+      color: var(--ink-soft);
+    }
+
+  .card-image {
+      width: 100%;
+      height: 320px;
+      background: linear-gradient(135deg, #F3EEE3, #E5D9C8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 80px;
+      background-size: cover;
+      background-position: center;
+    }
+
+  .card-content {
+      padding: 16px;
+    }
+
+  .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 6px;
+      font-family: 'Fraunces', serif;
+    }
+
+  .card-description {
+      font-size: 13px;
+      color: var(--ink-soft);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+  .card-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+  .tag {
+      background: var(--cream);
+      padding: 4px 10px;
+      border-radius: 18px;
+      font-size: 12px;
+      color: var(--olive);
+      font-weight: 500;
+    }
+
+  .card-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--ink-soft);
+      padding: 12px 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+  .card-actions {
+      display: flex;
+      gap: 0;
+      padding: 8px 0;
+    }
+
+  .action-btn {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--ink-soft);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border-radius: 10px;
+    }
+
+  .action-btn:hover {
+      background: var(--cream);
+      color: var(--olive);
+    }
+
+  /* Right sidebar */
+    .right-sidebar {
+      width: 320px;
+      background: var(--card-bg);
+      border-left: 1px solid var(--line);
+      padding: 24px 16px;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+  .widget-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 12px;
+      font-family: 'Fraunces', serif;
+    }
+
+  .challenge-banner {
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      color: #fff;
+      padding: 16px;
+      border-radius: 18px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+  .challenge-badge {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      opacity: 0.9;
+    }
+
+  .challenge-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-family: 'Fraunces', serif;
+    }
+
+  .challenge-desc {
+      font-size: 12px;
+      margin-bottom: 10px;
+      opacity: 0.95;
+    }
+
+  .challenge-btn {
+      background: #fff;
+      color: var(--olive);
+      padding: 8px 16px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+  .challenge-btn:hover {
+      background: var(--cream);
+    }
+
+  .leaderboard {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      margin-bottom: 20px;
+    }
+
+  .leaderboard-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+  .leaderboard-item:last-child {
+      border-bottom: none;
+    }
+
+  .leaderboard-rank {
+      font-weight: 600;
+      color: var(--brick);
+      min-width: 20px;
+      text-align: center;
+    }
+
+  .leaderboard-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+  .leaderboard-name {
+      flex: 1;
+      font-size: 12px;
+      color: var(--ink);
+    }
+
+  .leaderboard-hearts {
+      font-size: 12px;
+      color: var(--brick);
+      font-weight: 600;
+    }
+
+  /* Top Recipes widget */
+    .top-recipes {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      margin-bottom: 20px;
+    }
+
+  .top-recipe-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      text-decoration: none;
+      color: inherit;
+    }
+
+  .top-recipe-item:last-child {
+      border-bottom: none;
+    }
+
+  .top-recipe-rank {
+      font-weight: 600;
+      color: var(--brick);
+      min-width: 20px;
+      text-align: center;
+      font-size: 13px;
+    }
+
+  .top-recipe-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #F3EEE3, #E5D9C8);
+      flex-shrink: 0;
+    }
+
+  .top-recipe-meta {
+      flex: 1;
+      min-width: 0;
+    }
+
+  .top-recipe-title {
+      font-size: 12px;
+      color: var(--ink);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+  .top-recipe-author {
+      font-size: 11px;
+      color: var(--ink-soft);
+    }
+
+  .top-recipe-hearts {
+      font-size: 12px;
+      color: var(--brick);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+  /* Trending Ingredients widget */
+    .trending-ingredients {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px 12px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+  .ingredient-tag {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      padding: 6px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      color: var(--olive-dark);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+  .ingredient-tag .trend-up {
+      color: var(--olive);
+      font-size: 10px;
+    }
+
+  /* Top Contributors widget */
+    .top-contributors {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      margin-bottom: 20px;
+    }
+
+  .contributor-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+  .contributor-item:last-child {
+      border-bottom: none;
+    }
+
+  .contributor-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+  .contributor-name {
+      flex: 1;
+      font-size: 12px;
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+  .contributor-stat {
+      font-size: 11px;
+      color: var(--ink-soft);
+    }
+
+  /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+  /* Responsive */
+    @media (max-width: 900px) {
+      .right-sidebar { display: none; }
+    }
+
+  @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        height: 100vh;
+        z-index: 100;
+        transition: left 0.25s ease;
+      }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .search-bar { display: none; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+    }
+
+  @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div style="padding: 0 16px; margin-bottom: 20px;">
+    <a href="cookzer-feed.html" style="text-decoration: none;"><div style="font-size: 22px; font-family: 'Fredoka', sans-serif; font-weight: 600; color: var(--olive-dark);">Cook<span style="color: var(--brick);">zer</span></div></a>
+  </div>
+  
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed active">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Cookbook</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+  
+  <div class="sidebar-title" style="margin-top: 24px;">Your Network</div>
+  <div style="padding: 0 16px;">
+    <div style="font-size: 12px; color: var(--ink-soft); margin-bottom: 8px;">Recently active</div>
+  </div>
+  
+  <div class="sidebar-item" style="display: flex; gap: 10px; align-items: center;">
+    <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #D9A441, #A94E2E); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 600;">SK</div>
+    <span>Sarah K.</span>
+  </div>
+  
+  <div class="sidebar-item" style="display: flex; gap: 10px; align-items: center;">
+    <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #D9A441, #A94E2E); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 600;">AM</div>
+    <span>Amina M.</span>
+  </div>
+  
+  <div class="sidebar-item" style="display: flex; gap: 10px; align-items: center;">
+    <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #D9A441, #A94E2E); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 600;">JM</div>
+    <span>Josh M.</span>
+  </div>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Header -->
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <input type="text" class="search-bar" placeholder="Search recipes, cooks...">
+  <div class="header-right">
+    <button class="icon-btn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+  <div class="feed-container">
+    <!-- Composer -->
+    <div class="composer">
+      <div class="composer-header">
+        <div class="composer-avatar" id="composerAvatar">--</div>
+        <div class="composer-input">
+          <input type="text" id="postCaption" placeholder="Share what you cooked today..." maxlength="500">
+        </div>
+      </div>
+      <img id="composerPhotoPreview" hidden style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:10px;">
+      <input type="file" id="composerPhotoInput" accept="image/*" hidden>
+      <div class="composer-actions">
+        <button class="composer-btn" id="composerPhotoBtn" type="button">📸 Photo</button>
+        <a href="cookzer-recipe-new.html?share=1" style="text-decoration:none;flex:1;"><button class="composer-btn" type="button" style="width:100%;">📝 Recipe</button></a>
+        <button class="composer-btn" id="composerChallengeBtn" type="button">🏆 Challenge</button>
+      </div>
+      <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+        <button class="challenge-btn" id="composerPostBtn" type="button" style="background:var(--olive); color:#fff;">Post</button>
+      </div>
+    </div>
+
+    <!-- Feed cards rendered by JS -->
+    <div id="feedList"></div>
+    <div id="feedEmpty" class="card-description" style="text-align:center; padding: 24px;" hidden>No posts yet — be the first to share what you cooked today.</div>
+  </div>
+
+  <!-- Right sidebar -->
+  <div class="right-sidebar">
+    <div class="widget-title">This week's challenge</div>
+    <div class="challenge-banner" id="challengeBanner">
+      <div class="challenge-badge">Weekly Challenge</div>
+      <div class="challenge-title" id="challengeTitle">Loading…</div>
+      <div class="challenge-desc" id="challengeDesc"></div>
+      <button class="challenge-btn" id="joinChallengeBtn" type="button">Join challenge</button>
+    </div>
+
+    <div class="widget-title">Leaderboard</div>
+    <div class="leaderboard" id="leaderboardList">
+      <div class="leaderboard-item"><div class="leaderboard-name" style="color:var(--ink-soft);">No entries yet this week.</div></div>
+    </div>
+
+    <div class="widget-title">Top Recipes This Week</div>
+    <div class="top-recipes" id="topRecipesList">
+      <div class="top-recipe-item"><div class="top-recipe-meta"><div class="top-recipe-author">No recipes shared yet.</div></div></div>
+    </div>
+
+    <div class="widget-title">Trending Ingredients</div>
+    <div class="trending-ingredients" id="trendingIngredients">
+      <div class="ingredient-tag">Nothing trending yet</div>
+    </div>
+
+    <div class="widget-title">Top Contributors</div>
+    <div class="top-contributors" id="topContributorsList">
+      <div class="contributor-item"><div class="contributor-name" style="color:var(--ink-soft);">No contributors yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  let currentUser = null;
+  let activeChallenge = null;
+  let pendingPhotoFile = null;
+
+  function timeAgo(iso) {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + ' min' + (mins === 1 ? '' : 's') + ' ago';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + ' hour' + (hours === 1 ? '' : 's') + ' ago';
+    const days = Math.floor(hours / 24);
+    return days + ' day' + (days === 1 ? '' : 's') + ' ago';
+  }
+
+  function publicUrl(bucket, path) {
+    if (!path) return null;
+    return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  }
+
+  async function uploadPostPhoto(file) {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
+    const { error } = await sb.storage.from('post-photos').upload(path, file);
+    if (error) {
+      alert('Photo upload failed: ' + error.message);
+      return null;
+    }
+    return path;
+  }
+
+  document.getElementById('composerPhotoBtn').addEventListener('click', () => {
+    document.getElementById('composerPhotoInput').click();
+  });
+
+  document.getElementById('composerPhotoInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingPhotoFile = file;
+    const preview = document.getElementById('composerPhotoPreview');
+    preview.src = URL.createObjectURL(file);
+    preview.hidden = false;
+  });
+
+  document.getElementById('composerChallengeBtn').addEventListener('click', () => {
+    document.getElementById('composerChallengeBtn').classList.toggle('active-challenge-tag');
+    const btn = document.getElementById('composerChallengeBtn');
+    if (btn.classList.contains('active-challenge-tag')) {
+      btn.style.background = 'var(--mustard)';
+      btn.style.color = '#fff';
+    } else {
+      btn.style.background = '';
+      btn.style.color = '';
+    }
+  });
+
+  document.getElementById('composerPostBtn').addEventListener('click', createPost);
+
+  async function createPost() {
+    const captionInput = document.getElementById('postCaption');
+    const caption = captionInput.value.trim();
+    if (!caption && !pendingPhotoFile) return;
+
+    let photoPath = null;
+    if (pendingPhotoFile) {
+      photoPath = await uploadPostPhoto(pendingPhotoFile);
+    }
+
+    const { data: inserted, error } = await sb
+      .from('posts')
+      .insert({ author_id: currentUser.id, kind: 'post', caption: caption || null, photo_path: photoPath })
+      .select('id')
+      .single();
+
+    if (error) {
+      alert('Could not post: ' + error.message);
+      return;
+    }
+
+    const taggedForChallenge = document.getElementById('composerChallengeBtn').classList.contains('active-challenge-tag');
+    if (taggedForChallenge && activeChallenge) {
+      await sb.from('challenge_entries').upsert(
+        { challenge_id: activeChallenge.id, user_id: currentUser.id, post_id: inserted.id },
+        { onConflict: 'challenge_id,user_id' }
+      );
+    }
+
+    captionInput.value = '';
+    pendingPhotoFile = null;
+    document.getElementById('composerPhotoPreview').hidden = true;
+    document.getElementById('composerChallengeBtn').classList.remove('active-challenge-tag');
+    document.getElementById('composerChallengeBtn').style.background = '';
+    document.getElementById('composerChallengeBtn').style.color = '';
+
+    await loadFeed();
+  }
+
+  function cardShell(post) {
+    const card = document.createElement('div');
+    card.className = 'feed-card';
+
+    const header = document.createElement('div');
+    header.className = 'card-header';
+    const avatar = document.createElement('div');
+    avatar.className = 'card-avatar';
+    avatar.textContent = post.profiles ? post.profiles.initials : '??';
+    const meta = document.createElement('div');
+    meta.className = 'card-meta';
+    const name = document.createElement('div');
+    name.className = 'card-name';
+    name.textContent = (post.profiles ? post.profiles.display_name : 'Someone') +
+      (post.kind === 'cook_in' ? ' cooked this' : post.kind === 'remake' ? ' remade this' : '');
+    const time = document.createElement('div');
+    time.className = 'card-time';
+    time.textContent = timeAgo(post.created_at);
+    meta.appendChild(name);
+    meta.appendChild(time);
+    header.appendChild(avatar);
+    header.appendChild(meta);
+    card.appendChild(header);
+
+    const cardImageUrl = post.photo_path
+      ? publicUrl('post-photos', post.photo_path)
+      : (post.recipes && post.recipes.hero_photo_path ? publicUrl('recipe-photos', post.recipes.hero_photo_path) : null);
+    if (cardImageUrl) {
+      const img = document.createElement('div');
+      img.className = 'card-image';
+      img.style.backgroundImage = "url('" + cardImageUrl + "')";
+      card.appendChild(img);
+    }
+
+    const content = document.createElement('div');
+    content.className = 'card-content';
+
+    if (post.recipes) {
+      const titleLink = document.createElement('a');
+      titleLink.href = 'cookzer-recipe.html?id=' + post.recipe_id;
+      titleLink.style.textDecoration = 'none';
+      titleLink.style.color = 'inherit';
+      const title = document.createElement('div');
+      title.className = 'card-title';
+      title.textContent = post.recipes.title;
+      titleLink.appendChild(title);
+      content.appendChild(titleLink);
+    }
+
+    if (post.caption) {
+      const desc = document.createElement('div');
+      desc.className = 'card-description';
+      desc.textContent = post.caption;
+      content.appendChild(desc);
+    }
+
+    const stats = document.createElement('div');
+    stats.className = 'card-stats';
+    const heartStat = document.createElement('div');
+    heartStat.id = 'heartCount-' + post.id;
+    heartStat.textContent = '❤️ 0 hearts';
+    const commentStat = document.createElement('div');
+    commentStat.id = 'commentCount-' + post.id;
+    commentStat.textContent = '💬 0 comments';
+    stats.appendChild(heartStat);
+    stats.appendChild(commentStat);
+    content.appendChild(stats);
+
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+    const heartBtn = document.createElement('button');
+    heartBtn.className = 'action-btn';
+    heartBtn.id = 'heartBtn-' + post.id;
+    heartBtn.textContent = '❤️ Heart';
+    heartBtn.addEventListener('click', () => toggleHeart(post.id));
+    const commentBtn = document.createElement('button');
+    commentBtn.className = 'action-btn';
+    commentBtn.textContent = '💬 Comment';
+    commentBtn.addEventListener('click', () => toggleCommentBox(post.id));
+    actions.appendChild(heartBtn);
+    actions.appendChild(commentBtn);
+    content.appendChild(actions);
+
+    const commentBox = document.createElement('div');
+    commentBox.id = 'commentBox-' + post.id;
+    commentBox.hidden = true;
+    commentBox.style.marginTop = '10px';
+    content.appendChild(commentBox);
+
+    card.appendChild(content);
+    return card;
+  }
+
+  async function refreshPostStats(postId) {
+    const { count: heartCount } = await sb
+      .from('hearts')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', postId);
+    const { count: commentCount } = await sb
+      .from('comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', postId);
+    const { data: mine } = await sb
+      .from('hearts')
+      .select('post_id')
+      .eq('post_id', postId)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    const heartEl = document.getElementById('heartCount-' + postId);
+    const commentEl = document.getElementById('commentCount-' + postId);
+    const heartBtn = document.getElementById('heartBtn-' + postId);
+    if (heartEl) heartEl.textContent = '❤️ ' + (heartCount || 0) + ' hearts';
+    if (commentEl) commentEl.textContent = '💬 ' + (commentCount || 0) + ' comments';
+    if (heartBtn) {
+      heartBtn.textContent = mine ? '❤️ Hearted' : '❤️ Heart';
+      heartBtn.style.color = mine ? 'var(--brick)' : '';
+    }
+  }
+
+  async function toggleHeart(postId) {
+    const { data: mine } = await sb
+      .from('hearts')
+      .select('post_id')
+      .eq('post_id', postId)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    if (mine) {
+      await sb.from('hearts').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+    } else {
+      await sb.from('hearts').insert({ post_id: postId, user_id: currentUser.id });
+    }
+    await refreshPostStats(postId);
+  }
+
+  async function toggleCommentBox(postId) {
+    const box = document.getElementById('commentBox-' + postId);
+    if (!box.hidden) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+    await renderComments(postId, box);
+  }
+
+  async function renderComments(postId, box) {
+    box.innerHTML = '';
+    const { data: comments } = await sb
+      .from('comments')
+      .select('id, text, created_at, profiles(display_name, initials)')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+
+    (comments || []).forEach((c) => {
+      const row = document.createElement('div');
+      row.style.fontSize = '13px';
+      row.style.marginBottom = '6px';
+      const strong = document.createElement('b');
+      strong.textContent = (c.profiles ? c.profiles.display_name : 'Someone') + ': ';
+      row.appendChild(strong);
+      row.appendChild(document.createTextNode(c.text));
+      box.appendChild(row);
+    });
+
+    const inputRow = document.createElement('div');
+    inputRow.style.display = 'flex';
+    inputRow.style.gap = '8px';
+    inputRow.style.marginTop = '8px';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Write a comment...';
+    input.style.flex = '1';
+    input.style.padding = '8px 12px';
+    input.style.border = '1px solid var(--line)';
+    input.style.borderRadius = '16px';
+    input.style.fontFamily = 'inherit';
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitComment(postId, input, box);
+    });
+    const sendBtn = document.createElement('button');
+    sendBtn.className = 'action-btn';
+    sendBtn.textContent = 'Send';
+    sendBtn.addEventListener('click', () => submitComment(postId, input, box));
+    inputRow.appendChild(input);
+    inputRow.appendChild(sendBtn);
+    box.appendChild(inputRow);
+  }
+
+  async function submitComment(postId, input, box) {
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    const { error } = await sb.from('comments').insert({ post_id: postId, author_id: currentUser.id, text });
+    if (error) {
+      alert('Could not comment: ' + error.message);
+      return;
+    }
+    await renderComments(postId, box);
+    await refreshPostStats(postId);
+  }
+
+  async function loadFeed() {
+    const listEl = document.getElementById('feedList');
+    listEl.innerHTML = '';
+
+    const { data: posts, error } = await sb
+      .from('posts')
+      .select('id, kind, recipe_id, caption, photo_path, created_at, profiles(display_name, initials), recipes(title, hero_photo_path)')
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    document.getElementById('feedEmpty').hidden = !!(posts && posts.length);
+
+    if (error || !posts) return;
+
+    posts.forEach((post) => {
+      const card = cardShell(post);
+      listEl.appendChild(card);
+      refreshPostStats(post.id);
+    });
+  }
+
+  async function loadChallenge() {
+    const { data: challenges } = await sb
+      .from('challenges')
+      .select('id, title, description, ends_at')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (!challenges || challenges.length === 0) return;
+    activeChallenge = challenges[0];
+
+    document.getElementById('challengeTitle').textContent = activeChallenge.title;
+    const { count: entryCount } = await sb
+      .from('challenge_entries')
+      .select('*', { count: 'exact', head: true })
+      .eq('challenge_id', activeChallenge.id);
+    const endsIn = Math.max(0, Math.ceil((new Date(activeChallenge.ends_at) - Date.now()) / 86400000));
+    document.getElementById('challengeDesc').textContent = (entryCount || 0) + ' entries • ends in ' + endsIn + 'd';
+
+    document.getElementById('joinChallengeBtn').addEventListener('click', async () => {
+      const { error } = await sb
+        .from('challenge_entries')
+        .upsert({ challenge_id: activeChallenge.id, user_id: currentUser.id }, { onConflict: 'challenge_id,user_id' });
+      if (error) {
+        alert('Could not join: ' + error.message);
+        return;
+      }
+      document.getElementById('joinChallengeBtn').textContent = 'Joined ✓';
+      await loadChallenge();
+      await loadLeaderboard();
+    });
+
+    await loadLeaderboard();
+  }
+
+  async function loadLeaderboard() {
+    if (!activeChallenge) return;
+    const listEl = document.getElementById('leaderboardList');
+
+    const { data: entries } = await sb
+      .from('challenge_entries')
+      .select('user_id, post_id, profiles(display_name, initials)')
+      .eq('challenge_id', activeChallenge.id)
+      .not('post_id', 'is', null);
+
+    if (!entries || entries.length === 0) {
+      listEl.innerHTML = '<div class="leaderboard-item"><div class="leaderboard-name" style="color:var(--ink-soft);">No entries yet this week.</div></div>';
+      return;
+    }
+
+    const withHearts = await Promise.all(entries.map(async (e) => {
+      const { count } = await sb.from('hearts').select('*', { count: 'exact', head: true }).eq('post_id', e.post_id);
+      return { ...e, hearts: count || 0 };
+    }));
+
+    withHearts.sort((a, b) => b.hearts - a.hearts);
+    const medals = ['🥇', '🥈', '🥉'];
+    listEl.innerHTML = '';
+    withHearts.slice(0, 5).forEach((e, i) => {
+      const item = document.createElement('div');
+      item.className = 'leaderboard-item';
+      item.innerHTML =
+        '<div class="leaderboard-rank">' + (medals[i] || (i + 1)) + '</div>' +
+        '<div class="leaderboard-avatar"></div>' +
+        '<div class="leaderboard-name"></div>' +
+        '<div class="leaderboard-hearts">' + e.hearts + ' ❤️</div>';
+      item.querySelector('.leaderboard-avatar').textContent = e.profiles ? e.profiles.initials : '??';
+      item.querySelector('.leaderboard-name').textContent = e.profiles ? e.profiles.display_name : 'Someone';
+      listEl.appendChild(item);
+    });
+  }
+
+  async function loadTopRecipes() {
+    const listEl = document.getElementById('topRecipesList');
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+
+    const { data: posts } = await sb
+      .from('posts')
+      .select('id, recipe_id, created_at, profiles(display_name), recipes(title, hero_photo_path)')
+      .not('recipe_id', 'is', null)
+      .gte('created_at', weekAgo);
+
+    if (!posts || posts.length === 0) return;
+
+    const withHearts = await Promise.all(posts.map(async (p) => {
+      const { count } = await sb.from('hearts').select('*', { count: 'exact', head: true }).eq('post_id', p.id);
+      return { ...p, hearts: count || 0 };
+    }));
+
+    withHearts.sort((a, b) => b.hearts - a.hearts);
+    listEl.innerHTML = '';
+    withHearts.slice(0, 3).forEach((p, i) => {
+      const a = document.createElement('a');
+      a.className = 'top-recipe-item';
+      a.href = 'cookzer-recipe.html?id=' + p.recipe_id;
+      a.innerHTML =
+        '<div class="top-recipe-rank">' + (i + 1) + '</div>' +
+        '<div class="top-recipe-thumb"></div>' +
+        '<div class="top-recipe-meta"><div class="top-recipe-title"></div><div class="top-recipe-author"></div></div>' +
+        '<div class="top-recipe-hearts">' + p.hearts + ' ❤️</div>';
+      a.querySelector('.top-recipe-title').textContent = p.recipes ? p.recipes.title : 'Recipe';
+      a.querySelector('.top-recipe-author').textContent = p.profiles ? p.profiles.display_name : '';
+      if (p.recipes && p.recipes.hero_photo_path) {
+        a.querySelector('.top-recipe-thumb').style.backgroundImage = "url('" + publicUrl('recipe-photos', p.recipes.hero_photo_path) + "')";
+      }
+      listEl.appendChild(a);
+    });
+  }
+
+  async function loadTrendingIngredients() {
+    const { data: recipes } = await sb
+      .from('recipes')
+      .select('ingredients')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (!recipes || recipes.length === 0) return;
+
+    const counts = {};
+    recipes.forEach((r) => {
+      (r.ingredients || []).forEach((ing) => {
+        const name = (ing.name || '').trim();
+        if (!name) return;
+        counts[name] = (counts[name] || 0) + 1;
+      });
+    });
+
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    if (top.length === 0) return;
+
+    const listEl = document.getElementById('trendingIngredients');
+    listEl.innerHTML = '';
+    top.forEach(([name]) => {
+      const tag = document.createElement('div');
+      tag.className = 'ingredient-tag';
+      tag.innerHTML = '<span class="trend-up">▲</span> ';
+      tag.appendChild(document.createTextNode(name));
+      listEl.appendChild(tag);
+    });
+  }
+
+  async function loadTopContributors() {
+    const { data: posts } = await sb
+      .from('posts')
+      .select('author_id, profiles(display_name, initials)')
+      .not('recipe_id', 'is', null);
+
+    if (!posts || posts.length === 0) return;
+
+    const counts = {};
+    posts.forEach((p) => {
+      if (!counts[p.author_id]) counts[p.author_id] = { count: 0, profile: p.profiles };
+      counts[p.author_id].count++;
+    });
+
+    const top = Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 3);
+    const listEl = document.getElementById('topContributorsList');
+    listEl.innerHTML = '';
+    top.forEach((c) => {
+      const item = document.createElement('div');
+      item.className = 'contributor-item';
+      item.innerHTML = '<div class="contributor-avatar"></div><div class="contributor-name"></div><div class="contributor-stat">' + c.count + ' recipes</div>';
+      item.querySelector('.contributor-avatar').textContent = c.profile ? c.profile.initials : '??';
+      item.querySelector('.contributor-name').textContent = c.profile ? c.profile.display_name : 'Someone';
+      listEl.appendChild(item);
+    });
+  }
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const { data: profile } = await sb.from('profiles').select('display_name, initials').eq('id', user.id).single();
+    currentUser = { id: user.id, ...(profile || { display_name: user.email, initials: '??' }) };
+    document.getElementById('composerAvatar').textContent = currentUser.initials;
+
+    await loadFeed();
+    await loadChallenge();
+    await loadTopRecipes();
+    await loadTrendingIngredients();
+    await loadTopContributors();
+  })();
+</script>
+</body>
+</html>
