@@ -448,7 +448,7 @@
       <li class="toc-heading">What's next</li>
       <li><a href="#backlog">Full backlog</a></li>
       <li><a href="#flagged">Long-term expansion</a></li>
-      <li><a href="#now">Now bucket (20)</a></li>
+      <li><a href="#now">Now bucket (20/20 shipped)</a></li>
       <li class="toc-heading">Reference</li>
       <li><a href="#research">Competitive research</a></li>
       <li><a href="#tech">Technical reference</a></li>
@@ -562,15 +562,22 @@
         <div class="shipped-item"><div class="s-num">16</div><div class="s-text"><b>Dark mode, recipe scaling, and a round of Now-bucket polish</b><span>Site-wide dark mode toggle, +/- recipe scaling with real quantity math, print/share on recipes, a live challenge countdown, message read receipts, keyboard shortcuts, a weekly nutrition summary, a first-time welcome modal, confetti on joining a challenge, copy-last-week's-plan, and a past challenges archive.</span></div></div>
         <div class="shipped-item"><div class="s-num">17</div><div class="s-text"><b>Health section</b><span>A new nav-level page aggregating real nutrition totals (calories/protein/carbs/fat) across cook-ins, using each recipe's existing hand-entered nutrition line — no external nutrition database, resolving the decision this item was flagged on.</span></div></div>
         <div class="shipped-item"><div class="s-num">18</div><div class="s-text"><b>Restaurant check-ins</b><span>An optional "Dining out" tag on a post: one-time geolocation permission, a free OpenStreetMap Overpass API lookup (no key, no billing account) for nearby named places within 200m, a suggest-and-confirm list, and a manual-entry fallback if location is denied or the lookup fails.</span></div></div>
+        <div class="shipped-item"><div class="s-num">19</div><div class="s-text"><b>My Recipes &gt; Cookbooks &gt; Recipes made functional, profile photos, chat images</b><span>Saving a recipe now prompts for which cookbook folder to file it in (or none), a "move to folder" action moves existing saves between folders, newly-created recipes auto-save to their author's own cookbook, real avatar upload wired through every header avatar site-wide, and Messenger supports sending image attachments.</span></div></div>
+        <div class="shipped-item"><div class="s-num">20</div><div class="s-text"><b>Message reactions, post bookmarks, mood tags, profile banners</b><span>Emoji reactions on messages, a "Save post" bookmark with its own Saved Posts profile tab, an optional mood tag on the composer (Comfort food / Quick &amp; easy / Fancy tonight), and a preset-gradient cover banner picker on Profile.</span></div></div>
+        <div class="shipped-item"><div class="s-num">21</div><div class="s-text"><b>Drag-and-drop meal planner</b><span>A drag handle on every planned day lets you drag a meal onto another day, swapping it with whatever was already planned there.</span></div></div>
+        <div class="shipped-item"><div class="s-num">22</div><div class="s-text"><b>Cookbook empty-state polish + achievement milestones</b><span>Friendlier empty states and real recipe photo thumbnails on My Recipes, plus a Milestones section on Profile previewing 6 lockable achievement badges computed from real stats — this closes out the full 20-item Now bucket.</span></div></div>
       </div>
       <p class="section-dek" style="margin-top:20px;">
-        <b>⚠️ One manual step still needed:</b> items 11-15 and 17-18 depend
-        on <code>supabase/migrations/003_platform_tables.sql</code> through
-        <code>006_restaurant_checkins.sql</code>, which have to be run in
-        order once in the Supabase SQL Editor (Dashboard → SQL Editor →
+        <b>⚠️ One manual step still needed:</b> everything above depends on
+        <code>supabase/migrations/003_platform_tables.sql</code> through
+        <code>008_reactions_bookmarks.sql</code>, which have to be run in
+        order, once, in the Supabase SQL Editor (Dashboard → SQL Editor →
         paste each file's contents → Run) before any of this works live —
         no tool in this pipeline can execute SQL directly against the
-        project.
+        project. If an earlier one has already been run, re-running it is
+        harmless (it will just error on "already exists" — skip past that
+        and continue with the next file). Full list, in order: 003, 004,
+        005, 006, 007, 008.
       </p>
     </section>
 
@@ -790,44 +797,44 @@
     <!-- ================= NOW BUCKET ================= -->
     <section class="plan-section" id="now">
       <div class="section-eyebrow">What's next</div>
-      <h2>Now bucket <span class="pill progress" style="vertical-align: 2px;">20 ideas</span></h2>
-      <p class="section-dek">Buildable directly on what exists today — no dependency on the phased plan above. Not a build commitment, just triaged and ready whenever there's a gap to fill.</p>
+      <h2>Now bucket <span class="pill shipped" style="vertical-align: 2px;">20/20 shipped</span></h2>
+      <p class="section-dek">Buildable directly on what exists today — no dependency on the phased plan above. All 20 are now live on cookzer.com.</p>
 
       <div class="backlog-category">
         <h3>Zero backend, pure client-side</h3>
         <div class="now-grid">
-          <div class="now-item"><b>Dark mode toggle</b><span>CSS variables already exist on all 8 pages.</span></div>
-          <div class="now-item"><b>Recipe scaling</b><span>Adjust servings, auto-multiply every ingredient qty.</span></div>
-          <div class="now-item"><b>Print / PDF recipe view</b><span>Print-optimized stylesheet + button.</span></div>
-          <div class="now-item"><b>Share recipe link</b><span>Copy-to-clipboard, one click.</span></div>
-          <div class="now-item"><b>Keyboard shortcuts</b><span>"/" to search, "Esc" to close.</span></div>
-          <div class="now-item"><b>Welcome modal</b><span>One-time onboarding after signup.</span></div>
-          <div class="now-item"><b>Skeleton loading shimmer</b><span>Feed card polish.</span></div>
-          <div class="now-item"><b>Confetti on joining a challenge</b><span>Small delight moment.</span></div>
-          <div class="now-item"><b>Live challenge countdown</b><span>"Ends in 2d 14h," ticking.</span></div>
-          <div class="now-item"><b>Cookbook folder polish</b><span>Hover states, empty-state art.</span></div>
+          <div class="now-item"><b>✅ Dark mode toggle</b><span>CSS variables already exist on all 8 pages.</span></div>
+          <div class="now-item"><b>✅ Recipe scaling</b><span>Adjust servings, auto-multiply every ingredient qty.</span></div>
+          <div class="now-item"><b>✅ Print / PDF recipe view</b><span>Print-optimized stylesheet + button.</span></div>
+          <div class="now-item"><b>✅ Share recipe link</b><span>Copy-to-clipboard, one click.</span></div>
+          <div class="now-item"><b>✅ Keyboard shortcuts</b><span>"/" to search, "Esc" to close.</span></div>
+          <div class="now-item"><b>✅ Welcome modal</b><span>One-time onboarding after signup.</span></div>
+          <div class="now-item"><b>✅ Skeleton loading shimmer</b><span>Feed card polish.</span></div>
+          <div class="now-item"><b>✅ Confetti on joining a challenge</b><span>Small delight moment.</span></div>
+          <div class="now-item"><b>✅ Live challenge countdown</b><span>"Ends in 2d 14h," ticking.</span></div>
+          <div class="now-item"><b>✅ Cookbook folder polish</b><span>Hover states, empty-state art.</span></div>
         </div>
       </div>
 
       <div class="backlog-category">
         <h3>Small, isolated backend additions</h3>
         <div class="now-grid">
-          <div class="now-item"><b>Message read receipts</b><span><code>last_read_at</code> already exists — just surface it.</span></div>
-          <div class="now-item"><b>Message emoji reactions</b><span>One small table, fully isolated.</span></div>
-          <div class="now-item"><b>Save for later</b><span>localStorage now, swap to a real table later.</span></div>
-          <div class="now-item"><b>Copy last week's plan</b><span>localStorage-based duplication.</span></div>
-          <div class="now-item"><b>Drag-and-drop meal slots</b><span>Client-side reordering.</span></div>
+          <div class="now-item"><b>✅ Message read receipts</b><span><code>last_read_at</code> already exists — just surface it.</span></div>
+          <div class="now-item"><b>✅ Message emoji reactions</b><span>One small table, fully isolated.</span></div>
+          <div class="now-item"><b>✅ Save for later</b><span>Real <code>post_bookmarks</code> table, with a Saved Posts profile tab.</span></div>
+          <div class="now-item"><b>✅ Copy last week's plan</b><span>Duplicates last week's <code>meal_plan_entries</code> rows.</span></div>
+          <div class="now-item"><b>✅ Drag-and-drop meal slots</b><span>Drag a planned day's meal onto another day to swap them.</span></div>
         </div>
       </div>
 
       <div class="backlog-category">
         <h3>Make the demo feel more alive</h3>
         <div class="now-grid">
-          <div class="now-item"><b>Weekly nutrition summary</b><span>Sum calories across planned meals.</span></div>
-          <div class="now-item"><b>Achievement badge preview</b><span>"Coming soon" badges on Profile.</span></div>
-          <div class="now-item"><b>Cover photo picker</b><span>Preset gradient banners on Profile.</span></div>
-          <div class="now-item"><b>Past Challenges archive</b><span>Timeline of previous weekly challenges.</span></div>
-          <div class="now-item"><b>"Feeling:" mood tag</b><span>Quick-tap options on the composer.</span></div>
+          <div class="now-item"><b>✅ Weekly nutrition summary</b><span>Sum calories across planned meals.</span></div>
+          <div class="now-item"><b>✅ Achievement badge preview</b><span>Milestones section on Profile — 6 lockable badges from real stats.</span></div>
+          <div class="now-item"><b>✅ Cover photo picker</b><span>Preset gradient banners on Profile.</span></div>
+          <div class="now-item"><b>✅ Past Challenges archive</b><span>Timeline of previous weekly challenges.</span></div>
+          <div class="now-item"><b>✅ "Feeling:" mood tag</b><span>Quick-tap options on the composer.</span></div>
         </div>
       </div>
     </section>
