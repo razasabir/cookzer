@@ -444,7 +444,7 @@
       <li class="toc-heading">Progress</li>
       <li><a href="#shipped">What's shipped</a></li>
       <li><a href="#phases">Execution plan</a></li>
-      <li><a href="#placeholders">Placeholder audit</a></li>
+      <li><a href="#placeholders">Known gaps</a></li>
       <li class="toc-heading">What's next</li>
       <li><a href="#backlog">Full backlog</a></li>
       <li><a href="#flagged">Long-term expansion</a></li>
@@ -535,6 +535,18 @@
           <div class="d-title">No fake profiles or bots to simulate traffic <span class="pill shipped">Decided</span></div>
           <p class="d-body">Rejected outright — presenting fabricated activity as real people is deceptive and carries real trust/legal risk. Honest alternative: seed with real accounts (founder + beta testers) or a clearly labeled "sample content" state.</p>
         </div>
+        <div class="decision-card">
+          <div class="d-title">Restaurant ratings require a receipt photo <span class="pill shipped">Shipped</span></div>
+          <p class="d-body">A rating can't be submitted without attaching a receipt or invoice photo as proof of the visit — a deliberate friction cost to keep ratings honest, over allowing frictionless star ratings that are easy to fake.</p>
+        </div>
+        <div class="decision-card">
+          <div class="d-title">Investor pitch page lives off the main nav, at <code>/nadir</code> <span class="pill shipped">Shipped</span></div>
+          <p class="d-body">A separate route rather than a page reachable from the app shell — it's a pitch artifact for a specific audience, not part of the product a cook would use.</p>
+        </div>
+        <div class="decision-card">
+          <div class="d-title">Co-Cooks: a sidebar widget, not a nav page <span class="pill shipped">Shipped</span></div>
+          <p class="d-body">First shipped as a full page with its own nav link, matching Groups/Restaurants — reworked after user feedback into a compact "up to 7 avatars + settings" widget pinned to the bottom of the sidebar on every page, since friends are meant to be glanceable, not a destination.</p>
+        </div>
       </div>
     </section>
 
@@ -567,13 +579,25 @@
         <div class="shipped-item"><div class="s-num">21</div><div class="s-text"><b>Drag-and-drop meal planner</b><span>A drag handle on every planned day lets you drag a meal onto another day, swapping it with whatever was already planned there.</span></div></div>
         <div class="shipped-item"><div class="s-num">22</div><div class="s-text"><b>Cookbook empty-state polish + achievement milestones</b><span>Friendlier empty states and real recipe photo thumbnails on My Recipes, plus a Milestones section on Profile previewing 6 lockable achievement badges computed from real stats — this closes out the full 20-item Now bucket.</span></div></div>
         <div class="shipped-item"><div class="s-num">23</div><div class="s-text"><b>Video posts</b><span>Feed posts can carry a short video (max 90s) instead of a photo — direct browser-to-host upload via Bunny Stream (TUS resumable), a signed-upload Vercel serverless function so the real Bunny API key stays server-side, and playback via Bunny's public player embed. Chosen over Cloudflare Stream on cost: roughly 5-7x cheaper for short, well-compressed clips. Resolves the "video posts" parked decision — estimated ~$5/month at current traffic.</span></div></div>
+        <div class="shipped-item"><div class="s-num">24</div><div class="s-text"><b>Groups</b><span>Facebook-style communities — create a group, join/leave, and post into a group's own feed and comment thread, separate from the main feed.</span></div></div>
+        <div class="shipped-item"><div class="s-num">25</div><div class="s-text"><b>WhatsApp-style Messenger, real notifications, real search</b><span>Messenger restyled to a familiar two-pane chat look; the notification bell became a real dropdown backed by actual follow/heart/comment events instead of a static icon; feed search actually filters posts instead of being decorative.</span></div></div>
+        <div class="shipped-item"><div class="s-num">26</div><div class="s-text"><b>Investor/partnership pitch page (<code>/nadir</code>)</b><span>A standalone page, not linked from the main site nav, refined over several rounds: a three-market comparison table, a 10-year growth model, a Facebook/Instagram/LinkedIn/Pinterest/Foursquare "blueprint" section mapping Cookzer features to proven analogues, and a revenue model consolidated to four streams (ads &amp; sponsorships, grocery cart connection, ready-made meal plans, restaurant delivery &amp; paid listings).</span></div></div>
+        <div class="shipped-item"><div class="s-num">27</div><div class="s-text"><b>Restaurant ratings, verified by receipt</b><span>A dining-out check-in can now be rated, but only with a required receipt/invoice photo attached as proof — this is what keeps ratings honest.</span></div></div>
+        <div class="shipped-item"><div class="s-num">28</div><div class="s-text"><b>Data-reliability pass</b><span>Fixed a family of bugs that made posting and recipes intermittently "not work": ambiguous Supabase embed queries (PGRST201) across posts/recipes/profiles, a stale browser disk-cache masking successful writes on reload, and two query paths that were silently swallowing errors instead of surfacing them.</span></div></div>
+        <div class="shipped-item"><div class="s-num">29</div><div class="s-text"><b>Post deletion</b><span>Users can delete their own posts from the feed, a group, or their profile.</span></div></div>
+        <div class="shipped-item"><div class="s-num">30</div><div class="s-text"><b>Clickable people, everywhere</b><span>Every name and avatar across the site — feed, comments, notifications, the Top Contributors widget, restaurant reviews — now links through to that person's real profile.</span></div></div>
+        <div class="shipped-item"><div class="s-num">31</div><div class="s-text"><b>Co-Cooks</b><span>A friends list with search-to-follow, surfaced as a compact widget at the bottom of the sidebar (up to 7 avatars + a settings link) rather than a separate nav page — repositioned this way after the first version's UX didn't land.</span></div></div>
+        <div class="shipped-item"><div class="s-num">32</div><div class="s-text"><b>Mobile chat input + Share button fixes</b><span>Fixed the mobile Messenger's message box being pushed off-screen with no way to reach it (a <code>100vh</code>-vs-<code>100dvh</code> viewport bug), and fixed the recipe/profile Share buttons silently failing on browsers without the Clipboard API.</span></div></div>
+        <div class="shipped-item"><div class="s-num">33</div><div class="s-text"><b>Guided recipe upload wizard</b><span>Recipe creation is now a 5-step flow (basics → ingredients → steps &amp; photos → cover photo → review) — a cook can attach a photo to each individual step and explicitly choose which photo becomes the recipe's cover, instead of one flat form.</span></div></div>
+        <div class="shipped-item"><div class="s-num">34</div><div class="s-text"><b>My Recipes: hashtags replace folders</b><span>Dropped the single-folder-per-recipe model for freeform multi-tag hashtags, with a filter bar built from the user's own tags and an "Add recipe" button straight into the wizard above.</span></div></div>
+        <div class="shipped-item"><div class="s-num">35</div><div class="s-text"><b>Photo lightbox, everywhere</b><span>Every photo on the site — feed/group posts, profile activity, recipe hero/gallery/step photos, restaurant receipts — is now clickable and opens full-size with an upload-details panel: who posted it, when, their caption, and context (recipe, filter, rating).</span></div></div>
       </div>
       <p class="section-dek" style="margin-top:20px;">
-        <b>⚠️ Two manual steps still needed:</b>
+        <b>⚠️ Manual steps still needed:</b>
       </p>
       <ol style="font-size:13.5px; color:var(--ink-soft); max-width:68ch; margin:0 0 20px; padding-left:20px; line-height:1.7;">
-        <li>Everything except item 23 depends on <code>supabase/migrations/003_platform_tables.sql</code> through <code>008_reactions_bookmarks.sql</code>, which have to be run in order, once, in the Supabase SQL Editor (Dashboard → SQL Editor → paste each file's contents → Run). If an earlier one has already been run, re-running it is harmless — it just errors on "already exists," skip past that and continue with the next file. Full list, in order: 003, 004, 005, 006, 007, 008.</li>
-        <li>Item 23 (video posts) additionally needs migration <code>009_video_posts.sql</code> run the same way, plus a one-time Bunny Stream setup: create a video library at bunny.net, then set <code>BUNNY_LIBRARY_ID</code> (also update the value in <code>bunny-config.js</code>) and <code>BUNNY_STREAM_API_KEY</code> as Vercel environment variables and redeploy. Until that's done, the Video composer button shows a clear "not configured yet" error rather than failing silently — nothing else is affected.</li>
+        <li>Almost everything above depends on the migrations in <code>supabase/migrations/</code>, which have to be run in order, once each, in the Supabase SQL Editor (Dashboard → SQL Editor → paste a file's contents → Run). If an earlier one has already been run, re-running it is harmless — it just errors on "already exists," skip past that and continue with the next file. Full list, in order: <code>003</code> through <code>013</code> (<code>003_platform_tables.sql</code> … <code>013_saved_recipe_tags.sql</code>). <code>013_saved_recipe_tags.sql</code> (item 34, hashtags) is the newest and, as of this writing, not yet confirmed run — until it is, saving/filtering by hashtag on the live site will fail.</li>
+        <li>Video posts (item 23) additionally need a one-time Bunny Stream setup: create a video library at bunny.net, then set <code>BUNNY_LIBRARY_ID</code> (also update the value in <code>bunny-config.js</code>) and <code>BUNNY_STREAM_API_KEY</code> as Vercel environment variables and redeploy. Until that's done, the Video composer button shows a clear "not configured yet" error rather than failing silently — nothing else is affected.</li>
       </ol>
     </section>
 
@@ -642,84 +666,57 @@
             <p>Ratings ("I made this" + star rating) and a real challenges backend (join, filter, leaderboard) are shipped. Recipe import from URL and full Trend Radar (auto-spawning challenges from live trending dishes) are not — both need a server-side piece and are still tracked in the backlog/flagged sections below.</p>
           </div>
         </div>
+        <div class="phase-card">
+          <div class="phase-num">6</div>
+          <div class="phase-body">
+            <h3>Post-launch: new surfaces &amp; hardening <span class="pill shipped">Shipped</span></h3>
+            <p>Not one build in sequence like Phases 0-5 — a run of independently-scoped additions and fixes once the core platform existed: Groups, verified restaurant ratings, a guided recipe upload wizard, hashtag-based My Recipes, Co-Cooks, and a sitewide photo lightbox, alongside a data-reliability pass (ambiguous embed queries, stale-cache writes, silently-swallowed errors) and a round of UX bugfixes (mobile chat input, Share buttons, clickable profiles everywhere).</p>
+            <div class="phase-tags">
+              <span class="tag">Groups</span>
+              <span class="tag">Restaurant ratings</span>
+              <span class="tag">Recipe wizard</span>
+              <span class="tag">Hashtags</span>
+              <span class="tag">Co-Cooks</span>
+              <span class="tag">Photo lightbox</span>
+            </div>
+          </div>
+        </div>
         <div class="phase-card parked">
           <div class="phase-num">—</div>
           <div class="phase-body">
             <h3>Parked — needs a business decision, not just build time</h3>
-            <p>Sponsored challenges (needs a sales motion), cooking clubs/groups (bigger scope). None of these are "no" — they're waiting on a call only the user can make. (Marketplace and the AI cooking assistant moved to Long-term expansion below. Video posts shipped — see below.)</p>
+            <p>Sponsored challenges — needs a sales motion, not a build call. Not a "no," just waiting on a call only the user can make. (Groups shipped — see Phase 6. Marketplace and the AI cooking assistant live under Long-term expansion below. Video posts shipped — see above.)</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ================= PLACEHOLDER AUDIT ================= -->
+    <!-- ================= KNOWN GAPS ================= -->
     <section class="plan-section" id="placeholders">
       <div class="section-eyebrow">Progress</div>
-      <h2>Placeholder audit — every page, page by page</h2>
+      <h2>Known gaps</h2>
       <p class="section-dek">
-        A line-by-line pass over all 8 pages to find exactly what's still
-        hardcoded markup pretending to be a product. Each item names the
-        specific button/section that doesn't work today and which phase
-        above already covers the backend it needs — nothing here is a new
-        phase, it's the detail underneath the ones that already exist.
+        This section used to be a page-by-page audit of hardcoded placeholder
+        markup from very early in the build — every item it listed has since
+        shipped (real feed, real recipes, real profile, real challenges, a
+        real avatar/sign-out on every page). What's below is what's
+        genuinely still missing today, not historical placeholder content.
       </p>
 
       <div class="backlog-category">
-        <h3>Feed (cookzer-feed.html)</h3>
-        <div class="backlog-item"><span class="b-name">Composer "Photo / Recipe / Challenge" buttons</span><span class="b-desc">— all three render but have no click handler at all; there is currently no way to actually create a post. Needs the <code>posts</code> table (Phase 1) plus, for the Recipe button, a way to attach an existing or new recipe (Phase 2).</span></div>
-        <div class="backlog-item"><span class="b-name">Composer avatar shows hardcoded "RZ"</span><span class="b-desc">— every other page's avatar is wired by <code>auth-guard.js</code> to the real logged-in user's initials; the feed composer never got that treatment. Small fix, ship with Phase 1.</span></div>
-        <div class="backlog-item"><span class="b-name">3 feed cards (Sarah K. / Amina M. / Josh M.)</span><span class="b-desc">— fully hardcoded HTML, not rows from a table. Only Sarah K.'s recipe title links anywhere. Replace with a real query against <code>posts</code> joined to <code>profiles</code>, ordered by <code>created_at</code> (Phase 1).</span></div>
-        <div class="backlog-item"><span class="b-name">Heart counts and comment counts on feed cards</span><span class="b-desc">— static numbers baked into the HTML, not live, and nothing is clickable to actually heart or open comments. Needs <code>hearts</code>/<code>comments</code> tables and a toggle handler (Phase 1).</span></div>
-        <div class="backlog-item"><span class="b-name">Weekly Challenge banner "Join challenge" button</span><span class="b-desc">— no onclick, no <code>challenge_entries</code> table to join into. Needs a minimal challenges backend before this does anything (Phase 5, or pulled forward if challenges become a priority sooner).</span></div>
-        <div class="backlog-item"><span class="b-name">Leaderboard (top 3, sidebar)</span><span class="b-desc">— hardcoded names/scores. Once challenge entries are real, this becomes a query ordered by hearts on this week's entries (Phase 3 social graph + Phase 5 challenges).</span></div>
-        <div class="backlog-item"><span class="b-name">Top Recipes This Week / Trending Ingredients / Top Contributors widgets</span><span class="b-desc">— all three ship with demo data today. Once real posts and recipes exist, each becomes a genuine aggregate query (most-hearted recipes this week, most-tagged ingredients, most-active posters) rather than a redesign — same markup, real data (Phase 1 for posts-based aggregates, Phase 2 once recipes/ingredients are structured data).</span></div>
-      </div>
-
-      <div class="backlog-category">
-        <h3>My Cookbook (cookzer-cookbook.html)</h3>
-        <div class="backlog-item"><span class="b-name">4 folders (Weeknight dinners, Ramadan meals, Kids approved, Restaurant recreations)</span><span class="b-desc">— static divs, not clickable, and there's no "create folder" UI at all. Needs a <code>cookbook_folders</code> table (user-owned, name + emoji) and a join table linking saved recipes to folders (Phase 2).</span></div>
-        <div class="backlog-item"><span class="b-name">"Recently saved" recipe items</span><span class="b-desc">— hardcoded Chicken Karahi / Lentil salad entries with a hand-written note ("less chilli next time"). Needs a real <code>saved_recipes</code> table (user, recipe, optional personal note) and the thumbnails need to actually link to <code>cookzer-recipe.html?id=…</code> instead of nowhere (Phase 2).</span></div>
-        <div class="backlog-item"><span class="b-name">Heart / "⋯" more-menu icons on recipe items</span><span class="b-desc">— decorative, no click handlers anywhere in the file except the shared <code>toggleSidebar()</code>. Once recipes are real, wire heart to the same hearts table as the feed and "⋯" to move-to-folder / remove-from-cookbook actions (Phase 2).</span></div>
-      </div>
-
-      <div class="backlog-category">
-        <h3>Meal Planner (cookzer-planner.html)</h3>
-        <div class="backlog-item"><span class="b-name">7-day grid (Mon–Sun) with hardcoded meals</span><span class="b-desc">— "Chicken Karahi," "Lentil salad," etc. are static text, not tied to any date, user, or real recipe row. Needs a <code>meal_plan_entries</code> table (user, date, recipe_id or free-text, meal slot) (Phase 2, since it depends on real recipes existing to attach).</span></div>
-        <div class="backlog-item"><span class="b-name">"+ Add meal" button on empty days</span><span class="b-desc">— renders on every unplanned day but has no onclick — there is no meal-picker modal to search/select a recipe and assign it to a day. Needs to be built once <code>meal_plan_entries</code> exists (Phase 2).</span></div>
-        <div class="backlog-item"><span class="b-name">Populated meal slots don't link anywhere</span><span class="b-desc">— "Chicken Karahi / from your cookbook" is plain text, not a link to the actual recipe page. Trivial fix once each slot has a real <code>recipe_id</code> (Phase 2).</span></div>
-        <div class="backlog-item"><span class="b-name">No shopping-list generation</span><span class="b-desc">— this is already its own phase (Phase 4) rather than a small gap: it needs every planned meal in the week to resolve to a real recipe's ingredient list, then consolidate quantities across recipes. Blocked on Phase 2 (real recipes) landing first.</span></div>
-      </div>
-
-      <div class="backlog-category">
-        <h3>Challenges (cookzer-challenges.html)</h3>
-        <div class="backlog-item"><span class="b-name">"Join the challenge" button on the hero card</span><span class="b-desc">— no onclick, and "214 cooks entered so far" is a hardcoded number. Needs a <code>challenges</code> table (current theme, end date) and a <code>challenge_entries</code> table (user, challenge, recipe/post, hearts) — this is the single biggest gap on this page (Phase 5).</span></div>
-        <div class="backlog-item"><span class="b-name">Filter chips (Diet / Cuisine / Cook time / Budget)</span><span class="b-desc">— "Budget" renders with the <code>active</code> class but none of the four chips have a click handler, and there's nothing to filter yet since entries aren't real. Depends on Recipe categories + Dietary filters shipping on the <code>recipes</code> table first (Phase 2), then wiring the chips to actually filter the leaderboard/entries list (Phase 5).</span></div>
-        <div class="backlog-item"><span class="b-name">Leaderboard (5 hardcoded entries)</span><span class="b-desc">— names, dishes, and heart counts are static; entries don't link to the cook's profile or the actual recipe they made. Becomes a real query against <code>challenge_entries</code> joined to <code>profiles</code> and <code>recipes</code>, ordered by hearts (Phase 3 + Phase 5).</span></div>
-      </div>
-
-      <div class="backlog-category">
-        <h3>Profile (cookzer-profile.html)</h3>
-        <div class="backlog-item"><span class="b-name">Entire header is hardcoded to one person ("Raza K.")</span><span class="b-desc">— name, location ("Melbourne, Australia • Joined this year"), and avatar initials "RZ" are static text regardless of who's logged in. This page needs to read the real <code>profiles</code> row for whichever user's profile is being viewed (own profile vs. someone else's — currently there's no concept of viewing anyone else's profile at all) (Phase 3).</span></div>
-        <div class="backlog-item"><span class="b-name">"Edit profile" button does nothing</span><span class="b-desc">— no onclick, no edit form or modal exists anywhere in the codebase. This needs its own build: a form/modal for display name, bio, location, and avatar image, writing back to the <code>profiles</code> table (currently only auto-populated by the signup trigger, never user-editable). Call this out as its own concrete task under Phase 3, not an afterthought of "real profile page."</span></div>
-        <div class="backlog-item"><span class="b-name">"Share" button does nothing</span><span class="b-desc">— no onclick. Needs a copy-to-clipboard profile link at minimum (same pattern as the "Share recipe link" Now-bucket idea, just applied to a profile URL instead of a recipe) (Phase 3, or pull into the Now bucket as a quick client-side win once profile URLs exist).</span></div>
-        <div class="backlog-item"><span class="b-name">Stats block (34 Recipes / 512 Followers / 128 Following)</span><span class="b-desc">— fabricated numbers. This is exactly the "Profile stats" decision already logged above (raw stats, not a rating) — needs real counts: recipes authored, follower/following rows once the social graph exists, challenges won, times remade, cook-in streak (Phase 3).</span></div>
-        <div class="backlog-item"><span class="b-name">View tabs (Grid view / List view / Saved)</span><span class="b-desc">— three tabs render but none have a click handler to actually switch the displayed layout or swap in a different data set for "Saved" vs. "posted." Needs real state-switching logic once there's real post data to switch between (Phase 3).</span></div>
-        <div class="backlog-item"><span class="b-name">9 post-cards in the grid</span><span class="b-desc">— all fully hardcoded (Chicken Karahi, Lentil salad, Brown butter gnocchi, etc.), none have an href or onclick. Needs to become a real query for this user's posts/recipes, each card linking to its recipe page (Phase 2 for recipes existing, Phase 3 for it being "this user's" posts specifically).</span></div>
-        <div class="backlog-item"><span class="b-name">4 achievement badges</span><span class="b-desc">— hardcoded ("🍳 30 recipes cooked," "🔥 5-week streak," etc.), not computed from anything. Once stats are real (above), badges become threshold checks against those same numbers (Phase 3).</span></div>
-        <div class="backlog-item"><span class="b-name">No <code>.avatar</code> element in this page's header at all</span><span class="b-desc">— every other page has a header avatar that <code>auth-guard.js</code> wires up with real initials and a sign-out click handler; this page's header only has 🔔 and 💬 icon buttons. This is a real bug, not just a content gap — sign-out is unreachable from the Profile page today. Quick fix, doesn't need to wait for any phase.</span></div>
-      </div>
-
-      <div class="backlog-category">
-        <h3>Messenger (cookzer-messenger.html) — mostly real, but gaps remain</h3>
+        <h3>Messenger</h3>
         <div class="backlog-item"><span class="b-name">No group conversations</span><span class="b-desc">— schema and UI only support 1:1 threads (<code>conversation_participants</code> supports more than 2 rows already, but nothing in the client creates or renders a 3+ person thread). Needs UI for multi-select on "New Message" and a group name/avatar concept.</span></div>
-        <div class="backlog-item"><span class="b-name">No file or image attachments in messages</span><span class="b-desc">— only plain text messages are supported. Needs Supabase Storage wiring (same gap as the recipe page gallery below) plus a <code>messages.attachment_url</code> column.</span></div>
-        <div class="backlog-item"><span class="b-name">No emoji reactions or read receipts surfaced</span><span class="b-desc">— <code>last_read_at</code> already exists in the schema and is updated on open, but nothing in the UI shows a "Seen" indicator yet; already tracked as Now-bucket items #11–12.</span></div>
       </div>
 
       <div class="backlog-category">
-        <h3>Recipe page (cookzer-recipe.html)</h3>
-        <div class="backlog-item"><span class="b-name">Photo gallery upload is client-side only</span><span class="b-desc">— the upload + filter picker (7 CSS filter presets) works and appends a new gallery thumbnail, but nothing is persisted to Supabase Storage or a <code>recipe_photos</code> table — refreshing the page loses every uploaded photo. This is the single biggest gap on an otherwise-shipped page (Phase 2, needs Supabase Storage bucket + RLS policy in addition to the <code>recipes</code> table).</span></div>
-        <div class="backlog-item"><span class="b-name">Only one real recipe exists (Homemade Chicken Karahi)</span><span class="b-desc">— every link to a recipe across the whole site (feed, cookbook, planner, challenges, profile) points at this same single hardcoded page. There is no dynamic <code>cookzer-recipe.html?id=…</code> route yet — this is the actual meaning of "Phase 2: dynamic recipe detail page" and it's what unblocks every other page's recipe links above.</span></div>
+        <h3>Recipes</h3>
+        <div class="backlog-item"><span class="b-name">No import from a URL</span><span class="b-desc">— every recipe is hand-entered through the wizard. Pasting a link and getting a structured recipe back needs a server-side scraper/parser piece.</span></div>
+        <div class="backlog-item"><span class="b-name">Nutrition is hand-entered, not computed</span><span class="b-desc">— the Health page sums whatever calories/protein/carbs/fat a recipe's author typed in; there's no ingredient-based auto-estimate and no cost-per-serve.</span></div>
+      </div>
+
+      <div class="backlog-category">
+        <h3>Trust &amp; safety</h3>
+        <div class="backlog-item"><span class="b-name">No block/report</span><span class="b-desc">— agreed as a day-one requirement in the decisions log below, still not built. The one open item here that's a real risk to ship without, not just a nice-to-have.</span></div>
       </div>
     </section>
 
@@ -730,43 +727,28 @@
       <p class="section-dek">Everything not yet built, organized by what it's for.</p>
 
       <div class="backlog-category">
-        <h3>Core engagement</h3>
-        <div class="backlog-item"><span class="b-name">Comments &amp; replies</span><span class="b-desc">— feed shows counts today; no read/write yet.</span></div>
-        <div class="backlog-item"><span class="b-name">Recipe ratings &amp; reviews</span><span class="b-desc">— "I made this" stamp + star rating.</span></div>
-      </div>
-
-      <div class="backlog-category">
         <h3>Utility &amp; planning</h3>
         <div class="backlog-item"><span class="b-name">Recipe import from URL</span><span class="b-desc">— paste a link, get a structured recipe.</span></div>
         <div class="backlog-item"><span class="b-name">Pantry-aware suggestions</span><span class="b-desc">— match what's in your fridge to community recipes.</span></div>
-        <div class="backlog-item"><span class="b-name">Nutrition &amp; cost-per-serve</span><span class="b-desc">— auto-estimate calories/cost; ties into "Under $10" style challenges.</span></div>
+        <div class="backlog-item"><span class="b-name">Nutrition &amp; cost-per-serve auto-estimate</span><span class="b-desc">— today's Health page only sums whatever an author hand-typed; no ingredient-based calculation, no cost-per-serve. Ties into "Under $10" style challenges.</span></div>
       </div>
 
       <div class="backlog-category">
         <h3>Social &amp; growth</h3>
-        <div class="backlog-item"><span class="b-name">Follow / friend system</span><span class="b-desc">— personalized feed, needs the social graph (Phase 3).</span></div>
-        <div class="backlog-item"><span class="b-name">Cooking clubs / groups</span><span class="b-desc">— parked, bigger scope than current build pace.</span></div>
-        <div class="backlog-item"><span class="b-name">Badges beyond challenges</span><span class="b-desc">— streaks, "tried 10 cuisines," lighter-weight recognition.</span></div>
+        <div class="backlog-item"><span class="b-name">Group conversations in Messenger</span><span class="b-desc">— schema supports it (<code>conversation_participants</code> allows 3+ rows), no client UI to create or render one yet.</span></div>
+        <div class="backlog-item"><span class="b-name">Badges beyond challenges</span><span class="b-desc">— the 6 achievement milestones on Profile are shipped; open-ended ones like "tried 10 cuisines" are not.</span></div>
+        <div class="backlog-item"><span class="b-name">Block / report</span><span class="b-desc">— agreed as a day-one requirement, still not built. See Trust &amp; safety in Known gaps above.</span></div>
       </div>
 
       <div class="backlog-category">
         <h3>From competitive research</h3>
-        <div class="backlog-item"><span class="b-name">Remakes</span><span class="b-desc">— cooking someone else's recipe as a credited post type, feeds a "Most Remade" leaderboard. Inspired by Cookpad's Cooksnaps.</span></div>
-        <div class="backlog-item"><span class="b-name">Cook-ins</span><span class="b-desc">— one-tap "I cooked this," lower friction than a full post, builds a streak. Inspired by Untappd check-ins.</span></div>
-        <div class="backlog-item"><span class="b-name">Cooking Diary + Lists</span><span class="b-desc">— evolve My Cookbook into a running diary plus curatable public Lists. Inspired by Letterboxd.</span></div>
-        <div class="backlog-item"><span class="b-name">Kitchen CV mode</span><span class="b-desc">— toggleable professional profile for industry users; post history doubles as a portfolio. Inspired by Culinary Agents.</span></div>
-        <div class="backlog-item"><span class="b-name">Trend Radar challenges</span><span class="b-desc">— live trending-dish detection spawning mini-challenges. Inspired by TikTok's food-discovery algorithm.</span></div>
+        <div class="backlog-item"><span class="b-name">Cooking Diary + public curatable Lists</span><span class="b-desc">— My Recipes now has real hashtags (shipped), but there's still no "diary" framing or a shareable public List concept. Inspired by Letterboxd.</span></div>
+        <div class="backlog-item"><span class="b-name">Trend Radar challenges</span><span class="b-desc">— live trending-dish detection auto-spawning mini-challenges, instead of the one manually-set weekly challenge today. Inspired by TikTok's food-discovery algorithm.</span></div>
       </div>
 
       <div class="backlog-category">
-        <h3>Recipe discovery</h3>
-        <div class="backlog-item"><span class="b-name">Recipe categories</span><span class="b-desc">— Breakfast/Lunch/Dinner/Dessert/Baking/Appetizers/BBQ — the primary browse mechanism.</span></div>
-        <div class="backlog-item"><span class="b-name">Dietary filters</span><span class="b-desc">— vegan/vegetarian/gluten-free as multi-select search tags, not a browse category.</span></div>
-      </div>
-
-      <div class="backlog-category">
-        <h3>Technical foundation</h3>
-        <div class="backlog-item"><span class="b-name">Shared stylesheet</span><span class="b-desc">— Phase 0, not yet built.</span></div>
+        <h3>Auth</h3>
+        <div class="backlog-item"><span class="b-name">Google OAuth login</span><span class="b-desc">— email/password is shipped; Google sign-in is still deferred behind setting up a Google Cloud OAuth client.</span></div>
       </div>
     </section>
 
@@ -901,6 +883,8 @@
         <div class="gotcha"><b>Insert-then-.select() chicken-and-egg</b><span><code>.insert({...}).select()</code> tries to read the new row back immediately — but if the SELECT policy requires state the insert itself is establishing (e.g. "you must already be a participant"), it fails. Fix: generate the ID client-side with <code>crypto.randomUUID()</code> and skip <code>.select()</code> entirely.</span></div>
         <div class="gotcha"><b>Supabase's default email sender is rate-limited</b><span>Fine for a couple of test signups, not production. Needs a real SMTP provider (Resend, SendGrid, Postmark) before any public launch.</span></div>
         <div class="gotcha"><b>New Supabase key system</b><span>"Publishable" replaces the old "anon" key, "Secret" replaces "service_role" — same purpose, new names. Only the publishable key belongs in client code.</span></div>
+        <div class="gotcha"><b>Ambiguous embeds (PGRST201) when a table has two paths to the same target</b><span><code>challenge_entries</code> has direct foreign keys to <code>posts</code>, <code>recipes</code>, and <code>profiles</code> all at once, so any query embedding e.g. <code>profiles(...)</code> straight off <code>posts</code> has two valid join paths and PostgREST refuses to guess. Fix: name the exact constraint, e.g. <code>profiles!posts_author_id_fkey(...)</code>.</span></div>
+        <div class="gotcha"><b>The browser's disk cache can mask a successful write</b><span>A freshly-inserted row can fail to show up on reload because the browser served the follow-up GET from cache instead of the network — looks exactly like the write silently failed. Fix: pass a custom <code>fetch</code> into <code>createClient()</code> that forces <code>cache: 'no-store'</code>.</span></div>
       </div>
     </section>
 
