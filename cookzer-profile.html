@@ -172,6 +172,53 @@
       background: #f0e6d2;
     }
 
+  .more-menu-wrap { position: relative; }
+
+  .more-menu-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      min-width: 160px;
+      overflow: hidden;
+      z-index: 20;
+    }
+
+  .more-menu-dropdown.open { display: block; }
+
+  .more-menu-item {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      padding: 10px 14px;
+      font-size: 13.5px;
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+  .more-menu-item:hover { background: var(--cream); }
+  .more-menu-item.danger { color: var(--brick); }
+
+  .blocked-banner {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+      color: var(--ink-soft);
+      font-size: 13.5px;
+      margin: 20px 0;
+    }
+
+  .blocked-banner button {
+      margin-top: 10px;
+    }
+
   .kitchen-cv-panel {
       background: linear-gradient(135deg, var(--olive), var(--olive-dark));
       color: #fff;
@@ -680,6 +727,7 @@
   let viewedProfile = null;
   let viewedId = params.get('id');
   let currentView = 'activity';
+  let profileBlockedByMe = false;
   const MOOD_EMOJI = { 'Comfort food': '🍲', 'Quick and easy': '⚡', 'Fancy tonight': '✨' };
 
   function publicUrl(bucket, path) {
@@ -796,10 +844,79 @@
       shareBtn.textContent = 'Share';
       shareBtn.addEventListener('click', shareProfile);
       actions.appendChild(shareBtn);
+
+      const moreWrap = document.createElement('div');
+      moreWrap.className = 'more-menu-wrap';
+      const moreBtn = document.createElement('button');
+      moreBtn.className = 'btn btn-secondary';
+      moreBtn.type = 'button';
+      moreBtn.textContent = '···';
+      const dropdown = document.createElement('div');
+      dropdown.className = 'more-menu-dropdown';
+      moreWrap.appendChild(moreBtn);
+      moreWrap.appendChild(dropdown);
+      actions.appendChild(moreWrap);
+      moreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+      });
+      document.addEventListener('click', () => dropdown.classList.remove('open'));
+
+      await refreshMoreMenu(dropdown);
     }
 
     await loadStats();
     await loadRecipesView();
+  }
+
+  async function refreshMoreMenu(dropdown) {
+    const { data: blockRow } = await sb
+      .from('user_blocks')
+      .select('blocker_id')
+      .eq('blocker_id', currentUser.id)
+      .eq('blocked_id', viewedId)
+      .maybeSingle();
+    const blocked = !!blockRow;
+
+    dropdown.innerHTML = '';
+    const blockBtn = document.createElement('button');
+    blockBtn.className = 'more-menu-item danger';
+    blockBtn.type = 'button';
+    blockBtn.textContent = blocked ? 'Unblock' : 'Block';
+    blockBtn.addEventListener('click', async () => {
+      if (blocked) {
+        await sb.from('user_blocks').delete().eq('blocker_id', currentUser.id).eq('blocked_id', viewedId);
+      } else {
+        if (!confirm('Block this person? You won\'t see their posts, and you won\'t be able to message them.')) return;
+        await sb.from('user_blocks').insert({ blocker_id: currentUser.id, blocked_id: viewedId });
+      }
+      dropdown.classList.remove('open');
+      await loadProfile();
+    });
+
+    const reportBtn = document.createElement('button');
+    reportBtn.className = 'more-menu-item';
+    reportBtn.type = 'button';
+    reportBtn.textContent = 'Report';
+    reportBtn.addEventListener('click', async () => {
+      dropdown.classList.remove('open');
+      const reason = prompt('Why are you reporting this profile? (spam, harassment, inappropriate content, other)');
+      if (!reason) return;
+      const { error } = await sb.from('reports').insert({ reporter_id: currentUser.id, target_type: 'user', target_id: viewedId, reason });
+      if (error) alert('Could not send report: ' + error.message);
+      else alert('Thanks — this profile has been reported for review.');
+    });
+
+    dropdown.appendChild(blockBtn);
+    dropdown.appendChild(reportBtn);
+
+    profileBlockedByMe = blocked;
+    const existingBanner = document.getElementById('blockedBanner');
+    if (existingBanner) existingBanner.remove();
+    if (blocked) {
+      document.getElementById('recipesSectionTitle').insertAdjacentHTML('afterend',
+        '<div class="blocked-banner" id="blockedBanner">You\'ve blocked this person — their posts and recipes are hidden.</div>');
+    }
   }
 
   async function refreshFollowButton() {
@@ -947,6 +1064,13 @@
     activityList.innerHTML = '';
     grid.hidden = currentView === 'activity';
     activityList.hidden = currentView !== 'activity';
+
+    if (profileBlockedByMe) {
+      grid.hidden = true;
+      activityList.hidden = false;
+      activityList.innerHTML = '';
+      return;
+    }
 
     if (currentView === 'activity') {
       const { data: posts } = await sb

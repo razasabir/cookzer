@@ -1371,6 +1371,14 @@
       deleteBtn.textContent = '🗑';
       deleteBtn.addEventListener('click', () => deletePost(post.id, card));
       header.appendChild(deleteBtn);
+    } else if (currentUser) {
+      const reportBtn = document.createElement('button');
+      reportBtn.className = 'card-delete-btn';
+      reportBtn.title = 'Report post';
+      reportBtn.type = 'button';
+      reportBtn.textContent = '🚩';
+      reportBtn.addEventListener('click', () => reportPost(post.id));
+      header.appendChild(reportBtn);
     }
 
     card.appendChild(header);
@@ -1485,6 +1493,14 @@
       recipeTitle: post.recipes ? post.recipes.title : null,
       recipeHref: post.recipe_id ? 'cookzer-recipe.html?id=' + post.recipe_id : null,
     });
+  }
+
+  async function reportPost(postId) {
+    const reason = prompt('Why are you reporting this post? (spam, harassment, inappropriate content, other)');
+    if (!reason) return;
+    const { error } = await sb.from('reports').insert({ reporter_id: currentUser.id, target_type: 'post', target_id: postId, reason });
+    if (error) alert('Could not send report: ' + error.message);
+    else alert('Thanks — this post has been reported for review.');
   }
 
   async function deletePost(postId, cardEl) {
@@ -1660,11 +1676,16 @@
     const listEl = document.getElementById('feedList');
     showFeedSkeleton();
 
-    const { data: posts, error } = await sb
-      .from('posts')
-      .select('id, author_id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles!posts_author_id_fkey(display_name, initials), recipes!posts_recipe_id_fkey(title, hero_photo_path)')
-      .order('created_at', { ascending: false })
-      .limit(30);
+    const [{ data: rawPosts, error }, blockedIds] = await Promise.all([
+      sb
+        .from('posts')
+        .select('id, author_id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles!posts_author_id_fkey(display_name, initials), recipes!posts_recipe_id_fkey(title, hero_photo_path)')
+        .order('created_at', { ascending: false })
+        .limit(30),
+      window.blockedIdsReady || Promise.resolve(new Set()),
+    ]);
+
+    const posts = (rawPosts || []).filter((p) => !blockedIds.has(p.author_id));
 
     listEl.innerHTML = '';
     document.getElementById('feedEmpty').hidden = !!(posts && posts.length);

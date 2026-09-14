@@ -15,6 +15,15 @@
     }
   });
 
+  // Pages that render lists of posts/people can `await window.blockedIdsReady`
+  // and filter out anyone in the returned Set, so a blocked user's content
+  // stays out of your feed/group/profile views.
+  window.blockedIdsReady = sb
+    .from('user_blocks')
+    .select('blocked_id')
+    .eq('blocker_id', session.user.id)
+    .then(({ data }) => new Set((data || []).map((b) => b.blocked_id)));
+
   function wireAvatar(person) {
     document.querySelectorAll('.avatar').forEach((el) => {
       if (person.avatar_url) {

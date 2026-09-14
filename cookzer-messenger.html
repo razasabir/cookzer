@@ -821,6 +821,9 @@
       return;
     }
 
+    const blockedIds = await (window.blockedIdsReady || Promise.resolve(new Set()));
+    const isBlockedThread = blockedIds.has(conv.otherId);
+
     const header = document.createElement('div');
     header.className = 'thread-header';
 
@@ -834,8 +837,28 @@
     nameEl.className = 'thread-name';
     nameEl.textContent = conv.name;
 
+    const blockToggle = document.createElement('button');
+    blockToggle.type = 'button';
+    blockToggle.title = isBlockedThread ? 'Unblock ' + conv.name : 'Block ' + conv.name;
+    blockToggle.textContent = isBlockedThread ? 'Unblock' : '🚫';
+    blockToggle.style.cssText = 'margin-left:auto; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); border-radius:10px; padding:4px 10px; font-size:12px; color:#fff; cursor:pointer; flex-shrink:0;';
+    blockToggle.addEventListener('click', async () => {
+      if (isBlockedThread) {
+        await sb.from('user_blocks').delete().eq('blocker_id', currentUser.id).eq('blocked_id', conv.otherId);
+      } else {
+        if (!confirm('Block ' + conv.name + '? You won\'t be able to message each other.')) return;
+        await sb.from('user_blocks').insert({ blocker_id: currentUser.id, blocked_id: conv.otherId });
+      }
+      window.blockedIdsReady = Promise.resolve(await (async () => {
+        const { data } = await sb.from('user_blocks').select('blocked_id').eq('blocker_id', currentUser.id);
+        return new Set((data || []).map((b) => b.blocked_id));
+      })());
+      await renderThread();
+    });
+
     header.appendChild(back);
     header.appendChild(nameEl);
+    header.appendChild(blockToggle);
 
     const messagesEl = document.createElement('div');
     messagesEl.className = 'thread-messages';
@@ -870,8 +893,9 @@
 
     const input = document.createElement('input');
     input.type = 'text';
-    input.placeholder = 'Write a message...';
+    input.placeholder = isBlockedThread ? "You've blocked this person" : 'Write a message...';
     input.id = 'messageInput';
+    input.disabled = isBlockedThread;
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') sendMessage();
     });
@@ -881,7 +905,10 @@
     sendBtn.type = 'button';
     sendBtn.setAttribute('aria-label', 'Send message');
     sendBtn.textContent = '➤';
+    sendBtn.disabled = isBlockedThread;
     sendBtn.addEventListener('click', sendMessage);
+
+    attachBtn.disabled = isBlockedThread;
 
     inputBar.appendChild(attachBtn);
     inputBar.appendChild(attachInput);
@@ -1004,12 +1031,16 @@
     newMsgResults.innerHTML = '';
     if (!query) return;
 
-    const { data: results } = await sb
-      .from('profiles')
-      .select('id, display_name, initials')
-      .ilike('display_name', '%' + query + '%')
-      .neq('id', currentUser.id)
-      .limit(10);
+    const [{ data: rawResults }, blockedIds] = await Promise.all([
+      sb
+        .from('profiles')
+        .select('id, display_name, initials')
+        .ilike('display_name', '%' + query + '%')
+        .neq('id', currentUser.id)
+        .limit(10),
+      window.blockedIdsReady || Promise.resolve(new Set()),
+    ]);
+    const results = (rawResults || []).filter((p) => !blockedIds.has(p.id));
 
     if (!results || results.length === 0) {
       const empty = document.createElement('div');
