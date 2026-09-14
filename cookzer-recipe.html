@@ -11,6 +11,7 @@
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js"></script>
   <script src="theme.js"></script>
+  <script src="photo-lightbox.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -306,14 +307,6 @@
   .gallery-add:hover { border-color: var(--forest); color: var(--forest); }
 
   .gallery-add .plus { font-size: 26px; line-height: 1; }
-
-  .lightbox-img {
-      max-width: 90vw;
-      max-height: 90vh;
-      border-radius: 12px;
-      object-fit: contain;
-      cursor: zoom-out;
-    }
 
   /* Photo upload + filter modal */
     .modal-overlay {
@@ -627,11 +620,6 @@
   </div>
 </div>
 
-<!-- Gallery photo lightbox -->
-<div class="modal-overlay" id="photoLightbox">
-  <img class="lightbox-img" id="lightboxImg" alt="Recipe photo">
-</div>
-
 <!-- Rating modal -->
 <div class="modal-overlay" id="rateModal">
   <div class="modal-card">
@@ -892,7 +880,15 @@
           img.className = 'step-photo';
           img.src = url;
           img.alt = 'Photo for this step';
-          img.addEventListener('click', () => openLightbox(url, 'none'));
+          img.addEventListener('click', () => CookzerLightbox.open({
+            imageUrl: url,
+            authorName: recipe.profiles ? recipe.profiles.display_name : 'Cookzer community',
+            authorInitials: recipe.profiles ? recipe.profiles.initials : 'C',
+            authorHref: 'cookzer-profile.html?id=' + recipe.author_id,
+            timestamp: recipe.created_at,
+            caption: text,
+            meta: [{ label: 'From', value: recipe.title }],
+          }));
           body.appendChild(img);
         }
 
@@ -914,7 +910,19 @@
     }
 
     if (recipe.hero_photo_path) {
-      document.getElementById('rHero').style.backgroundImage = "url('" + publicUrl('recipe-photos', recipe.hero_photo_path) + "')";
+      const heroUrl = publicUrl('recipe-photos', recipe.hero_photo_path);
+      const heroEl = document.getElementById('rHero');
+      heroEl.style.backgroundImage = "url('" + heroUrl + "')";
+      heroEl.style.cursor = 'zoom-in';
+      heroEl.onclick = () => CookzerLightbox.open({
+        imageUrl: heroUrl,
+        authorName: recipe.profiles ? recipe.profiles.display_name : 'Cookzer community',
+        authorInitials: recipe.profiles ? recipe.profiles.initials : 'C',
+        authorHref: 'cookzer-profile.html?id=' + recipe.author_id,
+        timestamp: recipe.created_at,
+        caption: recipe.description || '',
+        meta: [{ label: 'Cover photo for', value: recipe.title }],
+      });
     }
 
     await loadGallery();
@@ -924,7 +932,7 @@
   async function loadGallery() {
     const { data: photos } = await sb
       .from('recipe_photos')
-      .select('id, storage_path, filter')
+      .select('id, storage_path, filter, created_at, user_id, profiles(display_name, initials)')
       .eq('recipe_id', recipeId)
       .order('created_at', { ascending: true });
 
@@ -946,21 +954,21 @@
       thumb.style.backgroundImage = "url('" + url + "')";
       thumb.style.filter = filterCss;
       thumb.style.cursor = 'zoom-in';
-      thumb.addEventListener('click', () => openLightbox(url, filterCss));
+      thumb.addEventListener('click', () => CookzerLightbox.open({
+        imageUrl: url,
+        filterCss,
+        authorName: p.profiles ? p.profiles.display_name : 'Someone',
+        authorInitials: p.profiles ? p.profiles.initials : '??',
+        authorHref: 'cookzer-profile.html?id=' + p.user_id,
+        timestamp: p.created_at,
+        meta: [
+          { label: 'Uploaded to', value: recipe.title },
+          { label: 'Filter', value: p.filter === 'original' || !p.filter ? 'None' : p.filter },
+        ],
+      }));
       grid.insertBefore(thumb, addTile);
     });
   }
-
-  function openLightbox(url, filterCss) {
-    const img = document.getElementById('lightboxImg');
-    img.src = url;
-    img.style.filter = filterCss;
-    document.getElementById('photoLightbox').classList.add('open');
-  }
-
-  document.getElementById('photoLightbox').addEventListener('click', () => {
-    document.getElementById('photoLightbox').classList.remove('open');
-  });
 
   async function loadRatingSummary() {
     const { data: reviews } = await sb.from('recipe_reviews').select('rating').eq('recipe_id', recipeId);

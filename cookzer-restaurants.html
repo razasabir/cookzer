@@ -11,6 +11,7 @@
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js"></script>
   <script src="theme.js"></script>
+  <script src="photo-lightbox.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -327,13 +328,6 @@
       padding: 20px;
     }
   .modal-overlay.open { display: flex; }
-  .lightbox-img {
-      max-width: 90vw;
-      max-height: 90vh;
-      border-radius: 12px;
-      object-fit: contain;
-      cursor: zoom-out;
-    }
 
   /* Responsive */
     @media (max-width: 900px) {
@@ -448,10 +442,6 @@
 
     <div class="restaurants-list" id="restaurantsList"></div>
   </div>
-</div>
-
-<div class="modal-overlay" id="receiptLightbox">
-  <img class="lightbox-img" id="lightboxImg" alt="Receipt proof">
 </div>
 
 <script>
@@ -642,15 +632,6 @@
     await loadRestaurants();
   });
 
-  document.getElementById('receiptLightbox').addEventListener('click', () => {
-    document.getElementById('receiptLightbox').classList.remove('open');
-  });
-
-  function openLightbox(url) {
-    document.getElementById('lightboxImg').src = url;
-    document.getElementById('receiptLightbox').classList.add('open');
-  }
-
   async function loadRatingsFor(restaurantId, container) {
     container.innerHTML = '<div class="empty-note">Loading ratings...</div>';
     const { data: ratings } = await sb
@@ -702,12 +683,20 @@
         body.appendChild(review);
       }
 
-      const receiptUrl = publicUrl('restaurant-receipts', r.receipt_photo_path);
-      if (receiptUrl) {
+      if (r.receipt_photo_path) {
+        const receiptUrl = publicUrl('restaurant-receipts', r.receipt_photo_path);
         const proof = document.createElement('div');
         proof.className = 'rating-row-receipt';
         proof.innerHTML = '<img src="' + receiptUrl + '" alt="Receipt"> 🧾 Proof attached';
-        proof.addEventListener('click', () => openLightbox(receiptUrl));
+        proof.addEventListener('click', () => CookzerLightbox.open({
+          imageUrl: receiptUrl,
+          authorName: (r.profiles && r.profiles.display_name) || 'Someone',
+          authorInitials: (r.profiles && r.profiles.initials) || '??',
+          authorHref: 'cookzer-profile.html?id=' + r.user_id,
+          timestamp: r.created_at,
+          caption: r.review || '',
+          meta: [{ label: 'Rating', value: starString(r.rating) }],
+        }));
         body.appendChild(proof);
       }
 
