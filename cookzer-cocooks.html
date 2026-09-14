@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>Co-Cooks — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .brand-header {
+      font-size: 20px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+    }
+
+  .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
+  .main {
+      flex: 1;
+      margin-top: 60px;
+      overflow-y: auto;
+    }
+
+  .cocooks-content {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+  .page-title {
+      font-size: 28px;
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      color: var(--olive-dark);
+      margin-bottom: 6px;
+      width: 100%;
+    }
+
+  .page-sub {
+      width: 100%;
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-bottom: 20px;
+    }
+
+  .search-panel {
+      width: 100%;
+      margin-bottom: 24px;
+    }
+
+  .search-panel input {
+      width: 100%;
+      padding: 11px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      font-size: 14px;
+      color: var(--ink);
+      font-family: inherit;
+    }
+
+  .search-results {
+      margin-top: 8px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--card-bg);
+    }
+
+  .search-results:empty { display: none; }
+
+  .person-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-top: 1px solid var(--line);
+    }
+
+  .person-row:first-child { border-top: none; }
+
+  .person-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+      text-decoration: none;
+      color: inherit;
+    }
+
+  .person-avatar {
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; font-size: 14px;
+    }
+
+  .person-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+  .follow-toggle-btn {
+      background: var(--olive);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+  .follow-toggle-btn.following {
+      background: var(--cream);
+      color: var(--ink-soft);
+      border: 1px solid var(--line);
+    }
+
+  .tabs-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+  .tab-btn {
+      background: none;
+      border: none;
+      padding: 10px 4px;
+      margin-right: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+
+  .tab-btn.active {
+      color: var(--olive-dark);
+      border-bottom-color: var(--olive);
+    }
+
+  .cocooks-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+  .cocooks-list .person-row {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--line);
+    }
+
+  .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 24px; }
+
+  /* Responsive */
+    @media (max-width: 900px) {
+      .right-sidebar { display: none; }
+    }
+
+  @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        height: 100vh;
+        height: 100dvh;
+        z-index: 100;
+        transition: left 0.25s ease;
+      }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .search-bar { display: none; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+    }
+
+  @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
+
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-health.html" style="text-decoration: none;"><div class="sidebar-item icon health">Health</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-groups.html" style="text-decoration: none;"><div class="sidebar-item icon groups">Groups</div></a>
+  <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants">Restaurants</div></a>
+  <a href="cookzer-cocooks.html" style="text-decoration: none;"><div class="sidebar-item icon cocooks active">Co-Cooks</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Header -->
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn" id="notifBellBtn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+  <div class="cocooks-content">
+    <h1 class="page-title">Co-Cooks</h1>
+    <div class="page-sub">The people you cook alongside — find them, follow them, and jump straight to their profile.</div>
+
+    <div class="search-panel">
+      <input type="text" id="cocooksSearchInput" placeholder="Find a co-cook by name..." autocomplete="off">
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <div class="tabs-row">
+      <button class="tab-btn active" id="followingTab" type="button">Following</button>
+      <button class="tab-btn" id="followersTab" type="button">Followers</button>
+    </div>
+
+    <div class="cocooks-list" id="cocooksList"></div>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  let currentUser = null;
+  let activeTab = 'following';
+  let followingIds = new Set();
+  let searchDebounce = null;
+
+  function personRow(person, showToggle) {
+    const row = document.createElement('div');
+    row.className = 'person-row';
+
+    const link = document.createElement('a');
+    link.className = 'person-link';
+    link.href = 'cookzer-profile.html?id=' + person.id;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'person-avatar';
+    avatar.textContent = person.initials || '??';
+
+    const name = document.createElement('div');
+    name.className = 'person-name';
+    name.textContent = person.display_name || 'Someone';
+
+    link.appendChild(avatar);
+    link.appendChild(name);
+    row.appendChild(link);
+
+    if (showToggle && person.id !== currentUser.id) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      updateToggleBtn(btn, followingIds.has(person.id));
+      btn.addEventListener('click', async () => {
+        const isFollowing = followingIds.has(person.id);
+        if (isFollowing) {
+          await sb.from('follows').delete().eq('follower_id', currentUser.id).eq('followee_id', person.id);
+          followingIds.delete(person.id);
+        } else {
+          await sb.from('follows').insert({ follower_id: currentUser.id, followee_id: person.id });
+          followingIds.add(person.id);
+        }
+        updateToggleBtn(btn, followingIds.has(person.id));
+        if (activeTab === 'following') loadList();
+      });
+      row.appendChild(btn);
+    }
+
+    return row;
+  }
+
+  function updateToggleBtn(btn, isFollowing) {
+    btn.className = 'follow-toggle-btn' + (isFollowing ? ' following' : '');
+    btn.textContent = isFollowing ? 'Following ✓' : 'Follow';
+  }
+
+  async function loadFollowingIds() {
+    const { data } = await sb.from('follows').select('followee_id').eq('follower_id', currentUser.id);
+    followingIds = new Set((data || []).map((f) => f.followee_id));
+  }
+
+  async function loadList() {
+    const listEl = document.getElementById('cocooksList');
+    listEl.innerHTML = '<div class="empty-note">Loading...</div>';
+
+    if (activeTab === 'following') {
+      const { data } = await sb
+        .from('follows')
+        .select('followee_id, profiles!follows_followee_id_fkey(id, display_name, initials)')
+        .eq('follower_id', currentUser.id);
+
+      const people = (data || []).map((f) => f.profiles).filter(Boolean);
+      listEl.innerHTML = '';
+      if (people.length === 0) {
+        listEl.innerHTML = '<div class="empty-note">You\'re not following anyone yet — search above to find co-cooks.</div>';
+        return;
+      }
+      people.forEach((p) => listEl.appendChild(personRow(p, true)));
+    } else {
+      const { data } = await sb
+        .from('follows')
+        .select('follower_id, profiles!follows_follower_id_fkey(id, display_name, initials)')
+        .eq('followee_id', currentUser.id);
+
+      const people = (data || []).map((f) => f.profiles).filter(Boolean);
+      listEl.innerHTML = '';
+      if (people.length === 0) {
+        listEl.innerHTML = '<div class="empty-note">No followers yet — share your profile to find co-cooks.</div>';
+        return;
+      }
+      people.forEach((p) => listEl.appendChild(personRow(p, true)));
+    }
+  }
+
+  document.getElementById('followingTab').addEventListener('click', () => {
+    activeTab = 'following';
+    document.getElementById('followingTab').classList.add('active');
+    document.getElementById('followersTab').classList.remove('active');
+    loadList();
+  });
+
+  document.getElementById('followersTab').addEventListener('click', () => {
+    activeTab = 'followers';
+    document.getElementById('followersTab').classList.add('active');
+    document.getElementById('followingTab').classList.remove('active');
+    loadList();
+  });
+
+  document.getElementById('cocooksSearchInput').addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    clearTimeout(searchDebounce);
+    const results = document.getElementById('searchResults');
+    if (!query) { results.innerHTML = ''; return; }
+    searchDebounce = setTimeout(async () => {
+      const { data: matches } = await sb
+        .from('profiles')
+        .select('id, display_name, initials')
+        .ilike('display_name', '%' + query + '%')
+        .neq('id', currentUser.id)
+        .limit(8);
+
+      results.innerHTML = '';
+      (matches || []).forEach((p) => results.appendChild(personRow(p, true)));
+    }, 300);
+  });
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    await loadFollowingIds();
+    await loadList();
+  })();
+</script>
+</body>
+</html>

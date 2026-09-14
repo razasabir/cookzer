@@ -45,6 +45,7 @@ h1, h2, h3, .brand {
 body {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -111,6 +112,7 @@ body {
 .sidebar-item.challenges:before { content: "🏆"; }
 .sidebar-item.groups:before { content: "👥"; }
 .sidebar-item.restaurants:before { content: "🧾"; }
+.sidebar-item.cocooks:before { content: "🧑‍🍳"; }
 .sidebar-item.profile:before { content: "👤"; }
 .sidebar-item.messenger:before { content: "💬"; }
 
