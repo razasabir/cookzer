@@ -107,6 +107,7 @@ body {
 .sidebar-item.feed:before { content: "📰"; }
 .sidebar-item.cookbook:before { content: "📚"; }
 .sidebar-item.planner:before { content: "📅"; }
+.sidebar-item.health:before { content: "🩺"; }
 .sidebar-item.challenges:before { content: "🏆"; }
 .sidebar-item.profile:before { content: "👤"; }
 .sidebar-item.messenger:before { content: "💬"; }

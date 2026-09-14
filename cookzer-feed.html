@@ -625,6 +625,7 @@
   <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed active">Feed</div></a>
   <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
   <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-health.html" style="text-decoration: none;"><div class="sidebar-item icon health">Health</div></a>
   <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
   <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
   <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
@@ -682,6 +683,14 @@
         <button class="composer-btn" id="composerPhotoBtn" type="button">📸 Photo</button>
         <a href="cookzer-recipe-new.html?share=1" style="text-decoration:none;flex:1;"><button class="composer-btn" type="button" style="width:100%;">📝 Recipe</button></a>
         <button class="composer-btn" id="composerChallengeBtn" type="button">🏆 Challenge</button>
+        <button class="composer-btn" id="composerRestaurantBtn" type="button">📍 Dining out</button>
+      </div>
+      <div id="restaurantPanel" hidden style="margin-top:10px; background:var(--cream); border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-size:13px;">
+        <div id="restaurantPanelBody">Finding nearby places…</div>
+      </div>
+      <div id="restaurantTag" hidden style="margin-top:8px; display:flex; align-items:center; gap:8px; font-size:13px; color:var(--olive-dark);">
+        📍 <span id="restaurantTagName"></span>
+        <button type="button" id="restaurantTagRemove" style="background:none; border:none; color:var(--brick); cursor:pointer; font-size:13px;">✕</button>
       </div>
       <div style="display:flex; justify-content:flex-end; margin-top:10px;">
         <button class="challenge-btn" id="composerPostBtn" type="button" style="background:var(--olive); color:#fff;">Post</button>
@@ -802,6 +811,137 @@
 
   document.getElementById('composerPostBtn').addEventListener('click', createPost);
 
+  // ----- Restaurant check-in (OpenStreetMap Overpass API — free, no key) -----
+  let selectedRestaurant = null;
+
+  function haversineMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const toRad = (d) => (d * Math.PI) / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function showManualRestaurantEntry(message) {
+    const body = document.getElementById('restaurantPanelBody');
+    body.innerHTML = '';
+    if (message) {
+      const note = document.createElement('div');
+      note.style.color = 'var(--ink-soft)';
+      note.style.marginBottom = '8px';
+      note.textContent = message;
+      body.appendChild(note);
+    }
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Type the restaurant name...';
+    input.style.flex = '1';
+    input.style.padding = '7px 10px';
+    input.style.border = '1px solid var(--line)';
+    input.style.borderRadius = '10px';
+    input.style.fontFamily = 'inherit';
+    const useBtn = document.createElement('button');
+    useBtn.className = 'action-btn';
+    useBtn.textContent = 'Use this';
+    useBtn.addEventListener('click', () => {
+      if (!input.value.trim()) return;
+      applyRestaurantSelection(input.value.trim());
+    });
+    row.appendChild(input);
+    row.appendChild(useBtn);
+    body.appendChild(row);
+  }
+
+  function applyRestaurantSelection(name) {
+    selectedRestaurant = name;
+    document.getElementById('restaurantPanel').hidden = true;
+    document.getElementById('restaurantTag').hidden = false;
+    document.getElementById('restaurantTagName').textContent = name;
+  }
+
+  document.getElementById('restaurantTagRemove').addEventListener('click', () => {
+    selectedRestaurant = null;
+    document.getElementById('restaurantTag').hidden = true;
+  });
+
+  document.getElementById('composerRestaurantBtn').addEventListener('click', () => {
+    const panel = document.getElementById('restaurantPanel');
+    panel.hidden = false;
+    document.getElementById('restaurantPanelBody').textContent = 'Finding nearby places…';
+
+    if (!navigator.geolocation) {
+      showManualRestaurantEntry("This browser can't share your location — type the name instead.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        const query = '[out:json][timeout:10];(node["amenity"~"restaurant|cafe|fast_food|bar|pub"](around:200,' +
+          latitude + ',' + longitude + '););out center 15;';
+
+        let results = [];
+        try {
+          const res = await fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            body: 'data=' + encodeURIComponent(query),
+          });
+          const json = await res.json();
+          results = (json.elements || [])
+            .filter((el) => el.tags && el.tags.name)
+            .map((el) => ({
+              name: el.tags.name,
+              distance: haversineMeters(latitude, longitude, el.lat, el.lon),
+            }))
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, 5);
+        } catch (e) {
+          showManualRestaurantEntry("Couldn't reach the places lookup right now — type the name instead.");
+          return;
+        }
+
+        if (results.length === 0) {
+          showManualRestaurantEntry('No named places found nearby — type the name instead.');
+          return;
+        }
+
+        const body = document.getElementById('restaurantPanelBody');
+        body.innerHTML = '';
+        const label = document.createElement('div');
+        label.style.marginBottom = '8px';
+        label.style.color = 'var(--ink-soft)';
+        label.textContent = 'You might be at:';
+        body.appendChild(label);
+        results.forEach((r) => {
+          const btn = document.createElement('div');
+          btn.style.padding = '6px 8px';
+          btn.style.cursor = 'pointer';
+          btn.style.borderRadius = '8px';
+          btn.textContent = r.name + ' (' + Math.round(r.distance) + 'm)';
+          btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--card-bg)'; });
+          btn.addEventListener('mouseleave', () => { btn.style.background = ''; });
+          btn.addEventListener('click', () => applyRestaurantSelection(r.name));
+          body.appendChild(btn);
+        });
+        const noneBtn = document.createElement('div');
+        noneBtn.style.padding = '6px 8px';
+        noneBtn.style.cursor = 'pointer';
+        noneBtn.style.color = 'var(--ink-soft)';
+        noneBtn.textContent = "None of these — let me type it";
+        noneBtn.addEventListener('click', () => showManualRestaurantEntry());
+        body.appendChild(noneBtn);
+      },
+      () => {
+        showManualRestaurantEntry('Location permission denied — type the name instead.');
+      },
+      { timeout: 8000 }
+    );
+  });
+
   async function createPost() {
     const captionInput = document.getElementById('postCaption');
     const caption = captionInput.value.trim();
@@ -814,7 +954,7 @@
 
     const { data: inserted, error } = await sb
       .from('posts')
-      .insert({ author_id: currentUser.id, kind: 'post', caption: caption || null, photo_path: photoPath })
+      .insert({ author_id: currentUser.id, kind: 'post', caption: caption || null, photo_path: photoPath, restaurant_name: selectedRestaurant })
       .select('id')
       .single();
 
@@ -837,6 +977,9 @@
     document.getElementById('composerChallengeBtn').classList.remove('active-challenge-tag');
     document.getElementById('composerChallengeBtn').style.background = '';
     document.getElementById('composerChallengeBtn').style.color = '';
+    document.getElementById('restaurantTag').hidden = true;
+    document.getElementById('restaurantPanel').hidden = true;
+    selectedRestaurant = null;
 
     await loadFeed();
   }
@@ -858,7 +1001,7 @@
       (post.kind === 'cook_in' ? ' cooked this' : post.kind === 'remake' ? ' remade this' : '');
     const time = document.createElement('div');
     time.className = 'card-time';
-    time.textContent = timeAgo(post.created_at);
+    time.textContent = timeAgo(post.created_at) + (post.restaurant_name ? ' · 📍 ' + post.restaurant_name : '');
     meta.appendChild(name);
     meta.appendChild(time);
     header.appendChild(avatar);
@@ -1049,7 +1192,7 @@
 
     const { data: posts, error } = await sb
       .from('posts')
-      .select('id, kind, recipe_id, caption, photo_path, created_at, profiles(display_name, initials), recipes(title, hero_photo_path)')
+      .select('id, kind, recipe_id, caption, photo_path, restaurant_name, created_at, profiles(display_name, initials), recipes(title, hero_photo_path)')
       .order('created_at', { ascending: false })
       .limit(30);
 
