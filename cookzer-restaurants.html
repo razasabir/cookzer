@@ -654,7 +654,7 @@
     container.innerHTML = '<div class="empty-note">Loading ratings...</div>';
     const { data: ratings } = await sb
       .from('restaurant_ratings')
-      .select('id, rating, review, receipt_photo_path, created_at, profiles(display_name, initials)')
+      .select('id, user_id, rating, review, receipt_photo_path, created_at, profiles(display_name, initials)')
       .eq('restaurant_id', restaurantId)
       .order('created_at', { ascending: false });
 
@@ -677,10 +677,21 @@
 
       const top = document.createElement('div');
       top.className = 'rating-row-top';
-      top.innerHTML =
-        '<span class="rating-row-name">' + ((r.profiles && r.profiles.display_name) || 'Someone') + '</span>' +
-        '<span class="rating-row-stars">' + starString(r.rating) + '</span>' +
-        '<span class="rating-row-time">' + timeAgo(r.created_at) + '</span>';
+      const nameLink = document.createElement('a');
+      nameLink.className = 'rating-row-name';
+      nameLink.href = 'cookzer-profile.html?id=' + r.user_id;
+      nameLink.style.color = 'inherit';
+      nameLink.style.textDecoration = 'none';
+      nameLink.textContent = (r.profiles && r.profiles.display_name) || 'Someone';
+      const stars = document.createElement('span');
+      stars.className = 'rating-row-stars';
+      stars.textContent = starString(r.rating);
+      const rowTime = document.createElement('span');
+      rowTime.className = 'rating-row-time';
+      rowTime.textContent = timeAgo(r.created_at);
+      top.appendChild(nameLink);
+      top.appendChild(stars);
+      top.appendChild(rowTime);
       body.appendChild(top);
 
       if (r.review) {

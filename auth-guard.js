@@ -93,13 +93,13 @@
 
       const items = [];
       (followsRes.data || []).forEach((f) => {
-        if (f.profiles) items.push({ created_at: f.created_at, text: (f.profiles.display_name || 'Someone') + ' followed you' });
+        if (f.profiles) items.push({ created_at: f.created_at, actorId: f.follower_id, text: (f.profiles.display_name || 'Someone') + ' followed you' });
       });
       (heartsRes.data || []).forEach((h) => {
-        if (h.profiles) items.push({ created_at: h.created_at, text: (h.profiles.display_name || 'Someone') + ' hearted your post' });
+        if (h.profiles) items.push({ created_at: h.created_at, actorId: h.user_id, text: (h.profiles.display_name || 'Someone') + ' hearted your post' });
       });
       (commentsRes.data || []).forEach((c) => {
-        if (c.profiles) items.push({ created_at: c.created_at, text: (c.profiles.display_name || 'Someone') + ' commented on your post' });
+        if (c.profiles) items.push({ created_at: c.created_at, actorId: c.author_id, text: (c.profiles.display_name || 'Someone') + ' commented on your post' });
       });
 
       items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -110,8 +110,9 @@
         return;
       }
       items.slice(0, 8).forEach((item) => {
-        const row = document.createElement('div');
-        row.style.cssText = 'padding:10px 8px; font-size:13px; color:var(--ink); border-bottom:1px solid var(--line);';
+        const row = document.createElement('a');
+        row.href = 'cookzer-profile.html?id=' + item.actorId;
+        row.style.cssText = 'display:block; padding:10px 8px; font-size:13px; color:var(--ink); border-bottom:1px solid var(--line); text-decoration:none;';
         const text = document.createElement('div');
         text.textContent = item.text;
         const time = document.createElement('div');
