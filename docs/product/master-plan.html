@@ -536,6 +536,10 @@
           <p class="d-body">Rejected outright — presenting fabricated activity as real people is deceptive and carries real trust/legal risk. Honest alternative: seed with real accounts (founder + beta testers) or a clearly labeled "sample content" state.</p>
         </div>
         <div class="decision-card">
+          <div class="d-title">Test infrastructure: checked-in Playwright, not forever-throwaway <span class="pill shipped">Shipped</span></div>
+          <p class="d-body">First asked, chose "keep it lightweight, no new deps" and kept using scratch verification scripts per feature. Revisited once it was clear scratch scripts were being rebuilt from scratch every time — package.json + Playwright cost nothing (open-source, no network calls, fits GitHub Actions' free tier) and the site stays a zero-build static site otherwise; only the test suite gained a build step.</p>
+        </div>
+        <div class="decision-card">
           <div class="d-title">Restaurant ratings require a receipt photo <span class="pill shipped">Shipped</span></div>
           <p class="d-body">A rating can't be submitted without attaching a receipt or invoice photo as proof of the visit — a deliberate friction cost to keep ratings honest, over allowing frictionless star ratings that are easy to fake.</p>
         </div>
@@ -605,6 +609,7 @@
         <div class="shipped-item"><div class="s-num">47</div><div class="s-text"><b>Notifications: remakes and challenge joins</b><span>Two more real events the notification center was missing — someone remaking your recipe, someone joining a challenge you created — with matching Settings toggles.</span></div></div>
         <div class="shipped-item"><div class="s-num">48</div><div class="s-text"><b>Typing indicators in Messenger</b><span>WhatsApp-inspired. Ephemeral Supabase Realtime broadcast on the conversation channel already open for live messages — no new table, no persisted state.</span></div></div>
         <div class="shipped-item"><div class="s-num">49</div><div class="s-text"><b>Group admin controls</b><span>Edit name/description, remove a member, delete the group — all previously impossible for the creator even though the update-your-own-group RLS policy existed from day one. A real Members list replaces the plain count.</span></div></div>
+        <div class="shipped-item"><div class="s-num">50</div><div class="s-text"><b>Checked-in Playwright test suite</b><span>Every feature this whole build was verified with throwaway scratch scripts, thrown away after each check. That method's proven, but it means re-deriving coverage from zero on every future change. <code>package.json</code> + <code>tests/</code> now checked in: real specs that load the actual HTML pages via <code>file://</code>, stub <code>window.supabase</code> the same way the scratch scripts always did, and run with <code>npm test</code> — plus a GitHub Actions workflow so they run on every push/PR. Free — Playwright is open-source, runs only locally/in CI, never touches production, and this project's scale sits well inside GitHub Actions' free tier.</span></div></div>
       </div>
       <p class="section-dek" style="margin-top:20px;">
         <b>⚠️ Manual steps still needed:</b>
