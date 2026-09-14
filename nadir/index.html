@@ -144,6 +144,18 @@
   .segment .seg-name { font-weight: 700; font-size: 14.5px; margin-bottom: 4px; }
   .segment .seg-desc { font-size: 13.5px; color: var(--ink-soft); }
 
+  /* ---------- Inspiration / blueprint ---------- */
+  .inspiration-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 860px) { .inspiration-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .inspiration-grid { grid-template-columns: 1fr; } }
+  .inspiration-item {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px;
+    border-left: 3px solid var(--green);
+  }
+  .insp-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--ink-faint); font-weight: 700; margin-bottom: 6px; }
+  .insp-who { font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; color: var(--green-deep); margin-bottom: 6px; }
+  .insp-what { font-size: 13.5px; color: var(--ink-soft); }
+
   /* ---------- Traction / built ---------- */
   .built-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
   @media (max-width: 780px) { .built-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -271,9 +283,10 @@
     </div>
     <nav class="topbar-nav">
       <a href="#opportunity">Opportunity</a>
+      <a href="#inspiration">Blueprint</a>
       <a href="#markets">Markets</a>
-      <a href="#model">Model</a>
       <a href="#growth">Growth</a>
+      <a href="#model">Model</a>
       <a href="#built">Built &amp; live</a>
     </nav>
   </div>
@@ -322,6 +335,47 @@
           <div class="segment"><div class="seg-name">Aspiring &amp; semi-pro cooks</div><div class="seg-desc">Build a following, run weekly challenges, start turning cooking into a side business.</div></div>
           <div class="segment"><div class="seg-name">Hospitality professionals</div><div class="seg-desc">A Kitchen CV mode turns a real cooking history into a portfolio — the "LinkedIn for chefs" half of the thesis.</div></div>
         </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="inspiration">
+  <div class="wrap">
+    <div class="section-kicker">The blueprint</div>
+    <h2 class="section-head">Nothing here is unprecedented — it's proven mechanics, remixed for cooking.</h2>
+    <p class="section-dek">Every piece of Cookzer borrows the part that already works somewhere else and builds it for a niche that's never had it.</p>
+
+    <div class="inspiration-grid">
+      <div class="inspiration-item">
+        <div class="insp-label">Feed</div>
+        <div class="insp-who">Facebook</div>
+        <div class="insp-what">A wall of what people actually made, real reactions, and a network that grows around shared taste.</div>
+      </div>
+      <div class="inspiration-item">
+        <div class="insp-label">Profiles</div>
+        <div class="insp-who">Instagram</div>
+        <div class="insp-what">A visual grid of a cook's history — every dish they've posted, browsable the way a profile grid already works.</div>
+      </div>
+      <div class="inspiration-item">
+        <div class="insp-label">Professional layer</div>
+        <div class="insp-who">LinkedIn</div>
+        <div class="insp-what">Built for one vertical instead of every industry — a Kitchen CV that's a real portfolio, not a résumé PDF.</div>
+      </div>
+      <div class="inspiration-item">
+        <div class="insp-label">Messenger</div>
+        <div class="insp-who">LinkedIn Messenger</div>
+        <div class="insp-what">Direct, professional-feeling messaging between cooks — not a chat app bolted on as an afterthought.</div>
+      </div>
+      <div class="inspiration-item">
+        <div class="insp-label">Recipe collections</div>
+        <div class="insp-who">Pinterest</div>
+        <div class="insp-what">Saveable, browsable boards of recipes that actually work — collected, not just scrolled past once.</div>
+      </div>
+      <div class="inspiration-item">
+        <div class="insp-label">Restaurant ratings</div>
+        <div class="insp-who">Foursquare</div>
+        <div class="insp-what">Check-in-style ratings — but every one is verified by an uploaded receipt or invoice, so it can't be faked.</div>
       </div>
     </div>
   </div>
@@ -402,76 +456,6 @@
   </div>
 </section>
 
-<section class="block" id="model">
-  <div class="wrap">
-    <div class="section-kicker">Commercial model</div>
-    <h2 class="section-head">Several ways this makes money — none of them require inventing a new behavior.</h2>
-    <p class="section-dek">Every stream below rides on top of something already built and live: the feed, the recipe engine, the challenge system, or the Kitchen CV professional layer.</p>
-
-    <div class="revenue-grid">
-      <div class="revenue-card">
-        <div class="revenue-num">01</div>
-        <div class="revenue-title">Brand advertising &amp; sponsored recipes</div>
-        <div class="revenue-desc">Native sponsored posts and recipes from CPG and appliance brands, placed directly in the feed — not a generic banner, a recipe someone actually wants to cook.</div>
-        <div class="revenue-proof">Food creators see 18.4% engagement vs. typical feed content</div>
-      </div>
-      <div class="revenue-card">
-        <div class="revenue-num">02</div>
-        <div class="revenue-title">Shoppable recipes &amp; cart affiliate revenue</div>
-        <div class="revenue-desc">An "Add ingredients to cart" button on any recipe, integrated directly with major grocery retailers — Woolworths and Coles in Australia — so the basket checks out on their platform while Cookzer takes a commission on every order it originates.</div>
-        <div class="revenue-proof">Recipe-driven carts average +3 items vs. non-recipe shopping</div>
-      </div>
-      <div class="revenue-card">
-        <div class="revenue-num">03</div>
-        <div class="revenue-title">Sponsored challenges &amp; creator deals</div>
-        <div class="revenue-desc">The Weekly Challenge system already built is a ready-made sponsorship slot — a kitchenware or grocery brand underwrites the week's theme and prize.</div>
-        <div class="revenue-proof">Meta paid creators ~$3B in 2025, up 35% YoY — brands are already spending here</div>
-      </div>
-      <div class="revenue-card">
-        <div class="revenue-num">04</div>
-        <div class="revenue-title">Kitchen CV Pro subscription</div>
-        <div class="revenue-desc">A paid tier for semi-pro cooks and hospitality professionals: portfolio analytics, priority visibility, an ad-free feed, and advanced planning tools.</div>
-        <div class="revenue-proof">Cookpad's closest comparable: 65% of all revenue is subscription</div>
-      </div>
-      <div class="revenue-card future">
-        <div class="future-pill">Longer horizon</div>
-        <div class="revenue-title">Aggregate trend data licensing</div>
-        <div class="revenue-desc">Anonymized, aggregated data on what's trending by region and season — a genuine demand-forecasting signal CPG brands and retailers don't have anywhere else, once the network reaches real scale.</div>
-      </div>
-      <div class="revenue-card future">
-        <div class="future-pill">Longer horizon</div>
-        <div class="revenue-title">Home-cook &amp; tiffin marketplace</div>
-        <div class="revenue-desc">Let top-rated home cooks turn their reputation into income — list a tiffin subscription or home-cooked meal service, take orders, and get discovered by the same feed that already proved they can cook. Already scoped in the product roadmap, held back deliberately until the network has real density.</div>
-      </div>
-      <div class="revenue-card future">
-        <div class="future-pill">Longer horizon</div>
-        <div class="revenue-title">Ready-made meal brand listings</div>
-        <div class="revenue-desc">A dedicated, paid placement slot for ready-made meal delivery brands — in the vein of YouFoods — to advertise directly to an audience already planning what to cook this week, alongside the informal home-cook and tiffin sellers on the same marketplace.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="block">
-  <div class="wrap">
-    <div class="section-kicker">Competitive landscape</div>
-    <h2 class="section-head">Nobody else owns this position.</h2>
-    <div class="table-scroll">
-      <table class="compare">
-        <thead>
-          <tr><th>Platform</th><th>Recipes &amp; feed</th><th>Real social graph</th><th>Messaging</th><th>Professional layer</th><th>Shoppable commerce</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Instagram / TikTok</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td></tr>
-          <tr><td>Cookpad / Yummly</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
-          <tr><td>Pinterest</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="yes">Partial</td></tr>
-          <tr class="us"><td>Cookzer</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Roadmapped</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
 <section class="block" id="growth">
   <div class="wrap">
     <div class="section-kicker">Where this goes</div>
@@ -531,6 +515,76 @@
       </table>
     </div>
     <p class="growth-note">Blended ARPU rises over time because the revenue mix rises with it — starting on ads alone, then layering in shoppable-cart commissions, Kitchen CV subscriptions, and marketplace take-rate as each system matures. These are our own working estimates, not third-party projections.</p>
+  </div>
+</section>
+
+<section class="block" id="model">
+  <div class="wrap">
+    <div class="section-kicker">Commercial model</div>
+    <h2 class="section-head">Several ways this makes money — none of them require inventing a new behavior.</h2>
+    <p class="section-dek">Every stream below rides on top of something already built and live: the feed, the recipe engine, the challenge system, or the Kitchen CV professional layer.</p>
+
+    <div class="revenue-grid">
+      <div class="revenue-card">
+        <div class="revenue-num">01</div>
+        <div class="revenue-title">Brand advertising &amp; sponsored recipes</div>
+        <div class="revenue-desc">Native sponsored posts and recipes from CPG and appliance brands, placed directly in the feed — not a generic banner, a recipe someone actually wants to cook.</div>
+        <div class="revenue-proof">Food creators see 18.4% engagement vs. typical feed content</div>
+      </div>
+      <div class="revenue-card">
+        <div class="revenue-num">02</div>
+        <div class="revenue-title">Shoppable recipes &amp; cart affiliate revenue</div>
+        <div class="revenue-desc">An "Add ingredients to cart" button on any recipe, integrated directly with major grocery retailers — Woolworths and Coles in Australia — so the basket checks out on their platform while Cookzer takes a commission on every order it originates.</div>
+        <div class="revenue-proof">Recipe-driven carts average +3 items vs. non-recipe shopping</div>
+      </div>
+      <div class="revenue-card">
+        <div class="revenue-num">03</div>
+        <div class="revenue-title">Restaurant listings &amp; featured placement</div>
+        <div class="revenue-desc">Cookzer's receipt-verified ratings directory gives restaurants a featured-placement slot to pay for — visibility built on real, proven visits instead of managed reviews they can buy anywhere else.</div>
+        <div class="revenue-proof">Yelp's restaurant &amp; retail ad segment alone did $444M in 2025 — restaurants already pay for listing visibility</div>
+      </div>
+      <div class="revenue-card">
+        <div class="revenue-num">04</div>
+        <div class="revenue-title">Kitchen CV Pro subscription</div>
+        <div class="revenue-desc">A paid tier for semi-pro cooks and hospitality professionals: portfolio analytics, priority visibility, an ad-free feed, and advanced planning tools.</div>
+        <div class="revenue-proof">Cookpad's closest comparable: 65% of all revenue is subscription</div>
+      </div>
+      <div class="revenue-card future">
+        <div class="future-pill">Longer horizon</div>
+        <div class="revenue-title">Aggregate trend data licensing</div>
+        <div class="revenue-desc">Anonymized, aggregated data on what's trending by region and season — a genuine demand-forecasting signal CPG brands and retailers don't have anywhere else, once the network reaches real scale.</div>
+      </div>
+      <div class="revenue-card future">
+        <div class="future-pill">Longer horizon</div>
+        <div class="revenue-title">Home-cook &amp; tiffin marketplace</div>
+        <div class="revenue-desc">Let top-rated home cooks turn their reputation into income — list a tiffin subscription or home-cooked meal service, take orders, and get discovered by the same feed that already proved they can cook. Already scoped in the product roadmap, held back deliberately until the network has real density.</div>
+      </div>
+      <div class="revenue-card future">
+        <div class="future-pill">Longer horizon</div>
+        <div class="revenue-title">Ready-made meal brand listings</div>
+        <div class="revenue-desc">A dedicated, paid placement slot for ready-made meal delivery brands — in the vein of YouFoods — to advertise directly to an audience already planning what to cook this week, alongside the informal home-cook and tiffin sellers on the same marketplace.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <div class="section-kicker">Competitive landscape</div>
+    <h2 class="section-head">Nobody else owns this position.</h2>
+    <div class="table-scroll">
+      <table class="compare">
+        <thead>
+          <tr><th>Platform</th><th>Recipes &amp; feed</th><th>Real social graph</th><th>Messaging</th><th>Professional layer</th><th>Shoppable commerce</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Instagram / TikTok</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td></tr>
+          <tr><td>Cookpad / Yummly</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+          <tr><td>Pinterest</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="yes">Partial</td></tr>
+          <tr class="us"><td>Cookzer</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Roadmapped</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </section>
 
