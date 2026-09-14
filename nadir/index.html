@@ -116,14 +116,9 @@
   h1.thesis { font-size: clamp(34px, 5.2vw, 58px); line-height: 1.06; letter-spacing: -1px; max-width: 15ch; }
   h1.thesis em { font-style: italic; color: var(--green-deep); }
   .hero-sub { margin-top: 22px; font-size: 18px; color: var(--ink-soft); max-width: 58ch; }
-  .hero-stats {
-    margin-top: 40px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
-    background: var(--line); border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
-  }
-  .hero-stat { background: var(--paper); padding: 20px 22px; }
-  .hero-stat .num { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .hero-stat .lbl { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
-  @media (max-width: 640px) { .hero-stats { grid-template-columns: 1fr; } }
+  .hero-live { margin-top: 32px; }
+  .hero-table-wrap { margin-top: 16px; }
+  table.hero-table th:first-child, table.hero-table td:first-child { white-space: nowrap; }
 
   /* ---------- Section scaffolding ---------- */
   section.block { padding: 64px 0; border-top: 1px solid var(--line); }
@@ -289,10 +284,20 @@
     <div class="hero-eyebrow">What's built, and where it's headed</div>
     <h1 class="thesis">The social network for people who cook — <em>Facebook and LinkedIn, built for the kitchen.</em></h1>
     <p class="hero-sub">Cookzer is a social platform built for people who cook — home cooks and food enthusiasts sharing what they made, saving what works, planning the week ahead, and following other cooks whose taste they trust. Every major platform treats cooking as content to scroll past; Cookzer is where cooks actually live, and it's already up and running.</p>
-    <div class="hero-stats">
-      <div class="hero-stat"><div class="num">$13.1T</div><div class="lbl">Global food &amp; grocery retail market, 2026</div></div>
-      <div class="hero-stat"><div class="num">25.9%</div><div class="lbl">CAGR of online grocery through 2034</div></div>
-      <div class="hero-stat"><div class="num">6</div><div class="lbl">Product phases already shipped &amp; live</div></div>
+
+    <div class="live-badge hero-live"><span class="dot"></span>6 product phases already shipped &amp; live at cookzer.com</div>
+
+    <div class="hero-table-wrap table-scroll">
+      <table class="compare hero-table">
+        <thead>
+          <tr><th>Market</th><th>Grocery</th><th>Cooking &amp; food culture</th><th>Advertisers &amp; ready-made meals</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>🇦🇺 Australia</td><td>$11.2B online grocery sales, 2025 (+8.2% YoY)</td><td>18.4% engagement rate for food creators — highest of any category on TikTok</td><td>AUD 2.84B ready-meals market, growing at 5.66% CAGR</td></tr>
+          <tr><td>🇵🇰 Pakistan</td><td>+25–30% online grocery growth projected for 2026</td><td>Deep home-cooking culture — an informal tiffin economy fills the gap packaged ready meals haven't</td><td>$413M platform food-delivery market by 2029 (+13.83% CAGR) — still forming</td></tr>
+          <tr><td>🌍 Global</td><td>$13.1T food &amp; grocery retail market, 2026</td><td>$1.66T social commerce market, 2026 (~25% of e-commerce)</td><td>$221.4B global ready-meals market, 2026 (10.3% CAGR)</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </section>
