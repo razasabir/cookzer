@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>Restaurants — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .brand-header {
+      font-size: 20px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+    }
+
+  .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
+  .main {
+      flex: 1;
+      margin-top: 60px;
+      overflow-y: auto;
+    }
+
+  .restaurants-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+  .page-header-row {
+      width: 100%;
+      max-width: 780px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+  .page-title {
+      font-size: 28px;
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      color: var(--olive-dark);
+    }
+
+  .page-sub {
+      width: 100%;
+      max-width: 780px;
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-bottom: 24px;
+    }
+
+  .rate-btn {
+      background: var(--olive);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+  .rate-btn:hover { background: var(--olive-dark); }
+
+  .rate-btn.ghost {
+      background: var(--cream);
+      color: var(--ink-soft);
+    }
+
+  .rate-panel {
+      width: 100%;
+      max-width: 780px;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+  .rate-panel.hidden { display: none; }
+
+  .rate-panel label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 14px 0 6px;
+    }
+
+  .rate-panel label:first-child { margin-top: 0; }
+
+  .rate-panel input[type="text"],
+  .rate-panel textarea {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font-size: 14px;
+      color: var(--ink);
+      font-family: inherit;
+      resize: vertical;
+    }
+
+  .search-results {
+      margin-top: 8px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+  .search-results:empty { display: none; }
+
+  .search-result-row {
+      padding: 10px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+  .search-result-row:first-child { border-top: none; }
+  .search-result-row:hover { background: var(--cream); }
+  .search-result-row .sr-meta { font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
+  .search-result-row.add-new { color: var(--olive-dark); font-weight: 600; }
+
+  .selected-restaurant-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+  .selected-restaurant-row button {
+      background: none;
+      border: none;
+      color: var(--ink-soft);
+      font-size: 12.5px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+  .star-picker { display: flex; gap: 4px; margin-top: 4px; }
+  .star-picker .star {
+      font-size: 26px;
+      cursor: pointer;
+      color: var(--line);
+      user-select: none;
+      transition: color 0.1s;
+    }
+  .star-picker .star.filled { color: var(--gold, #D9A441); }
+
+  .receipt-input-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+  .rate-panel label.receipt-upload-btn {
+      display: inline-block;
+      background: var(--cream);
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      padding: 10px 16px;
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: normal;
+      color: var(--ink-soft);
+      cursor: pointer;
+    }
+
+  .receipt-preview-thumb {
+      width: 44px; height: 44px; border-radius: 8px; object-fit: cover;
+      border: 1px solid var(--line);
+    }
+
+  .receipt-note {
+      font-size: 12px;
+      color: var(--ink-faint);
+      margin-top: 6px;
+    }
+
+  .rate-panel-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+  .restaurants-list {
+      width: 100%;
+      max-width: 780px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+  .restaurant-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+  .restaurant-summary {
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      cursor: pointer;
+    }
+
+  .restaurant-summary:hover { background: var(--cream); }
+
+  .restaurant-name {
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      font-size: 16.5px;
+      color: var(--ink);
+    }
+
+  .restaurant-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 3px;
+      font-size: 13px;
+      color: var(--ink-soft);
+    }
+
+  .restaurant-meta .stars { color: var(--gold, #D9A441); letter-spacing: 1px; }
+  .verified-pill {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--olive-dark);
+      background: var(--olive-tint, rgba(0,156,74,0.1));
+      padding: 3px 9px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+  .restaurant-detail { display: none; border-top: 1px solid var(--line); padding: 4px 18px 14px; }
+  .restaurant-detail.open { display: block; }
+
+  .rating-row {
+      padding: 12px 0;
+      border-top: 1px solid var(--line);
+      display: flex;
+      gap: 12px;
+    }
+  .rating-row:first-child { border-top: none; }
+
+  .rating-row .avatar-sm {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; font-size: 12px;
+    }
+
+  .rating-row-body { flex: 1; min-width: 0; }
+  .rating-row-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .rating-row-name { font-weight: 600; font-size: 13.5px; color: var(--ink); }
+  .rating-row-time { font-size: 12px; color: var(--ink-faint); }
+  .rating-row-stars { color: var(--gold, #D9A441); font-size: 13px; letter-spacing: 1px; }
+  .rating-row-review { font-size: 13.5px; color: var(--ink-soft); margin-top: 4px; }
+  .rating-row-receipt {
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      color: var(--olive-dark);
+      cursor: pointer;
+    }
+  .rating-row-receipt img {
+      width: 28px; height: 28px; border-radius: 6px; object-fit: cover;
+      border: 1px solid var(--line);
+    }
+
+  .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 24px; }
+
+  /* Lightbox */
+  .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(43, 38, 32, 0.6);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+  .modal-overlay.open { display: flex; }
+  .lightbox-img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: 12px;
+      object-fit: contain;
+      cursor: zoom-out;
+    }
+
+  /* Responsive */
+    @media (max-width: 900px) {
+      .right-sidebar { display: none; }
+    }
+
+  @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        height: 100vh;
+        z-index: 100;
+        transition: left 0.25s ease;
+      }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .search-bar { display: none; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+    }
+
+  @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+      .restaurant-summary { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
+
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-health.html" style="text-decoration: none;"><div class="sidebar-item icon health">Health</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-groups.html" style="text-decoration: none;"><div class="sidebar-item icon groups">Groups</div></a>
+  <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants active">Restaurants</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Header -->
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn" id="notifBellBtn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+  <div class="restaurants-content">
+    <div class="page-header-row">
+      <h1 class="page-title">Restaurants</h1>
+      <button class="rate-btn" id="openRateBtn" type="button">+ Rate a restaurant</button>
+    </div>
+    <div class="page-sub">Every rating here needs a receipt or invoice as proof of the visit — no proof, no rating.</div>
+
+    <div class="rate-panel hidden" id="ratePanel">
+      <div id="ratePanelStep1">
+        <label>Find or add a restaurant</label>
+        <input type="text" id="restaurantSearchInput" placeholder="Type a restaurant name..." autocomplete="off">
+        <div class="search-results" id="searchResults"></div>
+      </div>
+
+      <div id="ratePanelStep2" hidden>
+        <div class="selected-restaurant-row">
+          <span id="selectedRestaurantLabel"></span>
+          <button type="button" id="changeRestaurantBtn">Change</button>
+        </div>
+
+        <label>Your rating</label>
+        <div class="star-picker" id="starPicker">
+          <span class="star" data-value="1">★</span>
+          <span class="star" data-value="2">★</span>
+          <span class="star" data-value="3">★</span>
+          <span class="star" data-value="4">★</span>
+          <span class="star" data-value="5">★</span>
+        </div>
+
+        <label>Review (optional)</label>
+        <textarea id="reviewInput" rows="3" maxlength="500" placeholder="What did you have? Would you go back?"></textarea>
+
+        <label>Receipt or invoice — your proof</label>
+        <div class="receipt-input-row">
+          <label class="receipt-upload-btn" for="receiptInput">📎 Attach receipt photo</label>
+          <input type="file" id="receiptInput" accept="image/*" hidden>
+          <img id="receiptPreview" class="receipt-preview-thumb" hidden>
+        </div>
+        <div class="receipt-note">Ratings without a receipt or invoice photo can't be submitted — this is what keeps ratings honest.</div>
+
+        <div class="rate-panel-actions">
+          <button class="rate-btn ghost" id="cancelRateBtn" type="button">Cancel</button>
+          <button class="rate-btn" id="submitRatingBtn" type="button">Submit rating</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="restaurants-list" id="restaurantsList"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="receiptLightbox">
+  <img class="lightbox-img" id="lightboxImg" alt="Receipt proof">
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  let currentUser = null;
+  let selectedRestaurantId = null;
+  let selectedRestaurantName = null;
+  let selectedRatingValue = 0;
+  let pendingReceiptFile = null;
+  let searchDebounce = null;
+
+  function publicUrl(bucket, path) {
+    if (!path) return null;
+    return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  }
+
+  function starString(avg) {
+    const rounded = Math.round(avg);
+    return '★★★★★'.slice(0, rounded) + '☆☆☆☆☆'.slice(0, 5 - rounded);
+  }
+
+  function timeAgo(iso) {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + ' min' + (mins === 1 ? '' : 's') + ' ago';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + ' hour' + (hours === 1 ? '' : 's') + ' ago';
+    const days = Math.floor(hours / 24);
+    return days + ' day' + (days === 1 ? '' : 's') + ' ago';
+  }
+
+  function resetRatePanel() {
+    document.getElementById('ratePanel').classList.add('hidden');
+    document.getElementById('ratePanelStep1').hidden = false;
+    document.getElementById('ratePanelStep2').hidden = true;
+    document.getElementById('restaurantSearchInput').value = '';
+    document.getElementById('searchResults').innerHTML = '';
+    document.getElementById('reviewInput').value = '';
+    document.getElementById('receiptInput').value = '';
+    document.getElementById('receiptPreview').hidden = true;
+    selectedRestaurantId = null;
+    selectedRestaurantName = null;
+    selectedRatingValue = 0;
+    pendingReceiptFile = null;
+    updateStarDisplay();
+  }
+
+  document.getElementById('openRateBtn').addEventListener('click', () => {
+    document.getElementById('ratePanel').classList.remove('hidden');
+    document.getElementById('restaurantSearchInput').focus();
+  });
+
+  document.getElementById('cancelRateBtn').addEventListener('click', resetRatePanel);
+
+  document.getElementById('restaurantSearchInput').addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    clearTimeout(searchDebounce);
+    const results = document.getElementById('searchResults');
+    if (!query) { results.innerHTML = ''; return; }
+    searchDebounce = setTimeout(async () => {
+      const { data: matches } = await sb
+        .from('restaurants')
+        .select('id, name')
+        .ilike('name', '%' + query + '%')
+        .limit(6);
+
+      results.innerHTML = '';
+      const exact = (matches || []).some((m) => m.name.toLowerCase() === query.toLowerCase());
+
+      (matches || []).forEach((m) => {
+        const row = document.createElement('div');
+        row.className = 'search-result-row';
+        row.innerHTML = '<span>' + m.name + '</span>';
+        row.addEventListener('click', () => selectRestaurant(m.id, m.name));
+        results.appendChild(row);
+      });
+
+      if (!exact) {
+        const addRow = document.createElement('div');
+        addRow.className = 'search-result-row add-new';
+        addRow.textContent = '+ Add "' + query + '" as a new restaurant';
+        addRow.addEventListener('click', () => selectRestaurant(null, query));
+        results.appendChild(addRow);
+      }
+    }, 300);
+  });
+
+  function selectRestaurant(id, name) {
+    selectedRestaurantId = id;
+    selectedRestaurantName = name;
+    document.getElementById('selectedRestaurantLabel').textContent = name;
+    document.getElementById('ratePanelStep1').hidden = true;
+    document.getElementById('ratePanelStep2').hidden = false;
+  }
+
+  document.getElementById('changeRestaurantBtn').addEventListener('click', () => {
+    document.getElementById('ratePanelStep1').hidden = false;
+    document.getElementById('ratePanelStep2').hidden = true;
+  });
+
+  function updateStarDisplay() {
+    document.querySelectorAll('#starPicker .star').forEach((s) => {
+      s.classList.toggle('filled', Number(s.dataset.value) <= selectedRatingValue);
+    });
+  }
+
+  document.querySelectorAll('#starPicker .star').forEach((s) => {
+    s.addEventListener('click', () => {
+      selectedRatingValue = Number(s.dataset.value);
+      updateStarDisplay();
+    });
+  });
+
+  document.getElementById('receiptInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingReceiptFile = file;
+    const preview = document.getElementById('receiptPreview');
+    preview.src = URL.createObjectURL(file);
+    preview.hidden = false;
+  });
+
+  async function uploadReceipt(file) {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
+    const { error } = await sb.storage.from('restaurant-receipts').upload(path, file);
+    if (error) {
+      alert('Receipt upload failed: ' + error.message);
+      return null;
+    }
+    return path;
+  }
+
+  document.getElementById('submitRatingBtn').addEventListener('click', async () => {
+    if (!selectedRatingValue) { alert('Pick a star rating first.'); return; }
+    if (!pendingReceiptFile) { alert('Attach a receipt or invoice photo — ratings need proof.'); return; }
+
+    const btn = document.getElementById('submitRatingBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    let restaurantId = selectedRestaurantId;
+    if (!restaurantId) {
+      const { data, error } = await sb
+        .from('restaurants')
+        .insert({ name: selectedRestaurantName, created_by: currentUser.id })
+        .select('id')
+        .single();
+      if (error) {
+        alert('Could not add restaurant: ' + error.message);
+        btn.disabled = false; btn.textContent = 'Submit rating';
+        return;
+      }
+      restaurantId = data.id;
+    }
+
+    const receiptPath = await uploadReceipt(pendingReceiptFile);
+    if (!receiptPath) {
+      btn.disabled = false; btn.textContent = 'Submit rating';
+      return;
+    }
+
+    const review = document.getElementById('reviewInput').value.trim();
+    const { error: ratingErr } = await sb
+      .from('restaurant_ratings')
+      .upsert({
+        restaurant_id: restaurantId,
+        user_id: currentUser.id,
+        rating: selectedRatingValue,
+        review: review || null,
+        receipt_photo_path: receiptPath,
+      }, { onConflict: 'restaurant_id,user_id' });
+
+    btn.disabled = false;
+    btn.textContent = 'Submit rating';
+
+    if (ratingErr) {
+      alert('Could not save rating: ' + ratingErr.message);
+      return;
+    }
+
+    resetRatePanel();
+    await loadRestaurants();
+  });
+
+  document.getElementById('receiptLightbox').addEventListener('click', () => {
+    document.getElementById('receiptLightbox').classList.remove('open');
+  });
+
+  function openLightbox(url) {
+    document.getElementById('lightboxImg').src = url;
+    document.getElementById('receiptLightbox').classList.add('open');
+  }
+
+  async function loadRatingsFor(restaurantId, container) {
+    container.innerHTML = '<div class="empty-note">Loading ratings...</div>';
+    const { data: ratings } = await sb
+      .from('restaurant_ratings')
+      .select('id, rating, review, receipt_photo_path, created_at, profiles(display_name, initials)')
+      .eq('restaurant_id', restaurantId)
+      .order('created_at', { ascending: false });
+
+    container.innerHTML = '';
+    if (!ratings || ratings.length === 0) {
+      container.innerHTML = '<div class="empty-note">No ratings yet.</div>';
+      return;
+    }
+
+    ratings.forEach((r) => {
+      const row = document.createElement('div');
+      row.className = 'rating-row';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar-sm';
+      avatar.textContent = (r.profiles && r.profiles.initials) || '?';
+
+      const body = document.createElement('div');
+      body.className = 'rating-row-body';
+
+      const top = document.createElement('div');
+      top.className = 'rating-row-top';
+      top.innerHTML =
+        '<span class="rating-row-name">' + ((r.profiles && r.profiles.display_name) || 'Someone') + '</span>' +
+        '<span class="rating-row-stars">' + starString(r.rating) + '</span>' +
+        '<span class="rating-row-time">' + timeAgo(r.created_at) + '</span>';
+      body.appendChild(top);
+
+      if (r.review) {
+        const review = document.createElement('div');
+        review.className = 'rating-row-review';
+        review.textContent = r.review;
+        body.appendChild(review);
+      }
+
+      const receiptUrl = publicUrl('restaurant-receipts', r.receipt_photo_path);
+      if (receiptUrl) {
+        const proof = document.createElement('div');
+        proof.className = 'rating-row-receipt';
+        proof.innerHTML = '<img src="' + receiptUrl + '" alt="Receipt"> 🧾 Proof attached';
+        proof.addEventListener('click', () => openLightbox(receiptUrl));
+        body.appendChild(proof);
+      }
+
+      row.appendChild(avatar);
+      row.appendChild(body);
+      container.appendChild(row);
+    });
+  }
+
+  async function loadRestaurants() {
+    const { data: restaurants } = await sb
+      .from('restaurants')
+      .select('id, name, created_at')
+      .order('created_at', { ascending: false });
+
+    const list = document.getElementById('restaurantsList');
+    list.innerHTML = '';
+
+    if (!restaurants || restaurants.length === 0) {
+      list.innerHTML = '<div class="empty-note">No restaurants rated yet — be the first, receipt in hand.</div>';
+      return;
+    }
+
+    const withRatings = await Promise.all(restaurants.map(async (r) => {
+      const { data: ratings } = await sb.from('restaurant_ratings').select('rating').eq('restaurant_id', r.id);
+      const rows = ratings || [];
+      const avg = rows.length ? rows.reduce((s, x) => s + x.rating, 0) / rows.length : 0;
+      return { ...r, avg, count: rows.length };
+    }));
+
+    withRatings.forEach((r) => {
+      const card = document.createElement('div');
+      card.className = 'restaurant-card';
+
+      const summary = document.createElement('div');
+      summary.className = 'restaurant-summary';
+      summary.innerHTML =
+        '<div>' +
+          '<div class="restaurant-name">' + r.name + '</div>' +
+          '<div class="restaurant-meta">' +
+            (r.count > 0
+              ? '<span class="stars">' + starString(r.avg) + '</span><span>' + r.avg.toFixed(1) + ' · ' + r.count + (r.count === 1 ? ' rating' : ' ratings') + '</span>'
+              : '<span>No ratings yet</span>') +
+          '</div>' +
+        '</div>' +
+        (r.count > 0 ? '<span class="verified-pill">🧾 Receipt-verified</span>' : '');
+
+      const detail = document.createElement('div');
+      detail.className = 'restaurant-detail';
+      let loaded = false;
+
+      summary.addEventListener('click', async () => {
+        const isOpen = detail.classList.toggle('open');
+        if (isOpen && !loaded) {
+          loaded = true;
+          await loadRatingsFor(r.id, detail);
+        }
+      });
+
+      card.appendChild(summary);
+      card.appendChild(detail);
+      list.appendChild(card);
+    });
+  }
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    await loadRestaurants();
+  })();
+</script>
+</body>
+</html>
