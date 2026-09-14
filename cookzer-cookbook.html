@@ -362,7 +362,8 @@
 
     if (activeFolderId) query = query.eq('folder_id', activeFolderId);
 
-    const { data: saved } = await query;
+    const { data: saved, error } = await query;
+    if (error) console.error('loadSavedRecipes failed:', error.message, error);
     const listEl = document.getElementById('savedRecipesList');
     listEl.innerHTML = '';
     const isEmpty = !(saved && saved.length);
