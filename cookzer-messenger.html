@@ -11,6 +11,7 @@
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js"></script>
   <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
   .sidebar-title {
@@ -308,6 +309,8 @@
 
   .bubble-row.received .bubble-time { text-align: left; }
 
+  .seen-label { font-size: 10px; color: var(--olive); text-align: right; margin-top: 2px; }
+
   .thread-empty {
       flex: 1;
       display: flex;
@@ -597,6 +600,7 @@
   function appendBubble(messagesEl, msg) {
     const row = document.createElement('div');
     row.className = 'bubble-row ' + (msg.sender_id === currentUser.id ? 'sent' : 'received');
+    row.dataset.createdAt = msg.created_at;
     const bubbleWrap = document.createElement('div');
     bubbleWrap.className = 'bubble-wrap';
 
@@ -613,6 +617,35 @@
     row.appendChild(bubbleWrap);
     messagesEl.appendChild(row);
     messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  // Shows "Seen" under the most recent message I sent, if the other
+  // participant's last_read_at is at or after it. Re-run each time the
+  // thread is opened — there's no realtime push on conversation_participants
+  // updates, so it reflects read state as of when you opened the thread.
+  async function markSeenReceipt(messagesEl, conv) {
+    const { data: theirParticipant } = await sb
+      .from('conversation_participants')
+      .select('last_read_at')
+      .eq('conversation_id', conv.id)
+      .eq('user_id', conv.otherId)
+      .maybeSingle();
+
+    messagesEl.querySelectorAll('.seen-label').forEach((el) => el.remove());
+    if (!theirParticipant || !theirParticipant.last_read_at) return;
+
+    const theirReadAt = new Date(theirParticipant.last_read_at).getTime();
+    const sentRows = Array.from(messagesEl.querySelectorAll('.bubble-row.sent'));
+    let lastSeen = null;
+    sentRows.forEach((row) => {
+      if (new Date(row.dataset.createdAt).getTime() <= theirReadAt) lastSeen = row;
+    });
+    if (lastSeen) {
+      const seenLabel = document.createElement('div');
+      seenLabel.className = 'seen-label';
+      seenLabel.textContent = 'Seen';
+      lastSeen.querySelector('.bubble-wrap').appendChild(seenLabel);
+    }
   }
 
   async function renderThread() {
@@ -679,6 +712,7 @@
 
     (messages || []).forEach((m) => appendBubble(messagesEl, m));
     messagesEl.scrollTop = messagesEl.scrollHeight;
+    await markSeenReceipt(messagesEl, conv);
 
     if (activeChannel) sb.removeChannel(activeChannel);
     activeChannel = sb

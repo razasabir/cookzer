@@ -11,6 +11,8 @@
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js"></script>
   <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <script src="countdown.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
   .brand-header {
@@ -330,6 +332,7 @@
   let currentUser = null;
   let activeChallenge = null;
   let categoryFilter = '';
+  let challengeCountdownTimer = null;
 
   async function loadChallenge() {
     const { data: challenges } = await sb
@@ -350,8 +353,10 @@
       .select('*', { count: 'exact', head: true })
       .eq('challenge_id', activeChallenge.id);
 
-    const endsIn = Math.max(0, Math.ceil((new Date(activeChallenge.ends_at) - Date.now()) / 86400000));
-    document.getElementById('challengeDetails').textContent = (entryCount || 0) + ' cooks entered so far • ends in ' + endsIn + 'd';
+    const detailsEl = document.getElementById('challengeDetails');
+    detailsEl.innerHTML = (entryCount || 0) + ' cooks entered so far • ends in <span id="challengeCountdown"></span>';
+    if (challengeCountdownTimer) clearInterval(challengeCountdownTimer);
+    challengeCountdownTimer = startCountdown(document.getElementById('challengeCountdown'), activeChallenge.ends_at);
 
     const { data: mine } = await sb
       .from('challenge_entries')
