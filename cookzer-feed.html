@@ -1588,6 +1588,7 @@
     listEl.innerHTML = '';
     document.getElementById('feedEmpty').hidden = !!(posts && posts.length);
 
+    if (error) console.error('loadFeed failed:', error.message, error);
     if (error || !posts) return;
 
     posts.forEach((post) => {
