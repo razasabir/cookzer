@@ -993,12 +993,29 @@
     const { count: challengeCount } = await sb.from('challenge_entries').select('*', { count: 'exact', head: true }).eq('user_id', viewedId);
     document.getElementById('badgeChallengesNum').textContent = challengeCount || 0;
 
+    const { data: cookedPosts } = await sb
+      .from('posts')
+      .select('kind, recipes!posts_recipe_id_fkey(category)')
+      .eq('author_id', viewedId)
+      .in('kind', ['cook_in', 'remake']);
+    const cuisineCount = new Set((cookedPosts || []).map((p) => p.recipes && p.recipes.category).filter(Boolean)).size;
+
+    const { count: restaurantCount } = await sb.from('posts').select('*', { count: 'exact', head: true }).eq('author_id', viewedId).not('restaurant_name', 'is', null);
+    const { count: groupPostCount } = await sb.from('posts').select('*', { count: 'exact', head: true }).eq('author_id', viewedId).not('group_id', 'is', null);
+    const { count: photoCount } = await sb.from('recipe_photos').select('*', { count: 'exact', head: true }).eq('user_id', viewedId);
+    const { count: followingCountForBadge } = await sb.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', viewedId);
+
     renderMilestoneBadges({
       cookIns: cookIns ? cookIns.length : 0,
       streak: computeStreak(cookIns || []),
       recipeCount: recipeCount || 0,
       challengeCount: challengeCount || 0,
       followerCount: followerCount || 0,
+      cuisineCount,
+      restaurantCount: restaurantCount || 0,
+      groupPostCount: groupPostCount || 0,
+      photoCount: photoCount || 0,
+      followingCount: followingCountForBadge || 0,
     });
   }
 
@@ -1009,6 +1026,11 @@
     { label: 'Challenge Champion', check: (s) => s.challengeCount >= 3, hint: 'Join 3 weekly challenges' },
     { label: 'Community Favorite', check: (s) => s.followerCount >= 10, hint: 'Reach 10 followers' },
     { label: 'Master Chef', check: (s) => s.cookIns >= 20, hint: 'Log 20 cook-ins' },
+    { label: 'Cuisine Explorer', check: (s) => s.cuisineCount >= 5, hint: 'Cook dishes from 5 different categories' },
+    { label: 'Restaurant Scout', check: (s) => s.restaurantCount >= 3, hint: 'Check in at 3 restaurants' },
+    { label: 'Group Cook', check: (s) => s.groupPostCount >= 1, hint: 'Post in a group' },
+    { label: 'Shutterbug', check: (s) => s.photoCount >= 3, hint: 'Upload 3 recipe photos' },
+    { label: 'Co-Cook Connector', check: (s) => s.followingCount >= 10, hint: 'Follow 10 fellow cooks' },
   ];
 
   function renderMilestoneBadges(stats) {
