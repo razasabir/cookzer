@@ -73,12 +73,12 @@
     }
 
   .msg-list-header {
-      padding: 16px;
-      border-bottom: 1px solid var(--line);
+      padding: 16px 20px;
+      background: var(--olive);
       font-family: 'Fraunces', serif;
       font-size: 18px;
       font-weight: 600;
-      color: var(--olive-dark);
+      color: #fff;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -88,15 +88,15 @@
       font-family: 'Work Sans', sans-serif;
       font-size: 12px;
       font-weight: 600;
-      color: var(--olive);
-      background: var(--cream);
-      border: 1px solid var(--line);
+      color: #fff;
+      background: rgba(255, 255, 255, 0.18);
+      border: none;
       border-radius: 18px;
       padding: 6px 12px;
       cursor: pointer;
     }
 
-  .new-msg-btn:hover { background: #f0e6d2; }
+  .new-msg-btn:hover { background: rgba(255, 255, 255, 0.28); }
 
   .new-msg-panel {
       display: none;
@@ -213,10 +213,10 @@
     }
 
   .unread-dot {
-      width: 8px;
-      height: 8px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
-      background: var(--brick);
+      background: var(--olive);
       flex-shrink: 0;
       margin-left: 6px;
     }
@@ -234,8 +234,7 @@
       align-items: center;
       gap: 12px;
       padding: 12px 20px;
-      border-bottom: 1px solid var(--line);
-      background: var(--card-bg);
+      background: var(--olive);
       flex-shrink: 0;
     }
 
@@ -244,8 +243,9 @@
       width: 32px;
       height: 32px;
       border-radius: 50%;
-      border: 1px solid var(--line);
-      background: var(--cream);
+      border: none;
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
       cursor: pointer;
       align-items: center;
       justify-content: center;
@@ -257,7 +257,7 @@
       font-family: 'Fraunces', serif;
       font-weight: 600;
       font-size: 15px;
-      color: var(--ink);
+      color: #fff;
     }
 
   .thread-messages {
@@ -267,6 +267,9 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      background-color: var(--cream);
+      background-image: radial-gradient(var(--line) 1px, transparent 1px);
+      background-size: 20px 20px;
     }
 
   .bubble-row {
@@ -298,15 +301,20 @@
 
   .bubble-row.received .bubble {
       background: var(--card-bg);
-      border: 1px solid var(--line);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
       color: var(--ink);
       border-bottom-left-radius: 4px;
     }
 
   .bubble-row.sent .bubble {
-      background: var(--olive);
-      color: #fff;
+      background: var(--bubble-sent-bg, #D9FDD3);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      color: var(--ink);
       border-bottom-right-radius: 4px;
+    }
+
+  [data-theme="dark"] {
+      --bubble-sent-bg: #005C4B;
     }
 
   .bubble-time {
@@ -318,7 +326,9 @@
 
   .bubble-row.received .bubble-time { text-align: left; }
 
-  .seen-label { font-size: 10px; color: var(--olive); text-align: right; margin-top: 2px; }
+  .bubble-check { margin-left: 3px; color: var(--ink-soft); }
+
+  .bubble-check.seen { color: #34B7F1; }
 
   .thread-empty {
       flex: 1;
@@ -333,19 +343,19 @@
 
   .thread-input {
       display: flex;
+      align-items: center;
       gap: 10px;
-      padding: 14px 20px;
-      border-top: 1px solid var(--line);
-      background: var(--card-bg);
+      padding: 12px 16px;
+      background: var(--cream);
       flex-shrink: 0;
     }
 
   .thread-input input {
       flex: 1;
-      padding: 10px 16px;
-      background: var(--cream);
-      border: 1px solid var(--line);
-      border-radius: 20px;
+      padding: 11px 18px;
+      background: var(--card-bg);
+      border: none;
+      border-radius: 24px;
       font-size: 13px;
       color: var(--ink);
       font-family: inherit;
@@ -359,12 +369,16 @@
       background: var(--olive);
       color: #fff;
       border: none;
-      padding: 0 20px;
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 13px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 16px;
       cursor: pointer;
       transition: background 0.2s;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
   .thread-send:hover {
@@ -642,6 +656,12 @@
     const time = document.createElement('div');
     time.className = 'bubble-time';
     time.textContent = formatTime(msg.created_at);
+    if (msg.sender_id === currentUser.id) {
+      const check = document.createElement('span');
+      check.className = 'bubble-check';
+      check.textContent = '✓';
+      time.appendChild(check);
+    }
     bubbleWrap.appendChild(time);
 
     if (msg.id) {
@@ -764,7 +784,10 @@
       .eq('user_id', conv.otherId)
       .maybeSingle();
 
-    messagesEl.querySelectorAll('.seen-label').forEach((el) => el.remove());
+    messagesEl.querySelectorAll('.bubble-check').forEach((el) => {
+      el.textContent = '✓';
+      el.classList.remove('seen');
+    });
     if (!theirParticipant || !theirParticipant.last_read_at) return;
 
     const theirReadAt = new Date(theirParticipant.last_read_at).getTime();
@@ -774,10 +797,11 @@
       if (new Date(row.dataset.createdAt).getTime() <= theirReadAt) lastSeen = row;
     });
     if (lastSeen) {
-      const seenLabel = document.createElement('div');
-      seenLabel.className = 'seen-label';
-      seenLabel.textContent = 'Seen';
-      lastSeen.querySelector('.bubble-wrap').appendChild(seenLabel);
+      const check = lastSeen.querySelector('.bubble-check');
+      if (check) {
+        check.textContent = '✓✓';
+        check.classList.add('seen');
+      }
     }
   }
 
@@ -851,7 +875,9 @@
 
     const sendBtn = document.createElement('button');
     sendBtn.className = 'thread-send';
-    sendBtn.textContent = 'Send';
+    sendBtn.type = 'button';
+    sendBtn.setAttribute('aria-label', 'Send message');
+    sendBtn.textContent = '➤';
     sendBtn.addEventListener('click', sendMessage);
 
     inputBar.appendChild(attachBtn);
