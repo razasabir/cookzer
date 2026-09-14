@@ -414,6 +414,17 @@
       margin-top: 4px;
     }
 
+  .mood-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--olive-dark);
+      background: var(--cream);
+      border-radius: 12px;
+      padding: 4px 10px;
+      margin-top: 8px;
+    }
+
   .post-overlay {
       width: 100%;
       background: rgba(0, 0, 0, 0.55);
@@ -641,6 +652,7 @@
   let viewedProfile = null;
   let viewedId = params.get('id');
   let currentView = 'activity';
+  const MOOD_EMOJI = { 'Comfort food': '🍲', 'Quick and easy': '⚡', 'Fancy tonight': '✨' };
 
   function publicUrl(bucket, path) {
     if (!path) return null;
@@ -662,15 +674,13 @@
     'linear-gradient(135deg, #4CA5A0, #2E706C)',
   ];
 
-  function setupBanner(isOwn) {
+  function setupBanner(isOwn, savedGradient) {
     const banner = document.getElementById('profileBanner');
     const btn = document.getElementById('changeBannerBtn');
     const swatchesEl = document.getElementById('bannerSwatches');
     btn.hidden = !isOwn;
 
-    let saved = null;
-    try { saved = localStorage.getItem('cookzer-banner-' + viewedId); } catch (e) { /* no storage available */ }
-    if (saved) banner.style.background = saved;
+    if (savedGradient) banner.style.background = savedGradient;
 
     if (!isOwn) return;
 
@@ -684,10 +694,11 @@
       swatch.style.background = gradient;
       swatch.style.cursor = 'pointer';
       swatch.style.border = '2px solid #fff';
-      swatch.addEventListener('click', () => {
+      swatch.addEventListener('click', async () => {
         banner.style.background = gradient;
-        try { localStorage.setItem('cookzer-banner-' + viewedId, gradient); } catch (e) { /* per-viewer only, fine to skip */ }
         swatchesEl.hidden = true;
+        const { error } = await sb.from('profiles').update({ cover_gradient: gradient }).eq('id', currentUser.id);
+        if (error) alert('Could not save cover: ' + error.message);
       });
       swatchesEl.appendChild(swatch);
     });
@@ -698,7 +709,7 @@
 
     const { data: profile } = await sb
       .from('profiles')
-      .select('id, display_name, initials, bio, location, avatar_url, is_kitchen_cv, cv_title, cv_bio, open_to_work, created_at')
+      .select('id, display_name, initials, bio, location, avatar_url, is_kitchen_cv, cv_title, cv_bio, open_to_work, cover_gradient, created_at')
       .eq('id', viewedId)
       .single();
 
@@ -727,7 +738,7 @@
     }
 
     const isOwn = viewedId === currentUser.id;
-    setupBanner(isOwn);
+    setupBanner(isOwn, profile.cover_gradient);
     document.getElementById('savedTab').hidden = !isOwn;
     document.getElementById('bookmarksTab').hidden = !isOwn;
     document.getElementById('recipesSectionTitle').textContent = isOwn ? 'Your recipes' : profile.display_name.split(' ')[0] + "'s recipes";
@@ -895,7 +906,7 @@
     if (currentView === 'activity') {
       const { data: posts } = await sb
         .from('posts')
-        .select('id, kind, recipe_id, caption, photo_path, video_uid, restaurant_name, created_at, recipes(title, hero_photo_path)')
+        .select('id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, recipes(title, hero_photo_path)')
         .eq('author_id', viewedId)
         .order('created_at', { ascending: false });
 
@@ -946,6 +957,13 @@
           link.href = 'cookzer-recipe.html?id=' + post.recipe_id;
           link.textContent = post.recipes.title;
           card.appendChild(link);
+        }
+
+        if (post.mood) {
+          const moodBadge = document.createElement('div');
+          moodBadge.className = 'mood-badge';
+          moodBadge.textContent = MOOD_EMOJI[post.mood] ? MOOD_EMOJI[post.mood] + ' ' + post.mood : post.mood;
+          card.appendChild(moodBadge);
         }
 
         if (post.caption) {

@@ -307,6 +307,17 @@
       margin-bottom: 12px;
     }
 
+  .mood-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--olive-dark);
+      background: var(--cream);
+      border-radius: 12px;
+      padding: 4px 10px;
+      margin-bottom: 8px;
+    }
+
   .card-tags {
       display: flex;
       gap: 8px;
@@ -976,6 +987,8 @@
     }
   });
 
+  const MOOD_EMOJI = { 'Comfort food': '🍲', 'Quick and easy': '⚡', 'Fancy tonight': '✨' };
+
   let selectedMood = null;
   document.querySelectorAll('.composer-mood-chip').forEach((chip) => {
     chip.addEventListener('click', () => {
@@ -1133,10 +1146,6 @@
       return;
     }
 
-    if (selectedMood) {
-      caption = caption ? selectedMood + ' — ' + caption : selectedMood;
-    }
-
     let photoPath = null;
     if (pendingPhotoFile) {
       photoPath = await uploadPostPhoto(pendingPhotoFile);
@@ -1144,7 +1153,7 @@
 
     const { data: inserted, error } = await sb
       .from('posts')
-      .insert({ author_id: currentUser.id, kind: 'post', caption: caption || null, photo_path: photoPath, video_uid: pendingVideoUid, restaurant_name: selectedRestaurant })
+      .insert({ author_id: currentUser.id, kind: 'post', caption: caption || null, photo_path: photoPath, video_uid: pendingVideoUid, mood: selectedMood, restaurant_name: selectedRestaurant })
       .select('id')
       .single();
 
@@ -1236,6 +1245,13 @@
       title.textContent = post.recipes.title;
       titleLink.appendChild(title);
       content.appendChild(titleLink);
+    }
+
+    if (post.mood) {
+      const moodBadge = document.createElement('div');
+      moodBadge.className = 'mood-badge';
+      moodBadge.textContent = MOOD_EMOJI[post.mood] ? MOOD_EMOJI[post.mood] + ' ' + post.mood : post.mood;
+      content.appendChild(moodBadge);
     }
 
     if (post.caption) {
@@ -1446,7 +1462,7 @@
 
     const { data: posts, error } = await sb
       .from('posts')
-      .select('id, kind, recipe_id, caption, photo_path, video_uid, restaurant_name, created_at, profiles(display_name, initials), recipes(title, hero_photo_path)')
+      .select('id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles(display_name, initials), recipes(title, hero_photo_path)')
       .order('created_at', { ascending: false })
       .limit(30);
 
@@ -1482,7 +1498,16 @@
     if (challengeCountdownTimer) clearInterval(challengeCountdownTimer);
     challengeCountdownTimer = startCountdown(document.getElementById('challengeCountdown'), activeChallenge.ends_at);
 
-    document.getElementById('joinChallengeBtn').addEventListener('click', async () => {
+    const { data: mine } = await sb
+      .from('challenge_entries')
+      .select('id')
+      .eq('challenge_id', activeChallenge.id)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    const joinBtn = document.getElementById('joinChallengeBtn');
+    joinBtn.textContent = mine ? 'Joined ✓' : 'Join challenge';
+    joinBtn.onclick = async () => {
       const { error } = await sb
         .from('challenge_entries')
         .upsert({ challenge_id: activeChallenge.id, user_id: currentUser.id }, { onConflict: 'challenge_id,user_id' });
@@ -1490,12 +1515,9 @@
         alert('Could not join: ' + error.message);
         return;
       }
-      const btn = document.getElementById('joinChallengeBtn');
-      if (btn.textContent !== 'Joined ✓') burstConfetti();
-      btn.textContent = 'Joined ✓';
+      if (!mine) burstConfetti();
       await loadChallenge();
-      await loadLeaderboard();
-    });
+    };
 
     await loadLeaderboard();
   }
