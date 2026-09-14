@@ -296,6 +296,14 @@
 
   .gallery-add .plus { font-size: 26px; line-height: 1; }
 
+  .lightbox-img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: 12px;
+      object-fit: contain;
+      cursor: zoom-out;
+    }
+
   /* Photo upload + filter modal */
     .modal-overlay {
       display: none;
@@ -606,6 +614,11 @@
   </div>
 </div>
 
+<!-- Gallery photo lightbox -->
+<div class="modal-overlay" id="photoLightbox">
+  <img class="lightbox-img" id="lightboxImg" alt="Recipe photo">
+</div>
+
 <!-- Rating modal -->
 <div class="modal-overlay" id="rateModal">
   <div class="modal-card">
@@ -879,11 +892,26 @@
     (photos || []).slice().reverse().forEach((p) => {
       const thumb = document.createElement('div');
       thumb.className = 'gallery-thumb';
-      thumb.style.backgroundImage = "url('" + publicUrl('recipe-photos', p.storage_path) + "')";
-      thumb.style.filter = FILTER_CSS[p.filter] || 'none';
+      const url = publicUrl('recipe-photos', p.storage_path);
+      const filterCss = FILTER_CSS[p.filter] || 'none';
+      thumb.style.backgroundImage = "url('" + url + "')";
+      thumb.style.filter = filterCss;
+      thumb.style.cursor = 'zoom-in';
+      thumb.addEventListener('click', () => openLightbox(url, filterCss));
       grid.insertBefore(thumb, addTile);
     });
   }
+
+  function openLightbox(url, filterCss) {
+    const img = document.getElementById('lightboxImg');
+    img.src = url;
+    img.style.filter = filterCss;
+    document.getElementById('photoLightbox').classList.add('open');
+  }
+
+  document.getElementById('photoLightbox').addEventListener('click', () => {
+    document.getElementById('photoLightbox').classList.remove('open');
+  });
 
   async function loadRatingSummary() {
     const { data: reviews } = await sb.from('recipe_reviews').select('rating').eq('recipe_id', recipeId);
