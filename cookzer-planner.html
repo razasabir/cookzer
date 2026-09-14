@@ -14,6 +14,7 @@
   <script src="supabase-config.js"></script>
   <script src="notifications-shared.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="nutrition-data.js"></script>
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -595,6 +596,32 @@
       row.textContent = name + (qtys.length ? ' — ' + qtys.join(' + ') : '');
       list.appendChild(row);
     });
+
+    // Estimated total: sum each planned recipe's own ingredient cost
+    // (servings forced to 1 so it's the whole-recipe total, not
+    // per-serving) rather than trying to re-parse the merged "2 cups +
+    // 1 cup"-style rows above, which aren't in a form the lookup table
+    // can add together.
+    if (window.CookzerNutrition) {
+      let total = 0;
+      let anyMatched = false;
+      entries.forEach((e) => {
+        const cost = window.CookzerNutrition.estimateCostForRecipe({ ingredients: (e.recipes && e.recipes.ingredients) || [], servings: 1 });
+        if (cost != null) { total += cost; anyMatched = true; }
+      });
+      if (anyMatched) {
+        const totalRow = document.createElement('div');
+        totalRow.className = 'shopping-list-item';
+        totalRow.style.fontWeight = '700';
+        totalRow.style.borderTop = '2px solid var(--line)';
+        totalRow.style.marginTop = '4px';
+        totalRow.style.paddingTop = '10px';
+        totalRow.innerHTML = 'Estimated total: ~$' + total.toFixed(2) +
+          ' <span style="font-weight:400; color:var(--ink-soft); font-size:12px;">(from a lookup-table estimate, not real prices)</span>';
+        list.appendChild(totalRow);
+      }
+    }
+
     box.innerHTML = '';
     box.appendChild(list);
   });

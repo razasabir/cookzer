@@ -610,6 +610,8 @@
         <div class="shipped-item"><div class="s-num">48</div><div class="s-text"><b>Typing indicators in Messenger</b><span>WhatsApp-inspired. Ephemeral Supabase Realtime broadcast on the conversation channel already open for live messages — no new table, no persisted state.</span></div></div>
         <div class="shipped-item"><div class="s-num">49</div><div class="s-text"><b>Group admin controls</b><span>Edit name/description, remove a member, delete the group — all previously impossible for the creator even though the update-your-own-group RLS policy existed from day one. A real Members list replaces the plain count.</span></div></div>
         <div class="shipped-item"><div class="s-num">50</div><div class="s-text"><b>Checked-in Playwright test suite</b><span>Every feature this whole build was verified with throwaway scratch scripts, thrown away after each check. That method's proven, but it means re-deriving coverage from zero on every future change. <code>package.json</code> + <code>tests/</code> now checked in: real specs that load the actual HTML pages via <code>file://</code>, stub <code>window.supabase</code> the same way the scratch scripts always did, and run with <code>npm test</code> — plus a GitHub Actions workflow so they run on every push/PR. Free — Playwright is open-source, runs only locally/in CI, never touches production, and this project's scale sits well inside GitHub Actions' free tier.</span></div></div>
+        <div class="shipped-item"><div class="s-num">51</div><div class="s-text"><b>Cost-per-serve auto-estimate</b><span>The last open Known gap: extended the item-43 lookup table with a per-100g price alongside its nutrition data, reusing the exact same ingredient-matching/quantity-parsing code. Shown on the recipe page next to Nutrition (falls back to a "~" estimate when an author skipped the hand-typed field, same honesty convention as item 43), an "Estimate from ingredients" button in the wizard, and — new — an estimated total cost on the Meal Planner's generated shopping list.</span></div></div>
+        <div class="shipped-item"><div class="s-num">52</div><div class="s-text"><b>Itemized yearly expense table on the investor pitch</b><span>The <code>/nadir</code> growth section only ever showed one lump "Operating cost" per milestone year. A new standalone Expenses section (own nav link) breaks each year's total into 7 named line items — engineering, marketing, support/trust &amp; safety, infra, payment/delivery fees, legal, admin — that reconcile exactly to the totals already shown.</span></div></div>
       </div>
       <p class="section-dek" style="margin-top:20px;">
         <b>⚠️ Manual steps still needed:</b>
@@ -715,9 +717,11 @@
       <div class="section-eyebrow">Progress</div>
       <h2>Known gaps</h2>
       <p class="section-dek">
-        The previous version of this section listed 7 items; all 7 shipped
-        in one pass (items 36-42 above). What's below is what's left — both
-        blocked on something only the user can provide, not on build time.
+        Down to a single item, and it's blocked on something only the user
+        can provide, not on build time. The nutrition &amp; cost-per-serve
+        auto-estimate gap that used to sit here has fully shipped now
+        (nutrition as item 43, cost-per-serve as item 51 — see What's
+        shipped).
       </p>
 
       <div class="backlog-category">
@@ -725,17 +729,13 @@
         <div class="backlog-item"><span class="b-name">Google OAuth login</span><span class="b-desc">— email/password is shipped; Google sign-in needs a Google Cloud OAuth client the user hasn't set up yet. Can't be built until that credential exists.</span></div>
       </div>
 
-      <div class="backlog-category">
-        <h3>Recipes</h3>
-        <div class="backlog-item"><span class="b-name">Nutrition &amp; cost-per-serve auto-estimate</span><span class="b-desc">— the Health page sums whatever an author hand-typed; there's no ingredient-based calculation. Deliberately not attempted without a decision first: real auto-estimation needs either a paid nutrition/pricing API (ongoing cost) or a hand-maintained per-ingredient lookup table (accuracy risk, real maintenance burden) — not a good blind build.</span></div>
-      </div>
     </section>
 
     <!-- ================= BACKLOG ================= -->
     <section class="plan-section" id="backlog">
       <div class="section-eyebrow">What's next</div>
       <h2>Full backlog</h2>
-      <p class="section-dek">Empty as of this writing — every backlog item from the previous pass shipped (items 36-42 above). The 2 items in Known gaps are blocked on a credential/decision, not tracked here as buildable work.</p>
+      <p class="section-dek">Empty as of this writing. The 1 item left in Known gaps is blocked on a credential, not tracked here as buildable work.</p>
     </section>
 
     <!-- ================= LONG-TERM EXPANSION ================= -->
