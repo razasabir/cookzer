@@ -70,69 +70,60 @@
 
   function wireNotificationBell(userId) {
     const btn = document.getElementById('notifBellBtn');
-    if (!btn) return;
+    if (!btn || !window.CookzerNotifications) return;
 
     const panel = document.createElement('div');
     panel.id = 'notifPanel';
-    panel.style.cssText = 'display:none; position:absolute; top:52px; right:16px; width:300px; max-height:360px; overflow-y:auto; background:var(--card-bg); border:1px solid var(--line); border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.12); z-index:150; padding:8px;';
+    panel.style.cssText = 'display:none; position:absolute; top:52px; right:16px; width:300px; max-height:400px; overflow-y:auto; background:var(--card-bg); border:1px solid var(--line); border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.12); z-index:150; padding:8px;';
     document.body.appendChild(panel);
 
+    const dot = document.createElement('div');
+    dot.style.cssText = 'display:none; position:absolute; top:2px; right:2px; width:9px; height:9px; border-radius:50%; background:var(--brick,#E85659); border:2px solid var(--card-bg);';
     btn.style.position = 'relative';
+    btn.appendChild(dot);
+
+    async function refreshUnreadDot() {
+      const items = await window.CookzerNotifications.fetchItems(userId, 1);
+      if (items.length === 0) { dot.style.display = 'none'; return; }
+      const readAt = await window.CookzerNotifications.getReadAt(userId);
+      const latest = new Date(items[0].created_at);
+      dot.style.display = (!readAt || latest > readAt) ? 'block' : 'none';
+    }
 
     async function loadNotifications() {
       panel.innerHTML = '<div style="padding:12px; font-size:13px; color:var(--ink-soft);">Loading…</div>';
-
-      const [followsRes, heartsRes, commentsRes] = await Promise.all([
-        sb.from('follows')
-          .select('follower_id, created_at, profiles!follows_follower_id_fkey(display_name)')
-          .eq('followee_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(5),
-        sb.from('hearts')
-          .select('user_id, created_at, profiles(display_name), posts!inner(author_id)')
-          .eq('posts.author_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(5),
-        sb.from('comments')
-          .select('author_id, created_at, text, profiles(display_name), posts!inner(author_id)')
-          .eq('posts.author_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(5),
-      ]);
-
-      const items = [];
-      (followsRes.data || []).forEach((f) => {
-        if (f.profiles) items.push({ created_at: f.created_at, actorId: f.follower_id, text: (f.profiles.display_name || 'Someone') + ' followed you' });
-      });
-      (heartsRes.data || []).forEach((h) => {
-        if (h.profiles) items.push({ created_at: h.created_at, actorId: h.user_id, text: (h.profiles.display_name || 'Someone') + ' hearted your post' });
-      });
-      (commentsRes.data || []).forEach((c) => {
-        if (c.profiles) items.push({ created_at: c.created_at, actorId: c.author_id, text: (c.profiles.display_name || 'Someone') + ' commented on your post' });
-      });
-
-      items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      const items = await window.CookzerNotifications.fetchItems(userId, 5);
 
       panel.innerHTML = '';
       if (items.length === 0) {
         panel.innerHTML = '<div style="padding:12px; font-size:13px; color:var(--ink-soft);">No activity yet.</div>';
-        return;
+      } else {
+        items.slice(0, 8).forEach((item) => {
+          const row = document.createElement('a');
+          row.href = 'cookzer-profile.html?id=' + item.actorId;
+          row.style.cssText = 'display:block; padding:10px 8px; font-size:13px; color:var(--ink); border-bottom:1px solid var(--line); text-decoration:none;';
+          const text = document.createElement('div');
+          text.textContent = item.text;
+          const time = document.createElement('div');
+          time.style.cssText = 'font-size:11px; color:var(--ink-soft); margin-top:2px;';
+          time.textContent = timeAgo(item.created_at);
+          row.appendChild(text);
+          row.appendChild(time);
+          panel.appendChild(row);
+        });
       }
-      items.slice(0, 8).forEach((item) => {
-        const row = document.createElement('a');
-        row.href = 'cookzer-profile.html?id=' + item.actorId;
-        row.style.cssText = 'display:block; padding:10px 8px; font-size:13px; color:var(--ink); border-bottom:1px solid var(--line); text-decoration:none;';
-        const text = document.createElement('div');
-        text.textContent = item.text;
-        const time = document.createElement('div');
-        time.style.cssText = 'font-size:11px; color:var(--ink-soft); margin-top:2px;';
-        time.textContent = timeAgo(item.created_at);
-        row.appendChild(text);
-        row.appendChild(time);
-        panel.appendChild(row);
-      });
-      panel.lastChild.style.borderBottom = 'none';
+
+      const seeAll = document.createElement('a');
+      seeAll.href = 'cookzer-notifications.html';
+      seeAll.style.cssText = 'display:block; padding:10px 8px; font-size:12.5px; color:var(--olive-dark); font-weight:600; text-decoration:none; text-align:center;';
+      seeAll.textContent = 'See all notifications';
+      panel.appendChild(seeAll);
+
+      await window.CookzerNotifications.markRead(userId);
+      dot.style.display = 'none';
     }
+
+    refreshUnreadDot();
 
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
