@@ -591,12 +591,19 @@
         <div class="shipped-item"><div class="s-num">33</div><div class="s-text"><b>Guided recipe upload wizard</b><span>Recipe creation is now a 5-step flow (basics → ingredients → steps &amp; photos → cover photo → review) — a cook can attach a photo to each individual step and explicitly choose which photo becomes the recipe's cover, instead of one flat form.</span></div></div>
         <div class="shipped-item"><div class="s-num">34</div><div class="s-text"><b>My Recipes: hashtags replace folders</b><span>Dropped the single-folder-per-recipe model for freeform multi-tag hashtags, with a filter bar built from the user's own tags and an "Add recipe" button straight into the wizard above.</span></div></div>
         <div class="shipped-item"><div class="s-num">35</div><div class="s-text"><b>Photo lightbox, everywhere</b><span>Every photo on the site — feed/group posts, profile activity, recipe hero/gallery/step photos, restaurant receipts — is now clickable and opens full-size with an upload-details panel: who posted it, when, their caption, and context (recipe, filter, rating).</span></div></div>
+        <div class="shipped-item"><div class="s-num">36</div><div class="s-text"><b>Block &amp; report</b><span>The trust &amp; safety item flagged since day one as a real risk to ship without. A Block/Report menu on other people's profiles, a report flag on every post that isn't yours, feed/group posts from anyone you've blocked filtered out, Messenger gated against a blocked person (can't start a new thread, message box disabled in an existing one), and a "Blocked" tab on Co-Cooks to review and undo. Enforced client-side rather than at the RLS layer for this pass — see the decisions log.</span></div></div>
+        <div class="shipped-item"><div class="s-num">37</div><div class="s-text"><b>5 open-ended achievement badges</b><span>Cuisine Explorer, Restaurant Scout, Group Cook, Shutterbug, Co-Cook Connector — breadth-of-activity badges alongside the original 6 raw-count milestones, all computed from existing tables.</span></div></div>
+        <div class="shipped-item"><div class="s-num">38</div><div class="s-text"><b>Recipe import from URL</b><span>A new Vercel serverless function fetches a recipe page server-side and parses its schema.org Recipe JSON-LD — the structured data almost every real recipe site already embeds for Google's rich results. Prefills the wizard for the user to review and edit; no external API, no cost. Basic SSRF hardening (protocol/host checks, timeout, size cap) since the endpoint fetches an arbitrary user-supplied URL.</span></div></div>
+        <div class="shipped-item"><div class="s-num">39</div><div class="s-text"><b>Group conversations in Messenger</b><span>"New Message" is multi-select now; picking 2+ people prompts for an optional group name and creates a real 3+-person thread. The schema and RLS already supported this from the original messenger build — only the client needed to catch up.</span></div></div>
+        <div class="shipped-item"><div class="s-num">40</div><div class="s-text"><b>Public curatable Lists</b><span>A named, shareable collection of recipes a user curates on purpose — distinct from the freeform per-recipe hashtags. Public by default with a private toggle; a public list's URL is shareable as-is. (The "diary" half of this idea is already covered by Profile's Activity tab.)</span></div></div>
+        <div class="shipped-item"><div class="s-num">41</div><div class="s-text"><b>Pantry-aware recipe suggestions</b><span>A "🥕 What can I cook?" widget on the feed: type a few ingredients you have, get community recipes ranked by how many you already have. Pure client-side text matching against existing recipe data — no external API.</span></div></div>
+        <div class="shipped-item"><div class="s-num">42</div><div class="s-text"><b>Trend Radar</b><span>Detects ingredients trending across the last 7 days of real posts and surfaces them on Challenges with a "Spawn challenge" button — any logged-in user could already create a challenge (existing policy), this just gives that action a live-data-driven starting point. This closes out the full backlog from the previous "What's next" pass.</span></div></div>
       </div>
       <p class="section-dek" style="margin-top:20px;">
         <b>⚠️ Manual steps still needed:</b>
       </p>
       <ol style="font-size:13.5px; color:var(--ink-soft); max-width:68ch; margin:0 0 20px; padding-left:20px; line-height:1.7;">
-        <li>Almost everything above depends on the migrations in <code>supabase/migrations/</code>, which have to be run in order, once each, in the Supabase SQL Editor (Dashboard → SQL Editor → paste a file's contents → Run). If an earlier one has already been run, re-running it is harmless — it just errors on "already exists," skip past that and continue with the next file. Full list, in order: <code>003</code> through <code>013</code> (<code>003_platform_tables.sql</code> … <code>013_saved_recipe_tags.sql</code>). <code>013_saved_recipe_tags.sql</code> (item 34, hashtags) is the newest and, as of this writing, not yet confirmed run — until it is, saving/filtering by hashtag on the live site will fail.</li>
+        <li>Almost everything above depends on the migrations in <code>supabase/migrations/</code>, which have to be run in order, once each, in the Supabase SQL Editor (Dashboard → SQL Editor → paste a file's contents → Run). If an earlier one has already been run, re-running it is harmless — it just errors on "already exists," skip past that and continue with the next file. Full list, in order: <code>003</code> through <code>016</code> (<code>003_platform_tables.sql</code> … <code>016_recipe_lists.sql</code>). <code>013</code> through <code>016</code> are the newest and, as of this writing, not yet confirmed run — until they are, hashtags (item 34), block/report (36), group conversations (39), and Lists (40) won't work on the live site.</li>
         <li>Video posts (item 23) additionally need a one-time Bunny Stream setup: create a video library at bunny.net, then set <code>BUNNY_LIBRARY_ID</code> (also update the value in <code>bunny-config.js</code>) and <code>BUNNY_STREAM_API_KEY</code> as Vercel environment variables and redeploy. Until that's done, the Video composer button shows a clear "not configured yet" error rather than failing silently — nothing else is affected.</li>
       </ol>
     </section>
@@ -662,8 +669,8 @@
         <div class="phase-card">
           <div class="phase-num">5</div>
           <div class="phase-body">
-            <h3>Engagement extras <span class="pill shipped">Shipped (partial)</span></h3>
-            <p>Ratings ("I made this" + star rating) and a real challenges backend (join, filter, leaderboard) are shipped. Recipe import from URL and full Trend Radar (auto-spawning challenges from live trending dishes) are not — both need a server-side piece and are still tracked in the backlog/flagged sections below.</p>
+            <h3>Engagement extras <span class="pill shipped">Shipped</span></h3>
+            <p>Ratings ("I made this" + star rating), a real challenges backend (join, filter, leaderboard), recipe import from URL, and Trend Radar (trend-driven challenge spawning) are all shipped — see items 36-42 in What's shipped above.</p>
           </div>
         </div>
         <div class="phase-card">
@@ -696,27 +703,19 @@
       <div class="section-eyebrow">Progress</div>
       <h2>Known gaps</h2>
       <p class="section-dek">
-        This section used to be a page-by-page audit of hardcoded placeholder
-        markup from very early in the build — every item it listed has since
-        shipped (real feed, real recipes, real profile, real challenges, a
-        real avatar/sign-out on every page). What's below is what's
-        genuinely still missing today, not historical placeholder content.
+        The previous version of this section listed 7 items; all 7 shipped
+        in one pass (items 36-42 above). What's below is what's left — both
+        blocked on something only the user can provide, not on build time.
       </p>
 
       <div class="backlog-category">
-        <h3>Messenger</h3>
-        <div class="backlog-item"><span class="b-name">No group conversations</span><span class="b-desc">— schema and UI only support 1:1 threads (<code>conversation_participants</code> supports more than 2 rows already, but nothing in the client creates or renders a 3+ person thread). Needs UI for multi-select on "New Message" and a group name/avatar concept.</span></div>
+        <h3>Auth</h3>
+        <div class="backlog-item"><span class="b-name">Google OAuth login</span><span class="b-desc">— email/password is shipped; Google sign-in needs a Google Cloud OAuth client the user hasn't set up yet. Can't be built until that credential exists.</span></div>
       </div>
 
       <div class="backlog-category">
         <h3>Recipes</h3>
-        <div class="backlog-item"><span class="b-name">No import from a URL</span><span class="b-desc">— every recipe is hand-entered through the wizard. Pasting a link and getting a structured recipe back needs a server-side scraper/parser piece.</span></div>
-        <div class="backlog-item"><span class="b-name">Nutrition is hand-entered, not computed</span><span class="b-desc">— the Health page sums whatever calories/protein/carbs/fat a recipe's author typed in; there's no ingredient-based auto-estimate and no cost-per-serve.</span></div>
-      </div>
-
-      <div class="backlog-category">
-        <h3>Trust &amp; safety</h3>
-        <div class="backlog-item"><span class="b-name">No block/report</span><span class="b-desc">— agreed as a day-one requirement in the decisions log below, still not built. The one open item here that's a real risk to ship without, not just a nice-to-have.</span></div>
+        <div class="backlog-item"><span class="b-name">Nutrition &amp; cost-per-serve auto-estimate</span><span class="b-desc">— the Health page sums whatever an author hand-typed; there's no ingredient-based calculation. Deliberately not attempted without a decision first: real auto-estimation needs either a paid nutrition/pricing API (ongoing cost) or a hand-maintained per-ingredient lookup table (accuracy risk, real maintenance burden) — not a good blind build.</span></div>
       </div>
     </section>
 
@@ -724,32 +723,7 @@
     <section class="plan-section" id="backlog">
       <div class="section-eyebrow">What's next</div>
       <h2>Full backlog</h2>
-      <p class="section-dek">Everything not yet built, organized by what it's for.</p>
-
-      <div class="backlog-category">
-        <h3>Utility &amp; planning</h3>
-        <div class="backlog-item"><span class="b-name">Recipe import from URL</span><span class="b-desc">— paste a link, get a structured recipe.</span></div>
-        <div class="backlog-item"><span class="b-name">Pantry-aware suggestions</span><span class="b-desc">— match what's in your fridge to community recipes.</span></div>
-        <div class="backlog-item"><span class="b-name">Nutrition &amp; cost-per-serve auto-estimate</span><span class="b-desc">— today's Health page only sums whatever an author hand-typed; no ingredient-based calculation, no cost-per-serve. Ties into "Under $10" style challenges.</span></div>
-      </div>
-
-      <div class="backlog-category">
-        <h3>Social &amp; growth</h3>
-        <div class="backlog-item"><span class="b-name">Group conversations in Messenger</span><span class="b-desc">— schema supports it (<code>conversation_participants</code> allows 3+ rows), no client UI to create or render one yet.</span></div>
-        <div class="backlog-item"><span class="b-name">Badges beyond challenges</span><span class="b-desc">— the 6 achievement milestones on Profile are shipped; open-ended ones like "tried 10 cuisines" are not.</span></div>
-        <div class="backlog-item"><span class="b-name">Block / report</span><span class="b-desc">— agreed as a day-one requirement, still not built. See Trust &amp; safety in Known gaps above.</span></div>
-      </div>
-
-      <div class="backlog-category">
-        <h3>From competitive research</h3>
-        <div class="backlog-item"><span class="b-name">Cooking Diary + public curatable Lists</span><span class="b-desc">— My Recipes now has real hashtags (shipped), but there's still no "diary" framing or a shareable public List concept. Inspired by Letterboxd.</span></div>
-        <div class="backlog-item"><span class="b-name">Trend Radar challenges</span><span class="b-desc">— live trending-dish detection auto-spawning mini-challenges, instead of the one manually-set weekly challenge today. Inspired by TikTok's food-discovery algorithm.</span></div>
-      </div>
-
-      <div class="backlog-category">
-        <h3>Auth</h3>
-        <div class="backlog-item"><span class="b-name">Google OAuth login</span><span class="b-desc">— email/password is shipped; Google sign-in is still deferred behind setting up a Google Cloud OAuth client.</span></div>
-      </div>
+      <p class="section-dek">Empty as of this writing — every backlog item from the previous pass shipped (items 36-42 above). The 2 items in Known gaps are blocked on a credential/decision, not tracked here as buildable work.</p>
     </section>
 
     <!-- ================= LONG-TERM EXPANSION ================= -->
