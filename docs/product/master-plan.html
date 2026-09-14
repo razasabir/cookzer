@@ -566,19 +566,15 @@
         <div class="shipped-item"><div class="s-num">20</div><div class="s-text"><b>Message reactions, post bookmarks, mood tags, profile banners</b><span>Emoji reactions on messages, a "Save post" bookmark with its own Saved Posts profile tab, an optional mood tag on the composer (Comfort food / Quick &amp; easy / Fancy tonight), and a preset-gradient cover banner picker on Profile.</span></div></div>
         <div class="shipped-item"><div class="s-num">21</div><div class="s-text"><b>Drag-and-drop meal planner</b><span>A drag handle on every planned day lets you drag a meal onto another day, swapping it with whatever was already planned there.</span></div></div>
         <div class="shipped-item"><div class="s-num">22</div><div class="s-text"><b>Cookbook empty-state polish + achievement milestones</b><span>Friendlier empty states and real recipe photo thumbnails on My Recipes, plus a Milestones section on Profile previewing 6 lockable achievement badges computed from real stats — this closes out the full 20-item Now bucket.</span></div></div>
+        <div class="shipped-item"><div class="s-num">23</div><div class="s-text"><b>Video posts</b><span>Feed posts can carry a short video (max 90s) instead of a photo — direct browser-to-host upload via Bunny Stream (TUS resumable), a signed-upload Vercel serverless function so the real Bunny API key stays server-side, and playback via Bunny's public player embed. Chosen over Cloudflare Stream on cost: roughly 5-7x cheaper for short, well-compressed clips. Resolves the "video posts" parked decision — estimated ~$5/month at current traffic.</span></div></div>
       </div>
       <p class="section-dek" style="margin-top:20px;">
-        <b>⚠️ One manual step still needed:</b> everything above depends on
-        <code>supabase/migrations/003_platform_tables.sql</code> through
-        <code>008_reactions_bookmarks.sql</code>, which have to be run in
-        order, once, in the Supabase SQL Editor (Dashboard → SQL Editor →
-        paste each file's contents → Run) before any of this works live —
-        no tool in this pipeline can execute SQL directly against the
-        project. If an earlier one has already been run, re-running it is
-        harmless (it will just error on "already exists" — skip past that
-        and continue with the next file). Full list, in order: 003, 004,
-        005, 006, 007, 008.
+        <b>⚠️ Two manual steps still needed:</b>
       </p>
+      <ol style="font-size:13.5px; color:var(--ink-soft); max-width:68ch; margin:0 0 20px; padding-left:20px; line-height:1.7;">
+        <li>Everything except item 23 depends on <code>supabase/migrations/003_platform_tables.sql</code> through <code>008_reactions_bookmarks.sql</code>, which have to be run in order, once, in the Supabase SQL Editor (Dashboard → SQL Editor → paste each file's contents → Run). If an earlier one has already been run, re-running it is harmless — it just errors on "already exists," skip past that and continue with the next file. Full list, in order: 003, 004, 005, 006, 007, 008.</li>
+        <li>Item 23 (video posts) additionally needs migration <code>009_video_posts.sql</code> run the same way, plus a one-time Bunny Stream setup: create a video library at bunny.net, then set <code>BUNNY_LIBRARY_ID</code> (also update the value in <code>bunny-config.js</code>) and <code>BUNNY_STREAM_API_KEY</code> as Vercel environment variables and redeploy. Until that's done, the Video composer button shows a clear "not configured yet" error rather than failing silently — nothing else is affected.</li>
+      </ol>
     </section>
 
     <!-- ================= PHASES ================= -->
@@ -650,7 +646,7 @@
           <div class="phase-num">—</div>
           <div class="phase-body">
             <h3>Parked — needs a business decision, not just build time</h3>
-            <p>Sponsored challenges (needs a sales motion), video posts (storage/bandwidth cost), cooking clubs/groups (bigger scope). None of these are "no" — they're waiting on a call only the user can make. (Marketplace and the AI cooking assistant moved to Long-term expansion below.)</p>
+            <p>Sponsored challenges (needs a sales motion), cooking clubs/groups (bigger scope). None of these are "no" — they're waiting on a call only the user can make. (Marketplace and the AI cooking assistant moved to Long-term expansion below. Video posts shipped — see below.)</p>
           </div>
         </div>
       </div>
@@ -737,7 +733,6 @@
         <h3>Core engagement</h3>
         <div class="backlog-item"><span class="b-name">Comments &amp; replies</span><span class="b-desc">— feed shows counts today; no read/write yet.</span></div>
         <div class="backlog-item"><span class="b-name">Recipe ratings &amp; reviews</span><span class="b-desc">— "I made this" stamp + star rating.</span></div>
-        <div class="backlog-item"><span class="b-name">Video posts</span><span class="b-desc">— short cook-along clips; parked pending a storage/bandwidth cost call.</span></div>
       </div>
 
       <div class="backlog-category">
