@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabase-config.js"></script>
+  <script src="theme.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
   html, body {
@@ -141,6 +142,9 @@
 <body>
 
   <div class="auth-card">
+    <div style="display:flex; justify-content:flex-end; margin-bottom:-8px;">
+      <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button" style="width:32px;height:32px;font-size:15px;">🌙</button>
+    </div>
     <div class="brand">Cook<span>zer</span></div>
     <div class="tagline">A social network for people who cook.</div>
 

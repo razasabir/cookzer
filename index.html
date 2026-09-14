@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabase-config.js"></script>
+  <script src="theme.js"></script>
   <style>
     :root {
       --cream: #F7F2E9;
@@ -21,6 +22,18 @@
       --mustard: #D9A441;
       --brick: #CE2B37;
       --line: #E7DFCF;
+    }
+
+    [data-theme="dark"] {
+      --cream: #1C1815;
+      --card-bg: #262019;
+      --ink: #F2ECE2;
+      --ink-soft: #B3A99A;
+      --olive: #2FB86B;
+      --olive-dark: #43D485;
+      --mustard: #E8B865;
+      --brick: #E85D57;
+      --line: #3A3229;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -288,6 +301,7 @@
   <nav class="top-nav">
     <a href="index.html" style="text-decoration:none;"><div class="brand">Cook<span>zer</span></div></a>
     <div class="nav-actions">
+      <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button" style="width:36px;height:36px;border-radius:50%;background:var(--card-bg);border:1px solid var(--line);cursor:pointer;font-size:16px;">🌙</button>
       <a href="cookzer-auth.html" class="btn btn-ghost">Log in</a>
       <a href="cookzer-auth.html?tab=signup" class="btn btn-primary">Sign up free</a>
     </div>
