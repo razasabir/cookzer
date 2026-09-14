@@ -137,6 +137,51 @@
       padding: 4px 6px;
     }
 
+  .new-msg-result.selected { background: var(--card-bg); }
+  .new-msg-result.selected:after { content: '✓'; margin-left: auto; color: var(--olive); font-weight: 700; }
+
+  .new-msg-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+  .new-msg-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+  .new-msg-chip button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--ink-soft);
+      font-size: 13px;
+      line-height: 1;
+    }
+
+  .new-msg-start-btn {
+      width: 100%;
+      margin-top: 8px;
+      background: var(--olive);
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 9px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+  .new-msg-start-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
   .conversation {
       display: flex;
       align-items: center;
@@ -486,8 +531,10 @@
         <button class="new-msg-btn" id="newMsgBtn" type="button">+ New</button>
       </div>
       <div class="new-msg-panel" id="newMsgPanel">
+        <div class="new-msg-chips" id="newMsgChips"></div>
         <input type="text" id="newMsgSearch" placeholder="Search people by name...">
         <div id="newMsgResults"></div>
+        <button class="new-msg-start-btn" id="newMsgStartBtn" type="button" disabled>Start conversation</button>
       </div>
       <!-- conversation items rendered by JS -->
     </div>
@@ -534,7 +581,7 @@
 
     const { data: others } = await sb
       .from('conversation_participants')
-      .select('conversation_id, user_id, profiles(display_name, initials)')
+      .select('conversation_id, user_id, profiles(display_name, initials), conversations(name)')
       .in('conversation_id', convIds)
       .neq('user_id', currentUser.id);
 
@@ -549,14 +596,36 @@
       if (!latestByConv[m.conversation_id]) latestByConv[m.conversation_id] = m;
     });
 
-    conversations = (others || []).map((o) => {
-      const last = latestByConv[o.conversation_id];
-      const lastReadAt = readMap[o.conversation_id];
-      return {
-        id: o.conversation_id,
-        otherId: o.user_id,
+    // Group participant rows by conversation — a group thread has more
+    // than one "other" participant, where a 1:1 thread has exactly one.
+    const byConv = {};
+    (others || []).forEach((o) => {
+      if (!byConv[o.conversation_id]) {
+        byConv[o.conversation_id] = { groupName: o.conversations ? o.conversations.name : null, participants: [] };
+      }
+      byConv[o.conversation_id].participants.push({
+        id: o.user_id,
         name: o.profiles ? o.profiles.display_name : 'Unknown',
         initials: o.profiles ? o.profiles.initials : '??',
+      });
+    });
+
+    conversations = Object.keys(byConv).map((convId) => {
+      const info = byConv[convId];
+      const last = latestByConv[convId];
+      const lastReadAt = readMap[convId];
+      const isGroup = info.participants.length > 1;
+      const name = info.groupName || (isGroup
+        ? info.participants.map((p) => p.name.split(' ')[0]).join(', ')
+        : (info.participants[0] ? info.participants[0].name : 'Unknown'));
+
+      return {
+        id: convId,
+        isGroup,
+        otherId: isGroup ? null : (info.participants[0] ? info.participants[0].id : null),
+        participants: info.participants,
+        name,
+        initials: isGroup ? '👥' : (info.participants[0] ? info.participants[0].initials : '??'),
         lastText: last ? (last.text || (last.attachment_path ? '📷 Photo' : '')) : 'Say hello!',
         lastTime: last ? formatTime(last.created_at) : '',
         unread: !!(last && (!lastReadAt || new Date(last.created_at) > new Date(lastReadAt))),
@@ -780,6 +849,7 @@
   // thread is opened — there's no realtime push on conversation_participants
   // updates, so it reflects read state as of when you opened the thread.
   async function markSeenReceipt(messagesEl, conv) {
+    if (conv.isGroup) return; // "Seen" is a 1:1-only signal for now
     const { data: theirParticipant } = await sb
       .from('conversation_participants')
       .select('last_read_at')
@@ -858,7 +928,7 @@
 
     header.appendChild(back);
     header.appendChild(nameEl);
-    header.appendChild(blockToggle);
+    if (!conv.isGroup) header.appendChild(blockToggle);
 
     const messagesEl = document.createElement('div');
     messagesEl.className = 'thread-messages';
@@ -1014,7 +1084,10 @@
   const newMsgPanel = document.getElementById('newMsgPanel');
   const newMsgSearch = document.getElementById('newMsgSearch');
   const newMsgResults = document.getElementById('newMsgResults');
+  const newMsgChips = document.getElementById('newMsgChips');
+  const newMsgStartBtn = document.getElementById('newMsgStartBtn');
   let searchTimer = null;
+  const selectedPeople = new Map(); // id -> { id, display_name, initials }
 
   newMsgBtn.addEventListener('click', () => {
     newMsgPanel.classList.toggle('open');
@@ -1026,6 +1099,29 @@
     const q = newMsgSearch.value.trim();
     searchTimer = setTimeout(() => runSearch(q), 250);
   });
+
+  function renderChips() {
+    newMsgChips.innerHTML = '';
+    selectedPeople.forEach((person) => {
+      const chip = document.createElement('div');
+      chip.className = 'new-msg-chip';
+      const label = document.createElement('span');
+      label.textContent = person.display_name;
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', () => {
+        selectedPeople.delete(person.id);
+        renderChips();
+        runSearch(newMsgSearch.value.trim());
+      });
+      chip.appendChild(label);
+      chip.appendChild(removeBtn);
+      newMsgChips.appendChild(chip);
+    });
+    newMsgStartBtn.disabled = selectedPeople.size === 0;
+    newMsgStartBtn.textContent = selectedPeople.size > 1 ? 'Start group (' + selectedPeople.size + ')' : 'Start conversation';
+  }
 
   async function runSearch(query) {
     newMsgResults.innerHTML = '';
@@ -1052,7 +1148,7 @@
 
     results.forEach((person) => {
       const row = document.createElement('div');
-      row.className = 'new-msg-result';
+      row.className = 'new-msg-result' + (selectedPeople.has(person.id) ? ' selected' : '');
 
       const avatar = document.createElement('div');
       avatar.className = 'conv-avatar';
@@ -1066,14 +1162,32 @@
 
       row.appendChild(avatar);
       row.appendChild(name);
-      row.addEventListener('click', () => startConversation(person));
+      row.addEventListener('click', () => {
+        if (selectedPeople.has(person.id)) selectedPeople.delete(person.id);
+        else selectedPeople.set(person.id, person);
+        renderChips();
+        runSearch(newMsgSearch.value.trim());
+      });
 
       newMsgResults.appendChild(row);
     });
   }
 
+  newMsgStartBtn.addEventListener('click', () => {
+    const people = Array.from(selectedPeople.values());
+    if (people.length === 0) return;
+    if (people.length === 1) {
+      startConversation(people[0]);
+    } else {
+      const name = prompt('Name this group (optional):', people.map((p) => p.display_name.split(' ')[0]).join(', '));
+      startGroupConversation(people, name ? name.trim() : null);
+    }
+  });
+
   async function startConversation(person) {
-    // Look for an existing conversation shared with this person.
+    // Look for an existing 1:1 conversation shared with this person —
+    // must check the participant count too, since a shared conversation
+    // could now be a group thread that happens to include both of us.
     const { data: mine } = await sb
       .from('conversation_participants')
       .select('conversation_id')
@@ -1087,7 +1201,13 @@
         .select('conversation_id')
         .eq('user_id', person.id)
         .in('conversation_id', myIds);
-      if (shared && shared.length > 0) conversationId = shared[0].conversation_id;
+      for (const s of (shared || [])) {
+        const { count } = await sb
+          .from('conversation_participants')
+          .select('*', { count: 'exact', head: true })
+          .eq('conversation_id', s.conversation_id);
+        if (count === 2) { conversationId = s.conversation_id; break; }
+      }
     }
 
     if (!conversationId) {
@@ -1118,12 +1238,43 @@
       }
     }
 
+    closeNewMsgPanel();
+    await loadConversations();
+    await openConversation(conversationId);
+  }
+
+  async function startGroupConversation(people, name) {
+    const conversationId = crypto.randomUUID();
+
+    const { error: convErr } = await sb
+      .from('conversations')
+      .insert({ id: conversationId, created_by: currentUser.id, name: name || null });
+    if (convErr) {
+      alert('Could not start group: ' + convErr.message);
+      return;
+    }
+
+    const rows = [
+      { conversation_id: conversationId, user_id: currentUser.id },
+      ...people.map((p) => ({ conversation_id: conversationId, user_id: p.id })),
+    ];
+    const { error: partErr } = await sb.from('conversation_participants').insert(rows);
+    if (partErr) {
+      alert('Could not add participants: ' + partErr.message);
+      return;
+    }
+
+    closeNewMsgPanel();
+    await loadConversations();
+    await openConversation(conversationId);
+  }
+
+  function closeNewMsgPanel() {
+    selectedPeople.clear();
+    renderChips();
     newMsgPanel.classList.remove('open');
     newMsgSearch.value = '';
     newMsgResults.innerHTML = '';
-
-    await loadConversations();
-    await openConversation(conversationId);
   }
 
   (async function init() {
