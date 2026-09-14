@@ -198,7 +198,7 @@
 
     const { data: cookIns } = await sb
       .from('posts')
-      .select('id, created_at, recipe_id, recipes(id, title, nutrition)')
+      .select('id, created_at, recipe_id, recipes!posts_recipe_id_fkey(id, title, nutrition)')
       .eq('author_id', currentUser.id)
       .eq('kind', 'cook_in')
       .gte('created_at', since)
