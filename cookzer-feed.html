@@ -9,7 +9,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabase-config.js"></script>
+  <script src="bunny-config.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
   <script src="countdown.js"></script>
@@ -261,6 +263,30 @@
       font-size: 80px;
       background-size: cover;
       background-position: center;
+    }
+
+  .card-video {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border: 0;
+      display: block;
+      background: #000;
+    }
+
+  .upload-progress-track {
+      width: 100%;
+      height: 6px;
+      background: var(--cream);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+  .upload-progress-fill {
+      height: 100%;
+      background: var(--olive);
+      width: 0%;
+      transition: width 0.2s;
     }
 
   .card-content {
@@ -722,8 +748,15 @@
       </div>
       <img id="composerPhotoPreview" hidden style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:10px;">
       <input type="file" id="composerPhotoInput" accept="image/*" hidden>
+      <video id="composerVideoPreview" hidden muted controls style="width:100%;max-height:220px;border-radius:12px;margin-top:10px;"></video>
+      <input type="file" id="composerVideoInput" accept="video/*" hidden>
+      <div id="videoUploadStatus" hidden style="margin-top:6px; font-size:12px; color:var(--ink-soft);">
+        <span id="videoUploadStatusText">Uploading…</span>
+        <div class="upload-progress-track"><div class="upload-progress-fill" id="videoUploadProgressFill"></div></div>
+      </div>
       <div class="composer-actions">
         <button class="composer-btn" id="composerPhotoBtn" type="button">📸 Photo</button>
+        <button class="composer-btn" id="composerVideoBtn" type="button">🎥 Video</button>
         <a href="cookzer-recipe-new.html?share=1" style="text-decoration:none;flex:1;"><button class="composer-btn" type="button" style="width:100%;">📝 Recipe</button></a>
         <button class="composer-btn" id="composerChallengeBtn" type="button">🏆 Challenge</button>
         <button class="composer-btn" id="composerRestaurantBtn" type="button">📍 Dining out</button>
@@ -804,6 +837,9 @@
   let activeChallenge = null;
   let challengeCountdownTimer = null;
   let pendingPhotoFile = null;
+  let pendingVideoUid = null;
+  let videoUploadInProgress = false;
+  const MAX_VIDEO_SECONDS = 90;
 
   function timeAgo(iso) {
     const diffMs = Date.now() - new Date(iso).getTime();
@@ -844,6 +880,90 @@
     preview.src = URL.createObjectURL(file);
     preview.hidden = false;
   });
+
+  document.getElementById('composerVideoBtn').addEventListener('click', () => {
+    document.getElementById('composerVideoInput').click();
+  });
+
+  document.getElementById('composerVideoInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const preview = document.getElementById('composerVideoPreview');
+    const probe = document.createElement('video');
+    probe.preload = 'metadata';
+    probe.onloadedmetadata = () => {
+      URL.revokeObjectURL(probe.src);
+      if (probe.duration > MAX_VIDEO_SECONDS) {
+        alert('Videos are limited to ' + MAX_VIDEO_SECONDS + ' seconds — trim this clip and try again.');
+        e.target.value = '';
+        return;
+      }
+      preview.src = URL.createObjectURL(file);
+      preview.hidden = false;
+      startVideoUpload(file);
+    };
+    probe.src = URL.createObjectURL(file);
+  });
+
+  async function startVideoUpload(file) {
+    const statusBox = document.getElementById('videoUploadStatus');
+    const statusText = document.getElementById('videoUploadStatusText');
+    const progressFill = document.getElementById('videoUploadProgressFill');
+    statusBox.hidden = false;
+    statusText.textContent = 'Starting upload…';
+    progressFill.style.width = '0%';
+    pendingVideoUid = null;
+    videoUploadInProgress = true;
+
+    const captionInput = document.getElementById('postCaption');
+    const { data: { session } } = await sb.auth.getSession();
+
+    let signRes;
+    try {
+      const resp = await fetch('/api/create-video-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+        body: JSON.stringify({ title: captionInput.value.trim() || 'Cookzer video' }),
+      });
+      signRes = await resp.json();
+      if (!resp.ok) throw new Error(signRes.error || 'Could not start upload');
+    } catch (err) {
+      statusText.textContent = 'Upload failed: ' + err.message;
+      videoUploadInProgress = false;
+      return;
+    }
+
+    new tus.Upload(file, {
+      endpoint: 'https://video.bunnycdn.com/tusupload',
+      retryDelays: [0, 3000, 5000, 10000],
+      headers: {
+        AuthorizationSignature: signRes.authorizationSignature,
+        AuthorizationExpire: String(signRes.authorizationExpire),
+        VideoId: signRes.videoId,
+        LibraryId: signRes.libraryId,
+      },
+      metadata: {
+        filetype: file.type,
+        title: captionInput.value.trim() || 'Cookzer video',
+      },
+      onError: (err) => {
+        statusText.textContent = 'Upload failed: ' + err.message;
+        videoUploadInProgress = false;
+      },
+      onProgress: (bytesUploaded, bytesTotal) => {
+        const pct = Math.round((bytesUploaded / bytesTotal) * 100);
+        progressFill.style.width = pct + '%';
+        statusText.textContent = 'Uploading… ' + pct + '%';
+      },
+      onSuccess: () => {
+        pendingVideoUid = signRes.videoId;
+        videoUploadInProgress = false;
+        statusText.textContent = 'Video ready to post ✓';
+        progressFill.style.width = '100%';
+      },
+    }).start();
+  }
 
   document.getElementById('composerChallengeBtn').addEventListener('click', () => {
     document.getElementById('composerChallengeBtn').classList.toggle('active-challenge-tag');
@@ -1007,7 +1127,12 @@
   async function createPost() {
     const captionInput = document.getElementById('postCaption');
     let caption = captionInput.value.trim();
-    if (!caption && !pendingPhotoFile) return;
+    if (!caption && !pendingPhotoFile && !pendingVideoUid) return;
+
+    if (videoUploadInProgress) {
+      alert('Your video is still uploading — hang tight, then hit Post again.');
+      return;
+    }
 
     if (selectedMood) {
       caption = caption ? selectedMood + ' — ' + caption : selectedMood;
@@ -1020,7 +1145,7 @@
 
     const { data: inserted, error } = await sb
       .from('posts')
-      .insert({ author_id: currentUser.id, kind: 'post', caption: caption || null, photo_path: photoPath, restaurant_name: selectedRestaurant })
+      .insert({ author_id: currentUser.id, kind: 'post', caption: caption || null, photo_path: photoPath, video_uid: pendingVideoUid, restaurant_name: selectedRestaurant })
       .select('id')
       .single();
 
@@ -1039,7 +1164,10 @@
 
     captionInput.value = '';
     pendingPhotoFile = null;
+    pendingVideoUid = null;
     document.getElementById('composerPhotoPreview').hidden = true;
+    document.getElementById('composerVideoPreview').hidden = true;
+    document.getElementById('videoUploadStatus').hidden = true;
     document.getElementById('composerChallengeBtn').classList.remove('active-challenge-tag');
     document.getElementById('composerChallengeBtn').style.background = '';
     document.getElementById('composerChallengeBtn').style.color = '';
@@ -1076,14 +1204,24 @@
     header.appendChild(meta);
     card.appendChild(header);
 
-    const cardImageUrl = post.photo_path
-      ? publicUrl('post-photos', post.photo_path)
-      : (post.recipes && post.recipes.hero_photo_path ? publicUrl('recipe-photos', post.recipes.hero_photo_path) : null);
-    if (cardImageUrl) {
-      const img = document.createElement('div');
-      img.className = 'card-image';
-      img.style.backgroundImage = "url('" + cardImageUrl + "')";
-      card.appendChild(img);
+    if (post.video_uid) {
+      const iframe = document.createElement('iframe');
+      iframe.className = 'card-video';
+      iframe.src = 'https://player.mediadelivery.net/embed/' + BUNNY_LIBRARY_ID + '/' + post.video_uid;
+      iframe.loading = 'lazy';
+      iframe.allow = 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;';
+      iframe.allowFullscreen = true;
+      card.appendChild(iframe);
+    } else {
+      const cardImageUrl = post.photo_path
+        ? publicUrl('post-photos', post.photo_path)
+        : (post.recipes && post.recipes.hero_photo_path ? publicUrl('recipe-photos', post.recipes.hero_photo_path) : null);
+      if (cardImageUrl) {
+        const img = document.createElement('div');
+        img.className = 'card-image';
+        img.style.backgroundImage = "url('" + cardImageUrl + "')";
+        card.appendChild(img);
+      }
     }
 
     const content = document.createElement('div');
@@ -1309,7 +1447,7 @@
 
     const { data: posts, error } = await sb
       .from('posts')
-      .select('id, kind, recipe_id, caption, photo_path, restaurant_name, created_at, profiles(display_name, initials), recipes(title, hero_photo_path)')
+      .select('id, kind, recipe_id, caption, photo_path, video_uid, restaurant_name, created_at, profiles(display_name, initials), recipes(title, hero_photo_path)')
       .order('created_at', { ascending: false })
       .limit(30);
 
