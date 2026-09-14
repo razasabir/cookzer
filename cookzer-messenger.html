@@ -48,14 +48,23 @@
   /* Main content */
     .main {
       flex: 1;
-      margin-left: 280px;
       margin-top: 60px;
       display: flex;
       overflow: hidden;
     }
 
   /* Messenger layout */
-    .msg-list {
+    .messenger {
+      display: flex;
+      flex: 1;
+      min-width: 0;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+
+  .msg-list {
       width: 320px;
       flex-shrink: 0;
       background: var(--card-bg);
