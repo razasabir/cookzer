@@ -251,6 +251,12 @@
     
     <div class="planner-grid" id="plannerGrid"></div>
 
+    <!-- Weekly nutrition summary -->
+    <div class="cart-section" id="nutritionSummaryBox" hidden>
+      <div class="cart-title">This week's nutrition</div>
+      <div class="ingredient-count" id="nutritionSummaryText"></div>
+    </div>
+
     <!-- Shopping list (Phase 4) -->
     <div class="cart-section">
       <div class="cart-title">This week's basket</div>
@@ -295,7 +301,7 @@
     const dates = weekDates();
     const { data } = await sb
       .from('meal_plan_entries')
-      .select('id, plan_date, recipe_id, free_text, source_note, recipes(id, title)')
+      .select('id, plan_date, recipe_id, free_text, source_note, recipes(id, title, nutrition)')
       .eq('user_id', currentUser.id)
       .in('plan_date', dates);
 
@@ -305,6 +311,29 @@
     });
 
     renderWeek(dates);
+    renderNutritionSummary(data || []);
+  }
+
+  function renderNutritionSummary(entries) {
+    const withNutrition = entries.filter((e) => e.recipes && e.recipes.nutrition && e.recipes.nutrition.calories);
+    const box = document.getElementById('nutritionSummaryBox');
+    if (withNutrition.length === 0) {
+      box.hidden = true;
+      return;
+    }
+    const totals = withNutrition.reduce((sum, e) => {
+      const n = e.recipes.nutrition;
+      sum.calories += n.calories || 0;
+      sum.protein += n.protein || 0;
+      sum.carbs += n.carbs || 0;
+      sum.fat += n.fat || 0;
+      return sum;
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+    box.hidden = false;
+    document.getElementById('nutritionSummaryText').textContent =
+      '🔥 ' + totals.calories + ' kcal · 🥩 ' + totals.protein + 'g protein · 🍞 ' + totals.carbs + 'g carbs · 🥑 ' + totals.fat + 'g fat' +
+      ' — across ' + withNutrition.length + ' planned ' + (withNutrition.length === 1 ? 'meal' : 'meals') + ' with nutrition data.';
   }
 
   function renderWeek(dates) {

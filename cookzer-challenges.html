@@ -13,6 +13,7 @@
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
   <script src="countdown.js"></script>
+  <script src="confetti.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
   .brand-header {
@@ -376,6 +377,7 @@
         alert('Could not join: ' + error.message);
         return;
       }
+      if (!mine) burstConfetti();
       await loadChallenge();
     };
 
