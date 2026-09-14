@@ -7,4 +7,4 @@
 // Fill this in after creating a Bunny Stream video library
 // (bunny.net dashboard -> Stream -> add library -> the numeric Library ID
 // shown on its overview page).
-const BUNNY_LIBRARY_ID = 'REPLACE_ME';
+const BUNNY_LIBRARY_ID = '752707';
