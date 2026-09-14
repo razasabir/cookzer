@@ -321,6 +321,15 @@
       background-size: 20px 20px;
     }
 
+  .typing-indicator {
+      padding: 4px 20px 0;
+      font-size: 12px;
+      font-style: italic;
+      color: var(--ink-soft);
+      background: var(--cream);
+      flex-shrink: 0;
+    }
+
   .bubble-row {
       display: flex;
     }
@@ -560,6 +569,7 @@
   let conversations = []; // [{ id, name, initials, otherId, lastText, lastTime, unread }]
   let activeId = null;
   let activeChannel = null;
+  let typingHideTimer = null;
   let pendingChatImage = null;
 
   function formatTime(iso) {
@@ -939,6 +949,11 @@
     messagesEl.className = 'thread-messages';
     messagesEl.id = 'threadMessages';
 
+    const typingIndicator = document.createElement('div');
+    typingIndicator.className = 'typing-indicator';
+    typingIndicator.id = 'typingIndicator';
+    typingIndicator.hidden = true;
+
     const inputBar = document.createElement('div');
     inputBar.className = 'thread-input';
 
@@ -974,6 +989,14 @@
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') sendMessage();
     });
+    let lastTypingBroadcast = 0;
+    input.addEventListener('input', () => {
+      if (!activeChannel) return;
+      const now = Date.now();
+      if (now - lastTypingBroadcast < 2000) return;
+      lastTypingBroadcast = now;
+      activeChannel.send({ type: 'broadcast', event: 'typing', payload: { userId: currentUser.id } });
+    });
 
     const sendBtn = document.createElement('button');
     sendBtn.className = 'thread-send';
@@ -992,6 +1015,7 @@
 
     threadEl.appendChild(header);
     threadEl.appendChild(messagesEl);
+    threadEl.appendChild(typingIndicator);
     threadEl.appendChild(inputBar);
 
     const { data: messages } = await sb
@@ -1006,6 +1030,7 @@
     await loadReactions((messages || []).map((m) => m.id));
 
     if (activeChannel) sb.removeChannel(activeChannel);
+    if (typingHideTimer) clearTimeout(typingHideTimer);
     activeChannel = sb
       .channel('messages:' + activeId)
       .on(
@@ -1016,6 +1041,18 @@
           if (el) appendBubble(el, payload.new);
         }
       )
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (!payload || payload.userId === currentUser.id) return;
+        const senderName = conv.isGroup
+          ? ((conv.participants.find((p) => p.id === payload.userId) || {}).name || 'Someone')
+          : conv.name;
+        const indicator = document.getElementById('typingIndicator');
+        if (!indicator) return;
+        indicator.textContent = senderName + ' is typing…';
+        indicator.hidden = false;
+        clearTimeout(typingHideTimer);
+        typingHideTimer = setTimeout(() => { indicator.hidden = true; }, 3000);
+      })
       .subscribe();
   }
 
@@ -1041,6 +1078,7 @@
       sb.removeChannel(activeChannel);
       activeChannel = null;
     }
+    clearTimeout(typingHideTimer);
   }
 
   async function sendMessage() {
