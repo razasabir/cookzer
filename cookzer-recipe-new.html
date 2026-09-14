@@ -10,6 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabase-config.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="theme.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
     .avatar {
@@ -93,6 +94,7 @@
   <div class="brand-header">Cook<span>zer</span></div>
   <div class="header-right">
     <a href="cookzer-feed.html" style="text-decoration: none;"><button class="icon-btn">✕</button></a>
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
     <div class="avatar">--</div>
   </div>
 </div>
