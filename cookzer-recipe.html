@@ -216,6 +216,17 @@
 
   .step-text { font-size: 15px; line-height: 1.65; color: var(--ink); padding-top: 3px; }
 
+  .step-body { flex: 1; min-width: 0; }
+
+  .step-photo {
+      margin-top: 10px;
+      max-width: 280px;
+      width: 100%;
+      border-radius: 12px;
+      display: block;
+      cursor: zoom-in;
+    }
+
   .actions-row {
       display: flex;
       justify-content: center;
@@ -861,13 +872,31 @@
     if ((recipe.steps || []).length === 0) {
       stepList.innerHTML = '<div class="empty-note">No steps listed yet.</div>';
     } else {
-      recipe.steps.forEach((text) => {
+      recipe.steps.forEach((step) => {
         const li = document.createElement('li');
         li.className = 'step';
+
+        const body = document.createElement('div');
+        body.className = 'step-body';
+
+        const text = typeof step === 'string' ? step : (step && step.text) || '';
         const div = document.createElement('div');
         div.className = 'step-text';
         div.textContent = text;
-        li.appendChild(div);
+        body.appendChild(div);
+
+        const photoPath = step && typeof step === 'object' ? step.photo_path : null;
+        if (photoPath) {
+          const url = publicUrl('recipe-photos', photoPath);
+          const img = document.createElement('img');
+          img.className = 'step-photo';
+          img.src = url;
+          img.alt = 'Photo for this step';
+          img.addEventListener('click', () => openLightbox(url, 'none'));
+          body.appendChild(img);
+        }
+
+        li.appendChild(body);
         stepList.appendChild(li);
       });
     }

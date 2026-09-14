@@ -1,78 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <title>New Recipe — Cookzer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="supabase-config.js"></script>
-  <script src="auth-guard.js"></script>
-  <script src="theme.js"></script>
-  <script src="shortcuts.js"></script>
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    .avatar {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
-      display: flex; align-items: center; justify-content: center;
-      color: #fff; font-weight: 600; cursor: pointer;
-    }
-    .main { flex: 1; margin-top: 60px; overflow-y: auto; }
-    .form-page { max-width: 640px; margin: 0 auto; padding: 40px 32px 96px; }
-    .form-page h1 { font-size: 26px; color: var(--olive-dark); margin-bottom: 24px; }
-    .field { margin-bottom: 18px; }
-    .field label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); margin-bottom: 6px; }
-    .field input[type="text"], .field input[type="number"], .field select, .field textarea {
-      width: 100%; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px;
-      font-family: inherit; font-size: 14px; color: var(--ink); background: var(--card-bg);
-    }
-    .field textarea { resize: vertical; min-height: 60px; }
-    .row-2 { display: flex; gap: 14px; }
-    .row-2 > .field { flex: 1; }
-    .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip-toggle {
-      padding: 7px 14px; border: 1px solid var(--line); border-radius: 20px; background: var(--card-bg);
-      font-size: 13px; cursor: pointer; color: var(--ink);
-    }
-    .chip-toggle.active { background: var(--mustard); color: #fff; border-color: var(--mustard); }
-    .dynamic-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
-    .dynamic-row input { flex: 1; }
-    .remove-row-btn { background: none; border: none; color: var(--brick); font-size: 18px; cursor: pointer; flex-shrink: 0; }
-    .add-row-btn {
-      background: var(--cream); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px;
-      font-size: 13px; color: var(--olive); cursor: pointer;
-    }
-    .submit-btn {
-      background: var(--olive); color: #fff; border: none; padding: 12px 28px; border-radius: 14px;
-      font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 12px;
-    }
-    .submit-btn:hover { background: var(--olive-dark); }
-    .photo-dropzone {
-      border: 2px dashed var(--line); border-radius: 14px; padding: 24px; text-align: center;
-      cursor: pointer; color: var(--ink-soft); font-size: 13px; transition: all 0.2s;
-    }
-    .photo-dropzone:hover { border-color: var(--olive); color: var(--olive); }
-    .photo-preview { width: 100%; max-height: 260px; object-fit: cover; border-radius: 14px; margin-bottom: 10px; display: none; }
-    .photo-remove-btn { background: none; border: none; color: var(--brick); font-size: 12px; cursor: pointer; display: none; }
-    @media (max-width: 768px) {
-      .sidebar { position: fixed; top: 0; left: -280px; height: 100vh; height: 100dvh; z-index: 100; transition: left 0.25s ease; }
-      .sidebar.open { left: 0; }
-      .sidebar-overlay.open { display: block; }
-      .menu-toggle { display: flex; }
-      .header { left: 0; padding: 0 16px; gap: 12px; }
-      .main { margin-left: 0; }
-      .brand-header { font-size: 18px; }
-      .row-2 { flex-direction: column; gap: 0; }
-    }
-    @media (max-width: 480px) {
-      .header { padding: 0 12px; }
-      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
-      .form-page { padding: 28px 16px 80px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>New Recipe — Cookzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="auth-guard.js"></script>
+<script src="theme.js"></script>
+<script src="shortcuts.js"></script>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 600; cursor: pointer;
+  }
+  .main { flex: 1; margin-top: 60px; overflow-y: auto; }
+  .form-page { max-width: 680px; margin: 0 auto; padding: 32px 32px 120px; }
+
+  /* Wizard progress */
+  .wizard-progress { display: flex; gap: 6px; margin-bottom: 8px; }
+  .wizard-progress-seg { flex: 1; height: 4px; border-radius: 4px; background: var(--line); }
+  .wizard-progress-seg.done { background: var(--olive); }
+  .wizard-progress-seg.current { background: var(--mustard); }
+  .wizard-step-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ink-soft); margin-bottom: 6px; }
+  .form-page h1 { font-size: 26px; color: var(--olive-dark); margin-bottom: 4px; }
+  .step-dek { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 24px; }
+
+  .wizard-panel { display: none; }
+  .wizard-panel.active { display: block; }
+
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); margin-bottom: 6px; }
+  .field input[type="text"], .field input[type="number"], .field select, .field textarea {
+    width: 100%; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px;
+    font-family: inherit; font-size: 14px; color: var(--ink); background: var(--card-bg);
+  }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .row-2 { display: flex; gap: 14px; }
+  .row-2 > .field { flex: 1; }
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip-toggle {
+    padding: 7px 14px; border: 1px solid var(--line); border-radius: 20px; background: var(--card-bg);
+    font-size: 13px; cursor: pointer; color: var(--ink);
+  }
+  .chip-toggle.active { background: var(--mustard); color: #fff; border-color: var(--mustard); }
+
+  .dynamic-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
+  .dynamic-row input, .dynamic-row textarea { flex: 1; }
+  .remove-row-btn { background: none; border: none; color: var(--brick); font-size: 18px; cursor: pointer; flex-shrink: 0; padding-top: 6px; }
+  .add-row-btn {
+    background: var(--cream); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px;
+    font-size: 13px; color: var(--olive); cursor: pointer;
+  }
+
+  /* Step rows with per-step photo */
+  .step-row { display: flex; gap: 10px; margin-bottom: 14px; align-items: flex-start; }
+  .step-num { font-family: 'Fraunces', serif; font-weight: 600; color: var(--rosso); font-size: 18px; min-width: 24px; padding-top: 8px; flex-shrink: 0; }
+  .step-row-body { flex: 1; min-width: 0; }
+  .step-row-body textarea { width: 100%; min-height: 50px; }
+  .step-photo-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .step-photo-btn {
+    background: var(--cream); border: 1px dashed var(--line); border-radius: 10px; padding: 6px 12px;
+    font-size: 12px; color: var(--ink-soft); cursor: pointer; flex-shrink: 0;
+  }
+  .step-photo-thumb { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: 1px solid var(--line); display: none; }
+  .step-photo-remove { background: none; border: none; color: var(--brick); font-size: 12px; cursor: pointer; display: none; }
+
+  /* Extra photos */
+  .extra-photos-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+  .extra-photo-tile { position: relative; width: 80px; height: 80px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+  .extra-photo-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .extra-photo-remove {
+    position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(43,38,32,0.65); color: #fff; border: none; font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .add-photo-tile {
+    width: 80px; height: 80px; border-radius: 10px; border: 2px dashed var(--line);
+    display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--ink-soft); cursor: pointer;
+  }
+  .add-photo-tile:hover { border-color: var(--olive); color: var(--olive); }
+
+  /* Cover picker */
+  .cover-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+  .cover-option {
+    aspect-ratio: 1; border-radius: 14px; background-size: cover; background-position: center;
+    border: 3px solid transparent; position: relative; cursor: pointer; display: flex; align-items: flex-end;
+  }
+  .cover-option.selected { border-color: var(--olive); }
+  .cover-option-label {
+    width: 100%; background: linear-gradient(transparent, rgba(0,0,0,0.6)); color: #fff;
+    font-size: 11px; padding: 16px 8px 6px; border-radius: 0 0 11px 11px;
+  }
+  .cover-option-check {
+    position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--olive); color: #fff; display: none; align-items: center; justify-content: center; font-size: 12px;
+  }
+  .cover-option.selected .cover-option-check { display: flex; }
+
+  /* Review */
+  .review-block { background: var(--card-bg); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+  .review-block h3 { font-family: 'Fraunces', serif; font-size: 15px; color: var(--olive-dark); margin-bottom: 8px; }
+  .review-line { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 4px; }
+  .review-cover-preview { width: 100%; max-height: 220px; object-fit: cover; border-radius: 12px; margin-bottom: 10px; }
+  .share-toggle-row { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink); margin-bottom: 20px; }
+
+  .wizard-nav { display: flex; justify-content: space-between; margin-top: 28px; }
+  .nav-btn {
+    padding: 12px 26px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; border: none;
+  }
+  .nav-btn.back { background: var(--cream); color: var(--ink-soft); border: 1px solid var(--line); }
+  .nav-btn.next, .nav-btn.submit { background: var(--olive); color: #fff; }
+  .nav-btn.next:hover, .nav-btn.submit:hover { background: var(--olive-dark); }
+  .nav-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .empty-note { color: var(--ink-soft); font-size: 13px; padding: 12px 0; }
+
+  @media (max-width: 768px) {
+    .sidebar { position: fixed; top: 0; left: -280px; height: 100vh; height: 100dvh; z-index: 100; transition: left 0.25s ease; }
+    .sidebar.open { left: 0; }
+    .sidebar-overlay.open { display: block; }
+    .menu-toggle { display: flex; }
+    .header { left: 0; padding: 0 16px; gap: 12px; }
+    .main { margin-left: 0; }
+    .brand-header { font-size: 18px; }
+    .row-2 { flex-direction: column; gap: 0; }
+  }
+  @media (max-width: 480px) {
+    .header { padding: 0 12px; }
+    .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+    .form-page { padding: 24px 16px 100px; }
+  }
+</style>
 </head>
 <body>
 
@@ -105,100 +169,136 @@
 
 <div class="main">
   <div class="form-page">
+    <div class="wizard-progress" id="wizardProgress"></div>
+    <div class="wizard-step-label" id="wizardStepLabel"></div>
     <h1 id="formTitle">New recipe</h1>
+    <div class="step-dek" id="stepDek"></div>
 
-    <div class="field">
-      <label>Title</label>
-      <input type="text" id="rTitle" placeholder="Homemade Chicken Karahi">
-    </div>
-
-    <div class="field">
-      <label>Description</label>
-      <textarea id="rDescription" placeholder="A quick note about this dish..."></textarea>
-    </div>
-
-    <div class="field">
-      <label>Cover photo (optional)</label>
-      <img class="photo-preview" id="photoPreview" alt="Cover photo preview">
-      <div class="photo-dropzone" id="photoDropzone">📷 Click to add a photo of your dish</div>
-      <input type="file" accept="image/*" id="photoInput" hidden>
-      <button class="photo-remove-btn" id="photoRemoveBtn" type="button">Remove photo</button>
-    </div>
-
-    <div class="row-2">
+    <!-- Step 1: Basics -->
+    <div class="wizard-panel" data-panel="1">
       <div class="field">
-        <label>Category</label>
-        <select id="rCategory">
-          <option value="">None</option>
-          <option>Breakfast</option>
-          <option>Lunch</option>
-          <option>Dinner</option>
-          <option>Dessert</option>
-          <option>Baking</option>
-          <option>Appetizers</option>
-          <option>BBQ</option>
-        </select>
+        <label>Title</label>
+        <input type="text" id="rTitle" placeholder="Homemade Chicken Karahi">
       </div>
       <div class="field">
-        <label>Spice level</label>
-        <select id="rSpice">
-          <option value="">None</option>
-          <option>Mild</option>
-          <option>Medium</option>
-          <option>Hot</option>
-          <option>Extra hot</option>
-        </select>
+        <label>Description</label>
+        <textarea id="rDescription" placeholder="A quick note about this dish..."></textarea>
       </div>
-    </div>
-
-    <div class="field">
-      <label>Dietary tags</label>
-      <div class="chip-group" id="dietaryChips">
-        <div class="chip-toggle" data-tag="Vegan">Vegan</div>
-        <div class="chip-toggle" data-tag="Vegetarian">Vegetarian</div>
-        <div class="chip-toggle" data-tag="Gluten-free">Gluten-free</div>
-        <div class="chip-toggle" data-tag="Dairy-free">Dairy-free</div>
-        <div class="chip-toggle" data-tag="Halal">Halal</div>
-        <div class="chip-toggle" data-tag="Low-carb">Low-carb</div>
-      </div>
-    </div>
-
-    <div class="row-2">
-      <div class="field"><label>Prep time (min)</label><input type="number" id="rPrep" min="0"></div>
-      <div class="field"><label>Cook time (min)</label><input type="number" id="rCook" min="0"></div>
-      <div class="field"><label>Servings</label><input type="number" id="rServings" min="1" value="4"></div>
-    </div>
-
-    <div class="field">
-      <label>Ingredients</label>
-      <div id="ingredientRows"></div>
-      <button class="add-row-btn" id="addIngredientBtn" type="button">+ Add ingredient</button>
-    </div>
-
-    <div class="field">
-      <label>Steps</label>
-      <div id="stepRows"></div>
-      <button class="add-row-btn" id="addStepBtn" type="button">+ Add step</button>
-    </div>
-
-    <div class="field">
-      <label>Nutrition (per serving, optional)</label>
       <div class="row-2">
-        <input type="number" id="rCalories" placeholder="Calories" min="0">
-        <input type="number" id="rProtein" placeholder="Protein (g)" min="0">
+        <div class="field">
+          <label>Category</label>
+          <select id="rCategory">
+            <option value="">None</option>
+            <option>Breakfast</option>
+            <option>Lunch</option>
+            <option>Dinner</option>
+            <option>Dessert</option>
+            <option>Baking</option>
+            <option>Appetizers</option>
+            <option>BBQ</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Spice level</label>
+          <select id="rSpice">
+            <option value="">None</option>
+            <option>Mild</option>
+            <option>Medium</option>
+            <option>Hot</option>
+            <option>Extra hot</option>
+          </select>
+        </div>
       </div>
-      <div class="row-2" style="margin-top:8px;">
-        <input type="number" id="rCarbs" placeholder="Carbs (g)" min="0">
-        <input type="number" id="rFat" placeholder="Fat (g)" min="0">
+      <div class="field">
+        <label>Dietary tags</label>
+        <div class="chip-group" id="dietaryChips">
+          <div class="chip-toggle" data-tag="Vegan">Vegan</div>
+          <div class="chip-toggle" data-tag="Vegetarian">Vegetarian</div>
+          <div class="chip-toggle" data-tag="Gluten-free">Gluten-free</div>
+          <div class="chip-toggle" data-tag="Dairy-free">Dairy-free</div>
+          <div class="chip-toggle" data-tag="Halal">Halal</div>
+          <div class="chip-toggle" data-tag="Low-carb">Low-carb</div>
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="field"><label>Prep time (min)</label><input type="number" id="rPrep" min="0"></div>
+        <div class="field"><label>Cook time (min)</label><input type="number" id="rCook" min="0"></div>
+        <div class="field"><label>Servings</label><input type="number" id="rServings" min="1" value="4"></div>
+      </div>
+      <div class="field">
+        <label>Cost per serve ($, optional)</label>
+        <input type="number" id="rCost" min="0" step="0.01">
       </div>
     </div>
 
-    <div class="field">
-      <label>Cost per serve ($, optional)</label>
-      <input type="number" id="rCost" min="0" step="0.01">
+    <!-- Step 2: Ingredients -->
+    <div class="wizard-panel" data-panel="2">
+      <div class="field">
+        <label>Ingredients</label>
+        <div id="ingredientRows"></div>
+        <button class="add-row-btn" id="addIngredientBtn" type="button">+ Add ingredient</button>
+      </div>
+      <div class="field">
+        <label>Nutrition (per serving, optional)</label>
+        <div class="row-2">
+          <input type="number" id="rCalories" placeholder="Calories" min="0">
+          <input type="number" id="rProtein" placeholder="Protein (g)" min="0">
+        </div>
+        <div class="row-2" style="margin-top:8px;">
+          <input type="number" id="rCarbs" placeholder="Carbs (g)" min="0">
+          <input type="number" id="rFat" placeholder="Fat (g)" min="0">
+        </div>
+      </div>
     </div>
 
-    <button class="submit-btn" id="submitBtn" type="button">Save recipe</button>
+    <!-- Step 3: Steps & photos -->
+    <div class="wizard-panel" data-panel="3">
+      <div class="field">
+        <label>Steps</label>
+        <div id="stepRows"></div>
+        <button class="add-row-btn" id="addStepBtn" type="button">+ Add step</button>
+      </div>
+      <div class="field">
+        <label>Extra photos (optional)</label>
+        <div class="step-dek" style="margin-bottom:10px;">Anything not tied to a specific step — plating shots, ingredients laid out, the finished dish from another angle.</div>
+        <div class="extra-photos-grid" id="extraPhotosGrid">
+          <div class="add-photo-tile" id="addExtraPhotoTile">＋</div>
+        </div>
+        <input type="file" accept="image/*" id="extraPhotoInput" hidden>
+      </div>
+    </div>
+
+    <!-- Step 4: Cover photo -->
+    <div class="wizard-panel" data-panel="4">
+      <div class="field">
+        <label>Pick a cover photo</label>
+        <div class="cover-grid" id="coverGrid"></div>
+      </div>
+    </div>
+
+    <!-- Step 5: Review -->
+    <div class="wizard-panel" data-panel="5">
+      <img class="review-cover-preview" id="reviewCoverPreview" style="display:none;" alt="Cover preview">
+      <div class="review-block">
+        <h3 id="reviewTitle">—</h3>
+        <div class="review-line" id="reviewMeta"></div>
+        <div class="review-line" id="reviewTags"></div>
+      </div>
+      <div class="review-block">
+        <h3>Ingredients &amp; steps</h3>
+        <div class="review-line" id="reviewCounts"></div>
+      </div>
+      <div class="share-toggle-row">
+        <input type="checkbox" id="shareToFeedCheck">
+        <label for="shareToFeedCheck">Also share this to your feed</label>
+      </div>
+    </div>
+
+    <div class="wizard-nav">
+      <button class="nav-btn back" id="backBtn" type="button">← Back</button>
+      <button class="nav-btn next" id="nextBtn" type="button">Next →</button>
+      <button class="nav-btn submit" id="submitBtn" type="button" style="display:none;">Publish recipe</button>
+    </div>
   </div>
 </div>
 
@@ -209,32 +309,59 @@
   }
 
   let currentUser = null;
-  let selectedPhotoFile = null;
   const selectedTags = new Set();
 
-  const photoDropzone = document.getElementById('photoDropzone');
-  const photoInput = document.getElementById('photoInput');
-  const photoPreview = document.getElementById('photoPreview');
-  const photoRemoveBtn = document.getElementById('photoRemoveBtn');
+  const STEP_LABELS = ['Basics', 'Ingredients', 'Steps & photos', 'Cover photo', 'Review & publish'];
+  const STEP_DEKS = [
+    "What is it, and the basics people search by.",
+    "What goes into it.",
+    "Walk through it — attach a photo to any step that needs one.",
+    "Pick the photo that represents this recipe best.",
+    "Double-check it, then publish.",
+  ];
+  let currentStep = 1;
+  const TOTAL_STEPS = 5;
+  let selectedCoverKey = null;
+  let extraPhotos = []; // [{id, file, previewUrl}]
+  let extraPhotoIdCounter = 0;
+  let stepIdCounter = 0;
 
-  photoDropzone.addEventListener('click', () => photoInput.click());
+  function renderProgress() {
+    const bar = document.getElementById('wizardProgress');
+    bar.innerHTML = '';
+    for (let i = 1; i <= TOTAL_STEPS; i++) {
+      const seg = document.createElement('div');
+      seg.className = 'wizard-progress-seg' + (i < currentStep ? ' done' : i === currentStep ? ' current' : '');
+      bar.appendChild(seg);
+    }
+    document.getElementById('wizardStepLabel').textContent = 'Step ' + currentStep + ' of ' + TOTAL_STEPS + ' — ' + STEP_LABELS[currentStep - 1];
+    document.getElementById('stepDek').textContent = STEP_DEKS[currentStep - 1];
+  }
 
-  photoInput.addEventListener('change', () => {
-    const file = photoInput.files[0];
-    if (!file) return;
-    selectedPhotoFile = file;
-    photoPreview.src = URL.createObjectURL(file);
-    photoPreview.style.display = 'block';
-    photoDropzone.style.display = 'none';
-    photoRemoveBtn.style.display = 'inline-block';
+  function showStep(n) {
+    currentStep = n;
+    document.querySelectorAll('.wizard-panel').forEach((p) => {
+      p.classList.toggle('active', Number(p.dataset.panel) === n);
+    });
+    document.getElementById('backBtn').style.visibility = n === 1 ? 'hidden' : 'visible';
+    document.getElementById('nextBtn').style.display = n === TOTAL_STEPS ? 'none' : 'inline-block';
+    document.getElementById('submitBtn').style.display = n === TOTAL_STEPS ? 'inline-block' : 'none';
+    if (n === 4) renderCoverPicker();
+    if (n === 5) renderReview();
+    renderProgress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    if (currentStep > 1) showStep(currentStep - 1);
   });
 
-  photoRemoveBtn.addEventListener('click', () => {
-    selectedPhotoFile = null;
-    photoInput.value = '';
-    photoPreview.style.display = 'none';
-    photoDropzone.style.display = 'block';
-    photoRemoveBtn.style.display = 'none';
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    if (currentStep === 1 && !document.getElementById('rTitle').value.trim()) {
+      alert('Give your recipe a title first.');
+      return;
+    }
+    if (currentStep < TOTAL_STEPS) showStep(currentStep + 1);
   });
 
   document.querySelectorAll('.chip-toggle').forEach((chip) => {
@@ -264,14 +391,84 @@
   }
 
   function addStepRow(text = '') {
+    stepIdCounter++;
+    const stepId = stepIdCounter;
     const row = document.createElement('div');
-    row.className = 'dynamic-row';
-    row.innerHTML =
-      '<input type="text" class="step-text" placeholder="Describe this step">' +
-      '<button class="remove-row-btn" type="button">✕</button>';
-    row.querySelector('.step-text').value = text;
-    row.querySelector('.remove-row-btn').addEventListener('click', () => row.remove());
+    row.className = 'step-row';
+    row.dataset.stepId = stepId;
+
+    const num = document.createElement('div');
+    num.className = 'step-num';
+
+    const body = document.createElement('div');
+    body.className = 'step-row-body';
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'step-text-input';
+    textarea.placeholder = 'Describe this step...';
+    textarea.value = text;
+    body.appendChild(textarea);
+
+    const photoRow = document.createElement('div');
+    photoRow.className = 'step-photo-row';
+    const photoBtn = document.createElement('button');
+    photoBtn.type = 'button';
+    photoBtn.className = 'step-photo-btn';
+    photoBtn.textContent = '📷 Add photo for this step';
+    const photoInput = document.createElement('input');
+    photoInput.type = 'file';
+    photoInput.accept = 'image/*';
+    photoInput.hidden = true;
+    const thumb = document.createElement('img');
+    thumb.className = 'step-photo-thumb';
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'step-photo-remove';
+    removeBtn.textContent = 'Remove';
+
+    photoBtn.addEventListener('click', () => photoInput.click());
+    photoInput.addEventListener('change', () => {
+      const file = photoInput.files[0];
+      if (!file) return;
+      row._photoFile = file;
+      row._photoPreviewUrl = URL.createObjectURL(file);
+      thumb.src = row._photoPreviewUrl;
+      thumb.style.display = 'block';
+      removeBtn.style.display = 'inline-block';
+      photoBtn.textContent = '📷 Change photo';
+    });
+    removeBtn.addEventListener('click', () => {
+      row._photoFile = null;
+      row._photoPreviewUrl = null;
+      photoInput.value = '';
+      thumb.style.display = 'none';
+      removeBtn.style.display = 'none';
+      photoBtn.textContent = '📷 Add photo for this step';
+    });
+
+    photoRow.appendChild(photoBtn);
+    photoRow.appendChild(photoInput);
+    photoRow.appendChild(thumb);
+    photoRow.appendChild(removeBtn);
+    body.appendChild(photoRow);
+
+    const removeStepBtn = document.createElement('button');
+    removeStepBtn.type = 'button';
+    removeStepBtn.className = 'remove-row-btn';
+    removeStepBtn.textContent = '✕';
+    removeStepBtn.addEventListener('click', () => { row.remove(); renumberSteps(); });
+
+    row.appendChild(num);
+    row.appendChild(body);
+    row.appendChild(removeStepBtn);
     document.getElementById('stepRows').appendChild(row);
+    renumberSteps();
+  }
+
+  function renumberSteps() {
+    document.querySelectorAll('#stepRows .step-row').forEach((row, i) => {
+      row.querySelector('.step-num').textContent = (i + 1) + '.';
+    });
   }
 
   document.getElementById('addIngredientBtn').addEventListener('click', () => addIngredientRow());
@@ -280,23 +477,149 @@
   addIngredientRow();
   addStepRow();
 
+  // ----- Extra photos (not tied to a step) -----
+  const extraPhotoInput = document.getElementById('extraPhotoInput');
+  let pendingExtraSlot = null;
+
+  document.getElementById('addExtraPhotoTile').addEventListener('click', () => extraPhotoInput.click());
+  extraPhotoInput.addEventListener('change', () => {
+    const file = extraPhotoInput.files[0];
+    if (!file) return;
+    extraPhotoIdCounter++;
+    extraPhotos.push({ id: extraPhotoIdCounter, file, previewUrl: URL.createObjectURL(file) });
+    extraPhotoInput.value = '';
+    renderExtraPhotos();
+  });
+
+  function renderExtraPhotos() {
+    const grid = document.getElementById('extraPhotosGrid');
+    grid.querySelectorAll('.extra-photo-tile').forEach((el) => el.remove());
+    const addTile = document.getElementById('addExtraPhotoTile');
+    extraPhotos.forEach((p) => {
+      const tile = document.createElement('div');
+      tile.className = 'extra-photo-tile';
+      const img = document.createElement('img');
+      img.src = p.previewUrl;
+      const rm = document.createElement('button');
+      rm.className = 'extra-photo-remove';
+      rm.type = 'button';
+      rm.textContent = '✕';
+      rm.addEventListener('click', () => {
+        extraPhotos = extraPhotos.filter((x) => x.id !== p.id);
+        renderExtraPhotos();
+      });
+      tile.appendChild(img);
+      tile.appendChild(rm);
+      grid.insertBefore(tile, addTile);
+    });
+  }
+
+  // ----- Cover photo picker -----
+  function getAllPhotoCandidates() {
+    const candidates = [];
+    document.querySelectorAll('#stepRows .step-row').forEach((row, idx) => {
+      if (row._photoFile) {
+        candidates.push({ key: 'step-' + row.dataset.stepId, file: row._photoFile, previewUrl: row._photoPreviewUrl, label: 'Step ' + (idx + 1) });
+      }
+    });
+    extraPhotos.forEach((p) => {
+      candidates.push({ key: 'extra-' + p.id, file: p.file, previewUrl: p.previewUrl, label: 'Extra photo' });
+    });
+    return candidates;
+  }
+
+  function renderCoverPicker() {
+    const candidates = getAllPhotoCandidates();
+    if (!selectedCoverKey && candidates.length > 0) selectedCoverKey = candidates[0].key;
+    if (candidates.length === 0) selectedCoverKey = null;
+
+    const grid = document.getElementById('coverGrid');
+    grid.innerHTML = '';
+    if (candidates.length === 0) {
+      grid.innerHTML = '<div class="empty-note">No photos added yet — go back to the previous step to add at least one, or skip this and add a cover photo later from the recipe page.</div>';
+      return;
+    }
+    candidates.forEach((c) => {
+      const tile = document.createElement('div');
+      tile.className = 'cover-option' + (selectedCoverKey === c.key ? ' selected' : '');
+      tile.style.backgroundImage = "url('" + c.previewUrl + "')";
+      const check = document.createElement('div');
+      check.className = 'cover-option-check';
+      check.textContent = '✓';
+      const label = document.createElement('div');
+      label.className = 'cover-option-label';
+      label.textContent = c.label;
+      tile.appendChild(check);
+      tile.appendChild(label);
+      tile.addEventListener('click', () => {
+        selectedCoverKey = c.key;
+        renderCoverPicker();
+      });
+      grid.appendChild(tile);
+    });
+  }
+
+  // ----- Review -----
+  function renderReview() {
+    const title = document.getElementById('rTitle').value.trim() || 'Untitled recipe';
+    document.getElementById('reviewTitle').textContent = title;
+
+    const category = document.getElementById('rCategory').value;
+    const spice = document.getElementById('rSpice').value;
+    const prep = document.getElementById('rPrep').value;
+    const cook = document.getElementById('rCook').value;
+    const servings = document.getElementById('rServings').value;
+    const metaParts = [];
+    if (category) metaParts.push(category);
+    if (spice) metaParts.push(spice);
+    if (prep || cook) metaParts.push(((Number(prep) || 0) + (Number(cook) || 0)) + ' min total');
+    if (servings) metaParts.push('Serves ' + servings);
+    document.getElementById('reviewMeta').textContent = metaParts.filter(Boolean).join(' · ') || 'No details added yet.';
+    document.getElementById('reviewTags').textContent = selectedTags.size ? Array.from(selectedTags).join(', ') : 'No dietary tags';
+
+    const ingCount = document.querySelectorAll('#ingredientRows .ing-name').length;
+    let filledIngCount = 0;
+    document.querySelectorAll('#ingredientRows .ing-name').forEach((el) => { if (el.value.trim()) filledIngCount++; });
+    const stepCount = document.querySelectorAll('#stepRows .step-text-input').length;
+    let filledStepCount = 0;
+    document.querySelectorAll('#stepRows .step-text-input').forEach((el) => { if (el.value.trim()) filledStepCount++; });
+    const photoCount = getAllPhotoCandidates().length;
+    document.getElementById('reviewCounts').textContent =
+      filledIngCount + ' ingredient' + (filledIngCount === 1 ? '' : 's') + ' · ' +
+      filledStepCount + ' step' + (filledStepCount === 1 ? '' : 's') + ' · ' +
+      photoCount + ' photo' + (photoCount === 1 ? '' : 's');
+
+    const preview = document.getElementById('reviewCoverPreview');
+    const candidates = getAllPhotoCandidates();
+    const cover = candidates.find((c) => c.key === selectedCoverKey);
+    if (cover) {
+      preview.src = cover.previewUrl;
+      preview.style.display = 'block';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+
   const params = new URLSearchParams(location.search);
-  const shareToFeed = params.get('share') === '1';
-  if (shareToFeed) document.getElementById('formTitle').textContent = 'New recipe — shared to your feed';
+  const shareParam = params.get('share') === '1';
+  document.getElementById('shareToFeedCheck').checked = shareParam;
 
   document.getElementById('submitBtn').addEventListener('click', async () => {
     const title = document.getElementById('rTitle').value.trim();
     if (!title) {
       alert('Give your recipe a title first.');
+      showStep(1);
       return;
     }
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Publishing...';
 
     const ingredients = Array.from(document.querySelectorAll('#ingredientRows .dynamic-row')).map((row) => ({
       name: row.querySelector('.ing-name').value.trim(),
       qty: row.querySelector('.ing-qty').value.trim(),
     })).filter((i) => i.name);
-
-    const steps = Array.from(document.querySelectorAll('#stepRows .dynamic-row')).map((row) => row.querySelector('.step-text').value.trim()).filter(Boolean);
 
     const nutrition = {};
     const cal = document.getElementById('rCalories').value;
@@ -307,6 +630,34 @@
     if (pro) nutrition.protein = Number(pro);
     if (carb) nutrition.carbs = Number(carb);
     if (fat) nutrition.fat = Number(fat);
+
+    // Upload every photo (step-attached + extras) up front, keyed by candidate.key.
+    const candidates = getAllPhotoCandidates();
+    for (const c of candidates) {
+      const ext = (c.file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
+      const { error: uploadErr } = await sb.storage.from('recipe-photos').upload(path, c.file);
+      if (uploadErr) {
+        alert('Could not upload a photo (' + c.label + '): ' + uploadErr.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Publish recipe';
+        return;
+      }
+      c.uploadedPath = path;
+    }
+
+    const stepPhotoByKey = {};
+    candidates.forEach((c) => { stepPhotoByKey[c.key] = c.uploadedPath; });
+
+    const steps = Array.from(document.querySelectorAll('#stepRows .step-row')).map((row) => {
+      const text = row.querySelector('.step-text-input').value.trim();
+      if (!text) return null;
+      const key = 'step-' + row.dataset.stepId;
+      return { text, photo_path: stepPhotoByKey[key] || null };
+    }).filter(Boolean);
+
+    const coverCandidate = candidates.find((c) => c.key === selectedCoverKey);
+    const heroPhotoPath = coverCandidate ? coverCandidate.uploadedPath : null;
 
     const payload = {
       author_id: currentUser.id,
@@ -322,12 +673,22 @@
       steps,
       nutrition,
       cost_per_serve: Number(document.getElementById('rCost').value) || null,
+      hero_photo_path: heroPhotoPath,
     };
 
     const { data: recipe, error } = await sb.from('recipes').insert(payload).select('id').single();
     if (error) {
       alert('Could not save recipe: ' + error.message);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Publish recipe';
       return;
+    }
+
+    // Every uploaded photo also lands in the recipe's general gallery.
+    if (candidates.length > 0) {
+      await sb.from('recipe_photos').insert(
+        candidates.map((c) => ({ recipe_id: recipe.id, user_id: currentUser.id, storage_path: c.uploadedPath }))
+      );
     }
 
     // Your own recipes show up in My Recipes right away, same as anything
@@ -337,18 +698,7 @@
       { onConflict: 'user_id,recipe_id' }
     );
 
-    if (selectedPhotoFile) {
-      const ext = (selectedPhotoFile.name.split('.').pop() || 'jpg').toLowerCase();
-      const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
-      const { error: uploadErr } = await sb.storage.from('recipe-photos').upload(path, selectedPhotoFile);
-      if (uploadErr) {
-        alert('Recipe saved, but the cover photo failed to upload: ' + uploadErr.message);
-      } else {
-        await sb.from('recipes').update({ hero_photo_path: path }).eq('id', recipe.id);
-      }
-    }
-
-    if (shareToFeed) {
+    if (document.getElementById('shareToFeedCheck').checked) {
       await sb.from('posts').insert({
         author_id: currentUser.id,
         kind: 'post',
@@ -360,6 +710,8 @@
       window.location.href = 'cookzer-recipe.html?id=' + recipe.id;
     }
   });
+
+  showStep(1);
 
   (async function init() {
     const { data: { user } } = await sb.auth.getUser();
