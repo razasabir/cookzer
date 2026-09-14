@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>Recipe List — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .brand-header {
+      font-size: 20px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+    }
+
+  .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
+  .main { flex: 1; margin-top: 60px; overflow-y: auto; }
+
+  .list-content {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+  .list-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+  .list-title {
+      font-size: 28px;
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      color: var(--olive-dark);
+    }
+
+  .list-meta {
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-bottom: 20px;
+    }
+
+  .list-owner-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .list-action-btn {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 7px 14px;
+      font-size: 12.5px;
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+  .list-action-btn.danger { color: var(--brick); }
+
+  .add-recipe-panel {
+      margin-bottom: 20px;
+    }
+
+  .add-recipe-panel input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      font-size: 13px;
+      font-family: inherit;
+      background: var(--card-bg);
+      color: var(--ink);
+    }
+
+  .add-recipe-results {
+      margin-top: 8px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--card-bg);
+    }
+
+  .add-recipe-results:empty { display: none; border: none; }
+
+  .add-recipe-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+  .add-recipe-row:first-child { border-top: none; }
+  .add-recipe-row:hover { background: var(--cream); }
+
+  .list-recipes-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+  .list-recipe-item {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+  .list-recipe-thumb {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #F3EEE3, #E5D9C8);
+      background-size: cover;
+      background-position: center;
+      flex-shrink: 0;
+    }
+
+  .list-recipe-title {
+      flex: 1;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+  .list-remove-btn {
+      background: none;
+      border: none;
+      color: var(--brick);
+      font-size: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+  .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 24px; }
+
+  @media (max-width: 900px) { .right-sidebar { display: none; } }
+  @media (max-width: 768px) {
+      .sidebar { position: fixed; top: 0; left: -280px; height: 100vh; height: 100dvh; z-index: 100; transition: left 0.25s ease; }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+    }
+  @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-health.html" style="text-decoration: none;"><div class="sidebar-item icon health">Health</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-groups.html" style="text-decoration: none;"><div class="sidebar-item icon groups">Groups</div></a>
+  <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants">Restaurants</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn" id="notifBellBtn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="list-content" id="listContent" hidden>
+    <div class="list-header-row">
+      <div>
+        <div class="list-title" id="listTitle"></div>
+        <div class="list-meta" id="listMeta"></div>
+      </div>
+      <div class="list-owner-actions" id="listOwnerActions" hidden>
+        <button class="list-action-btn" id="renameListBtn" type="button">Rename</button>
+        <button class="list-action-btn" id="toggleVisibilityBtn" type="button"></button>
+        <button class="list-action-btn danger" id="deleteListBtn" type="button">Delete list</button>
+      </div>
+    </div>
+
+    <div class="add-recipe-panel" id="addRecipePanel" hidden>
+      <input type="text" id="addRecipeSearch" placeholder="Search your recipes to add...">
+      <div class="add-recipe-results" id="addRecipeResults"></div>
+    </div>
+
+    <div class="list-recipes-grid" id="listRecipesGrid"></div>
+    <div class="empty-note" id="listEmptyNote" hidden></div>
+  </div>
+
+  <div class="empty-note" id="listNotFound" hidden>This list is private or doesn't exist.</div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  function publicUrl(bucket, path) {
+    if (!path) return null;
+    return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  }
+
+  const params = new URLSearchParams(location.search);
+  const listId = params.get('id');
+  let currentUser = null;
+  let list = null;
+  let isOwner = false;
+
+  async function loadList() {
+    const { data, error } = await sb
+      .from('recipe_lists')
+      .select('id, owner_id, name, description, is_public, profiles(display_name)')
+      .eq('id', listId)
+      .maybeSingle();
+
+    if (error || !data) {
+      document.getElementById('listNotFound').hidden = false;
+      return;
+    }
+
+    list = data;
+    isOwner = currentUser && list.owner_id === currentUser.id;
+    document.getElementById('listContent').hidden = false;
+    document.title = list.name + ' — Cookzer';
+
+    document.getElementById('listTitle').textContent = list.name;
+    const ownerName = list.profiles ? list.profiles.display_name : 'Someone';
+    document.getElementById('listMeta').textContent =
+      (isOwner ? 'Your list' : 'By ' + ownerName) + ' · ' + (list.is_public ? 'Public' : 'Private');
+
+    document.getElementById('listOwnerActions').hidden = !isOwner;
+    document.getElementById('addRecipePanel').hidden = !isOwner;
+    if (isOwner) {
+      document.getElementById('toggleVisibilityBtn').textContent = list.is_public ? 'Make private' : 'Make public';
+    }
+
+    await loadListItems();
+  }
+
+  async function loadListItems() {
+    const { data: items } = await sb
+      .from('recipe_list_items')
+      .select('recipe_id, recipes(id, title, hero_photo_path)')
+      .eq('list_id', listId)
+      .order('added_at', { ascending: false });
+
+    const grid = document.getElementById('listRecipesGrid');
+    grid.innerHTML = '';
+    const recipes = (items || []).map((i) => i.recipes).filter(Boolean);
+    document.getElementById('listEmptyNote').hidden = recipes.length > 0;
+    document.getElementById('listEmptyNote').textContent = isOwner
+      ? 'No recipes yet — search above to add some.'
+      : 'No recipes in this list yet.';
+
+    recipes.forEach((r) => {
+      const row = document.createElement('div');
+      row.className = 'list-recipe-item';
+
+      const thumb = document.createElement('a');
+      thumb.className = 'list-recipe-thumb';
+      thumb.href = 'cookzer-recipe.html?id=' + r.id;
+      if (r.hero_photo_path) thumb.style.backgroundImage = "url('" + publicUrl('recipe-photos', r.hero_photo_path) + "')";
+
+      const titleLink = document.createElement('a');
+      titleLink.className = 'list-recipe-title';
+      titleLink.href = 'cookzer-recipe.html?id=' + r.id;
+      titleLink.textContent = r.title;
+
+      row.appendChild(thumb);
+      row.appendChild(titleLink);
+
+      if (isOwner) {
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'list-remove-btn';
+        removeBtn.type = 'button';
+        removeBtn.title = 'Remove from list';
+        removeBtn.textContent = '✕';
+        removeBtn.addEventListener('click', async () => {
+          await sb.from('recipe_list_items').delete().eq('list_id', listId).eq('recipe_id', r.id);
+          loadListItems();
+        });
+        row.appendChild(removeBtn);
+      }
+
+      grid.appendChild(row);
+    });
+  }
+
+  let searchTimer = null;
+  const addRecipeSearch = document.getElementById('addRecipeSearch');
+  if (addRecipeSearch) {
+    addRecipeSearch.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      const q = addRecipeSearch.value.trim();
+      searchTimer = setTimeout(() => runRecipeSearch(q), 250);
+    });
+  }
+
+  async function runRecipeSearch(query) {
+    const results = document.getElementById('addRecipeResults');
+    results.innerHTML = '';
+    if (!query) return;
+
+    const { data: matches } = await sb
+      .from('saved_recipes')
+      .select('recipe_id, recipes(id, title)')
+      .eq('user_id', currentUser.id);
+
+    const filtered = (matches || [])
+      .map((m) => m.recipes)
+      .filter((r) => r && r.title.toLowerCase().includes(query.toLowerCase()));
+
+    if (filtered.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'add-recipe-row';
+      empty.textContent = 'No saved recipes match — save a recipe to your cookbook first.';
+      results.appendChild(empty);
+      return;
+    }
+
+    filtered.forEach((r) => {
+      const row = document.createElement('div');
+      row.className = 'add-recipe-row';
+      row.textContent = r.title;
+      row.addEventListener('click', async () => {
+        const { error } = await sb.from('recipe_list_items').insert({ list_id: listId, recipe_id: r.id });
+        if (!error) {
+          addRecipeSearch.value = '';
+          results.innerHTML = '';
+          loadListItems();
+        }
+      });
+      results.appendChild(row);
+    });
+  }
+
+  const renameBtn = document.getElementById('renameListBtn');
+  if (renameBtn) renameBtn.addEventListener('click', async () => {
+    const name = prompt('Rename this list:', list.name);
+    if (!name || !name.trim()) return;
+    await sb.from('recipe_lists').update({ name: name.trim() }).eq('id', listId);
+    loadList();
+  });
+
+  const toggleVisBtn = document.getElementById('toggleVisibilityBtn');
+  if (toggleVisBtn) toggleVisBtn.addEventListener('click', async () => {
+    await sb.from('recipe_lists').update({ is_public: !list.is_public }).eq('id', listId);
+    loadList();
+  });
+
+  const deleteBtn = document.getElementById('deleteListBtn');
+  if (deleteBtn) deleteBtn.addEventListener('click', async () => {
+    if (!confirm('Delete "' + list.name + '"? This can\'t be undone.')) return;
+    await sb.from('recipe_lists').delete().eq('id', listId);
+    window.location.href = 'cookzer-cookbook.html';
+  });
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    if (!listId) {
+      document.getElementById('listNotFound').hidden = false;
+      return;
+    }
+    await loadList();
+  })();
+</script>
+</body>
+</html>

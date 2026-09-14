@@ -79,6 +79,53 @@
 
   .add-recipe-btn:hover { background: var(--olive-dark); }
 
+  /* Lists section */
+    .lists-section {
+      width: 100%;
+      max-width: 700px;
+      margin-bottom: 28px;
+    }
+
+  .lists-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+  .lists-section-header .section-label { margin-bottom: 0; }
+
+  .new-list-btn {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 12.5px;
+      color: var(--olive-dark);
+      cursor: pointer;
+    }
+
+  .lists-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+  .list-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 16px;
+      text-decoration: none;
+      color: var(--ink);
+      min-width: 150px;
+      transition: border-color 0.2s;
+    }
+
+  .list-card:hover { border-color: var(--mustard); }
+  .list-card .list-card-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  .list-card .list-card-meta { font-size: 12px; color: var(--ink-soft); }
+
   /* Hashtags section */
     .hashtags-section {
       width: 100%;
@@ -295,6 +342,18 @@
       <a class="add-recipe-btn" href="cookzer-recipe-new.html">+ Add recipe</a>
     </div>
 
+    <!-- Lists -->
+    <div class="lists-section">
+      <div class="lists-section-header">
+        <div class="section-label">Your lists</div>
+        <button class="new-list-btn" id="newListBtn" type="button">+ New list</button>
+      </div>
+      <div class="lists-row" id="listsRow"></div>
+      <div id="listsEmpty" class="empty-state" style="padding:16px 0; display:none;">
+        <div class="empty-state-text">Lists are curated collections you can share — like "Weeknight favorites" or "Ramadan meals." Create one to get started.</div>
+      </div>
+    </div>
+
     <!-- Hashtags -->
     <div class="hashtags-section" id="hashtagsSection" hidden>
       <div class="section-label">Filter by hashtag</div>
@@ -475,11 +534,56 @@
     });
   }
 
+  async function loadLists() {
+    const { data: lists } = await sb
+      .from('recipe_lists')
+      .select('id, name, is_public, recipe_list_items(recipe_id)')
+      .eq('owner_id', currentUser.id)
+      .order('created_at', { ascending: false });
+
+    const row = document.getElementById('listsRow');
+    row.innerHTML = '';
+    document.getElementById('listsEmpty').style.display = (lists && lists.length > 0) ? 'none' : 'block';
+
+    (lists || []).forEach((list) => {
+      const card = document.createElement('a');
+      card.className = 'list-card';
+      card.href = 'cookzer-list.html?id=' + list.id;
+      const count = (list.recipe_list_items || []).length;
+      const name = document.createElement('div');
+      name.className = 'list-card-name';
+      name.textContent = (list.is_public ? '' : '🔒 ') + list.name;
+      const meta = document.createElement('div');
+      meta.className = 'list-card-meta';
+      meta.textContent = count + ' recipe' + (count === 1 ? '' : 's') + (list.is_public ? ' · Public' : ' · Private');
+      card.appendChild(name);
+      card.appendChild(meta);
+      row.appendChild(card);
+    });
+  }
+
+  document.getElementById('newListBtn').addEventListener('click', async () => {
+    const name = prompt('Name this list (e.g. "Weeknight favorites"):');
+    if (!name || !name.trim()) return;
+    const isPublic = confirm('Make this list public so you can share the link? Cancel keeps it private.');
+    const { data, error } = await sb
+      .from('recipe_lists')
+      .insert({ owner_id: currentUser.id, name: name.trim(), is_public: isPublic })
+      .select('id')
+      .single();
+    if (error) {
+      alert('Could not create list: ' + error.message);
+      return;
+    }
+    window.location.href = 'cookzer-list.html?id=' + data.id;
+  });
+
   (async function init() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
     currentUser = user;
     await loadSavedRecipes();
+    await loadLists();
   })();
 </script>
 </body>
