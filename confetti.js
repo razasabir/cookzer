@@ -2,7 +2,7 @@
 // (joining a challenge, etc). No canvas — just absolutely positioned
 // divs that fall and fade via CSS, removed once the animation ends.
 function burstConfetti() {
-  const colors = ['#009246', '#D9A441', '#CE2B37', '#00733A', '#F2C87A'];
+  const colors = ['#009C4A', '#D9A441', '#E85659', '#009C4A', '#F2C87A'];
   const container = document.createElement('div');
   container.style.position = 'fixed';
   container.style.inset = '0';
