@@ -176,6 +176,14 @@
 
     <!-- Step 1: Basics -->
     <div class="wizard-panel" data-panel="1">
+      <div class="field" id="importField">
+        <label>Import from a link (optional)</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="importUrlInput" placeholder="Paste a recipe URL..." style="flex:1;">
+          <button class="add-row-btn" id="importUrlBtn" type="button" style="flex-shrink:0; white-space:nowrap;">Import</button>
+        </div>
+        <div id="importStatus" style="font-size:12.5px; color:var(--ink-soft); margin-top:6px;"></div>
+      </div>
       <div class="field">
         <label>Title</label>
         <input type="text" id="rTitle" placeholder="Homemade Chicken Karahi">
@@ -470,6 +478,60 @@
       row.querySelector('.step-num').textContent = (i + 1) + '.';
     });
   }
+
+  document.getElementById('importUrlBtn').addEventListener('click', async () => {
+    const urlInput = document.getElementById('importUrlInput');
+    const status = document.getElementById('importStatus');
+    const url = urlInput.value.trim();
+    if (!url) return;
+
+    const btn = document.getElementById('importUrlBtn');
+    btn.disabled = true;
+    status.style.color = 'var(--ink-soft)';
+    status.textContent = 'Fetching…';
+
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const resp = await fetch('/api/import-recipe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+        body: JSON.stringify({ url }),
+      });
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error || 'Import failed.');
+
+      if (result.title) document.getElementById('rTitle').value = result.title;
+      if (result.description) document.getElementById('rDescription').value = result.description;
+      if (result.category) document.getElementById('rCategory').value = result.category;
+      if (result.prepTimeMinutes) document.getElementById('rPrep').value = result.prepTimeMinutes;
+      if (result.cookTimeMinutes) document.getElementById('rCook').value = result.cookTimeMinutes;
+      if (result.servings) document.getElementById('rServings').value = result.servings;
+      if (result.nutrition) {
+        if (result.nutrition.calories) document.getElementById('rCalories').value = result.nutrition.calories;
+        if (result.nutrition.protein) document.getElementById('rProtein').value = result.nutrition.protein;
+        if (result.nutrition.carbs) document.getElementById('rCarbs').value = result.nutrition.carbs;
+        if (result.nutrition.fat) document.getElementById('rFat').value = result.nutrition.fat;
+      }
+
+      if (result.ingredients && result.ingredients.length > 0) {
+        document.getElementById('ingredientRows').innerHTML = '';
+        result.ingredients.forEach((ing) => addIngredientRow(ing.name, ing.qty));
+      }
+      if (result.steps && result.steps.length > 0) {
+        document.getElementById('stepRows').innerHTML = '';
+        result.steps.forEach((text) => addStepRow(text));
+      }
+
+      status.style.color = 'var(--olive-dark)';
+      status.textContent = 'Imported' + (result.title ? ' "' + result.title + '"' : '') + ' — review everything below before publishing.' +
+        (result.imageUrl ? ' The photo wasn\'t imported automatically; add your own in the next steps.' : '');
+    } catch (e) {
+      status.style.color = 'var(--brick)';
+      status.textContent = e.message;
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   document.getElementById('addIngredientBtn').addEventListener('click', () => addIngredientRow());
   document.getElementById('addStepBtn').addEventListener('click', () => addStepRow());
