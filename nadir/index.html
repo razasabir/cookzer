@@ -24,10 +24,6 @@
     --gold-tint: rgba(217, 164, 65, 0.12);
     --chart-grid: #E7DFCF;
     --shadow: 0 12px 32px rgba(43, 38, 32, 0.08);
-    --ask-bg: #2B2620;
-    --ask-fg: #F7F2E9;
-    --ask-border: transparent;
-    --ask-milestone-border: rgba(247, 242, 233, 0.16);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -47,10 +43,6 @@
       --gold-tint: rgba(232, 184, 101, 0.12);
       --chart-grid: #3A3229;
       --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-      --ask-bg: #262019;
-      --ask-fg: #F2ECE2;
-      --ask-border: #3A3229;
-      --ask-milestone-border: #3A3229;
     }
   }
 
@@ -70,10 +62,6 @@
     --gold-tint: rgba(232, 184, 101, 0.12);
     --chart-grid: #3A3229;
     --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-    --ask-bg: #262019;
-    --ask-fg: #F2ECE2;
-    --ask-border: #3A3229;
-    --ask-milestone-border: #3A3229;
   }
 
   * { box-sizing: border-box; }
@@ -247,29 +235,14 @@
   table.compare td:first-child { font-weight: 700; color: var(--ink); }
   table.compare tr.us { background: var(--green-tint); }
 
-  /* ---------- Ask ---------- */
-  .ask-section {
-    background: var(--ask-bg);
-    color: var(--ask-fg);
-    border: 1px solid var(--ask-border);
-    border-radius: 24px;
-    padding: 52px 44px;
-    margin-top: 8px;
-  }
-  .ask-section h2 { color: inherit; }
-  .ask-section .section-kicker { color: var(--gold); }
-  .ask-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 32px; }
-  @media (max-width: 780px) { .ask-grid { grid-template-columns: 1fr; } }
-  .ask-col h3 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--gold); margin-bottom: 14px; font-family: 'Work Sans'; font-weight: 700; }
-  .ask-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
-  .ask-list li { font-size: 14.5px; opacity: 0.92; padding-left: 20px; position: relative; }
-  .ask-list li::before { content: '—'; position: absolute; left: 0; opacity: 0.5; }
-  .milestone-row { display: flex; gap: 16px; margin-top: 40px; flex-wrap: wrap; }
-  .milestone {
-    flex: 1; min-width: 140px; padding: 16px; border: 1px solid var(--ask-milestone-border); border-radius: 12px;
-  }
-  .milestone .m-when { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; opacity: 0.6; margin-bottom: 6px; }
-  .milestone .m-what { font-size: 13.5px; font-weight: 600; }
+  /* ---------- Growth model ---------- */
+  .chart-legend { display: flex; gap: 22px; margin-top: 16px; font-size: 12.5px; color: var(--ink-soft); flex-wrap: wrap; }
+  .chart-legend .leg-item { display: flex; align-items: center; gap: 7px; }
+  .chart-legend .leg-swatch { width: 16px; height: 0; border-top-width: 2.5px; border-top-style: solid; }
+  .chart-legend .leg-swatch.dashed { border-top-style: dashed; }
+  .growth-note { font-size: 12.5px; color: var(--ink-soft); font-style: italic; margin-top: 18px; max-width: 68ch; }
+  table.compare tr.highlight { background: var(--green-tint); }
+  table.compare td.neg { color: var(--red); font-weight: 700; }
 
   footer.cta {
     padding: 64px 0 80px; text-align: center;
@@ -289,7 +262,6 @@
   @media (max-width: 480px) {
     section.hero { padding: 48px 0 40px; }
     section.block { padding: 48px 0; }
-    .ask-section { padding: 36px 22px; }
   }
 </style>
 </head>
@@ -300,21 +272,21 @@
   <div class="topbar-inner">
     <div>
       <div class="brand-mark">Cook<span class="zer">zer</span></div>
-      <div class="topbar-tag">Partnership overview</div>
+      <div class="topbar-tag">Product &amp; growth overview</div>
     </div>
     <nav class="topbar-nav">
       <a href="#opportunity">Opportunity</a>
       <a href="#built">Built &amp; live</a>
       <a href="#markets">Markets</a>
       <a href="#model">Model</a>
-      <a href="#ask">The ask</a>
+      <a href="#growth">Growth</a>
     </nav>
   </div>
 </div>
 
 <section class="hero">
   <div class="wrap">
-    <div class="hero-eyebrow">Prepared for a founding partnership conversation</div>
+    <div class="hero-eyebrow">What's built, and where it's headed</div>
     <h1 class="thesis">The social network for people who cook — <em>Facebook and LinkedIn, built for the kitchen.</em></h1>
     <p class="hero-sub">Somewhere in most families there's a recipe book — stained, handwritten, held together with tape — that nobody has opened since grandma passed it down. Cookzer is what it looks like to digitise that book and bring it back to life: every major platform treats cooking as content to scroll past, but nobody has built the place where cooks actually live — post what you made, save what works, plan your week, follow other cooks, and build a reputation that means something. Cookzer is that place, and it's already live.</p>
     <div class="hero-stats">
@@ -518,50 +490,76 @@
   </div>
 </section>
 
-<section class="block" id="ask">
+<section class="block" id="growth">
   <div class="wrap">
-    <div class="ask-section">
-      <div class="section-kicker">The ask</div>
-      <h2 class="section-head" style="color:inherit;">A founding partner, not a check.</h2>
-      <p class="section-dek" style="color:inherit; opacity:0.85;">The product is built and live. What it needs next is someone who can put real time and capital behind taking it from one builder's momentum to two markets running in parallel.</p>
+    <div class="section-kicker">Where this goes</div>
+    <h2 class="section-head">A 10-year model, built off what's already proven.</h2>
+    <p class="section-dek">Modelled off the market growth rates cited above and Cookpad's real monetization mix at maturity — layering in ads first, then shoppable commerce, then subscriptions and marketplace revenue as the network grows. A plan for what disciplined execution looks like, not a promise.</p>
 
-      <div class="ask-grid">
-        <div class="ask-col">
-          <h3>What this needs</h3>
-          <ul class="ask-list">
-            <li>Capital for infrastructure scale-up and a real regional launch push in Australia and Pakistan</li>
-            <li>Business development leadership to close the first grocery-retail and brand-sponsorship partnerships</li>
-            <li>Local market knowledge and relationships to move fast in Pakistan specifically</li>
-          </ul>
-        </div>
-        <div class="ask-col">
-          <h3>What's on the table</h3>
-          <ul class="ask-list">
-            <li>A genuine partnership in a platform that's already built, live, and shipping weekly — not a slide deck</li>
-            <li>A category-defining position with no direct competitor occupying the same space</li>
-            <li>Five monetization paths already designed around what's already shipped</li>
-          </ul>
-        </div>
+    <div class="chart-panel">
+      <div class="chart-panel-head">
+        <div class="chart-panel-title">Revenue vs. operating cost, Year 1 → 10 ($M)</div>
+        <div class="chart-panel-cagr">Modelled break-even: <b>Year 4–5</b></div>
       </div>
+      <svg viewBox="0 0 900 260" style="width:100%; height:auto; max-height:260px;" role="img" aria-label="Modelled revenue growing from 25 thousand dollars in year 1 to 130 million dollars in year 10, crossing above operating cost around year 4 to 5">
+        <line x1="60" y1="20" x2="60" y2="210" stroke="var(--chart-grid)" stroke-width="1"></line>
+        <line x1="60" y1="210" x2="860" y2="210" stroke="var(--chart-grid)" stroke-width="1"></line>
+        <line x1="60" y1="115" x2="860" y2="115" stroke="var(--chart-grid)" stroke-width="1" stroke-dasharray="3,4"></line>
+        <text x="52" y="214" text-anchor="end" font-size="11">$0</text>
+        <text x="52" y="119" text-anchor="end" font-size="11">$70M</text>
+        <text x="52" y="24" text-anchor="end" font-size="11">$140M</text>
 
-      <div class="milestone-row">
-        <div class="milestone"><div class="m-when">Next</div><div class="m-what">First brand + grocery pilot partnership</div></div>
-        <div class="milestone"><div class="m-when">Then</div><div class="m-what">Australia launch push &amp; first paid Kitchen CV cohort</div></div>
-        <div class="milestone"><div class="m-when">Then</div><div class="m-what">Pakistan market entry with a local partner</div></div>
-        <div class="milestone"><div class="m-when">Then</div><div class="m-what">First sponsored Weekly Challenge live</div></div>
+        <line x1="346" y1="20" x2="346" y2="210" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2,4"></line>
+        <text x="346" y="14" text-anchor="middle" font-size="11" fill="var(--ink-faint)">Break-even</text>
+
+        <path d="M 90 210 L 172.2 209.7 L 254.4 208.1 L 336.7 204.3 L 418.9 195.1 L 501.1 180.1 L 583.3 153 L 665.6 117.7 L 747.8 81.1 L 830 33.6 L 830 210 L 90 210 Z" fill="var(--green-tint)" stroke="none"></path>
+        <path d="M 90 210 L 172.2 209.7 L 254.4 208.1 L 336.7 204.3 L 418.9 195.1 L 501.1 180.1 L 583.3 153 L 665.6 117.7 L 747.8 81.1 L 830 33.6" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+        <path d="M 90 209.8 L 172.2 209.1 L 254.4 207.2 L 336.7 203.8 L 418.9 199.1 L 501.1 191 L 583.3 173.4 L 665.6 155.7 L 747.8 131.3 L 830 108.2" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-dasharray="6,4" stroke-linecap="round" stroke-linejoin="round"></path>
+
+        <circle cx="830" cy="33.6" r="5" fill="var(--green)"></circle>
+        <circle cx="830" cy="108.2" r="4.5" fill="var(--ink-soft)"></circle>
+
+        <text x="90" y="228" text-anchor="middle" font-size="12">Yr 1</text>
+        <text x="336.7" y="228" text-anchor="middle" font-size="12">Yr 4</text>
+        <text x="418.9" y="228" text-anchor="middle" font-size="12">Yr 5</text>
+        <text x="583.3" y="228" text-anchor="middle" font-size="12">Yr 7</text>
+        <text x="830" y="228" text-anchor="middle" font-size="12">Yr 10</text>
+
+        <text x="797" y="26" text-anchor="end" font-size="12" class="value-label">Revenue $130M</text>
+        <text x="797" y="123" text-anchor="end" font-size="12" fill="var(--ink-soft)">Cost $75M</text>
+      </svg>
+      <div class="chart-legend">
+        <div class="leg-item"><span class="leg-swatch" style="border-color:var(--green);"></span>Revenue</div>
+        <div class="leg-item"><span class="leg-swatch dashed" style="border-color:var(--ink-soft);"></span>Operating cost</div>
       </div>
     </div>
+
+    <div class="table-scroll">
+      <table class="compare">
+        <thead>
+          <tr><th>Milestone</th><th>Monthly active users</th><th>Annual revenue</th><th>Operating cost</th><th>Net result</th><th>Blended ARPU</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Year 1 — Foundation</td><td>15K</td><td>$25K</td><td>$180K</td><td class="neg">–$155K</td><td>$1.67</td></tr>
+          <tr><td>Year 3 — Two markets live</td><td>350K</td><td>$1.4M</td><td>$2.1M</td><td class="neg">–$0.7M</td><td>$4.00</td></tr>
+          <tr class="highlight"><td>Year 5 — Profitable</td><td>2.1M</td><td>$11M</td><td>$8M</td><td class="yes">+$3M</td><td>$5.24</td></tr>
+          <tr><td>Year 7 — Scaling</td><td>6M</td><td>$42M</td><td>$27M</td><td class="yes">+$15M</td><td>$7.00</td></tr>
+          <tr><td>Year 10 — Category leader</td><td>15M</td><td>$130M</td><td>$75M</td><td class="yes">+$55M</td><td>$8.67</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="growth-note">Blended ARPU rises over time because the revenue mix rises with it — starting on ads alone, then layering in shoppable-cart commissions, Kitchen CV subscriptions, and marketplace take-rate as each system matures. These are our own working estimates, not third-party projections.</p>
   </div>
 </section>
 
 <footer class="cta">
   <div class="wrap">
     <h2 class="cta-headline">Let's build the place where cooks actually live.</h2>
-    <p class="cta-sub">The product is live at cookzer.com. This deck is the case for what it becomes next — let's talk about the partnership.</p>
+    <p class="cta-sub">The product is live at cookzer.com — this is where it's headed next. Let's talk it through.</p>
     <div class="cta-buttons">
       <a class="btn btn-primary" href="https://cookzer.com" target="_blank" rel="noopener">See the live product →</a>
     </div>
-    <div class="foot-meta">Cookzer — a social network for cooks. Prepared as a private partnership overview, not for public distribution.</div>
+    <div class="foot-meta">Cookzer — a social network for cooks. Shared privately, not for public distribution.</div>
   </div>
 </footer>
 
