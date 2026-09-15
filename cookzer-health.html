@@ -16,6 +16,8 @@
   <script src="auth-guard.js"></script>
   <script src="theme.js"></script>
 <script src="nutrition-data.js"></script>
+<script src="cookzer-modal.js"></script>
+<script src="ai-assistant-teaser.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -179,6 +181,8 @@
     <div class="nutrition-note-box">
       📋 These numbers use each recipe's hand-entered nutrition line where the author filled one in, and fall back to an estimate built from a lookup table of common ingredients otherwise (marked with "~"). Cookzer doesn't call an external nutrition database, so accuracy depends on how detailed the recipe's ingredients and quantities are — treat these as a general guide, not precise tracking.
     </div>
+
+    <div id="healthAiTeaser"></div>
   </div>
 </div>
 
@@ -293,6 +297,7 @@
     if (!user) return;
     currentUser = user;
     await loadHealth();
+    window.CookzerAIAssistant.mount(sb, currentUser, document.getElementById('healthAiTeaser'), 'health');
   })();
 </script>
 </body>
