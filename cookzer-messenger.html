@@ -14,6 +14,7 @@
   <script src="supabase-config.js"></script>
   <script src="notifications-shared.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="cocooks-widget.js"></script>
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -501,25 +502,7 @@
   <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
   <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger active">Messenger</div></a>
 
-  <div class="sidebar-title" style="margin-top: 24px;">Your Network</div>
-  <div style="padding: 0 16px;">
-    <div style="font-size: 12px; color: var(--ink-soft); margin-bottom: 8px;">Recently active</div>
-  </div>
-
-  <div class="sidebar-item" style="display: flex; gap: 10px; align-items: center;">
-    <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--olive), var(--olive-dark)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 600;">SK</div>
-    <span>Sarah K.</span>
-  </div>
-
-  <div class="sidebar-item" style="display: flex; gap: 10px; align-items: center;">
-    <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--olive), var(--olive-dark)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 600;">AM</div>
-    <span>Amina M.</span>
-  </div>
-
-  <div class="sidebar-item" style="display: flex; gap: 10px; align-items: center;">
-    <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--olive), var(--olive-dark)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 600;">JM</div>
-    <span>Josh M.</span>
-  </div>
+  <div class="sidebar-cocooks-widget" id="sidebarCocooksWidget"></div>
 </div>
 
 <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -1328,6 +1311,7 @@
     await loadConversations();
     renderList();
     renderThread();
+    window.CookzerCocooksWidget.render(sb, currentUser.id, document.getElementById('sidebarCocooksWidget'));
   })();
 </script>
 </body>
