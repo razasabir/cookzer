@@ -222,6 +222,21 @@
     font-size: 12px; color: var(--green-deep); background: var(--green-tint);
     padding: 8px 12px; border-radius: 10px; display: inline-block;
   }
+  .future-streams-head { margin-top: 40px; margin-bottom: 4px; }
+  .future-streams-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; }
+  .future-streams-dek { font-size: 13px; color: var(--ink-soft); margin-bottom: 18px; max-width: 68ch; }
+  .future-grid { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 900px) { .future-grid { grid-template-columns: 1fr; } }
+  .revenue-card.future { border-style: dashed; background: var(--cream); }
+  .revenue-card.future .revenue-num { color: var(--ink-faint); }
+  .future-pill {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    background: var(--paper); color: var(--ink-soft); border: 1px solid var(--line);
+    padding: 3px 9px; border-radius: 10px; display: inline-block; margin-bottom: 10px;
+  }
+  .revenue-card.future .revenue-proof {
+    color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line);
+  }
   /* ---------- Competitive ---------- */
   .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
   table.compare { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13.5px; }
@@ -521,7 +536,7 @@
         </tbody>
       </table>
     </div>
-    <p class="growth-note">Blended ARPU rises over time because the revenue mix rises with it — starting on ads alone, then layering in Cookzer+ AI Assistant subscriptions as that matures. Grocery-cart commissions, paid meal plans, and restaurant marketplace take-rate are proven models held in reserve rather than folded into this model right now — see Long-term expansion. These are our own working estimates, not third-party projections.</p>
+    <p class="growth-note">Blended ARPU rises over time because the revenue mix rises with it — starting on ads alone, then layering in Cookzer+ AI Assistant subscriptions as that matures. Grocery-cart commissions, paid meal plans, and restaurant marketplace take-rate are proven models shown as future revenue streams below (see Commercial model) rather than folded into this model right now. These are our own working estimates, not third-party projections.</p>
 
     <div class="unit-econ-panel">
       <div class="unit-econ-title">Cookzer+ AI Assistant — the unit economics behind the subscription line</div>
@@ -582,7 +597,7 @@
   <div class="wrap">
     <div class="section-kicker">Commercial model</div>
     <h2 class="section-head">Two ways this makes money — the deliberate focus right now.</h2>
-    <p class="section-dek">Both ride on top of something already built and live: the feed for ads, and Pantry Challenge / Leftovers / Health for Cookzer+. Grocery-cart commissions, paid meal plans, and restaurant delivery are real, proven models too — held in reserve rather than diluting focus across five streams at once. See Long-term expansion in the master plan for where they stand.</p>
+    <p class="section-dek">Both ride on top of something already built and live: the feed for ads, and Pantry Challenge / Leftovers / Health for Cookzer+. Three more proven models sit below as deliberate future streams — not diluting focus across five at once, but not off the table either.</p>
 
     <div class="revenue-grid">
       <div class="revenue-card">
@@ -596,6 +611,34 @@
         <div class="revenue-title">Cookzer+ AI Assistant</div>
         <div class="revenue-desc">A conversational assistant across the three highest-intent surfaces on the platform — Pantry Challenge, Leftovers, and Health — sold as a Cookzer+ monthly subscription. Ask it what to cook from what's on hand, what to do with leftovers before they're wasted, or how to hit a nutrition goal, grounded in the user's own real recipes and cook-in history rather than a generic model. The second stream, and the one with room to grow fastest once the backend exists.</div>
         <div class="revenue-proof">$5/month, 500 messages included (Claude Haiku 4.5) — ~$3.11 net profit per subscriber/mo after LLM cost and Stripe fees, a ~62% margin even at worst-case full usage. No delivery partner cut, no inventory. Modelled at a conservative &lt;1% subscriber attach rate, it's already worth $7.2M/year by Year 10 inside the revenue model above (see Growth section) — live today as a waitlist-capture teaser on all three surfaces; the paid chat itself needs an LLM API integration and billing, both scoped, not yet built</div>
+      </div>
+    </div>
+
+    <div class="future-streams-head">
+      <div class="future-streams-title">Future revenue streams</div>
+      <p class="future-streams-dek">Real, proven models the platform already has the infrastructure to support — deliberately not the near-term focus while Ads and Cookzer+ prove out first, not because they don't work. Revisit once those two are running at scale.</p>
+    </div>
+    <div class="revenue-grid future-grid">
+      <div class="revenue-card future">
+        <div class="revenue-num">03</div>
+        <div class="future-pill">Future stream</div>
+        <div class="revenue-title">Grocery cart connection</div>
+        <div class="revenue-desc">An "Add ingredients to cart" button on any recipe or shopping list, integrated directly with major grocery retailers — Woolworths and Coles in Australia — down to independent local shops in markets the majors don't dominate. Cookzer takes a commission on every order it originates.</div>
+        <div class="revenue-proof">Recipe-driven carts average +3 items vs. non-recipe shopping. Needs a retailer integration per market — a BD/partnership motion, not a build call.</div>
+      </div>
+      <div class="revenue-card future">
+        <div class="revenue-num">04</div>
+        <div class="future-pill">Future stream</div>
+        <div class="revenue-title">Ready-made meal plans</div>
+        <div class="revenue-desc">A paid meal-plan tier in the vein of Youfoodz or Weight Watchers — personalized weekly plans paired with ready-made delivery or a guided cook-it-yourself track, sold directly through the app people already use to plan their week.</div>
+        <div class="revenue-proof">WW International alone guided ~$695–700M in 2025 revenue from meal-plan subscriptions. Needs a delivery/logistics partner (or enough planner maturity to sell the guided track alone).</div>
+      </div>
+      <div class="revenue-card future">
+        <div class="revenue-num">05</div>
+        <div class="future-pill">Future stream</div>
+        <div class="revenue-title">Restaurant delivery &amp; paid listings</div>
+        <div class="revenue-desc">Cookzer's receipt-verified restaurant module connects to delivery partners like Uber Eats and DoorDash for one-tap ordering — or, where that doesn't fit, restaurants pay directly for a featured menu placement in the directory.</div>
+        <div class="revenue-proof">Delivery marketplaces already charge restaurants 15–30% per order. Needs a delivery-partner integration or a direct restaurant sales motion — neither started.</div>
       </div>
     </div>
   </div>
