@@ -36,4 +36,23 @@ test.describe('Pantry Challenge page', () => {
     const calls = await page.evaluate(() => window.__CALLS__);
     expect(calls.filter((c) => c.table === 'recipes').length).toBe(0);
   });
+
+  test('?tab=leftovers opens straight into the Leftovers tab — the sidebar Leftover Help link\'s target', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-pantry.html?tab=leftovers', 'pantry-page.js');
+    await expect(page.locator('#panelLeftovers')).toBeVisible();
+    await expect(page.locator('#panelPantry')).toBeHidden();
+    await expect(page.locator('#tabLeftoversBtn')).toHaveClass(/active/);
+  });
+
+  test('sidebar groups Cooking Ideas, Leftover Help, and Health & Nutritions under a Cookzer+ label', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-pantry.html', 'pantry-page.js');
+    const section = page.locator('.sidebar .sidebar-section');
+    await expect(section.locator('.sidebar-section-label')).toHaveText('Cookzer+');
+    const links = section.locator('a');
+    await expect(links).toHaveCount(3);
+    await expect(links.nth(0)).toContainText('Cooking Ideas');
+    await expect(links.nth(1)).toContainText('Leftover Help');
+    await expect(links.nth(1)).toHaveAttribute('href', 'cookzer-pantry.html?tab=leftovers');
+    await expect(links.nth(2)).toContainText('Health & Nutritions');
+  });
 });
