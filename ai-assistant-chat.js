@@ -10,17 +10,17 @@
 (function () {
   const PITCH = {
     pantry: {
-      title: 'Cookzer+ AI Assistant',
+      title: 'Cooking Ideas',
       desc: 'Tell it what’s in your kitchen and get a suggestion back.',
       placeholder: 'e.g. "chicken thighs, rice, half an onion, some spinach"',
     },
     leftovers: {
-      title: 'Cookzer+ AI Assistant',
+      title: 'Leftover Help',
       desc: 'Describe your leftovers and turn them into tonight’s dinner.',
       placeholder: 'e.g. "leftover roast chicken and mashed potatoes"',
     },
     health: {
-      title: 'Cookzer+ AI Assistant',
+      title: 'Health & Nutritions',
       desc: 'Ask anything about nutrition, calories, or healthy cooking.',
       placeholder: 'e.g. "how much protein should I eat to hit my goals?"',
     },
