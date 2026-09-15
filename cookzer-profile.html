@@ -739,6 +739,7 @@
 
   function publicUrl(bucket, path) {
     if (!path) return null;
+    if (path.indexOf('http://') === 0 || path.indexOf('https://') === 0) return path; // external URL (e.g. a licensed stock photo) — use as-is
     return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
   }
 
