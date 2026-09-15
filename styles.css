@@ -109,6 +109,7 @@ body {
 .sidebar-item.cookbook:before { content: "📚"; }
 .sidebar-item.planner:before { content: "📅"; }
 .sidebar-item.health:before { content: "🩺"; }
+.sidebar-item.pantry:before { content: "🥕"; }
 .sidebar-item.challenges:before { content: "🏆"; }
 .sidebar-item.groups:before { content: "👥"; }
 .sidebar-item.restaurants:before { content: "🧾"; }

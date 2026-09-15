@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#009246">
+  <title>Pantry Challenge — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="notifications-shared.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="pantry-match.js"></script>
+  <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .brand-header {
+    font-size: 20px;
+    color: var(--olive-dark);
+    letter-spacing: -0.5px;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+  }
+
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 600; cursor: pointer;
+  }
+
+  .main { flex: 1; margin-top: 60px; overflow-y: auto; }
+
+  .pantry-content { max-width: 780px; margin: 0 auto; padding: 24px; }
+
+  .page-title {
+    font-size: 28px;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    color: var(--olive-dark);
+    margin-bottom: 6px;
+    text-align: center;
+  }
+
+  .page-sub { text-align: center; color: var(--ink-soft); font-size: 13.5px; margin-bottom: 24px; max-width: 56ch; margin-left: auto; margin-right: auto; }
+
+  .pantry-tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 28px; }
+
+  .pantry-tab {
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    background: var(--card-bg);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .pantry-tab.active { background: var(--olive); color: #fff; border-color: var(--olive); }
+
+  .pantry-panel { display: none; }
+  .pantry-panel.active { display: block; }
+
+  .pantry-input-card {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 22px;
+    margin-bottom: 28px;
+  }
+
+  .pantry-input-card label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+
+  .pantry-input-card textarea {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--paper, var(--card-bg));
+    resize: vertical;
+    min-height: 64px;
+  }
+
+  .pantry-input-hint { font-size: 12px; color: var(--ink-faint); margin-top: 6px; }
+
+  .pantry-find-btn {
+    margin-top: 14px;
+    background: var(--olive);
+    color: #fff;
+    padding: 11px 24px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .pantry-find-btn:hover { background: var(--olive-dark); transform: translateY(-1px); }
+  .pantry-find-btn:disabled { opacity: 0.6; cursor: default; transform: none; }
+
+  .pantry-results-status { text-align: center; color: var(--ink-soft); font-size: 13.5px; padding: 20px 0; }
+
+  .pantry-match-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (max-width: 620px) { .pantry-match-grid { grid-template-columns: 1fr; } }
+
+  .pantry-match-card {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-color 0.2s;
+  }
+
+  .pantry-match-card:hover { border-color: var(--olive); }
+
+  .pantry-match-thumb {
+    width: 56px; height: 56px; border-radius: 12px; flex-shrink: 0;
+    background: linear-gradient(135deg, #F3EEE3, #E5D9C8);
+    background-size: cover; background-position: center;
+  }
+
+  .pantry-match-info { flex: 1; min-width: 0; }
+  .pantry-match-title { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pantry-match-bar-track { height: 6px; border-radius: 4px; background: var(--cream); margin-top: 8px; overflow: hidden; }
+  .pantry-match-bar-fill { height: 100%; background: linear-gradient(90deg, var(--olive), var(--mustard)); }
+  .pantry-match-pct { font-size: 11.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  .pantry-note-box {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 768px) {
+    .sidebar { position: fixed; top: 0; left: -280px; height: 100vh; height: 100dvh; z-index: 100; transition: left 0.25s ease; }
+    .sidebar.open { left: 0; }
+    .sidebar-overlay.open { display: block; }
+    .menu-toggle { display: flex; }
+    .header { left: 0; padding: 0 16px; gap: 12px; }
+    .main { margin-left: 0; }
+    .brand-header { font-size: 18px; }
+  }
+
+  @media (max-width: 480px) {
+    .header { padding: 0 12px; }
+    .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+  }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
+
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-health.html" style="text-decoration: none;"><div class="sidebar-item icon health">Health</div></a>
+  <a href="cookzer-pantry.html" style="text-decoration: none;"><div class="sidebar-item icon pantry active">Pantry Challenge</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-groups.html" style="text-decoration: none;"><div class="sidebar-item icon groups">Groups</div></a>
+  <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants">Restaurants</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Header -->
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
+    <a href="cookzer-settings.html" style="text-decoration:none;"><button class="icon-btn" title="Settings" type="button">⚙️</button></a>
+    <button class="icon-btn" id="notifBellBtn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+  <div class="pantry-content">
+    <h1 class="page-title">Pantry Challenge</h1>
+    <p class="page-sub">Cook with what you've already got. Tell us what's in your kitchen and we'll match it against every recipe on Cookzer — no shopping trip required.</p>
+
+    <div class="pantry-tabs">
+      <button class="pantry-tab active" id="tabPantryBtn" type="button">🥕 Pantry Challenge</button>
+      <button class="pantry-tab" id="tabLeftoversBtn" type="button">🍲 Leftovers</button>
+    </div>
+
+    <!-- Pantry Challenge panel -->
+    <div class="pantry-panel active" id="panelPantry">
+      <div class="pantry-input-card">
+        <label for="pantryChallengeInput">What's in your fridge or cupboard?</label>
+        <textarea id="pantryChallengeInput" placeholder="e.g. chicken breast, rice, garlic, spinach"></textarea>
+        <div class="pantry-input-hint">Separate each ingredient with a comma. The more you list, the better the matches.</div>
+        <button class="pantry-find-btn" id="pantryChallengeBtn" type="button">Find what I can cook</button>
+      </div>
+      <div id="pantryChallengeResults"></div>
+    </div>
+
+    <!-- Leftovers panel -->
+    <div class="pantry-panel" id="panelLeftovers">
+      <div class="pantry-input-card">
+        <label for="leftoversInput">What's left over from last night, or half-used?</label>
+        <textarea id="leftoversInput" placeholder="e.g. half a roast chicken, leftover rice, wilting spinach, a bit of cream"></textarea>
+        <div class="pantry-input-hint">Describe it however you'd say it out loud — "leftover", "half a", "some" all get filtered out automatically.</div>
+        <button class="pantry-find-btn" id="leftoversBtn" type="button">Find what I can make</button>
+      </div>
+      <div id="leftoversResults"></div>
+      <div class="pantry-note-box">Built for using things up before they go to waste, not just for what's freshest — a wilting bag of spinach or last night's rice counts as much as anything straight from the fridge.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  function publicUrl(bucket, path) {
+    if (!path) return null;
+    return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  }
+
+  function switchTab(tab) {
+    const isPantry = tab === 'pantry';
+    document.getElementById('tabPantryBtn').classList.toggle('active', isPantry);
+    document.getElementById('tabLeftoversBtn').classList.toggle('active', !isPantry);
+    document.getElementById('panelPantry').classList.toggle('active', isPantry);
+    document.getElementById('panelLeftovers').classList.toggle('active', !isPantry);
+  }
+  document.getElementById('tabPantryBtn').addEventListener('click', () => switchTab('pantry'));
+  document.getElementById('tabLeftoversBtn').addEventListener('click', () => switchTab('leftovers'));
+
+  let recipeCache = null;
+  async function loadRecipeCache() {
+    if (recipeCache) return recipeCache;
+    const { data } = await sb
+      .from('recipes')
+      .select('id, title, ingredients, hero_photo_path')
+      .order('created_at', { ascending: false })
+      .limit(300);
+    recipeCache = data || [];
+    return recipeCache;
+  }
+
+  function renderMatches(container, scored, emptyMessage) {
+    container.innerHTML = '';
+    if (scored.length === 0) {
+      container.innerHTML = '<div class="pantry-results-status">' + emptyMessage + '</div>';
+      return;
+    }
+    const grid = document.createElement('div');
+    grid.className = 'pantry-match-grid';
+    scored.slice(0, 12).forEach((r) => {
+      const card = document.createElement('a');
+      card.className = 'pantry-match-card';
+      card.href = 'cookzer-recipe.html?id=' + r.id;
+
+      const thumb = document.createElement('div');
+      thumb.className = 'pantry-match-thumb';
+      const url = publicUrl('recipe-photos', r.hero_photo_path);
+      if (url) thumb.style.backgroundImage = "url('" + url + "')";
+
+      const info = document.createElement('div');
+      info.className = 'pantry-match-info';
+      const title = document.createElement('div');
+      title.className = 'pantry-match-title';
+      title.textContent = r.title;
+      const barTrack = document.createElement('div');
+      barTrack.className = 'pantry-match-bar-track';
+      const barFill = document.createElement('div');
+      barFill.className = 'pantry-match-bar-fill';
+      barFill.style.width = r.pct + '%';
+      barTrack.appendChild(barFill);
+      const pct = document.createElement('div');
+      pct.className = 'pantry-match-pct';
+      pct.textContent = r.matchCount + ' of ' + r.total + ' ingredients on hand · ' + r.pct + '%';
+
+      info.appendChild(title);
+      info.appendChild(barTrack);
+      info.appendChild(pct);
+      card.appendChild(thumb);
+      card.appendChild(info);
+      grid.appendChild(card);
+    });
+    container.appendChild(grid);
+  }
+
+  async function runMatch(inputId, resultsId, emptyInputMessage, emptyResultsMessage) {
+    const raw = document.getElementById(inputId).value;
+    const resultsEl = document.getElementById(resultsId);
+    const tokens = window.CookzerPantryMatch.parseTokens(raw);
+    if (tokens.length === 0) {
+      resultsEl.innerHTML = '<div class="pantry-results-status">' + emptyInputMessage + '</div>';
+      return;
+    }
+    resultsEl.innerHTML = '<div class="pantry-results-status">Searching…</div>';
+    const recipes = await loadRecipeCache();
+    const scored = window.CookzerPantryMatch.scoreRecipes(recipes, tokens);
+    renderMatches(resultsEl, scored, emptyResultsMessage);
+  }
+
+  document.getElementById('pantryChallengeBtn').addEventListener('click', () => runMatch(
+    'pantryChallengeInput', 'pantryChallengeResults',
+    'List a few ingredients you have on hand, separated by commas.',
+    'No recipes match those ingredients yet — try adding a couple more, or check back as the community posts new recipes.'
+  ));
+  document.getElementById('leftoversBtn').addEventListener('click', () => runMatch(
+    'leftoversInput', 'leftoversResults',
+    'Describe what you have left over, separated by commas.',
+    'Nothing matches those leftovers yet — try naming the base ingredient too (e.g. "roast chicken" as well as "chicken").'
+  ));
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+  })();
+</script>
+</body>
+</html>

@@ -18,6 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
   <script src="theme.js"></script>
   <script src="photo-lightbox.js"></script>
+  <script src="pantry-match.js"></script>
   <script src="shortcuts.js"></script>
   <script src="countdown.js"></script>
   <script src="confetti.js"></script>
@@ -833,6 +834,7 @@
   <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
   <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
   <a href="cookzer-health.html" style="text-decoration: none;"><div class="sidebar-item icon health">Health</div></a>
+  <a href="cookzer-pantry.html" style="text-decoration: none;"><div class="sidebar-item icon pantry">Pantry Challenge</div></a>
   <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
   <a href="cookzer-groups.html" style="text-decoration: none;"><div class="sidebar-item icon groups">Groups</div></a>
   <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants">Restaurants</div></a>
@@ -948,6 +950,7 @@
       <input type="text" id="pantryInput" placeholder="e.g. chicken, rice, onion">
       <button class="pantry-widget-btn" id="pantrySearchBtn" type="button">Find recipes</button>
       <div class="pantry-results" id="pantryResults"></div>
+      <a href="cookzer-pantry.html" style="display:block; margin-top:10px; font-size:12px; color:var(--olive-dark); font-weight:600; text-decoration:none;">Full Pantry Challenge &amp; Leftovers →</a>
     </div>
 
     <div class="widget-title">Top Recipes This Week</div>
@@ -1908,7 +1911,7 @@
     const resultsEl = document.getElementById('pantryResults');
     resultsEl.innerHTML = '';
 
-    const pantryTokens = raw.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const pantryTokens = window.CookzerPantryMatch.parseTokens(raw);
     if (pantryTokens.length === 0) {
       resultsEl.innerHTML = '<div class="pantry-hint">Enter a few ingredients you have on hand, separated by commas.</div>';
       return;
@@ -1922,15 +1925,7 @@
       .order('created_at', { ascending: false })
       .limit(150);
 
-    const scored = (recipes || [])
-      .map((r) => {
-        const names = (r.ingredients || []).map((ing) => (ing.name || '').toLowerCase());
-        if (names.length === 0) return null;
-        const matched = names.filter((name) => pantryTokens.some((tok) => name.includes(tok) || tok.includes(name)));
-        return { id: r.id, title: r.title, matchCount: matched.length, total: names.length };
-      })
-      .filter((r) => r && r.matchCount > 0)
-      .sort((a, b) => b.matchCount - a.matchCount || (a.total - a.matchCount) - (b.total - b.matchCount));
+    const scored = window.CookzerPantryMatch.scoreRecipes(recipes, pantryTokens);
 
     resultsEl.innerHTML = '';
     if (scored.length === 0) {
