@@ -242,8 +242,20 @@
   .chart-legend .leg-swatch { width: 16px; height: 0; border-top-width: 2.5px; border-top-style: solid; }
   .chart-legend .leg-swatch.dashed { border-top-style: dashed; }
   .growth-note { font-size: 12.5px; color: var(--ink-soft); font-style: italic; margin-top: 18px; max-width: 68ch; }
+
+  .unit-econ-panel {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 18px;
+    padding: 24px; margin-top: 32px;
+  }
+  .unit-econ-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; margin-bottom: 4px; }
+  .unit-econ-sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 18px; max-width: 68ch; }
+  .unit-econ-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  @media (max-width: 780px) { .unit-econ-row { grid-template-columns: repeat(2, 1fr); } }
+  .unit-econ-row .market-stat { border-top: 1px solid var(--line); padding-top: 12px; }
   table.compare tr.highlight { background: var(--green-tint); }
   table.compare td.neg { color: var(--red); font-weight: 700; }
+  table.compare tr.subrow td { font-size: 12px; color: var(--ink-faint); font-style: italic; padding-top: 8px; padding-bottom: 8px; }
+  table.compare tr.subrow td:first-child { font-weight: 400; color: var(--ink-faint); padding-left: 32px; }
 
   footer.cta {
     padding: 64px 0 80px; text-align: center;
@@ -509,7 +521,33 @@
         </tbody>
       </table>
     </div>
-    <p class="growth-note">Blended ARPU rises over time because the revenue mix rises with it — starting on ads alone, then layering in shoppable-cart commissions, Kitchen CV subscriptions, and marketplace take-rate as each system matures. These are our own working estimates, not third-party projections.</p>
+    <p class="growth-note">Blended ARPU rises over time because the revenue mix rises with it — starting on ads alone, then layering in shoppable-cart commissions, Cookzer+ AI Assistant subscriptions, and marketplace take-rate as each system matures. These are our own working estimates, not third-party projections.</p>
+
+    <div class="unit-econ-panel">
+      <div class="unit-econ-title">Cookzer+ AI Assistant — the unit economics behind the subscription line</div>
+      <p class="unit-econ-sub">Cookzer+ is the first concrete product behind the "subscriptions" slice of the revenue mix above — the Annual Revenue and Operating Cost figures in the table already include it at every milestone; this doesn't add to those totals, it explains what's inside them.</p>
+      <div class="unit-econ-row">
+        <div class="market-stat"><div class="m-num">$5/mo</div><div class="m-lbl">Cookzer+ subscription price</div></div>
+        <div class="market-stat"><div class="m-num">500</div><div class="m-lbl">Messages included per month (Claude Haiku 4.5)</div></div>
+        <div class="market-stat"><div class="m-num">$1.45</div><div class="m-lbl">Worst-case LLM cost per subscriber/mo — full 500-message usage</div></div>
+        <div class="market-stat"><div class="m-num">$3.11</div><div class="m-lbl">Net profit per subscriber/mo after LLM cost + Stripe fees — ~62% margin</div></div>
+      </div>
+      <div class="table-scroll">
+        <table class="compare">
+          <thead>
+            <tr><th>Milestone</th><th>Cookzer+ subscribers</th><th>Attach rate</th><th>Cookzer+ revenue/yr</th><th>Share of Annual Revenue</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Year 1 — Foundation</td><td>0</td><td>—</td><td>$0</td><td>Pre-launch — waitlist stage only</td></tr>
+            <tr><td>Year 3 — Two markets live</td><td>2,000</td><td>0.6%</td><td>$120K</td><td>8.6%</td></tr>
+            <tr class="highlight"><td>Year 5 — Profitable</td><td>10,000</td><td>0.5%</td><td>$600K</td><td>5.5%</td></tr>
+            <tr><td>Year 7 — Scaling</td><td>40,000</td><td>0.7%</td><td>$2.4M</td><td>5.7%</td></tr>
+            <tr><td>Year 10 — Category leader</td><td>120,000</td><td>0.8%</td><td>$7.2M</td><td>5.5%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="growth-note">Deliberately conservative attach rates (under 1% of MAU throughout) so this stays inside the already-published revenue model rather than requiring it to grow — the real number could easily be higher once the feature ships; this is the floor, not the ceiling. Worst-case cost assumes every subscriber uses all 500 messages every month, which won't happen in practice — actual margin should run higher than the ~62% modelled here. Full assumptions and the per-message math: see the Cookzer+ AI Assistant card in Commercial model below.</p>
+    </div>
   </div>
 </section>
 
@@ -528,6 +566,7 @@
           <tr><td>Marketing &amp; user acquisition</td><td>$15K</td><td>$450K</td><td>$2.0M</td><td>$8M</td><td>$24M</td></tr>
           <tr><td>Customer support &amp; trust/safety</td><td>$10K</td><td>$180K</td><td>$700K</td><td>$2.5M</td><td>$7M</td></tr>
           <tr><td>Infrastructure &amp; hosting</td><td>$8K</td><td>$120K</td><td>$500K</td><td>$2.2M</td><td>$7M</td></tr>
+          <tr class="subrow"><td>— of which Cookzer+ AI Assistant (LLM inference)</td><td>—</td><td>$35K</td><td>$174K</td><td>$696K</td><td>$2.09M</td></tr>
           <tr><td>Payment processing &amp; delivery partner fees</td><td>$2K</td><td>$60K</td><td>$350K</td><td>$1.5M</td><td>$5M</td></tr>
           <tr><td>Legal, compliance &amp; insurance</td><td>$15K</td><td>$90K</td><td>$300K</td><td>$900K</td><td>$2M</td></tr>
           <tr><td>Office &amp; admin overhead</td><td>$10K</td><td>$100K</td><td>$350K</td><td>$900K</td><td>$2M</td></tr>
@@ -535,7 +574,7 @@
         </tbody>
       </table>
     </div>
-    <p class="growth-note">Year 1 is a founder-plus-one-or-two-contractors budget — infra runs on Supabase/Vercel/Bunny Stream paid tiers, not a data center, and marketing is mostly organic. Engineering &amp; product stays the largest line at every stage; marketing overtakes infrastructure once paid acquisition kicks in around Year 3, tracking the same market-growth assumptions used for the revenue model above. Cookzer+ AI Assistant's LLM inference cost lands inside Infrastructure &amp; hosting once it's live — usage-based like the rest of that line, and priced into the Cookzer+ subscription itself rather than carried as pure overhead.</p>
+    <p class="growth-note">Year 1 is a founder-plus-one-or-two-contractors budget — infra runs on Supabase/Vercel/Bunny Stream paid tiers, not a data center, and marketing is mostly organic. Engineering &amp; product stays the largest line at every stage; marketing overtakes infrastructure once paid acquisition kicks in around Year 3, tracking the same market-growth assumptions used for the revenue model above. Cookzer+ AI Assistant's LLM inference (Claude Haiku 4.5, modelled at a conservative subscriber attach rate — see the Growth section above) is shown as its own line inside Infrastructure &amp; hosting rather than folded in invisibly: roughly 30–35% of that line at every stage once the feature is live, leaving the rest for the actual Supabase/Vercel/Bunny hosting that scales with users. It's already inside the Infrastructure &amp; hosting total above, not additional spend.</p>
   </div>
 </section>
 
@@ -574,7 +613,7 @@
         <div class="revenue-num">05</div>
         <div class="revenue-title">Cookzer+ AI Assistant</div>
         <div class="revenue-desc">A conversational assistant across the three highest-intent surfaces on the platform — Pantry Challenge, Leftovers, and Health — sold as a Cookzer+ monthly subscription. Ask it what to cook from what's on hand, what to do with leftovers before they're wasted, or how to hit a nutrition goal, grounded in the user's own real recipes and cook-in history rather than a generic model.</div>
-        <div class="revenue-proof">The highest-margin stream once live — no delivery partner cut, no inventory, priced like any AI copilot subscription. Live today as a waitlist-capture teaser on all three surfaces; the paid chat itself needs an LLM API integration and billing, both scoped, not yet built</div>
+        <div class="revenue-proof">$5/month, 500 messages included (Claude Haiku 4.5) — ~$3.11 net profit per subscriber/mo after LLM cost and Stripe fees, a ~62% margin even at worst-case full usage. No delivery partner cut, no inventory. Modelled at a conservative &lt;1% subscriber attach rate, it's already worth $7.2M/year by Year 10 inside the revenue model above (see Growth section) — live today as a waitlist-capture teaser on all three surfaces; the paid chat itself needs an LLM API integration and billing, both scoped, not yet built</div>
       </div>
     </div>
   </div>
