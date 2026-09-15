@@ -36,6 +36,14 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* A couple of elements pair the hidden attribute with an inline
+   display: value for their shown state (e.g. #restaurantTag) — inline
+   styles otherwise beat the UA stylesheet's [hidden]{display:none},
+   so the element never actually hides. !important here always wins
+   over a plain (non-important) inline style, closing that off site-wide
+   rather than patching each occurrence. */
+[hidden] { display: none !important; }
+
 html, body {
   font-family: 'Work Sans', sans-serif;
   color: var(--ink);

@@ -147,6 +147,7 @@
       padding: 16px;
       margin-bottom: 24px;
       width: 100%;
+      box-shadow: 0 1px 3px rgba(43, 38, 32, 0.05);
     }
 
   .composer-header {
@@ -189,21 +190,25 @@
 
   .composer-actions {
       display: flex;
-      gap: 12px;
+      gap: 8px;
       padding-top: 12px;
       border-top: 1px solid var(--line);
+      overflow-x: auto;
     }
 
   .composer-btn {
       flex: 1;
-      padding: 8px 12px;
+      min-width: fit-content;
+      padding: 9px 11px;
       background: var(--cream);
       border: 1px solid var(--line);
       border-radius: 12px;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 12.5px;
+      font-weight: 500;
       color: var(--ink-soft);
-      transition: all 0.2s;
+      white-space: nowrap;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -213,20 +218,22 @@
   .composer-btn:hover {
       background: #f0e6d2;
       color: var(--olive);
+      border-color: var(--olive);
+      transform: translateY(-1px);
     }
 
   .composer-mood-chip {
-      padding: 5px 12px;
-      background: var(--cream);
+      padding: 4px 11px;
+      background: transparent;
       border: 1px solid var(--line);
       border-radius: 14px;
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--ink-soft);
       cursor: pointer;
       transition: all 0.2s;
     }
 
-  .composer-mood-chip:hover { border-color: var(--mustard); }
+  .composer-mood-chip:hover { border-color: var(--mustard); color: var(--mustard); }
 
   .composer-mood-chip.active { background: var(--mustard); color: #fff; border-color: var(--mustard); }
 
@@ -475,7 +482,12 @@
     }
 
   .pantry-widget {
-      margin-bottom: 24px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(43, 38, 32, 0.05);
     }
 
   .pantry-widget input {
@@ -486,7 +498,7 @@
       font-size: 12.5px;
       font-family: inherit;
       color: var(--ink);
-      background: var(--cream);
+      background: var(--card-bg);
       margin-bottom: 8px;
     }
 
@@ -527,6 +539,7 @@
       border-radius: 18px;
       margin-bottom: 20px;
       text-align: center;
+      box-shadow: 0 3px 10px rgba(0, 156, 74, 0.18);
     }
 
   .challenge-badge {
@@ -573,6 +586,7 @@
       border-radius: 18px;
       padding: 12px;
       margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(43, 38, 32, 0.05);
     }
 
   .leaderboard-item {
@@ -626,6 +640,7 @@
       border-radius: 18px;
       padding: 12px;
       margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(43, 38, 32, 0.05);
     }
 
   .top-recipe-item {
@@ -694,6 +709,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
+      box-shadow: 0 1px 3px rgba(43, 38, 32, 0.05);
     }
 
   .ingredient-tag {
@@ -721,6 +737,7 @@
       border-radius: 18px;
       padding: 12px;
       margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(43, 38, 32, 0.05);
     }
 
   .contributor-item {
@@ -842,7 +859,6 @@
   <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
   <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
   
-  <div class="sidebar-cocooks-widget" id="sidebarCocooksWidget"></div>
 
 <div class="sidebar-plus">
   <div class="sidebar-plus-label">Cookzer+</div>
@@ -2084,7 +2100,6 @@
     await loadTopRecipes();
     await loadTrendingIngredients();
     await loadTopContributors();
-    await window.CookzerCocooksWidget.render(sb, currentUser.id, document.getElementById('sidebarCocooksWidget'));
     showWelcomeModalIfFirstVisit();
   })();
 
