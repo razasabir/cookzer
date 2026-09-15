@@ -14,6 +14,7 @@
   <script src="supabase-config.js"></script>
   <script src="notifications-shared.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="cookzer-modal.js"></script>
   <script src="theme.js"></script>
   <script src="photo-lightbox.js"></script>
   <script src="shortcuts.js"></script>
@@ -580,15 +581,15 @@
     const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
     const { error } = await sb.storage.from('restaurant-receipts').upload(path, file);
     if (error) {
-      alert('Receipt upload failed: ' + error.message);
+      await CookzerModal.alert('Receipt upload failed: ' + error.message);
       return null;
     }
     return path;
   }
 
   document.getElementById('submitRatingBtn').addEventListener('click', async () => {
-    if (!selectedRatingValue) { alert('Pick a star rating first.'); return; }
-    if (!pendingReceiptFile) { alert('Attach a receipt or invoice photo — ratings need proof.'); return; }
+    if (!selectedRatingValue) { await CookzerModal.alert('Pick a star rating first.'); return; }
+    if (!pendingReceiptFile) { await CookzerModal.alert('Attach a receipt or invoice photo — ratings need proof.'); return; }
 
     const btn = document.getElementById('submitRatingBtn');
     btn.disabled = true;
@@ -602,7 +603,7 @@
         .select('id')
         .single();
       if (error) {
-        alert('Could not add restaurant: ' + error.message);
+        await CookzerModal.alert('Could not add restaurant: ' + error.message);
         btn.disabled = false; btn.textContent = 'Submit rating';
         return;
       }
@@ -630,7 +631,7 @@
     btn.textContent = 'Submit rating';
 
     if (ratingErr) {
-      alert('Could not save rating: ' + ratingErr.message);
+      await CookzerModal.alert('Could not save rating: ' + ratingErr.message);
       return;
     }
 

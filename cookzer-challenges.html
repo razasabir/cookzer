@@ -14,6 +14,7 @@
   <script src="supabase-config.js"></script>
   <script src="notifications-shared.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="cookzer-modal.js"></script>
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
   <script src="countdown.js"></script>
@@ -442,7 +443,7 @@
         { onConflict: 'challenge_id,user_id' }
       );
       if (error) {
-        alert('Could not join: ' + error.message);
+        await CookzerModal.alert('Could not join: ' + error.message);
         return;
       }
       if (!mine) burstConfetti();
@@ -626,7 +627,7 @@
   }
 
   async function spawnTrendChallenge(ingredientName, btn) {
-    if (!confirm('Start a 3-day mini-challenge around "' + ingredientName + '"? This becomes the new active challenge for everyone.')) return;
+    if (!(await CookzerModal.confirm('Start a 3-day mini-challenge around "' + ingredientName + '"? This becomes the new active challenge for everyone.'))) return;
     btn.disabled = true;
 
     const { error } = await sb.from('challenges').insert({
@@ -637,13 +638,13 @@
     });
 
     if (error) {
-      alert('Could not spawn challenge: ' + error.message);
+      await CookzerModal.alert('Could not spawn challenge: ' + error.message);
       btn.disabled = false;
       return;
     }
 
     await loadChallenge();
-    alert('New challenge live: "Trending: ' + ingredientName + '"');
+    await CookzerModal.alert('New challenge live: "Trending: ' + ingredientName + '"');
   }
 
   (async function init() {

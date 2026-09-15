@@ -17,8 +17,9 @@ test.describe('group admin controls', () => {
     await expect(bobRow.locator('.member-remove-btn')).toHaveText('Remove');
     await expect(page.locator('#membersList .member-row', { hasText: 'Me' }).locator('.member-owner-tag')).toHaveText('Owner');
 
-    page.once('dialog', (d) => d.accept());
     await bobRow.locator('.member-remove-btn').click();
+    await expect(page.locator('.cz-modal-message')).toContainText('Remove Bob Ortiz');
+    await page.locator('.cz-modal-btn.cz-danger').click();
 
     await expect(page.locator('#membersList .member-row')).toHaveCount(1);
     const calls = await page.evaluate(() => window.__CALLS__);
@@ -30,15 +31,17 @@ test.describe('group admin controls', () => {
     await page.goto(page.url() + '?id=g1');
     await expect(page.locator('#groupName')).toHaveText('Weeknight Cooks');
 
-    const dialogMessages = [];
-    page.on('dialog', async (d) => {
-      dialogMessages.push(d.message());
-      await d.accept('Sunday Roasts');
-    });
     await page.locator('#editGroupBtn').click();
+    await expect(page.locator('.cz-modal-message')).toContainText('Group name');
+    await expect(page.locator('.cz-modal-input')).toHaveValue('Weeknight Cooks');
+    await page.locator('.cz-modal-input').fill('Sunday Roasts');
+    await page.locator('.cz-modal-btn.cz-primary').click();
+
+    // A second prompt follows for the description — accept its default.
+    await expect(page.locator('.cz-modal-message')).toContainText('description');
+    await page.locator('.cz-modal-btn.cz-primary').click();
 
     await expect(page.locator('#groupName')).toHaveText('Sunday Roasts');
-    expect(dialogMessages[0]).toContain('Group name');
   });
 
   test('non-creator sees no admin controls or Remove buttons', async ({ page }) => {

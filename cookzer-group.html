@@ -14,6 +14,7 @@
   <script src="supabase-config.js"></script>
   <script src="notifications-shared.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="cookzer-modal.js"></script>
   <script src="theme.js"></script>
   <script src="photo-lightbox.js"></script>
   <script src="shortcuts.js"></script>
@@ -503,18 +504,18 @@
     document.getElementById('deleteGroupBtn').hidden = !isCreator;
 
     document.getElementById('editGroupBtn').onclick = async () => {
-      const name = prompt('Group name:', group.name);
+      const name = await CookzerModal.prompt('Group name:', group.name);
       if (!name || !name.trim()) return;
-      const description = prompt('Group description (optional):', group.description || '');
+      const description = await CookzerModal.prompt('Group description (optional):', group.description || '');
       const { error } = await sb.from('groups').update({ name: name.trim(), description: (description || '').trim() || null }).eq('id', groupId);
-      if (error) alert('Could not save: ' + error.message);
+      if (error) await CookzerModal.alert('Could not save: ' + error.message);
       else await loadGroup();
     };
 
     document.getElementById('deleteGroupBtn').onclick = async () => {
-      if (!confirm('Delete "' + group.name + '"? This removes all its posts and can\'t be undone.')) return;
+      if (!(await CookzerModal.confirm('Delete "' + group.name + '"? This removes all its posts and can\'t be undone.', { confirmLabel: 'Delete', danger: true }))) return;
       const { error } = await sb.from('groups').delete().eq('id', groupId);
-      if (error) { alert('Could not delete: ' + error.message); return; }
+      if (error) { await CookzerModal.alert('Could not delete: ' + error.message); return; }
       window.location.href = 'cookzer-groups.html';
     };
 
@@ -555,7 +556,7 @@
         removeBtn.type = 'button';
         removeBtn.textContent = 'Remove';
         removeBtn.addEventListener('click', async () => {
-          if (!confirm('Remove ' + (m.profiles.display_name || 'this member') + ' from the group?')) return;
+          if (!(await CookzerModal.confirm('Remove ' + (m.profiles.display_name || 'this member') + ' from the group?', { confirmLabel: 'Remove', danger: true }))) return;
           await sb.from('group_members').delete().eq('group_id', groupId).eq('user_id', m.user_id);
           await loadGroup();
         });
@@ -604,7 +605,7 @@
     const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
     const { error } = await sb.storage.from('post-photos').upload(path, file);
     if (error) {
-      alert('Photo upload failed: ' + error.message);
+      await CookzerModal.alert('Photo upload failed: ' + error.message);
       return null;
     }
     return path;
@@ -623,7 +624,7 @@
       .insert({ author_id: currentUser.id, kind: 'post', caption: caption || null, photo_path: photoPath, group_id: groupId });
 
     if (error) {
-      alert('Could not post: ' + error.message);
+      await CookzerModal.alert('Could not post: ' + error.message);
       return;
     }
 
@@ -743,19 +744,19 @@
   }
 
   async function reportPost(postId) {
-    const reason = prompt('Why are you reporting this post? (spam, harassment, inappropriate content, other)');
+    const reason = await CookzerModal.prompt('Why are you reporting this post? (spam, harassment, inappropriate content, other)');
     if (!reason) return;
     const { error } = await sb.from('reports').insert({ reporter_id: currentUser.id, target_type: 'post', target_id: postId, reason });
-    if (error) alert('Could not send report: ' + error.message);
-    else alert('Thanks — this post has been reported for review.');
+    if (error) await CookzerModal.alert('Could not send report: ' + error.message);
+    else await CookzerModal.alert('Thanks — this post has been reported for review.');
   }
 
   async function deletePost(postId, cardEl) {
-    if (!confirm('Delete this post? This can\'t be undone.')) return;
+    if (!(await CookzerModal.confirm('Delete this post? This can\'t be undone.', { confirmLabel: 'Delete', danger: true }))) return;
 
     const { error } = await sb.from('posts').delete().eq('id', postId);
     if (error) {
-      alert('Could not delete post: ' + error.message);
+      await CookzerModal.alert('Could not delete post: ' + error.message);
       return;
     }
 

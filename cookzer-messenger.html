@@ -14,6 +14,7 @@
   <script src="supabase-config.js"></script>
   <script src="notifications-shared.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="cookzer-modal.js"></script>
   <script src="cocooks-widget.js"></script>
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
@@ -915,7 +916,7 @@
       if (isBlockedThread) {
         await sb.from('user_blocks').delete().eq('blocker_id', currentUser.id).eq('blocked_id', conv.otherId);
       } else {
-        if (!confirm('Block ' + conv.name + '? You won\'t be able to message each other.')) return;
+        if (!(await CookzerModal.confirm('Block ' + conv.name + '? You won\'t be able to message each other.', { confirmLabel: 'Block', danger: true }))) return;
         await sb.from('user_blocks').insert({ blocker_id: currentUser.id, blocked_id: conv.otherId });
       }
       window.blockedIdsReady = Promise.resolve(await (async () => {
@@ -1078,7 +1079,7 @@
       const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
       const { error: uploadErr } = await sb.storage.from('message-attachments').upload(path, pendingChatImage);
       if (uploadErr) {
-        alert('Could not send image: ' + uploadErr.message);
+        await CookzerModal.alert('Could not send image: ' + uploadErr.message);
         return;
       }
       attachmentPath = path;
@@ -1097,7 +1098,7 @@
       .insert({ conversation_id: activeId, sender_id: currentUser.id, text: text || '', attachment_path: attachmentPath });
 
     if (error) {
-      alert('Could not send message: ' + error.message);
+      await CookzerModal.alert('Could not send message: ' + error.message);
       return;
     }
 
@@ -1200,13 +1201,13 @@
     });
   }
 
-  newMsgStartBtn.addEventListener('click', () => {
+  newMsgStartBtn.addEventListener('click', async () => {
     const people = Array.from(selectedPeople.values());
     if (people.length === 0) return;
     if (people.length === 1) {
       startConversation(people[0]);
     } else {
-      const name = prompt('Name this group (optional):', people.map((p) => p.display_name.split(' ')[0]).join(', '));
+      const name = await CookzerModal.prompt('Name this group (optional):', people.map((p) => p.display_name.split(' ')[0]).join(', '));
       startGroupConversation(people, name ? name.trim() : null);
     }
   });
@@ -1250,7 +1251,7 @@
         .insert({ id: conversationId, created_by: currentUser.id });
 
       if (convErr) {
-        alert('Could not start conversation: ' + convErr.message);
+        await CookzerModal.alert('Could not start conversation: ' + convErr.message);
         return;
       }
 
@@ -1260,7 +1261,7 @@
       ]);
 
       if (partErr) {
-        alert('Could not add participants: ' + partErr.message);
+        await CookzerModal.alert('Could not add participants: ' + partErr.message);
         return;
       }
     }
@@ -1277,7 +1278,7 @@
       .from('conversations')
       .insert({ id: conversationId, created_by: currentUser.id, name: name || null });
     if (convErr) {
-      alert('Could not start group: ' + convErr.message);
+      await CookzerModal.alert('Could not start group: ' + convErr.message);
       return;
     }
 
@@ -1287,7 +1288,7 @@
     ];
     const { error: partErr } = await sb.from('conversation_participants').insert(rows);
     if (partErr) {
-      alert('Could not add participants: ' + partErr.message);
+      await CookzerModal.alert('Could not add participants: ' + partErr.message);
       return;
     }
 

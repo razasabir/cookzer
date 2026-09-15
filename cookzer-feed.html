@@ -15,6 +15,7 @@
   <script src="notifications-shared.js"></script>
   <script src="bunny-config.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="cookzer-modal.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
   <script src="theme.js"></script>
   <script src="photo-lightbox.js"></script>
@@ -1000,7 +1001,7 @@
     const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
     const { error } = await sb.storage.from('post-photos').upload(path, file);
     if (error) {
-      alert('Photo upload failed: ' + error.message);
+      await CookzerModal.alert('Photo upload failed: ' + error.message);
       return null;
     }
     return path;
@@ -1030,10 +1031,10 @@
     const preview = document.getElementById('composerVideoPreview');
     const probe = document.createElement('video');
     probe.preload = 'metadata';
-    probe.onloadedmetadata = () => {
+    probe.onloadedmetadata = async () => {
       URL.revokeObjectURL(probe.src);
       if (probe.duration > MAX_VIDEO_SECONDS) {
-        alert('Videos are limited to ' + MAX_VIDEO_SECONDS + ' seconds — trim this clip and try again.');
+        await CookzerModal.alert('Videos are limited to ' + MAX_VIDEO_SECONDS + ' seconds — trim this clip and try again.');
         e.target.value = '';
         return;
       }
@@ -1335,7 +1336,7 @@
     if (!caption && !pendingPhotoFile && !pendingVideoUid) return;
 
     if (videoUploadInProgress) {
-      alert('Your video is still uploading — hang tight, then hit Post again.');
+      await CookzerModal.alert('Your video is still uploading — hang tight, then hit Post again.');
       return;
     }
 
@@ -1351,7 +1352,7 @@
       .single();
 
     if (error) {
-      alert('Could not post: ' + error.message);
+      await CookzerModal.alert('Could not post: ' + error.message);
       return;
     }
 
@@ -1541,19 +1542,19 @@
   }
 
   async function reportPost(postId) {
-    const reason = prompt('Why are you reporting this post? (spam, harassment, inappropriate content, other)');
+    const reason = await CookzerModal.prompt('Why are you reporting this post? (spam, harassment, inappropriate content, other)');
     if (!reason) return;
     const { error } = await sb.from('reports').insert({ reporter_id: currentUser.id, target_type: 'post', target_id: postId, reason });
-    if (error) alert('Could not send report: ' + error.message);
-    else alert('Thanks — this post has been reported for review.');
+    if (error) await CookzerModal.alert('Could not send report: ' + error.message);
+    else await CookzerModal.alert('Thanks — this post has been reported for review.');
   }
 
   async function deletePost(postId, cardEl) {
-    if (!confirm('Delete this post? This can\'t be undone.')) return;
+    if (!(await CookzerModal.confirm('Delete this post? This can\'t be undone.', { confirmLabel: 'Delete', danger: true }))) return;
 
     const { error } = await sb.from('posts').delete().eq('id', postId);
     if (error) {
-      alert('Could not delete post: ' + error.message);
+      await CookzerModal.alert('Could not delete post: ' + error.message);
       return;
     }
 
@@ -1695,7 +1696,7 @@
     input.value = '';
     const { error } = await sb.from('comments').insert({ post_id: postId, author_id: currentUser.id, text });
     if (error) {
-      alert('Could not comment: ' + error.message);
+      await CookzerModal.alert('Could not comment: ' + error.message);
       return;
     }
     await renderComments(postId, box);
@@ -1842,7 +1843,7 @@
         .from('challenge_entries')
         .upsert({ challenge_id: activeChallenge.id, user_id: currentUser.id }, { onConflict: 'challenge_id,user_id' });
       if (error) {
-        alert('Could not join: ' + error.message);
+        await CookzerModal.alert('Could not join: ' + error.message);
         return;
       }
       if (!mine) burstConfetti();
