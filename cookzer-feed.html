@@ -16,6 +16,7 @@
   <script src="bunny-config.js"></script>
   <script src="auth-guard.js"></script>
   <script src="cookzer-modal.js"></script>
+  <script src="photo-filters.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
   <script src="theme.js"></script>
   <script src="photo-lightbox.js"></script>
@@ -877,6 +878,7 @@
         </div>
       </div>
       <img id="composerPhotoPreview" hidden style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:10px;">
+      <div id="composerFilterRow" hidden></div>
       <input type="file" id="composerPhotoInput" accept="image/*" hidden>
       <video id="composerVideoPreview" hidden muted controls style="width:100%;max-height:220px;border-radius:12px;margin-top:10px;"></video>
       <input type="file" id="composerVideoInput" accept="video/*" hidden>
@@ -976,6 +978,7 @@
   let activeChallenge = null;
   let challengeCountdownTimer = null;
   let pendingPhotoFile = null;
+  let pendingPhotoFilter = 'original';
   let pendingVideoUid = null;
   let videoUploadInProgress = false;
   const MAX_VIDEO_SECONDS = 90;
@@ -997,10 +1000,19 @@
     return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
   }
 
-  async function uploadPostPhoto(file) {
+  async function uploadPostPhoto(file, filterKey) {
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
     const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
-    const { error } = await sb.storage.from('post-photos').upload(path, file);
+    let toUpload = file;
+    if (filterKey && filterKey !== 'original') {
+      try {
+        const img = await CookzerPhotoFilters.loadImage(URL.createObjectURL(file));
+        toUpload = await CookzerPhotoFilters.bakeFilter(img, CookzerPhotoFilters.FILTER_CSS[filterKey], file.type);
+      } catch (e) {
+        toUpload = file; // filter failed — post the unfiltered photo rather than blocking
+      }
+    }
+    const { error } = await sb.storage.from('post-photos').upload(path, toUpload, { contentType: file.type });
     if (error) {
       await CookzerModal.alert('Photo upload failed: ' + error.message);
       return null;
@@ -1012,13 +1024,28 @@
     document.getElementById('composerPhotoInput').click();
   });
 
+  function renderComposerFilterRow() {
+    const preview = document.getElementById('composerPhotoPreview');
+    const filterRow = document.getElementById('composerFilterRow');
+    CookzerPhotoFilters.renderSwatches(filterRow, preview.src, pendingPhotoFilter, (f) => {
+      pendingPhotoFilter = f.key;
+      preview.style.filter = f.css;
+      renderComposerFilterRow();
+    });
+  }
+
   document.getElementById('composerPhotoInput').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
     pendingPhotoFile = file;
+    pendingPhotoFilter = 'original';
     const preview = document.getElementById('composerPhotoPreview');
     preview.src = URL.createObjectURL(file);
+    preview.style.filter = 'none';
     preview.hidden = false;
+
+    document.getElementById('composerFilterRow').hidden = false;
+    renderComposerFilterRow();
   });
 
   document.getElementById('composerVideoBtn').addEventListener('click', () => {
@@ -1343,7 +1370,7 @@
 
     let photoPath = null;
     if (pendingPhotoFile) {
-      photoPath = await uploadPostPhoto(pendingPhotoFile);
+      photoPath = await uploadPostPhoto(pendingPhotoFile, pendingPhotoFilter);
     }
 
     const { data: inserted, error } = await sb
@@ -1367,8 +1394,11 @@
 
     captionInput.value = '';
     pendingPhotoFile = null;
+    pendingPhotoFilter = 'original';
     pendingVideoUid = null;
     document.getElementById('composerPhotoPreview').hidden = true;
+    document.getElementById('composerPhotoPreview').style.filter = 'none';
+    document.getElementById('composerFilterRow').hidden = true;
     document.getElementById('composerVideoPreview').hidden = true;
     document.getElementById('videoUploadStatus').hidden = true;
     document.getElementById('composerChallengeBtn').classList.remove('active-challenge-tag');
