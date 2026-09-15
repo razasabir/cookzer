@@ -10,6 +10,9 @@
   --mustard: #D9A441;
   --brick: #E85659;
   --line: #E7DFCF;
+  --plus-tint: rgba(217, 164, 65, 0.07);
+  --plus-border: rgba(217, 164, 65, 0.30);
+  --plus-hover: rgba(217, 164, 65, 0.14);
 }
 
 /* Dark mode — same token names, different values. Explicit toggle only
@@ -26,6 +29,9 @@
   --mustard: #E8B865;
   --brick: #E85659;
   --line: #3A3229;
+  --plus-tint: rgba(232, 184, 101, 0.08);
+  --plus-border: rgba(232, 184, 101, 0.28);
+  --plus-hover: rgba(232, 184, 101, 0.16);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -110,28 +116,52 @@ body {
 .sidebar-item.planner:before { content: "📅"; }
 .sidebar-item.health:before { content: "🩺"; }
 .sidebar-item.pantry:before { content: "🥕"; }
-.sidebar-item.leftovers:before { content: "🍲"; }
 .sidebar-item.challenges:before { content: "🏆"; }
 .sidebar-item.groups:before { content: "👥"; }
 .sidebar-item.restaurants:before { content: "🧾"; }
 .sidebar-item.profile:before { content: "👤"; }
 .sidebar-item.messenger:before { content: "💬"; }
 
-.sidebar-section {
-  margin-top: 12px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
+/* Cookzer+ sidebar panel — a distinct, minimal corner for the 3
+   AI-backed paid modules. A soft mustard-tinted card (not another plain
+   list under the main nav) with its own gold hover/active state, since
+   olive is already "you are here" for the regular nav above it. */
+.sidebar-plus {
+  margin: 14px 14px 4px;
+  padding: 12px 10px;
+  border-radius: 14px;
+  background: var(--plus-tint);
+  border: 1px solid var(--plus-border);
 }
 
-.sidebar-section-label {
-  font-size: 11px;
+.sidebar-plus-label {
+  font-family: 'Fraunces', serif;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--ink-faint);
-  padding: 0 16px;
+  font-size: 12px;
+  color: var(--mustard);
+  padding: 0 6px;
   margin-bottom: 6px;
 }
+
+.sidebar-plus-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 6px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-plus-item:before { font-size: 15px; min-width: 16px; text-align: center; }
+.sidebar-plus-item:hover { background: var(--plus-hover); color: var(--ink); }
+.sidebar-plus-item.active { background: var(--plus-hover); color: var(--ink); font-weight: 600; }
+
+.sidebar-plus-item.pantry:before { content: "🥕"; }
+.sidebar-plus-item.leftovers:before { content: "🍲"; }
+.sidebar-plus-item.health:before { content: "🩺"; }
 
 .sidebar-cocooks-widget {
   margin-top: 20px;
