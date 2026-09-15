@@ -8,6 +8,9 @@
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed"
   },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.125.0"
+  },
   "devDependencies": {
     "@playwright/test": "^1.47.0"
   }
