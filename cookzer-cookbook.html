@@ -14,6 +14,7 @@
   <script src="supabase-config.js"></script>
   <script src="notifications-shared.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="cookzer-modal.js"></script>
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -502,7 +503,7 @@
       noteBtn.textContent = '📝';
       noteBtn.title = 'Edit note';
       noteBtn.addEventListener('click', async () => {
-        const newNote = prompt('Note for this recipe:', s.note || '');
+        const newNote = await CookzerModal.prompt('Note for this recipe:', s.note || '');
         if (newNote === null) return;
         await sb.from('saved_recipes').update({ note: newNote }).eq('user_id', currentUser.id).eq('recipe_id', s.recipe_id);
         await loadSavedRecipes();
@@ -513,7 +514,7 @@
       tagBtn.title = 'Edit hashtags';
       tagBtn.addEventListener('click', async () => {
         const current = (s.tags || []).join(', ');
-        const input = prompt('Hashtags for this recipe, comma-separated (e.g. quick, mealprep, spicy):', current);
+        const input = await CookzerModal.prompt('Hashtags for this recipe, comma-separated (e.g. quick, mealprep, spicy):', current);
         if (input === null) return;
         const tags = Array.from(new Set(
           input.split(',').map((t) => t.trim().replace(/^#/, '')).filter(Boolean)
@@ -569,16 +570,16 @@
   }
 
   document.getElementById('newListBtn').addEventListener('click', async () => {
-    const name = prompt('Name this list (e.g. "Weeknight favorites"):');
+    const name = await CookzerModal.prompt('Name this list (e.g. "Weeknight favorites"):');
     if (!name || !name.trim()) return;
-    const isPublic = confirm('Make this list public so you can share the link? Cancel keeps it private.');
+    const isPublic = await CookzerModal.confirm('Make this list public so you can share the link? Cancel keeps it private.');
     const { data, error } = await sb
       .from('recipe_lists')
       .insert({ owner_id: currentUser.id, name: name.trim(), is_public: isPublic })
       .select('id')
       .single();
     if (error) {
-      alert('Could not create list: ' + error.message);
+      await CookzerModal.alert('Could not create list: ' + error.message);
       return;
     }
     window.location.href = 'cookzer-list.html?id=' + data.id;

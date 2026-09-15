@@ -14,6 +14,7 @@
   <script src="supabase-config.js"></script>
   <script src="notifications-shared.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="cookzer-modal.js"></script>
   <script src="nutrition-data.js"></script>
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
@@ -347,7 +348,7 @@
       .in('plan_date', lastWeek);
 
     if (!lastWeekEntries || lastWeekEntries.length === 0) {
-      alert('No planned meals found for last week to copy.');
+      await CookzerModal.alert('No planned meals found for last week to copy.');
       return;
     }
 
@@ -362,13 +363,13 @@
       }));
 
     if (toInsert.length === 0) {
-      alert('This week already has meals planned on every day last week had one.');
+      await CookzerModal.alert('This week already has meals planned on every day last week had one.');
       return;
     }
 
     const { error } = await sb.from('meal_plan_entries').insert(toInsert);
     if (error) {
-      alert('Could not copy last week: ' + error.message);
+      await CookzerModal.alert('Could not copy last week: ' + error.message);
       return;
     }
     await loadWeek();
@@ -530,7 +531,7 @@
     let choice = null;
     if (recipes && recipes.length > 0) {
       const listText = recipes.map((r, i) => (i + 1) + '. ' + r.title).join('\n');
-      const pick = prompt('Pick a recipe by number, or type a plain meal name:\n' + listText);
+      const pick = await CookzerModal.prompt('Pick a recipe by number, or type a plain meal name:\n' + listText);
       if (pick === null) return;
       const idx = parseInt(pick, 10) - 1;
       if (!isNaN(idx) && recipes[idx]) {
@@ -539,7 +540,7 @@
         choice = { free_text: pick.trim() };
       }
     } else {
-      const text = prompt('What are you planning to cook? (create recipes to attach real ones)');
+      const text = await CookzerModal.prompt('What are you planning to cook? (create recipes to attach real ones)');
       if (!text || !text.trim()) return;
       choice = { free_text: text.trim() };
     }
@@ -551,7 +552,7 @@
       ...choice,
     });
     if (error) {
-      alert('Could not add meal: ' + error.message);
+      await CookzerModal.alert('Could not add meal: ' + error.message);
       return;
     }
     await loadWeek();

@@ -14,6 +14,7 @@
   <script src="supabase-config.js"></script>
   <script src="notifications-shared.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="cookzer-modal.js"></script>
   <script src="theme.js"></script>
 <script src="nutrition-data.js"></script>
   <script src="photo-lightbox.js"></script>
@@ -766,14 +767,14 @@
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(url);
-        alert('Recipe link copied: ' + url);
+        await CookzerModal.alert('Recipe link copied: ' + url);
         return;
       }
     } catch (e) {
       // Clipboard blocked (common in in-app browsers/webviews) — fall through to prompt.
     }
 
-    prompt('Copy this recipe link:', url);
+    await CookzerModal.prompt('Copy this recipe link:', url);
   });
 
   document.getElementById('printBtn').addEventListener('click', () => {
@@ -1021,7 +1022,7 @@
   document.getElementById('cookInBtn').addEventListener('click', async () => {
     const { error } = await sb.from('posts').insert({ author_id: currentUser.id, kind: 'cook_in', recipe_id: recipeId });
     if (error) {
-      alert('Could not log cook-in: ' + error.message);
+      await CookzerModal.alert('Could not log cook-in: ' + error.message);
       return;
     }
     document.getElementById('cookInBtn').classList.add('active');
@@ -1034,7 +1035,7 @@
     let folderId = null;
     if (folders && folders.length > 0) {
       const listText = folders.map((f, i) => (i + 1) + '. ' + f.emoji + ' ' + f.name).join('\n');
-      const pick = prompt('Save into which cookbook? Enter a number, or 0 for no folder:\n' + listText, '0');
+      const pick = await CookzerModal.prompt('Save into which cookbook? Enter a number, or 0 for no folder:\n' + listText, '0');
       if (pick === null) return;
       const idx = parseInt(pick, 10);
       if (idx > 0 && folders[idx - 1]) folderId = folders[idx - 1].id;
@@ -1045,7 +1046,7 @@
       { onConflict: 'user_id,recipe_id' }
     );
     if (error) {
-      alert('Could not save: ' + error.message);
+      await CookzerModal.alert('Could not save: ' + error.message);
       return;
     }
     document.getElementById('saveBtn').classList.add('active');
@@ -1060,7 +1061,7 @@
       caption: 'Remade ' + recipe.title + '.',
     });
     if (error) {
-      alert('Could not post remake: ' + error.message);
+      await CookzerModal.alert('Could not post remake: ' + error.message);
       return;
     }
     window.location.href = 'cookzer-feed.html';
@@ -1096,7 +1097,7 @@
       { onConflict: 'recipe_id,user_id' }
     );
     if (error) {
-      alert('Could not save rating: ' + error.message);
+      await CookzerModal.alert('Could not save rating: ' + error.message);
       return;
     }
     rateModal.classList.remove('open');
@@ -1197,7 +1198,7 @@
 
     const { error: uploadErr } = await sb.storage.from('recipe-photos').upload(path, currentImageFile);
     if (uploadErr) {
-      alert('Upload failed: ' + uploadErr.message);
+      await CookzerModal.alert('Upload failed: ' + uploadErr.message);
       return;
     }
 
@@ -1208,7 +1209,7 @@
       filter: currentFilter.key,
     });
     if (insertErr) {
-      alert('Could not save photo: ' + insertErr.message);
+      await CookzerModal.alert('Could not save photo: ' + insertErr.message);
       return;
     }
 

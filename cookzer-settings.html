@@ -14,6 +14,7 @@
   <script src="supabase-config.js"></script>
   <script src="notifications-shared.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="cookzer-modal.js"></script>
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -345,11 +346,11 @@
         return;
       }
     } catch (e) { /* fall through */ }
-    prompt('Copy this invite link:', url);
+    await CookzerModal.prompt('Copy this invite link:', url);
   });
 
   document.getElementById('signOutBtn').addEventListener('click', async () => {
-    if (!confirm('Sign out of Cookzer?')) return;
+    if (!(await CookzerModal.confirm('Sign out of Cookzer?'))) return;
     await sb.auth.signOut();
     window.location.href = 'cookzer-auth.html';
   });

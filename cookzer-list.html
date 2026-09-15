@@ -14,6 +14,7 @@
   <script src="supabase-config.js"></script>
   <script src="notifications-shared.js"></script>
   <script src="auth-guard.js"></script>
+  <script src="cookzer-modal.js"></script>
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -379,7 +380,7 @@
 
   const renameBtn = document.getElementById('renameListBtn');
   if (renameBtn) renameBtn.addEventListener('click', async () => {
-    const name = prompt('Rename this list:', list.name);
+    const name = await CookzerModal.prompt('Rename this list:', list.name);
     if (!name || !name.trim()) return;
     await sb.from('recipe_lists').update({ name: name.trim() }).eq('id', listId);
     loadList();
@@ -393,7 +394,7 @@
 
   const deleteBtn = document.getElementById('deleteListBtn');
   if (deleteBtn) deleteBtn.addEventListener('click', async () => {
-    if (!confirm('Delete "' + list.name + '"? This can\'t be undone.')) return;
+    if (!(await CookzerModal.confirm('Delete "' + list.name + '"? This can\'t be undone.', { confirmLabel: 'Delete', danger: true }))) return;
     await sb.from('recipe_lists').delete().eq('id', listId);
     window.location.href = 'cookzer-cookbook.html';
   });
