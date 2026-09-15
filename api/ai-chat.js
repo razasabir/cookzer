@@ -61,6 +61,19 @@ function monthStartIso() {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 }
 
+// Belt-and-braces for NO_MARKDOWN above: a system prompt instruction is a
+// strong signal, not a guarantee — Haiku still occasionally reaches for
+// **bold**/# headings out of habit. Strip the common markdown tokens from
+// whatever comes back so a literal "**" never reaches the plain-text bubble,
+// regardless of how well the model followed instructions this time.
+function stripMarkdown(text) {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '$1') // **bold**
+    .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '$1') // *italic*, not the leftover single stars from a bold pass
+    .replace(/^#{1,6}\s+/gm, '') // # heading
+    .replace(/^[*-]\s+/gm, ''); // * bullet / - bullet -> plain line
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -155,7 +168,7 @@ module.exports = async function handler(req, res) {
   }
 
   const textBlock = (completion.content || []).find((b) => b.type === 'text');
-  const reply = textBlock ? textBlock.text : "Sorry, I couldn't come up with a reply for that.";
+  const reply = stripMarkdown(textBlock ? textBlock.text : "Sorry, I couldn't come up with a reply for that.");
 
   res.status(200).json({
     reply,
@@ -163,3 +176,5 @@ module.exports = async function handler(req, res) {
     limit: MONTHLY_MESSAGE_LIMIT,
   });
 };
+
+module.exports.stripMarkdown = stripMarkdown;
