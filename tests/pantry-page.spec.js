@@ -46,8 +46,8 @@ test.describe('Pantry Challenge page', () => {
 
   test('sidebar groups Cooking Ideas, Leftover Help, and Health & Nutritions under a Cookzer+ label', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-pantry.html', 'pantry-page.js');
-    const section = page.locator('.sidebar .sidebar-section');
-    await expect(section.locator('.sidebar-section-label')).toHaveText('Cookzer+');
+    const section = page.locator('.sidebar .sidebar-plus');
+    await expect(section.locator('.sidebar-plus-label')).toHaveText('Cookzer+');
     const links = section.locator('a');
     await expect(links).toHaveCount(3);
     await expect(links.nth(0)).toContainText('Cooking Ideas');
