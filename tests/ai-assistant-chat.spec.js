@@ -9,11 +9,11 @@ test.describe('Cookzer+ AI Assistant chat', () => {
     await loadPageWithMock(page, 'cookzer-pantry.html', 'ai-chat.js');
 
     const pantryChat = page.locator('#pantryAiTeaser .cz-ai-chat');
-    await expect(pantryChat).toContainText('Cookzer+ AI Assistant');
+    await expect(pantryChat).toContainText('Cooking Ideas');
     await expect(pantryChat.locator('.cz-ai-chat-badge')).toHaveText('Cookzer+');
 
     const leftoversChat = page.locator('#leftoversAiTeaser .cz-ai-chat');
-    await expect(leftoversChat).toContainText('leftovers');
+    await expect(leftoversChat).toContainText('Leftover Help');
 
     await pantryChat.locator('.cz-ai-chat-input').fill('chicken thighs, rice, half an onion');
     await pantryChat.locator('.cz-ai-chat-send').click();
@@ -35,7 +35,7 @@ test.describe('Cookzer+ AI Assistant chat', () => {
   test('appears on the Health page', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-health.html', 'ai-chat.js');
     const chat = page.locator('#healthAiTeaser .cz-ai-chat');
-    await expect(chat).toContainText('Cookzer+ AI Assistant');
+    await expect(chat).toContainText('Health & Nutritions');
     await expect(chat).toContainText('nutrition');
   });
 
