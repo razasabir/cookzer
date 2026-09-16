@@ -1,0 +1,10 @@
+{
+  "appId": "com.cookzer.app",
+  "appName": "Cookzer",
+  "webDir": "www",
+  "server": {
+    "url": "https://cookzer.com",
+    "androidScheme": "https",
+    "cleartext": false
+  }
+}

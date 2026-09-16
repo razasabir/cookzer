@@ -12,6 +12,9 @@
     "@anthropic-ai/sdk": "^0.125.0"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
     "@playwright/test": "^1.47.0"
   }
 }
