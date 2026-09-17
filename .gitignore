@@ -13,3 +13,9 @@ android/local.properties
 android/**/release.keystore
 *.keystore
 *.jks
+
+# iOS signing material — same reasoning as the Android keystore above.
+# Capacitor's own ios/.gitignore already covers build outputs/Pods/etc.
+ios/**/*.mobileprovision
+ios/**/*.p12
+*.p12

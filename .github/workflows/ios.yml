@@ -1,0 +1,151 @@
+name: iOS build
+
+# Same shell-app idea as android.yml: the iOS app is a Capacitor project
+# that loads the live site (capacitor.config.json -> server.url), so it
+# only needs rebuilding when the native shell itself changes.
+#
+# Two jobs:
+#  - simulator-build: runs on every push that touches the iOS shell.
+#    Builds for the Simulator, which needs no Apple Developer account or
+#    signing — it just proves the Xcode project actually compiles. It
+#    can't produce anything installable on a real iPad; that's what the
+#    testflight job below is for.
+#  - testflight: uploads a real signed build to TestFlight so it can be
+#    installed on your iPad. Unlike Android, Apple has no free "direct
+#    APK-style download from a website" option — TestFlight (or the
+#    App Store) is the only way to get a build onto a real device
+#    without a Mac in hand, and both require a paid Apple Developer
+#    Program membership ($99/year). This job stays a no-op until that
+#    account exists and its credentials are added as repo secrets —
+#    see the comment on the job below for the exact steps.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - 'www/**'
+      - 'capacitor.config.json'
+      - 'package.json'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch: {}
+
+jobs:
+  simulator-build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npx cap sync ios
+      - name: Build for the iOS Simulator (no signing needed)
+        working-directory: ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App \
+            -sdk iphonesimulator -configuration Debug \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+
+  # Runs only once these secrets exist in the repo (Settings -> Secrets
+  # and variables -> Actions) AND the "IOS_RELEASE_READY" repo variable
+  # is set to "true". To get there:
+  #   1. Join the Apple Developer Program ($99/year) at
+  #      developer.apple.com, using the same Apple ID you'll use on
+  #      your iPad.
+  #   2. In developer.apple.com -> Certificates, Identifiers & Profiles:
+  #      register the App ID "com.cookzer.app", create a Distribution
+  #      certificate (export it as a .p12 with a password), and create
+  #      an "App Store" provisioning profile for that App ID + cert.
+  #   3. In appstoreconnect.apple.com -> Users and Access -> Keys:
+  #      create an App Store Connect API key (App Manager role) and
+  #      download its .p8 file. Also create the app record itself
+  #      (App Store Connect -> My Apps -> +) with bundle ID
+  #      com.cookzer.app so there's something for TestFlight builds to
+  #      attach to.
+  #   4. Set these repo secrets: IOS_DIST_CERT_BASE64 (base64 of the
+  #      .p12), IOS_DIST_CERT_PASSWORD, IOS_PROVISION_PROFILE_BASE64
+  #      (base64 of the .mobileprovision), APPLE_TEAM_ID,
+  #      APP_STORE_CONNECT_KEY_ID, APP_STORE_CONNECT_ISSUER_ID,
+  #      APP_STORE_CONNECT_KEY_BASE64 (base64 of the .p8).
+  #   5. Set the repo variable IOS_RELEASE_READY to "true".
+  # Once uploaded, add yourself as a TestFlight tester in App Store
+  # Connect and the build installs on your iPad through the TestFlight
+  # app — no cable, no Mac needed at that point.
+  testflight:
+    runs-on: macos-latest
+    if: ${{ github.ref == 'refs/heads/main' && vars.IOS_RELEASE_READY == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npx cap sync ios
+
+      - name: Import signing certificate and provisioning profile
+        env:
+          IOS_DIST_CERT_BASE64: ${{ secrets.IOS_DIST_CERT_BASE64 }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          IOS_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(uuidgen)
+          CERT_PATH="$RUNNER_TEMP/dist_cert.p12"
+          PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
+
+          echo "$IOS_DIST_CERT_BASE64" | base64 -d -o "$CERT_PATH"
+          echo "$IOS_PROVISION_PROFILE_BASE64" | base64 -d -o "$PROFILE_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$IOS_DIST_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed 's/"//g')
+
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Archive
+        working-directory: ios/App
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App \
+            -sdk iphoneos -configuration Release \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="Cookzer App Store" \
+            archive
+
+      - name: Export .ipa
+        working-directory: ios/App
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>teamID</key>
+            <string>${{ secrets.APPLE_TEAM_ID }}</string>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export"
+
+      - name: Upload to TestFlight
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+        run: |
+          mkdir -p ~/private_keys
+          echo "$APP_STORE_CONNECT_KEY_BASE64" | base64 -d -o ~/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
+          xcrun altool --upload-app -f "$RUNNER_TEMP/export/App.ipa" -t ios \
+            --apiKey "$APP_STORE_CONNECT_KEY_ID" --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"

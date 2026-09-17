@@ -200,9 +200,20 @@
 
     <div class="section-head">
       <h2>To do</h2>
-      <span class="section-count">4</span>
+      <span class="section-count">5</span>
     </div>
     <ul class="task-list">
+      <li class="task">
+        <div class="task-mark"></div>
+        <div class="task-body">
+          <p class="task-title">iOS app — get it onto your iPad via TestFlight</p>
+          <p class="task-note">The iOS shell is built (see Done). Unlike Android, Apple has no free direct-download option — the only way to run it on a real device is TestFlight, which needs a paid Apple Developer Program membership ($99/year). Once that account exists: register the com.cookzer.app App ID, create a distribution certificate + provisioning profile, create an App Store Connect API key, and add all of it as repo secrets (exact steps are commented in <code>.github/workflows/ios.yml</code>). After that, every push uploads a new TestFlight build automatically.</p>
+          <div class="task-meta">
+            <span class="pill todo">To do</span>
+            <span class="added">Added Sep 17, 2026</span>
+          </div>
+        </div>
+      </li>
       <li class="task">
         <div class="task-mark"></div>
         <div class="task-body">
@@ -251,9 +262,19 @@
 
     <div class="section-head">
       <h2>Done</h2>
-      <span class="section-count">1</span>
+      <span class="section-count">2</span>
     </div>
     <ul class="task-list">
+      <li class="task done">
+        <div class="task-mark"></div>
+        <div class="task-body">
+          <p class="task-title">iOS app shell — Capacitor project + CI build check</p>
+          <p class="task-note">Added the iOS platform on top of the same Capacitor project used for Android — same live-site-loading shell, same bundle identity (com.cookzer.app), zero duplicated code. CI now builds it for the Simulator on every push to catch breaks early, and a gated TestFlight job is ready to go the moment an Apple Developer account exists (see To do).</p>
+          <div class="task-meta">
+            <span class="pill done">Done — Sep 17, 2026</span>
+          </div>
+        </div>
+      </li>
       <li class="task done">
         <div class="task-mark"></div>
         <div class="task-body">
