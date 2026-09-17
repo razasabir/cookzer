@@ -156,6 +156,37 @@
       border-radius: 999px;
     }
 
+    .install-help {
+      max-width: 480px;
+      margin: 14px auto 0;
+      text-align: center;
+    }
+    .install-help summary {
+      cursor: pointer;
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      text-decoration: underline;
+      text-decoration-color: var(--line);
+      list-style: none;
+    }
+    .install-help summary:hover { color: var(--olive-dark); }
+    .install-help summary::-webkit-details-marker { display: none; }
+    .install-help[open] summary { text-decoration: none; }
+    .install-help ol {
+      text-align: left;
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      line-height: 1.6;
+      margin: 10px 0 0;
+      padding-left: 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 14px 14px 30px;
+    }
+    .install-help li { margin-bottom: 6px; }
+    .install-help li:last-child { margin-bottom: 0; }
+
     /* ---------- Sliding photo marquee ---------- */
     .marquee-wrap {
       overflow: hidden;
@@ -355,6 +386,14 @@
       <a href="cookzer-auth.html" class="btn btn-ghost btn-lg">I already have an account</a>
       <a href="https://github.com/razasabir/cookzer/releases/download/android-latest/app-debug.apk" class="btn btn-android btn-lg">📱 Download for Android <span class="free-tag">FREE</span></a>
     </div>
+    <details class="install-help">
+      <summary>Won't install? Tap here (especially on Samsung)</summary>
+      <ol>
+        <li><b>Samsung Auto Blocker:</b> Settings → Security and privacy → Auto Blocker — turn it off, or allow this one install when prompted. This is on by default on newer Samsung phones and blocks all sideloaded apps.</li>
+        <li><b>Allow installs from your browser:</b> Settings → Apps → (Chrome / Samsung Internet / your browser) → Install unknown apps → Allow.</li>
+        <li>If Google Play Protect shows a warning, tap "More details" → "Install anyway" — expected for an app that isn't on the Play Store yet.</li>
+      </ol>
+    </details>
   </header>
 
   <div class="marquee-wrap">
