@@ -23,6 +23,8 @@ on:
 jobs:
   debug-apk:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to publish/update the android-latest release below
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -41,6 +43,26 @@ jobs:
         with:
           name: cookzer-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+      # Gives the website a stable public download link
+      # (github.com/razasabir/cookzer/releases/download/android-latest/app-debug.apk)
+      # that doesn't change every build — this action updates the same
+      # "android-latest" release in place rather than creating a new one
+      # each time. This is a debug build (no Play Console account/signing
+      # keystore yet), so it's for direct download while that's set up,
+      # not the eventual Play Store listing.
+      - name: Publish to the android-latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: Cookzer for Android (latest build)
+          body: |
+            Automatically rebuilt from the latest `main` on every push that
+            touches the native app shell. This is a debug build for direct
+            download from the website while the Google Play listing is
+            still being set up — Android will show an "unknown sources"
+            warning on install, which is expected for a sideloaded app.
+          prerelease: true
+          files: android/app/build/outputs/apk/debug/app-debug.apk
 
   # Runs only once these 4 secrets exist in the repo (Settings -> Secrets
   # and variables -> Actions). To create them: generate a release keystore
