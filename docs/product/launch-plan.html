@@ -251,9 +251,29 @@
 
     <div class="section-head">
       <h2>Done</h2>
-      <span class="section-count">3</span>
+      <span class="section-count">5</span>
     </div>
     <ul class="task-list">
+      <li class="task done">
+        <div class="task-mark"></div>
+        <div class="task-body">
+          <p class="task-title">Measurement converter — inline on recipes + a standalone tool</p>
+          <p class="task-note">Requested: a way to convert a measurement you can't actually measure (e.g. "3g") into something you can. Any ingredient quantity on a recipe page with a recognized unit is now tap-to-convert, showing alternate units in a small popover (weight↔weight and volume↔volume always; weight↔volume like grams-to-cups for ingredients with a known density, e.g. flour, sugar, butter). Also a standalone "Convert" tool in the sidebar for ad hoc conversions outside of any recipe.</p>
+          <div class="task-meta">
+            <span class="pill done">Done — Sep 17, 2026</span>
+          </div>
+        </div>
+      </li>
+      <li class="task done">
+        <div class="task-mark"></div>
+        <div class="task-body">
+          <p class="task-title">Tips &amp; Tricks + a recipe-post visual distinction</p>
+          <p class="task-note">Tips &amp; Tricks lives on the existing Feed rather than a separate section — a new "💡 Tip" composer toggle and sidebar link (Feed filtered to just tips). Also, in response to a follow-up ask, posts with an attached recipe now get a green left-border accent and a "📖 Recipe" badge so they're unmistakable at a glance versus a plain post. <strong>Needs a migration run</strong> before the Tip toggle will actually save: <code>supabase/migrations/024_tip_posts.sql</code> in the Supabase SQL Editor.</p>
+          <div class="task-meta">
+            <span class="pill done">Done — Sep 17, 2026</span>
+          </div>
+        </div>
+      </li>
       <li class="task done">
         <div class="task-mark"></div>
         <div class="task-body">

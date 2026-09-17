@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#009246">
+  <title>Convert — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="notifications-shared.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="unit-convert.js"></script>
+  <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .brand-header {
+      font-size: 20px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+    }
+
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
+    .main { flex: 1; margin-top: 60px; overflow-y: auto; }
+
+    .convert-content { max-width: 620px; margin: 0 auto; padding: 24px; }
+
+    .page-title {
+      font-size: 28px;
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      color: var(--olive-dark);
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    .page-sub { text-align: center; color: var(--ink-soft); font-size: 13.5px; margin-bottom: 28px; max-width: 56ch; margin-left: auto; margin-right: auto; }
+
+    .convert-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .convert-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px; }
+    .convert-field { flex: 1; min-width: 130px; }
+    .convert-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--ink-soft);
+      margin-bottom: 8px;
+    }
+    .convert-field input[type="number"],
+    .convert-field input[type="text"],
+    .convert-field select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--card-bg);
+    }
+
+    .convert-swap-btn {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: var(--cream);
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .convert-swap-btn:hover { background: var(--line); }
+
+    .convert-ingredient-hint { font-size: 12px; color: var(--ink-faint); margin-top: -8px; margin-bottom: 16px; }
+
+    .convert-result {
+      text-align: center;
+      padding: 20px;
+      border-radius: 14px;
+      background: rgba(0, 156, 74, 0.07);
+      border: 1px solid var(--plus-border, var(--line));
+    }
+    .convert-result-value { font-size: 26px; font-weight: 600; color: var(--olive-dark); font-family: 'Fraunces', serif; }
+    .convert-result-note { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; }
+    .convert-result.unavailable .convert-result-value { color: var(--ink-soft); font-size: 15px; font-family: inherit; font-weight: 500; }
+
+    .convert-common-title { font-size: 13px; font-weight: 600; color: var(--ink); margin: 24px 0 10px; }
+    .convert-common-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .convert-common-item {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--ink-soft);
+    }
+    .convert-common-item b { color: var(--ink); }
+
+    @media (max-width: 480px) {
+      .convert-common-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
+
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-groups.html" style="text-decoration: none;"><div class="sidebar-item icon groups">Groups</div></a>
+  <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants">Restaurants</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+  <a href="cookzer-convert.html" style="text-decoration: none;"><div class="sidebar-item icon convert active">Convert</div></a>
+  <a href="cookzer-feed.html?filter=tips" style="text-decoration: none;"><div class="sidebar-item icon tips">Tips &amp; Tricks</div></a>
+
+<div class="sidebar-plus">
+  <div class="sidebar-plus-label">Cookzer+</div>
+  <a href="cookzer-pantry.html" class="sidebar-plus-item pantry">Cooking Ideas</a>
+  <a href="cookzer-pantry.html?tab=leftovers" class="sidebar-plus-item leftovers">Leftover Help</a>
+  <a href="cookzer-health.html" class="sidebar-plus-item health">Health & Nutritions</a>
+</div>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Header -->
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
+    <a href="cookzer-settings.html" style="text-decoration:none;"><button class="icon-btn" title="Settings" type="button">⚙️</button></a>
+    <button class="icon-btn" id="notifBellBtn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+  <div class="convert-content">
+    <h1 class="page-title">Convert</h1>
+    <p class="page-sub">Heard a measurement you can't measure? Convert it to whatever you've actually got in the kitchen.</p>
+
+    <div class="convert-card">
+      <div class="convert-row">
+        <div class="convert-field">
+          <label for="convertAmount">Amount</label>
+          <input type="number" id="convertAmount" value="1" min="0" step="any">
+        </div>
+        <div class="convert-field">
+          <label for="convertFrom">From</label>
+          <select id="convertFrom"></select>
+        </div>
+        <button class="convert-swap-btn" id="convertSwapBtn" type="button" title="Swap units" aria-label="Swap units">⇄</button>
+        <div class="convert-field">
+          <label for="convertTo">To</label>
+          <select id="convertTo"></select>
+        </div>
+      </div>
+
+      <div class="convert-field" style="margin-bottom: 8px;">
+        <label for="convertIngredient">Ingredient (optional)</label>
+        <input type="text" id="convertIngredient" placeholder="e.g. flour, butter, sugar">
+      </div>
+      <div class="convert-ingredient-hint">Only needed to convert between weight and volume (like grams to cups) — exact weight-to-weight or volume-to-volume conversions work without it.</div>
+
+      <div class="convert-result" id="convertResult">
+        <div class="convert-result-value" id="convertResultValue">—</div>
+        <div class="convert-result-note" id="convertResultNote"></div>
+      </div>
+    </div>
+
+    <div class="convert-common-title">Common cooking conversions</div>
+    <div class="convert-common-grid">
+      <div class="convert-common-item"><b>3 tsp</b> = 1 tbsp</div>
+      <div class="convert-common-item"><b>16 tbsp</b> = 1 cup</div>
+      <div class="convert-common-item"><b>1 cup</b> ≈ 237 ml</div>
+      <div class="convert-common-item"><b>1 oz</b> ≈ 28.3 g</div>
+      <div class="convert-common-item"><b>1 lb</b> ≈ 454 g</div>
+      <div class="convert-common-item"><b>1 kg</b> = 1000 g</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  const UNIT_LIST = window.CookzerUnitConvert.UNIT_LIST;
+  const fromSelect = document.getElementById('convertFrom');
+  const toSelect = document.getElementById('convertTo');
+
+  UNIT_LIST.forEach((u) => {
+    const optFrom = document.createElement('option');
+    optFrom.value = u.unit;
+    optFrom.textContent = u.label;
+    fromSelect.appendChild(optFrom);
+    const optTo = document.createElement('option');
+    optTo.value = u.unit;
+    optTo.textContent = u.label;
+    toSelect.appendChild(optTo);
+  });
+  fromSelect.value = 'g';
+  toSelect.value = 'cup';
+
+  function runConversion() {
+    const amount = parseFloat(document.getElementById('convertAmount').value);
+    const from = fromSelect.value;
+    const to = toSelect.value;
+    const ingredient = document.getElementById('convertIngredient').value.trim();
+    const resultEl = document.getElementById('convertResult');
+    const valueEl = document.getElementById('convertResultValue');
+    const noteEl = document.getElementById('convertResultNote');
+
+    if (Number.isNaN(amount)) {
+      resultEl.classList.add('unavailable');
+      valueEl.textContent = 'Enter an amount above';
+      noteEl.textContent = '';
+      return;
+    }
+
+    const converted = window.CookzerUnitConvert.convert(amount, from, to, ingredient || null);
+    const fromCat = window.CookzerUnitConvert.categoryOf(window.CookzerUnitConvert.canonicalUnit(from));
+    const toCat = window.CookzerUnitConvert.categoryOf(window.CookzerUnitConvert.canonicalUnit(to));
+
+    if (converted == null) {
+      resultEl.classList.add('unavailable');
+      valueEl.textContent = (fromCat !== toCat)
+        ? 'Enter an ingredient above to convert weight ↔ volume for this one'
+        : 'Can\'t convert between these units';
+      noteEl.textContent = '';
+      return;
+    }
+
+    resultEl.classList.remove('unavailable');
+    valueEl.textContent = amount + ' ' + from + ' = ' + window.CookzerUnitConvert.formatAmount(converted) + ' ' + to;
+    noteEl.textContent = (fromCat !== toCat && ingredient)
+      ? 'Based on typical density for "' + ingredient + '" — exact weight varies by how it\'s packed/measured.'
+      : '';
+  }
+
+  ['convertAmount', 'convertFrom', 'convertTo', 'convertIngredient'].forEach((id) => {
+    document.getElementById(id).addEventListener('input', runConversion);
+  });
+
+  document.getElementById('convertSwapBtn').addEventListener('click', () => {
+    const f = fromSelect.value;
+    fromSelect.value = toSelect.value;
+    toSelect.value = f;
+    runConversion();
+  });
+
+  runConversion();
+</script>
+</body>
+</html>

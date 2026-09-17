@@ -129,6 +129,8 @@ body {
 .sidebar-item.restaurants:before { content: "🧾"; }
 .sidebar-item.profile:before { content: "👤"; }
 .sidebar-item.messenger:before { content: "💬"; }
+.sidebar-item.convert:before { content: "📏"; }
+.sidebar-item.tips:before { content: "💡"; }
 
 /* Cookzer+ sidebar panel — a distinct, minimal corner for the 3
    AI-backed paid modules. A soft mustard-tinted card (not another plain
