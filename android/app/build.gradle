@@ -21,6 +21,25 @@ android {
     // this runs. Building release locally without that file falls back to
     // debug signing so `./gradlew assembleDebug`/local dev is unaffected.
     signingConfigs {
+        debug {
+            // Without this, AGP falls back to auto-generating
+            // ~/.android/debug.keystore on first use — fine on one machine,
+            // but every CI run starts from a clean runner with no cached
+            // keystore, so it was generating a NEW random debug key on
+            // every single build. Each rebuilt "android-latest" APK ended
+            // up signed with a different key, and Android refuses to
+            // install an update over an app signed with a different key
+            // than the one already installed — this is why reinstalling
+            // the "latest" build silently failed/left the app broken.
+            // Checking in a fixed debug keystore (safe to commit — it's
+            // not used for the Play Store release, see the release config
+            // above) makes every debug build's signature identical, so
+            // updates always apply cleanly from here on.
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
         release {
             def keystoreFile = file('release.keystore')
             if (keystoreFile.exists()) {
@@ -32,6 +51,9 @@ android {
         }
     }
     buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

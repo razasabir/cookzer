@@ -13,6 +13,10 @@ android/local.properties
 android/**/release.keystore
 *.keystore
 *.jks
+# Deliberately committed: a fixed debug-signing key (not the Play Store
+# release key above) so every CI-built debug APK shares one signature —
+# see the comment on signingConfigs.debug in android/app/build.gradle.
+!android/app/debug.keystore
 
 # iOS signing material — same reasoning as the Android keystore above.
 # Capacitor's own ios/.gitignore already covers build outputs/Pods/etc.
