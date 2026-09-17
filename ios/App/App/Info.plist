@@ -66,5 +66,19 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!-- Catches the redirect back from the system browser after
+	     Google/Facebook sign-in (see cookzer-auth.html's oauthSignIn):
+	     those providers block OAuth inside an app's own WebView, so
+	     sign-in opens in the system browser instead and returns here
+	     via this custom-scheme deep link. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.cookzer.app</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

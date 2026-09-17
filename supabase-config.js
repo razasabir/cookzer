@@ -9,6 +9,12 @@ const SUPABASE_ANON_KEY = 'sb_publishable_F4Yx16c0KA-kskGOa36Ygg_tcZfMYW8';
 // until a hard refresh even though the write itself succeeded. Force
 // every Supabase request to bypass the browser's disk cache.
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  // PKCE puts the OAuth result in a plain ?code= query param instead of a
+  // URL hash fragment — needed so the Android/iOS app's deep-link callback
+  // (see cookzer-auth.html's oauthSignIn) can read it with a plain URL parse.
+  auth: {
+    flowType: 'pkce',
+  },
   global: {
     fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }),
   },
