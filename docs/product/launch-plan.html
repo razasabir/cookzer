@@ -200,7 +200,7 @@
 
     <div class="section-head">
       <h2>To do</h2>
-      <span class="section-count">5</span>
+      <span class="section-count">4</span>
     </div>
     <ul class="task-list">
       <li class="task">
@@ -222,17 +222,6 @@
           <div class="task-meta">
             <span class="pill todo">To do</span>
             <span class="added">Added Sep 16, 2026</span>
-          </div>
-        </div>
-      </li>
-      <li class="task">
-        <div class="task-mark"></div>
-        <div class="task-body">
-          <p class="task-title">Google + Facebook sign-in: create provider credentials</p>
-          <p class="task-note">The "Continue with Google/Facebook" buttons are live on the sign-in page, but need real OAuth credentials to actually work: a Google Cloud OAuth client and a Facebook Developer app, both with their Client ID/Secret entered into Supabase Dashboard → Authentication → Providers, plus Supabase's callback URL added to each provider's redirect allowlist.</p>
-          <div class="task-meta">
-            <span class="pill todo">To do</span>
-            <span class="added">Added Sep 17, 2026</span>
           </div>
         </div>
       </li>
@@ -262,9 +251,19 @@
 
     <div class="section-head">
       <h2>Done</h2>
-      <span class="section-count">2</span>
+      <span class="section-count">3</span>
     </div>
     <ul class="task-list">
+      <li class="task done">
+        <div class="task-mark"></div>
+        <div class="task-body">
+          <p class="task-title">Google + Facebook sign-in: provider credentials created &amp; wired up</p>
+          <p class="task-note">Created a real Google Cloud OAuth client and a Facebook Developer app, both pointed at Supabase's callback URL, and entered the Client/App ID + secret into Supabase Dashboard → Authentication → Providers. "Continue with Google/Facebook" on the sign-in page now works end to end — confirmed by the account owner testing it live as each app's own admin. Also added a Privacy Policy page (both providers require one before they'll allow real, non-test users). Remaining before the general public can use these: Google's OAuth consent screen needs publishing out of "Testing," and the Facebook app needs switching from Development to Live — both self-serve, no more engineering needed.</p>
+          <div class="task-meta">
+            <span class="pill done">Done — Sep 17, 2026</span>
+          </div>
+        </div>
+      </li>
       <li class="task done">
         <div class="task-mark"></div>
         <div class="task-body">
