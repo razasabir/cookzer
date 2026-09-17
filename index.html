@@ -137,6 +137,25 @@
 
     .btn-lg { padding: 14px 30px; font-size: 15px; border-radius: 16px; }
 
+    .btn-android {
+      background: var(--card-bg);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-android:hover { border-color: var(--olive); transform: translateY(-1px); }
+    .btn-android .free-tag {
+      background: var(--olive);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+
     /* ---------- Sliding photo marquee ---------- */
     .marquee-wrap {
       overflow: hidden;
@@ -334,6 +353,7 @@
     <div class="hero-ctas">
       <a href="cookzer-auth.html?tab=signup" class="btn btn-primary btn-lg">Join Cookzer free</a>
       <a href="cookzer-auth.html" class="btn btn-ghost btn-lg">I already have an account</a>
+      <a href="https://github.com/razasabir/cookzer/releases/download/android-latest/app-debug.apk" class="btn btn-android btn-lg">📱 Download for Android <span class="free-tag">FREE</span></a>
     </div>
   </header>
 
@@ -422,7 +442,7 @@
     <div class="brand">Cook<span style="color: var(--brick);">zer</span></div>
     <div>A social network for people who cook.</div>
     <div>
-      <a class="footer-app-link" href="https://github.com/razasabir/cookzer/releases/download/android-latest/app-debug.apk">📱 Download for Android (beta)</a>
+      <a class="footer-app-link" href="https://github.com/razasabir/cookzer/releases/download/android-latest/app-debug.apk">📱 Free download for Android (beta)</a>
     </div>
   </footer>
 
