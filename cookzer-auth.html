@@ -285,10 +285,62 @@
       if (session) window.location.href = 'cookzer-feed.html';
     })();
 
+    // Google and Facebook both block OAuth sign-in when it happens inside
+    // an app's own embedded WebView (their anti-phishing policy) — it only
+    // works in a real browser tab. Inside the Android/iOS app, this is
+    // detected via window.Capacitor and the flow instead opens in the
+    // system browser (@capacitor/browser), then bounces back into the app
+    // via a custom-scheme deep link (com.cookzer.app://auth-callback,
+    // registered in AndroidManifest.xml / Info.plist) caught below by
+    // @capacitor/app's appUrlOpen listener.
+    function isNativeApp() {
+      return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    }
+
+    const OAUTH_CALLBACK_URL = 'com.cookzer.app://auth-callback';
+
+    async function handleOAuthCallback(url) {
+      const code = new URL(url).searchParams.get('code');
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+        window.Capacitor.Plugins.Browser.close().catch(() => {});
+      }
+      if (!code) return;
+      const { error } = await sb.auth.exchangeCodeForSession(code);
+      if (error) {
+        showMessage(error.message, 'error');
+        return;
+      }
+      window.location.href = 'cookzer-feed.html';
+    }
+
+    if (isNativeApp() && window.Capacitor.Plugins.App) {
+      window.Capacitor.Plugins.App.addListener('appUrlOpen', (event) => {
+        if (event.url && event.url.indexOf(OAUTH_CALLBACK_URL) === 0) {
+          handleOAuthCallback(event.url);
+        }
+      });
+    }
+
     function oauthSignIn(provider, btn) {
       return async () => {
         clearMessage();
         btn.disabled = true;
+
+        if (isNativeApp()) {
+          const { data, error } = await sb.auth.signInWithOAuth({
+            provider,
+            options: { redirectTo: OAUTH_CALLBACK_URL, skipBrowserRedirect: true },
+          });
+          if (error) {
+            showMessage(error.message, 'error');
+            btn.disabled = false;
+            return;
+          }
+          await window.Capacitor.Plugins.Browser.open({ url: data.url });
+          btn.disabled = false;
+          return;
+        }
+
         const { error } = await sb.auth.signInWithOAuth({
           provider,
           options: { redirectTo: window.location.origin + '/cookzer-feed.html' },
