@@ -200,17 +200,28 @@
 
     <div class="section-head">
       <h2>To do</h2>
-      <span class="section-count">3</span>
+      <span class="section-count">4</span>
     </div>
     <ul class="task-list">
       <li class="task">
         <div class="task-mark"></div>
         <div class="task-body">
-          <p class="task-title">Android app (Google Play), linked from the website</p>
-          <p class="task-note">Capacitor-wrapped Android app (same codebase, no separate frontend rebuild) + CI build pipeline, published to Google Play, with a "Get it on Google Play" link added to the website once live. Apple/iOS explicitly out of scope for now. Needs the user to create a Google Play Developer account ($25 one-time) and do the first manual store submission — everything up to that point is buildable here.</p>
+          <p class="task-title">Android app — publish to Google Play</p>
+          <p class="task-note">The app itself and a direct-download link are already live (see Done) — this is just the actual Google Play listing now: a Google Play Developer account ($25 one-time), a signing keystore for a real release build, and the first manual store submission. Once approved, the website's download link can point at the Play Store instead of the direct APK.</p>
           <div class="task-meta">
             <span class="pill todo">To do</span>
             <span class="added">Added Sep 16, 2026</span>
+          </div>
+        </div>
+      </li>
+      <li class="task">
+        <div class="task-mark"></div>
+        <div class="task-body">
+          <p class="task-title">Google + Facebook sign-in: create provider credentials</p>
+          <p class="task-note">The "Continue with Google/Facebook" buttons are live on the sign-in page, but need real OAuth credentials to actually work: a Google Cloud OAuth client and a Facebook Developer app, both with their Client ID/Secret entered into Supabase Dashboard → Authentication → Providers, plus Supabase's callback URL added to each provider's redirect allowlist.</p>
+          <div class="task-meta">
+            <span class="pill todo">To do</span>
+            <span class="added">Added Sep 17, 2026</span>
           </div>
         </div>
       </li>
@@ -240,10 +251,19 @@
 
     <div class="section-head">
       <h2>Done</h2>
-      <span class="section-count">0</span>
+      <span class="section-count">1</span>
     </div>
     <ul class="task-list">
-      <li class="empty">Nothing shipped from this list yet.</li>
+      <li class="task done">
+        <div class="task-mark"></div>
+        <div class="task-body">
+          <p class="task-title">Android app — direct APK download from the website</p>
+          <p class="task-note">A Capacitor-wrapped Android app (loads the live site directly, so it's always in sync with zero rebuild) with a CI pipeline that rebuilds it and publishes the APK to a stable download link on every push. Linked from the website footer. This is the "for now" interim step ahead of the full Google Play listing.</p>
+          <div class="task-meta">
+            <span class="pill done">Done — Sep 17, 2026</span>
+          </div>
+        </div>
+      </li>
     </ul>
 
     <footer>Maintained alongside <code>docs/product/master-plan.html</code>. This file tracks incoming delivery requests; the master plan tracks what's actually shipped in detail.</footer>

@@ -285,6 +285,18 @@
 
     .footer .brand { font-size: 18px; margin-bottom: 8px; }
 
+    .footer-app-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 16px;
+      color: var(--olive-dark);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .footer-app-link:hover { text-decoration: underline; }
+
     /* ---------- Responsive ---------- */
     @media (max-width: 860px) {
       .audience-grid, .feature-grid { grid-template-columns: 1fr; }
@@ -409,6 +421,9 @@
   <footer class="footer">
     <div class="brand">Cook<span style="color: var(--brick);">zer</span></div>
     <div>A social network for people who cook.</div>
+    <div>
+      <a class="footer-app-link" href="https://github.com/razasabir/cookzer/releases/download/android-latest/app-debug.apk">📱 Download for Android (beta)</a>
+    </div>
   </footer>
 
   <script>
