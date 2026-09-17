@@ -276,6 +276,27 @@
       width: 100%;
     }
 
+  /* A post with an attached recipe gets a distinct left accent — color
+     alone isn't enough (misses colorblind readers, easy to miss scanning
+     fast), so it's paired with the "📖 Recipe" badge next to the title
+     below rather than relying on the border by itself. */
+  .feed-card.has-recipe { border-left: 3px solid var(--olive); }
+
+  .recipe-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--olive-dark);
+      background: rgba(0, 156, 74, 0.1);
+      border-radius: 8px;
+      padding: 3px 8px;
+      margin-bottom: 6px;
+    }
+
   .card-header {
       display: flex;
       align-items: center;
@@ -859,6 +880,8 @@
   <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants">Restaurants</div></a>
   <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
   <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+  <a href="cookzer-convert.html" style="text-decoration: none;"><div class="sidebar-item icon convert">Convert</div></a>
+  <a href="cookzer-feed.html?filter=tips" style="text-decoration: none;"><div class="sidebar-item icon tips">Tips &amp; Tricks</div></a>
   
 
 <div class="sidebar-plus">
@@ -891,6 +914,10 @@
 <!-- Main content -->
 <div class="main">
   <div class="feed-container">
+    <div id="tipsFilterBanner" hidden style="display:flex; align-items:center; justify-content:space-between; background:var(--card-bg); border:1px solid var(--line); border-radius:14px; padding:14px 18px; margin-bottom:16px;">
+      <div style="font-family:'Fraunces',serif; font-weight:600; font-size:16px; color:var(--olive-dark);">💡 Tips &amp; Tricks</div>
+      <a href="cookzer-feed.html" style="font-size:13px; color:var(--ink-soft); text-decoration:none;">← Back to full Feed</a>
+    </div>
     <!-- Composer -->
     <div class="composer">
       <div class="composer-header">
@@ -914,6 +941,7 @@
         <a href="cookzer-recipe-new.html?share=1" style="text-decoration:none;flex:1;"><button class="composer-btn" type="button" style="width:100%;">📝 Recipe</button></a>
         <button class="composer-btn" id="composerChallengeBtn" type="button">🏆 Challenge</button>
         <button class="composer-btn" id="composerRestaurantBtn" type="button">📍 Dining out</button>
+        <button class="composer-btn" id="composerTipBtn" type="button" title="Mark this as a Tips &amp; Tricks post">💡 Tip</button>
       </div>
       <div id="restaurantPanel" hidden style="margin-top:10px; background:var(--cream); border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-size:13px;">
         <div id="restaurantPanelBody">Finding nearby places…</div>
@@ -1166,6 +1194,18 @@
     }
   });
 
+  document.getElementById('composerTipBtn').addEventListener('click', () => {
+    const btn = document.getElementById('composerTipBtn');
+    btn.classList.toggle('active-tip-tag');
+    if (btn.classList.contains('active-tip-tag')) {
+      btn.style.background = 'var(--olive)';
+      btn.style.color = '#fff';
+    } else {
+      btn.style.background = '';
+      btn.style.color = '';
+    }
+  });
+
   const MOOD_EMOJI = { 'Comfort food': '🍲', 'Quick and easy': '⚡', 'Fancy tonight': '✨' };
 
   async function runSearch(query) {
@@ -1395,9 +1435,11 @@
       photoPath = await uploadPostPhoto(pendingPhotoFile, pendingPhotoFilter);
     }
 
+    const isTip = document.getElementById('composerTipBtn').classList.contains('active-tip-tag');
+
     const { data: inserted, error } = await sb
       .from('posts')
-      .insert({ author_id: currentUser.id, kind: 'post', caption: caption || null, photo_path: photoPath, video_uid: pendingVideoUid, mood: selectedMood, restaurant_name: selectedRestaurant })
+      .insert({ author_id: currentUser.id, kind: isTip ? 'tip' : 'post', caption: caption || null, photo_path: photoPath, video_uid: pendingVideoUid, mood: selectedMood, restaurant_name: selectedRestaurant })
       .select('id')
       .single();
 
@@ -1426,6 +1468,9 @@
     document.getElementById('composerChallengeBtn').classList.remove('active-challenge-tag');
     document.getElementById('composerChallengeBtn').style.background = '';
     document.getElementById('composerChallengeBtn').style.color = '';
+    document.getElementById('composerTipBtn').classList.remove('active-tip-tag');
+    document.getElementById('composerTipBtn').style.background = '';
+    document.getElementById('composerTipBtn').style.color = '';
     document.getElementById('restaurantTag').hidden = true;
     document.getElementById('restaurantPanel').hidden = true;
     selectedRestaurant = null;
@@ -1437,7 +1482,7 @@
 
   function cardShell(post) {
     const card = document.createElement('div');
-    card.className = 'feed-card';
+    card.className = 'feed-card' + (post.recipes ? ' has-recipe' : '');
 
     const header = document.createElement('div');
     header.className = 'card-header';
@@ -1449,7 +1494,7 @@
     const name = document.createElement('div');
     name.className = 'card-name';
     name.textContent = (post.profiles ? post.profiles.display_name : 'Someone') +
-      (post.kind === 'cook_in' ? ' cooked this' : post.kind === 'remake' ? ' remade this' : '');
+      (post.kind === 'cook_in' ? ' cooked this' : post.kind === 'remake' ? ' remade this' : post.kind === 'tip' ? ' shared a tip' : '');
     const time = document.createElement('div');
     time.className = 'card-time';
     time.textContent = timeAgo(post.created_at) + (post.restaurant_name ? ' · 📍 ' + post.restaurant_name : '');
@@ -1508,6 +1553,11 @@
     content.className = 'card-content';
 
     if (post.recipes) {
+      const recipeBadge = document.createElement('div');
+      recipeBadge.className = 'recipe-badge';
+      recipeBadge.textContent = '📖 Recipe';
+      content.appendChild(recipeBadge);
+
       const titleLink = document.createElement('a');
       titleLink.href = 'cookzer-recipe.html?id=' + post.recipe_id;
       titleLink.style.textDecoration = 'none';
@@ -1517,6 +1567,13 @@
       title.textContent = post.recipes.title;
       titleLink.appendChild(title);
       content.appendChild(titleLink);
+    }
+
+    if (post.kind === 'tip') {
+      const tipBadge = document.createElement('div');
+      tipBadge.className = 'mood-badge tip-badge';
+      tipBadge.textContent = '💡 Tips & Tricks';
+      content.appendChild(tipBadge);
     }
 
     if (post.mood) {
@@ -1774,6 +1831,10 @@
   const FEED_PAGE_SIZE = 20;
   let feedOffset = 0;
   let feedLoadingMore = false;
+  // ?filter=tips (linked from the sidebar's "Tips & Tricks" item) narrows
+  // the feed to kind='tip' posts, reusing this same page/query/cards
+  // rather than a separate Tips page.
+  const feedFilterTips = new URLSearchParams(location.search).get('filter') === 'tips';
 
   async function loadFeed() {
     feedOffset = 0;
@@ -1791,12 +1852,15 @@
     loadMoreBtn.disabled = true;
     loadMoreBtn.textContent = 'Loading…';
 
+    let postsQuery = sb
+      .from('posts')
+      .select('id, author_id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles!posts_author_id_fkey(display_name, initials), recipes!posts_recipe_id_fkey(title, hero_photo_path)')
+      .order('created_at', { ascending: false })
+      .range(feedOffset, feedOffset + FEED_PAGE_SIZE - 1);
+    if (feedFilterTips) postsQuery = postsQuery.eq('kind', 'tip');
+
     const [{ data: rawPosts, error }, blockedIds] = await Promise.all([
-      sb
-        .from('posts')
-        .select('id, author_id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles!posts_author_id_fkey(display_name, initials), recipes!posts_recipe_id_fkey(title, hero_photo_path)')
-        .order('created_at', { ascending: false })
-        .range(feedOffset, feedOffset + FEED_PAGE_SIZE - 1),
+      postsQuery,
       window.blockedIdsReady || Promise.resolve(new Set()),
     ]);
 
@@ -2095,6 +2159,11 @@
     const { data: profile } = await sb.from('profiles').select('display_name, initials').eq('id', user.id).single();
     currentUser = { id: user.id, ...(profile || { display_name: user.email, initials: '??' }) };
     document.getElementById('composerAvatar').textContent = currentUser.initials;
+
+    if (feedFilterTips) {
+      document.getElementById('tipsFilterBanner').hidden = false;
+      document.getElementById('feedEmpty').textContent = 'No tips shared yet — be the first with a substitution, storage hack, or shortcut.';
+    }
 
     await loadFeed();
     await loadChallenge();

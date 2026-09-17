@@ -18,6 +18,7 @@
   <script src="cookzer-modal.js"></script>
   <script src="theme.js"></script>
 <script src="nutrition-data.js"></script>
+  <script src="unit-convert.js"></script>
   <script src="photo-lightbox.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -188,6 +189,41 @@
       color: var(--ink-soft);
       font-size: 13px;
       font-weight: 500;
+    }
+
+  .ingredient-row .qty.convertible {
+      cursor: pointer;
+      text-decoration: underline dotted;
+      text-underline-offset: 3px;
+      text-decoration-color: var(--line-strong, var(--ink-soft));
+    }
+
+  .ingredient-row .qty.convertible:hover { color: var(--forest); }
+
+  .qty-convert-popover {
+      position: absolute;
+      z-index: 200;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 4px;
+      box-shadow: 0 10px 30px rgba(43, 38, 32, 0.18);
+      min-width: 140px;
+    }
+
+  .qty-convert-row {
+      padding: 6px 14px;
+      font-size: 13px;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+  .qty-convert-empty {
+      padding: 6px 14px;
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      max-width: 200px;
+      white-space: normal;
     }
 
   .ingredient-row input[type="checkbox"] {
@@ -503,6 +539,8 @@
   <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants">Restaurants</div></a>
   <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
   <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+  <a href="cookzer-convert.html" style="text-decoration: none;"><div class="sidebar-item icon convert">Convert</div></a>
+  <a href="cookzer-feed.html?filter=tips" style="text-decoration: none;"><div class="sidebar-item icon tips">Tips &amp; Tricks</div></a>
 
 <div class="sidebar-plus">
   <div class="sidebar-plus-label">Cookzer+</div>
@@ -742,6 +780,70 @@
     });
   }
 
+  // Tap-to-convert popover on ingredient quantities — converts whatever's
+  // currently displayed (already reflects any active serving-scale) into
+  // alternate units via unit-convert.js. A single shared popover element,
+  // repositioned per click rather than one per row.
+  let qtyConvertPopoverEl = null;
+  let qtyConvertOpenFor = null;
+
+  function closeQtyConverter() {
+    if (qtyConvertPopoverEl) qtyConvertPopoverEl.remove();
+    qtyConvertPopoverEl = null;
+    qtyConvertOpenFor = null;
+    document.removeEventListener('click', onDocClickCloseQtyConverter, true);
+    document.removeEventListener('keydown', onKeydownCloseQtyConverter, true);
+  }
+
+  function onDocClickCloseQtyConverter(e) {
+    if (qtyConvertPopoverEl && !qtyConvertPopoverEl.contains(e.target) && e.target !== qtyConvertOpenFor) {
+      closeQtyConverter();
+    }
+  }
+
+  function onKeydownCloseQtyConverter(e) {
+    if (e.key === 'Escape') closeQtyConverter();
+  }
+
+  function openQtyConverter(qtyEl, ingredientName) {
+    if (qtyConvertOpenFor === qtyEl) {
+      closeQtyConverter();
+      return;
+    }
+    closeQtyConverter();
+
+    const parsed = window.CookzerUnitConvert.parseQuantity(qtyEl.textContent);
+    if (!parsed.unit) return;
+    const alternates = window.CookzerUnitConvert.getAlternateUnits(parsed.amount, parsed.unit, ingredientName);
+
+    const pop = document.createElement('div');
+    pop.className = 'qty-convert-popover';
+    if (alternates.length === 0) {
+      pop.innerHTML = '<div class="qty-convert-empty">No other units to show for this one.</div>';
+    } else {
+      alternates.forEach((alt) => {
+        const row = document.createElement('div');
+        row.className = 'qty-convert-row';
+        row.textContent = '= ' + alt.display;
+        pop.appendChild(row);
+      });
+    }
+    document.body.appendChild(pop);
+
+    const rect = qtyEl.getBoundingClientRect();
+    pop.style.top = (window.scrollY + rect.bottom + 6) + 'px';
+    pop.style.left = Math.max(8, window.scrollX + rect.right - pop.offsetWidth) + 'px';
+
+    qtyConvertPopoverEl = pop;
+    qtyConvertOpenFor = qtyEl;
+    // Deferred so the click that opened this popover doesn't immediately
+    // bubble into the "outside click closes it" listener below.
+    setTimeout(() => {
+      document.addEventListener('click', onDocClickCloseQtyConverter, true);
+      document.addEventListener('keydown', onKeydownCloseQtyConverter, true);
+    }, 0);
+  }
+
   document.getElementById('scaleDownBtn').addEventListener('click', () => {
     if (!originalServings || currentServings <= 1) return;
     currentServings -= 1;
@@ -868,6 +970,15 @@
         qty.className = 'qty';
         qty.textContent = ing.qty || '';
         qty.dataset.originalQty = ing.qty || '';
+        // Only quantities with a recognized measurement unit ("400g",
+        // "1/2 tsp") are convertible — "to taste", "2 large" etc. are left
+        // as plain text, same distinction parseLeadingQuantity above makes
+        // for scaling.
+        if (window.CookzerUnitConvert.parseQuantity(ing.qty || '').unit) {
+          qty.classList.add('convertible');
+          qty.title = 'Tap for other units';
+          qty.addEventListener('click', (e) => openQtyConverter(e.currentTarget, ing.name));
+        }
         row.appendChild(cb);
         row.appendChild(name);
         row.appendChild(qty);
