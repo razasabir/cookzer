@@ -204,7 +204,7 @@ test.describe('send-notification-push webhook handler', () => {
     expect(sentBody.message.token).toBe('tok-abc');
     expect(sentBody.message.notification.title).toBe('Someone hearted your post');
     expect(sentBody.message.notification.body).toBe('Sarah K. hearted your post');
-    expect(sentBody.message.webpush.fcm_options.link).toBe('https://cookzer.com/cookzer-feed.html?post=abc');
+    expect(sentBody.message.webpush.fcm_options.link).toBe('https://www.cookzer.com/cookzer-feed.html?post=abc');
   });
 
   test('falls back to a generic title for an unknown notification type', async () => {
