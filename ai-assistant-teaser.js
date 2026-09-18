@@ -28,7 +28,7 @@
     style.id = 'cz-ai-teaser-style';
     style.textContent = `
       .cz-ai-teaser {
-        background: linear-gradient(135deg, var(--olive-tint, #EEF1E9), var(--card-bg));
+        background: linear-gradient(135deg, var(--olive-tint, #EAF3EC), var(--card-bg));
         border: 1px solid var(--line); border-radius: 18px; padding: 20px;
         display: flex; gap: 14px; align-items: flex-start; margin: 20px 0;
       }

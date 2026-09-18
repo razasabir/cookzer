@@ -34,7 +34,7 @@
     style.id = 'cz-ai-chat-style';
     style.textContent = `
       .cz-ai-chat {
-        background: linear-gradient(135deg, var(--olive-tint, #EEF1E9), var(--card-bg));
+        background: linear-gradient(135deg, var(--olive-tint, #EAF3EC), var(--card-bg));
         border: 1px solid var(--line); border-radius: 18px; padding: 18px;
         margin: 20px 0;
       }
@@ -58,7 +58,7 @@
       .cz-ai-chat-msg { max-width: 82%; padding: 8px 12px; border-radius: 14px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
       .cz-ai-chat-msg.user { align-self: flex-end; background: var(--olive); color: #fff; border-bottom-right-radius: 4px; }
       .cz-ai-chat-msg.assistant { align-self: flex-start; background: var(--card-bg); border: 1px solid var(--line); color: var(--ink); border-bottom-left-radius: 4px; }
-      .cz-ai-chat-msg.error { align-self: flex-start; background: rgba(206,43,55,0.08); border: 1px solid rgba(206,43,55,0.25); color: var(--red, #CE2B37); }
+      .cz-ai-chat-msg.error { align-self: flex-start; background: rgba(255,107,74,0.1); border: 1px solid rgba(255,107,74,0.28); color: var(--brick, #FF6B4A); }
       .cz-ai-chat-input-row { display: flex; gap: 8px; }
       .cz-ai-chat-input {
         flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 10px;
