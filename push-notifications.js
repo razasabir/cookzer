@@ -125,12 +125,30 @@
   function showForegroundNotification(payload) {
     const title = (payload.notification && payload.notification.title) || 'Cookzer';
     const body = payload.notification && payload.notification.body;
-    const link = (payload.data && payload.data.link) || 'https://cookzer.com/cookzer-feed.html';
+    const link = (payload.data && payload.data.link) || 'https://www.cookzer.com/cookzer-feed.html';
     const notification = new Notification(title, { body, icon: '/icon-192.png' });
     notification.onclick = () => {
       window.focus();
       window.location.href = link;
     };
+  }
+
+  // Native counterpart of showForegroundNotification's onclick — a tap on
+  // the system notification (app backgrounded, or cold-started by the
+  // tap) fires this instead of a web Notification click. Registered
+  // unconditionally on load, same as initForegroundListener, so a tap
+  // that launches the app from scratch is still caught (Capacitor
+  // replays the launching notification to a listener added after the
+  // fact, not just ones added before the tap happened).
+  function initNativeNotificationTapHandler() {
+    if (!isNative()) return;
+    const plugins = window.Capacitor && window.Capacitor.Plugins;
+    const PushNotifications = plugins && plugins.PushNotifications;
+    if (!PushNotifications) return;
+    PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+      const link = action.notification && action.notification.data && action.notification.data.link;
+      if (link) window.location.href = link;
+    });
   }
 
   // Firebase's web SDK only auto-shows a system notification for a
@@ -161,4 +179,5 @@
 
   window.CookzerPush = { enable, disable, isNative };
   initForegroundListener();
+  initNativeNotificationTapHandler();
 })();

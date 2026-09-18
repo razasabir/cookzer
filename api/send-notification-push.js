@@ -129,7 +129,7 @@ module.exports = async function handler(req, res) {
   }
 
   const title = TYPE_TITLES[record.type] || 'Cookzer';
-  const link = record.link_url ? 'https://cookzer.com/' + record.link_url : 'https://cookzer.com/cookzer-feed.html';
+  const link = record.link_url ? 'https://www.cookzer.com/' + record.link_url : 'https://www.cookzer.com/cookzer-feed.html';
 
   const sendResp = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
     method: 'POST',
@@ -150,7 +150,7 @@ module.exports = async function handler(req, res) {
         },
         webpush: {
           fcm_options: { link },
-          notification: { icon: 'https://cookzer.com/icon-192.png' },
+          notification: { icon: 'https://www.cookzer.com/icon-192.png' },
         },
       },
     }),
