@@ -175,13 +175,13 @@ body {
 .sidebar-plus-item.leftovers:before { content: "🍲"; }
 .sidebar-plus-item.health:before { content: "🩺"; }
 
-.sidebar-cocooks-widget {
+.sidebar-friends-widget {
   margin-top: 20px;
   padding: 16px;
   border-top: 1px solid var(--line);
 }
 
-.sidebar-cocooks-label {
+.sidebar-friends-label {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -190,14 +190,14 @@ body {
   margin-bottom: 10px;
 }
 
-.sidebar-cocooks-row {
+.sidebar-friends-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
 }
 
-.sidebar-cocook-avatar {
+.sidebar-friend-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -212,7 +212,7 @@ body {
   flex-shrink: 0;
 }
 
-.sidebar-cocooks-settings {
+.sidebar-friends-settings {
   width: 32px;
   height: 32px;
   border-radius: 50%;

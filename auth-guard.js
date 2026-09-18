@@ -136,29 +136,29 @@
     });
   }
 
-  // Delegates to the shared cocooks-widget.js (every page loads it) rather
+  // Delegates to the shared friends-widget.js (every page loads it) rather
   // than keeping a second, slightly-worse copy of this logic here — this
   // used to build its own widget from scratch with no explicit order and
   // no empty-state message, while a couple of pages that also called
-  // cocooks-widget.js directly ended up rendering the widget twice.
-  async function wireCoCooksWidget(userId) {
+  // friends-widget.js directly ended up rendering the widget twice.
+  async function wireFriendsWidget(userId) {
     const sidebar = document.querySelector('.sidebar');
-    if (!sidebar || !window.CookzerCocooksWidget) return;
+    if (!sidebar || !window.CookzerFriendsWidget) return;
     const widget = document.createElement('div');
-    widget.className = 'sidebar-cocooks-widget';
+    widget.className = 'sidebar-friends-widget';
     sidebar.appendChild(widget);
-    await window.CookzerCocooksWidget.render(sb, userId, widget);
+    await window.CookzerFriendsWidget.render(sb, userId, widget);
   }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       wireAvatar(person);
       wireNotificationBell(session.user.id);
-      wireCoCooksWidget(session.user.id);
+      wireFriendsWidget(session.user.id);
     });
   } else {
     wireAvatar(person);
     wireNotificationBell(session.user.id);
-    wireCoCooksWidget(session.user.id);
+    wireFriendsWidget(session.user.id);
   }
 })();
