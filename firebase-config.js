@@ -11,5 +11,5 @@ const COOKZER_FIREBASE_CONFIG = {
   storageBucket: 'cookzer-c3103.firebasestorage.app',
   messagingSenderId: '399270908248',
   appId: '1:399270908248:web:4bf52c14033e6c80e5152d',
-  vapidKey: 'REPLACE_WITH_YOUR_VAPID_PUBLIC_KEY',
+  vapidKey: 'BPVJF2ZoShwe4pCSujEoS7_isZ8SHNKTuoDR4tBnjBl67a0kpJzPtot5uEYFVIB_TsAwkQvicl1LLSAoF28bL5k',
 };
