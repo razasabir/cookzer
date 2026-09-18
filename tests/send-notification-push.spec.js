@@ -142,6 +142,35 @@ test.describe('send-notification-push webhook handler', () => {
     expect(capturedCredentials.private_key).toBe('-----BEGIN PRIVATE KEY-----\nMIIabc\n-----END PRIVATE KEY-----\n');
   });
 
+  test('reads a base64-encoded FIREBASE_SERVICE_ACCOUNT_JSON', async () => {
+    // The actually-shipped configuration: base64 avoids the whole class of
+    // clipboard/env-var-field newline corruption the two tests above and
+    // above it exist because of.
+    const realJson = JSON.stringify({
+      project_id: 'cookzer-b64',
+      client_email: 'fake@cookzer-b64.iam.gserviceaccount.com',
+      private_key: '-----BEGIN PRIVATE KEY-----\nMIIreal\n-----END PRIVATE KEY-----\n',
+    });
+    process.env.FIREBASE_SERVICE_ACCOUNT_JSON = Buffer.from(realJson, 'utf8').toString('base64');
+    let capturedCredentials, capturedUrl;
+    global.fetch = async (url) => { capturedUrl = url; return { ok: true, json: async () => ({}) }; };
+    stubGoogleAuthLibrary(async () => ({ token: 'fake-access-token' }), (opts) => {
+      capturedCredentials = opts.credentials;
+    });
+    const handler = loadHandler();
+    const req = {
+      method: 'POST',
+      headers: { 'x-webhook-secret': 'test-secret' },
+      body: { type: 'INSERT', table: 'notifications', record: { should_push: true, push_token: 'tok-1', message: 'hi' } },
+    };
+    const res = fakeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(capturedCredentials.project_id).toBe('cookzer-b64');
+    expect(capturedCredentials.private_key).toBe('-----BEGIN PRIVATE KEY-----\nMIIreal\n-----END PRIVATE KEY-----\n');
+    expect(capturedUrl).toBe('https://fcm.googleapis.com/v1/projects/cookzer-b64/messages:send');
+  });
+
   test('sends a push via FCM for a valid, push-eligible notification', async () => {
     let capturedUrl, capturedOptions;
     global.fetch = async (url, options) => {

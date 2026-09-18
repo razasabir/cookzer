@@ -20,10 +20,24 @@
 //   FIREBASE_SERVICE_ACCOUNT_JSON - the full JSON key downloaded from
 //                                   Firebase Console -> Project Settings ->
 //                                   Service Accounts -> Generate new
-//                                   private key, pasted in as one env var
-//                                   value (its project_id field is used
-//                                   directly, no separate project ID var
-//                                   needed).
+//                                   private key, base64-encoded (its
+//                                   project_id field is used directly, no
+//                                   separate project ID var needed).
+//                                   Base64, not raw JSON: private_key's
+//                                   embedded \n newline escapes kept
+//                                   getting mangled differently on every
+//                                   attempt to paste raw JSON through a
+//                                   clipboard and Vercel's env-var text
+//                                   field (each attempt produced a
+//                                   different variant of
+//                                   "error:1E08010C:DECODER
+//                                   routines::unsupported" /
+//                                   ERR_OSSL_UNSUPPORTED from OpenSSL
+//                                   failing to parse the resulting PEM).
+//                                   Base64 has no newlines or special
+//                                   characters for any of those hops to
+//                                   corrupt. Raw JSON is still accepted
+//                                   as a fallback for compatibility.
 //
 // Known limitation: an expired/invalid token isn't cleared from
 // notification_prefs here (would need service-role write access this
@@ -31,6 +45,15 @@
 // push in Settings registers a fresh token.
 
 const { GoogleAuth } = require('google-auth-library');
+
+function parseServiceAccount(raw) {
+  const trimmed = raw.trim();
+  try {
+    return JSON.parse(Buffer.from(trimmed, 'base64').toString('utf8'));
+  } catch (e) {
+    return JSON.parse(trimmed);
+  }
+}
 
 const TYPE_TITLES = {
   follow: 'New follower',
@@ -88,14 +111,10 @@ module.exports = async function handler(req, res) {
   let projectId;
   let accessToken;
   try {
-    const credentials = JSON.parse(serviceAccountRaw);
-    // Pasting this JSON through a clipboard and an env-var text field can
-    // double-escape the private_key's embedded newlines (literal \n
-    // two-char sequences instead of real line breaks) — valid JSON either
-    // way, but OpenSSL then fails to parse it as PEM
-    // ("DECODER routines::unsupported" / ERR_OSSL_UNSUPPORTED). Normalize
-    // unconditionally; a key that already has real newlines is unaffected
-    // since they don't match this pattern.
+    const credentials = parseServiceAccount(serviceAccountRaw);
+    // Cheap extra safety net for the raw-JSON fallback path — a no-op
+    // against a base64-sourced key, which never has literal \n sequences
+    // to begin with.
     if (credentials.private_key) {
       credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
     }
