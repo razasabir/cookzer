@@ -4,8 +4,10 @@ const { loadPageWithMock } = require('./helpers/loadPage');
 test.describe('Tips & Tricks composer toggle', () => {
   test('posting with the Tip toggle active inserts kind: "tip"', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-tips-filter.js');
+    await page.click('#composerAddBtn');
     await page.click('#composerTipBtn');
     await expect(page.locator('#composerTipBtn')).toHaveClass(/active-tip-tag/);
+    await expect(page.locator('.composer-modifier-chip', { hasText: 'Tip' })).toBeVisible();
     await page.fill('#postCaption', 'Room-temp butter creams faster.');
     await page.click('#composerPostBtn');
     await expect.poll(() => page.evaluate(() => window.__INSERTED_POSTS__.length)).toBe(1);
@@ -23,11 +25,13 @@ test.describe('Tips & Tricks composer toggle', () => {
 
   test('the toggle resets after a successful post', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-tips-filter.js');
+    await page.click('#composerAddBtn');
     await page.click('#composerTipBtn');
     await page.fill('#postCaption', 'A tip.');
     await page.click('#composerPostBtn');
     await expect.poll(() => page.evaluate(() => window.__INSERTED_POSTS__.length)).toBe(1);
     await expect(page.locator('#composerTipBtn')).not.toHaveClass(/active-tip-tag/);
+    await expect(page.locator('.composer-modifier-chip')).toHaveCount(0);
   });
 });
 
@@ -35,15 +39,24 @@ test.describe('Tips & Tricks filtered feed view', () => {
   test('the unfiltered feed shows every post kind', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-tips-filter.js');
     await expect(page.locator('.feed-card')).toHaveCount(4);
-    await expect(page.locator('#tipsFilterBanner')).toBeHidden();
+    await expect(page.locator('.feed-filter-chip[data-filter="all"]')).toHaveClass(/active/);
   });
 
-  test('?filter=tips shows the banner and only kind=tip posts', async ({ page }) => {
+  test('?filter=tips highlights the Tips chip and shows only kind=tip posts', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html?filter=tips', 'feed-tips-filter.js');
-    await expect(page.locator('#tipsFilterBanner')).toBeVisible();
+    await expect(page.locator('.feed-filter-chip[data-filter="tips"]')).toHaveClass(/active/);
     await expect(page.locator('.feed-card')).toHaveCount(2);
     await expect(page.locator('.feed-card').first()).toContainText('shared a tip');
     await expect(page.locator('.feed-card').first()).toContainText('Tips & Tricks');
+  });
+
+  test('clicking the Tips chip narrows the feed the same way the ?filter=tips link does', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-tips-filter.js');
+    await expect(page.locator('.feed-card')).toHaveCount(4);
+    await page.click('.feed-filter-chip[data-filter="tips"]');
+    await expect(page.locator('.feed-filter-chip[data-filter="tips"]')).toHaveClass(/active/);
+    await expect(page.locator('.feed-card')).toHaveCount(2);
+    await expect(page).toHaveURL(/filter=tips/);
   });
 
   test('a tip post card is labeled "shared a tip" with a Tips & Tricks badge', async ({ page }) => {
