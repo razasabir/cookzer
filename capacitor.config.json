@@ -3,7 +3,7 @@
   "appName": "Cookzer",
   "webDir": "www",
   "server": {
-    "url": "https://cookzer.com",
+    "url": "https://www.cookzer.com",
     "androidScheme": "https",
     "cleartext": false
   }
