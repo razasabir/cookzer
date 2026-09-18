@@ -89,7 +89,12 @@
       await loadFirebaseWebSdk();
       const app = firebase.initializeApp(config);
       const messaging = firebase.messaging(app);
-      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      // .register() can resolve before the worker is actually active —
+      // PushManager.subscribe() (which getToken() calls internally) needs
+      // an active worker, so wait for readiness rather than using the
+      // registration handed back above directly.
+      const registration = await navigator.serviceWorker.ready;
       const token = await messaging.getToken({ vapidKey: config.vapidKey, serviceWorkerRegistration: registration });
       if (!token) return { ok: false, error: 'Could not get a push token.' };
       await savePushPrefs(userId, token, 'web');
