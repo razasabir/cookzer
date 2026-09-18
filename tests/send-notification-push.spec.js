@@ -6,9 +6,12 @@ const { test, expect } = require('@playwright/test');
 // needs stubbing (it does its own network calls to mint an access token),
 // done by pre-populating require.cache so the handler's own require()
 // picks up the fake module instead of the real package.
-function stubGoogleAuthLibrary(getAccessTokenImpl) {
+function stubGoogleAuthLibrary(getAccessTokenImpl, onConstruct) {
   const modulePath = require.resolve('google-auth-library');
   class FakeGoogleAuth {
+    constructor(opts) {
+      if (onConstruct) onConstruct(opts);
+    }
     async getClient() {
       return { getAccessToken: getAccessTokenImpl };
     }
@@ -111,6 +114,32 @@ test.describe('send-notification-push webhook handler', () => {
     await handler(req, res);
     expect(res.statusCode).toBe(200);
     expect(fetchCalled).toBe(false);
+  });
+
+  test('normalizes a double-escaped private_key before handing it to GoogleAuth', async () => {
+    // Reproduces a real production failure: pasting the service account
+    // JSON through a clipboard and Vercel's env-var field left the
+    // private_key's newlines as literal \n two-char sequences instead of
+    // real line breaks — valid JSON either way, but OpenSSL then rejects
+    // it ("DECODER routines::unsupported" / ERR_OSSL_UNSUPPORTED).
+    process.env.FIREBASE_SERVICE_ACCOUNT_JSON = JSON.stringify({
+      project_id: 'cookzer-test',
+      client_email: 'fake@cookzer-test.iam.gserviceaccount.com',
+      private_key: '-----BEGIN PRIVATE KEY-----\\nMIIabc\\n-----END PRIVATE KEY-----\\n',
+    });
+    let capturedCredentials;
+    global.fetch = async () => ({ ok: true, json: async () => ({}) });
+    stubGoogleAuthLibrary(async () => ({ token: 'fake-access-token' }), (opts) => {
+      capturedCredentials = opts.credentials;
+    });
+    const handler = loadHandler();
+    const req = {
+      method: 'POST',
+      headers: { 'x-webhook-secret': 'test-secret' },
+      body: { type: 'INSERT', table: 'notifications', record: { should_push: true, push_token: 'tok-1', message: 'hi' } },
+    };
+    await handler(req, fakeRes());
+    expect(capturedCredentials.private_key).toBe('-----BEGIN PRIVATE KEY-----\nMIIabc\n-----END PRIVATE KEY-----\n');
   });
 
   test('sends a push via FCM for a valid, push-eligible notification', async () => {

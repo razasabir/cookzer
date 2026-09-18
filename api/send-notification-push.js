@@ -89,6 +89,16 @@ module.exports = async function handler(req, res) {
   let accessToken;
   try {
     const credentials = JSON.parse(serviceAccountRaw);
+    // Pasting this JSON through a clipboard and an env-var text field can
+    // double-escape the private_key's embedded newlines (literal \n
+    // two-char sequences instead of real line breaks) — valid JSON either
+    // way, but OpenSSL then fails to parse it as PEM
+    // ("DECODER routines::unsupported" / ERR_OSSL_UNSUPPORTED). Normalize
+    // unconditionally; a key that already has real newlines is unaffected
+    // since they don't match this pattern.
+    if (credentials.private_key) {
+      credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+    }
     projectId = credentials.project_id;
     const client = await getAuth(credentials).getClient();
     const tokenResponse = await client.getAccessToken();
