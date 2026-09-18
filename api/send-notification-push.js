@@ -94,6 +94,7 @@ module.exports = async function handler(req, res) {
     const tokenResponse = await client.getAccessToken();
     accessToken = tokenResponse.token;
   } catch (err) {
+    console.error('send-notification-push: Firebase auth failed:', err);
     res.status(500).json({ error: 'Could not authenticate with Firebase', detail: String(err) });
     return;
   }
@@ -128,6 +129,7 @@ module.exports = async function handler(req, res) {
 
   if (!sendResp.ok) {
     const detail = await sendResp.text();
+    console.error('send-notification-push: FCM send failed:', sendResp.status, detail);
     res.status(502).json({ error: 'Could not send push', detail });
     return;
   }
