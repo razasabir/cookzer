@@ -1,0 +1,192 @@
+const { test, expect } = require('@playwright/test');
+
+// Pure Node test for api/send-notification-push.js — same style as
+// send-notification-email.spec.js, mocking global.fetch for the outbound
+// FCM call and fake req/res objects. google-auth-library additionally
+// needs stubbing (it does its own network calls to mint an access token),
+// done by pre-populating require.cache so the handler's own require()
+// picks up the fake module instead of the real package.
+function stubGoogleAuthLibrary(getAccessTokenImpl) {
+  const modulePath = require.resolve('google-auth-library');
+  class FakeGoogleAuth {
+    async getClient() {
+      return { getAccessToken: getAccessTokenImpl };
+    }
+  }
+  require.cache[modulePath] = {
+    id: modulePath,
+    filename: modulePath,
+    loaded: true,
+    exports: { GoogleAuth: FakeGoogleAuth },
+  };
+}
+
+function loadHandler() {
+  delete require.cache[require.resolve('../api/send-notification-push.js')];
+  return require('../api/send-notification-push.js');
+}
+
+function fakeRes() {
+  const res = { statusCode: null, body: null };
+  res.status = (code) => { res.statusCode = code; return res; };
+  res.json = (payload) => { res.body = payload; return res; };
+  return res;
+}
+
+test.describe('send-notification-push webhook handler', () => {
+  let originalFetch;
+  let originalEnv;
+
+  test.beforeEach(() => {
+    originalFetch = global.fetch;
+    originalEnv = { ...process.env };
+    process.env.NOTIFICATION_WEBHOOK_SECRET = 'test-secret';
+    process.env.FIREBASE_SERVICE_ACCOUNT_JSON = JSON.stringify({
+      project_id: 'cookzer-test',
+      client_email: 'fake@cookzer-test.iam.gserviceaccount.com',
+      private_key: 'fake-key',
+    });
+    stubGoogleAuthLibrary(async () => ({ token: 'fake-access-token' }));
+  });
+
+  test.afterEach(() => {
+    global.fetch = originalFetch;
+    process.env = originalEnv;
+  });
+
+  test('rejects a request with the wrong webhook secret', async () => {
+    const handler = loadHandler();
+    const req = { method: 'POST', headers: { 'x-webhook-secret': 'wrong' }, body: {} };
+    const res = fakeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(401);
+  });
+
+  test('rejects non-POST requests', async () => {
+    const handler = loadHandler();
+    const req = { method: 'GET', headers: {}, body: {} };
+    const res = fakeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(405);
+  });
+
+  test('skips (200, not an error) when should_push is false', async () => {
+    let fetchCalled = false;
+    global.fetch = async () => { fetchCalled = true; return { ok: true }; };
+    const handler = loadHandler();
+    const req = {
+      method: 'POST',
+      headers: { 'x-webhook-secret': 'test-secret' },
+      body: { type: 'INSERT', table: 'notifications', record: { should_push: false, push_token: 'tok-1', message: 'hi' } },
+    };
+    const res = fakeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(fetchCalled).toBe(false);
+  });
+
+  test('skips when there is no push_token', async () => {
+    const handler = loadHandler();
+    const req = {
+      method: 'POST',
+      headers: { 'x-webhook-secret': 'test-secret' },
+      body: { type: 'INSERT', table: 'notifications', record: { should_push: true, push_token: null, message: 'hi' } },
+    };
+    const res = fakeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.skipped).toBe(true);
+  });
+
+  test('ignores events for a different table or type (still 200, no send)', async () => {
+    let fetchCalled = false;
+    global.fetch = async () => { fetchCalled = true; return { ok: true }; };
+    const handler = loadHandler();
+    const req = {
+      method: 'POST',
+      headers: { 'x-webhook-secret': 'test-secret' },
+      body: { type: 'UPDATE', table: 'notifications', record: { should_push: true, push_token: 'tok-1' } },
+    };
+    const res = fakeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(fetchCalled).toBe(false);
+  });
+
+  test('sends a push via FCM for a valid, push-eligible notification', async () => {
+    let capturedUrl, capturedOptions;
+    global.fetch = async (url, options) => {
+      capturedUrl = url;
+      capturedOptions = options;
+      return { ok: true, json: async () => ({ name: 'projects/cookzer-test/messages/1' }) };
+    };
+    const handler = loadHandler();
+    const req = {
+      method: 'POST',
+      headers: { 'x-webhook-secret': 'test-secret' },
+      body: {
+        type: 'INSERT',
+        table: 'notifications',
+        record: {
+          should_push: true,
+          push_token: 'tok-abc',
+          type: 'heart',
+          message: 'Sarah K. hearted your post',
+          link_url: 'cookzer-feed.html?post=abc',
+        },
+      },
+    };
+    const res = fakeRes();
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(capturedUrl).toBe('https://fcm.googleapis.com/v1/projects/cookzer-test/messages:send');
+    expect(capturedOptions.headers.Authorization).toBe('Bearer fake-access-token');
+    const sentBody = JSON.parse(capturedOptions.body);
+    expect(sentBody.message.token).toBe('tok-abc');
+    expect(sentBody.message.notification.title).toBe('Someone hearted your post');
+    expect(sentBody.message.notification.body).toBe('Sarah K. hearted your post');
+    expect(sentBody.message.webpush.fcm_options.link).toBe('https://cookzer.com/cookzer-feed.html?post=abc');
+  });
+
+  test('falls back to a generic title for an unknown notification type', async () => {
+    let capturedOptions;
+    global.fetch = async (url, options) => { capturedOptions = options; return { ok: true, json: async () => ({}) }; };
+    const handler = loadHandler();
+    const req = {
+      method: 'POST',
+      headers: { 'x-webhook-secret': 'test-secret' },
+      body: { type: 'INSERT', table: 'notifications', record: { should_push: true, push_token: 'tok-1', type: 'something_new', message: 'hi' } },
+    };
+    await handler(req, fakeRes());
+    const sentBody = JSON.parse(capturedOptions.body);
+    expect(sentBody.message.notification.title).toBe('Cookzer');
+  });
+
+  test('returns 500 when FIREBASE_SERVICE_ACCOUNT_JSON is missing', async () => {
+    delete process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+    const handler = loadHandler();
+    const req = {
+      method: 'POST',
+      headers: { 'x-webhook-secret': 'test-secret' },
+      body: { type: 'INSERT', table: 'notifications', record: { should_push: true, push_token: 'tok-1', message: 'hi' } },
+    };
+    const res = fakeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(500);
+  });
+
+  test('returns 502 with detail when FCM rejects the send', async () => {
+    global.fetch = async () => ({ ok: false, text: async () => 'invalid registration token' });
+    const handler = loadHandler();
+    const req = {
+      method: 'POST',
+      headers: { 'x-webhook-secret': 'test-secret' },
+      body: { type: 'INSERT', table: 'notifications', record: { should_push: true, push_token: 'tok-1', message: 'hi' } },
+    };
+    const res = fakeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(502);
+    expect(res.body.detail).toBe('invalid registration token');
+  });
+});

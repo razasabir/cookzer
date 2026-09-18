@@ -20,12 +20,13 @@
     notify_reviews: true,
     notify_group_joins: true,
     notify_email: true,
+    notify_push: false,
   };
 
   async function loadPrefs(userId) {
     const { data } = await sb
       .from('notification_prefs')
-      .select('notify_follows, notify_hearts, notify_comments, notify_remakes, notify_challenge_joins, notify_messages, notify_reviews, notify_group_joins, notify_email')
+      .select('notify_follows, notify_hearts, notify_comments, notify_remakes, notify_challenge_joins, notify_messages, notify_reviews, notify_group_joins, notify_email, notify_push')
       .eq('user_id', userId)
       .maybeSingle();
     return data || DEFAULT_PREFS;
