@@ -122,5 +122,43 @@
     );
   }
 
+  function showForegroundNotification(payload) {
+    const title = (payload.notification && payload.notification.title) || 'Cookzer';
+    const body = payload.notification && payload.notification.body;
+    const link = (payload.data && payload.data.link) || 'https://cookzer.com/cookzer-feed.html';
+    const notification = new Notification(title, { body, icon: '/icon-192.png' });
+    notification.onclick = () => {
+      window.focus();
+      window.location.href = link;
+    };
+  }
+
+  // Firebase's web SDK only auto-shows a system notification for a
+  // background tab — the service worker's onBackgroundMessage (see
+  // firebase-messaging-sw.js) handles that case already. A message
+  // arriving while a Cookzer tab is open and focused instead goes to
+  // onMessage() in that page's own JS, which does nothing unless
+  // something's listening — this is that listener, run on every page
+  // (not just Settings) so a foreground push doesn't go silently missing
+  // no matter which page happens to be open when it arrives. Never
+  // requests permission itself — only attaches once it's already granted
+  // from an earlier explicit enable() in Settings.
+  async function initForegroundListener() {
+    if (isNative()) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const config = typeof COOKZER_FIREBASE_CONFIG !== 'undefined' ? COOKZER_FIREBASE_CONFIG : null;
+    if (!config || config.apiKey === 'REPLACE_WITH_YOUR_FIREBASE_API_KEY') return;
+    try {
+      await loadFirebaseWebSdk();
+      const app = firebase.apps && firebase.apps.length ? firebase.apps[0] : firebase.initializeApp(config);
+      const messaging = firebase.messaging(app);
+      messaging.onMessage(showForegroundNotification);
+    } catch (e) {
+      // Foreground delivery is on top of background (service worker)
+      // delivery, which doesn't depend on this — fine to no-op here.
+    }
+  }
+
   window.CookzerPush = { enable, disable, isNative };
+  initForegroundListener();
 })();
