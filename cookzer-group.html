@@ -441,6 +441,10 @@
           </div>
         </div>
         <div class="group-desc" id="groupDesc"></div>
+        <div id="inviteCodeRow" hidden style="margin-top:10px; display:flex; align-items:center; gap:8px; font-size:13px; color:var(--olive-dark);">
+          🔒 Invite code: <code id="inviteCodeText" style="font-weight:700; letter-spacing:1px;"></code>
+          <button type="button" id="copyInviteCodeBtn" style="background:var(--cream); border:1px solid var(--line); border-radius:8px; padding:4px 10px; font-size:12px; cursor:pointer; color:var(--ink);">Copy</button>
+        </div>
       </div>
     </div>
 
@@ -505,7 +509,7 @@
   async function loadGroup() {
     const { data: group } = await sb
       .from('groups')
-      .select('id, name, description, cover_gradient, created_by')
+      .select('id, name, description, cover_gradient, created_by, is_private, invite_code')
       .eq('id', groupId)
       .single();
 
@@ -595,6 +599,22 @@
       .maybeSingle();
 
     isMember = !!mine;
+
+    const inviteRow = document.getElementById('inviteCodeRow');
+    inviteRow.hidden = !(group.is_private && isMember && group.invite_code);
+    if (!inviteRow.hidden) {
+      document.getElementById('inviteCodeText').textContent = group.invite_code;
+      document.getElementById('copyInviteCodeBtn').onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(group.invite_code);
+          document.getElementById('copyInviteCodeBtn').textContent = 'Copied!';
+          setTimeout(() => { document.getElementById('copyInviteCodeBtn').textContent = 'Copy'; }, 1500);
+        } catch (e) {
+          await CookzerModal.prompt('Copy this invite code:', group.invite_code);
+        }
+      };
+    }
+
     const joinBtn = document.getElementById('joinGroupBtn');
     joinBtn.textContent = isMember ? 'Joined ✓' : 'Join';
     joinBtn.className = 'join-btn' + (isMember ? ' joined' : '');
