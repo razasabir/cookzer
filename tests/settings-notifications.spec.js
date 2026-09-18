@@ -46,15 +46,16 @@ test.describe('Settings — notification preferences', () => {
     expect(await page.evaluate(() => window.__PREFS_SAVED__[0].notify_email)).toBe(true);
   });
 
-  test('turning push on without Firebase configured reverts the checkbox and shows why', async ({ page }) => {
-    // firebase-config.js still ships with placeholder values until a real
-    // Firebase project is wired up — CookzerPush.enable() should fail
-    // gracefully rather than throw, and the checkbox should reflect that
-    // it didn't actually turn on.
+  test('turning push on without granting browser permission reverts the checkbox and shows why', async ({ page }) => {
+    // firebase-config.js carries real project values, so this exercises
+    // the actual permission-request path — headless Chromium denies
+    // Notification permission by default with no user gesture, and
+    // CookzerPush.enable() should surface that rather than throw, leaving
+    // the checkbox reflecting that push didn't actually turn on.
     await loadPageWithMock(page, 'cookzer-settings.html', 'settings-notifications.js');
     await toggleCheckbox(page, '#prefPush');
     await expect(page.locator('#prefPush')).not.toBeChecked();
-    await expect(page.locator('#prefsStatus')).toContainText('not configured');
+    await expect(page.locator('#prefsStatus')).toContainText('Could not enable push');
   });
 
   test('turning push off saves notify_push: false', async ({ page }) => {
