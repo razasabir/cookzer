@@ -5,7 +5,7 @@ window.__SEED_PREFS__ = window.__SEED_PREFS__ || {
   notify_follows: true, notify_hearts: false, notify_comments: true,
   notify_remakes: true, notify_challenge_joins: false,
   notify_messages: true, notify_reviews: false, notify_group_joins: true,
-  notify_email: false,
+  notify_email: false, notify_push: false,
 };
 
 function chain(table) {

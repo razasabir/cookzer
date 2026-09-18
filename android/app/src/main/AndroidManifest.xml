@@ -50,4 +50,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+ requires this declared here, on top of the runtime
+         request @capacitor/push-notifications makes via
+         PushNotifications.requestPermissions() in push-notifications.js. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

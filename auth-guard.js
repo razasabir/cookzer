@@ -78,7 +78,7 @@
     document.body.appendChild(panel);
 
     const dot = document.createElement('div');
-    dot.style.cssText = 'display:none; position:absolute; top:2px; right:2px; width:9px; height:9px; border-radius:50%; background:var(--brick,#E85659); border:2px solid var(--card-bg);';
+    dot.style.cssText = 'display:none; position:absolute; top:2px; right:2px; width:9px; height:9px; border-radius:50%; background:var(--brick,#FF6B4A); border:2px solid var(--card-bg);';
     btn.style.position = 'relative';
     btn.appendChild(dot);
 

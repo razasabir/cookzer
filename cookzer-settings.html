@@ -6,13 +6,15 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <meta name="theme-color" content="#009246">
+  <meta name="theme-color" content="#2E8F5C">
   <title>Settings — Cookzer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="supabase-config.js"></script>
   <script src="notifications-shared.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="push-notifications.js"></script>
   <script src="auth-guard.js"></script>
   <script src="cocooks-widget.js"></script>
   <script src="cookzer-modal.js"></script>
@@ -224,7 +226,7 @@
 
     <div class="settings-section">
       <h2>Notifications</h2>
-      <div class="section-dek">Which activity you get notified about, and how. Turn off a category here and it stops showing up in your bell, the Notifications page, and any email — all at once.</div>
+      <div class="section-dek">Which activity you get notified about, and how. Turn off a category here and it stops showing up in your bell, the Notifications page, any email, and any push alert — all at once.</div>
       <div class="toggle-row">
         <div>
           <div class="toggle-row-label">New followers</div>
@@ -279,6 +281,13 @@
           <div class="toggle-row-dek">On top of the bell and Notifications page — sent to your account email for whichever categories above are turned on.</div>
         </div>
         <label class="switch"><input type="checkbox" id="prefEmail"><span class="switch-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-row-label">Push notifications</div>
+          <div class="toggle-row-dek">A real alert on your phone or browser, even when Cookzer isn't open — for whichever categories above are turned on. Asks for permission the first time.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="prefPush"><span class="switch-slider"></span></label>
       </div>
       <div class="settings-status" id="prefsStatus"></div>
     </div>
@@ -366,6 +375,28 @@
     document.getElementById(id).addEventListener('change', savePrefs);
   });
 
+  // Push needs its own handler, not the generic savePrefs() the other
+  // toggles share — turning it on has to request OS/browser permission
+  // and register a token first, and can fail (denied, unsupported
+  // browser, not configured yet), which the checkbox state needs to
+  // reflect rather than optimistically staying checked.
+  document.getElementById('prefPush').addEventListener('change', async (e) => {
+    const status = document.getElementById('prefsStatus');
+    if (e.target.checked) {
+      status.textContent = 'Requesting permission…';
+      const result = await window.CookzerPush.enable(currentUser.id);
+      if (!result.ok) {
+        e.target.checked = false;
+        status.textContent = 'Could not enable push: ' + result.error;
+        return;
+      }
+      status.textContent = 'Push notifications on.';
+    } else {
+      await window.CookzerPush.disable(currentUser.id);
+      status.textContent = 'Push notifications off.';
+    }
+  });
+
   document.getElementById('inviteEmailBtn').addEventListener('click', () => {
     const email = document.getElementById('inviteEmailInput').value.trim();
     const subject = encodeURIComponent('Cook with me on Cookzer');
@@ -412,6 +443,7 @@
     document.getElementById('prefReviews').checked = prefs.notify_reviews;
     document.getElementById('prefGroupJoins').checked = prefs.notify_group_joins;
     document.getElementById('prefEmail').checked = prefs.notify_email;
+    document.getElementById('prefPush').checked = prefs.notify_push;
   })();
 </script>
 </body>

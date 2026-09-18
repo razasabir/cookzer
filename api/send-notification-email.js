@@ -106,7 +106,7 @@ module.exports = async function handler(req, res) {
 <tr><td align="center" style="padding:40px 16px;">
 <table role="presentation" width="480" cellpadding="0" cellspacing="0" border="0" style="max-width:480px; width:100%; background-color:#FFFFFF; border:1px solid #E7DFCF; border-radius:16px;">
 <tr><td style="padding:28px 32px 20px 32px; font-family:Georgia,'Times New Roman',serif; font-size:22px; font-weight:700;">
-<span style="color:#00733A;">Cook</span><span style="color:#CE2B37;">zer</span>
+<span style="color:#1F7A4A;">Cook</span><span style="color:#FF6B4A;">zer</span>
 </td></tr>
 <tr><td style="padding:0 32px;"><div style="height:1px; line-height:1px; font-size:1px; background-color:#E7DFCF;">&nbsp;</div></td></tr>
 <tr><td style="padding:24px 32px 0 32px;">
@@ -118,7 +118,7 @@ module.exports = async function handler(req, res) {
 ${message}
 </td></tr>
 <tr><td style="padding:22px 32px 32px 32px;">
-<a href="${link}" style="display:inline-block; background-color:#009246; color:#FFFFFF; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:14px; font-weight:600; text-decoration:none; padding:12px 26px; border-radius:10px;">Open on Cookzer</a>
+<a href="${link}" style="display:inline-block; background-color:#2E8F5C; color:#FFFFFF; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:14px; font-weight:600; text-decoration:none; padding:12px 26px; border-radius:10px;">Open on Cookzer</a>
 </td></tr>
 </table>
 <table role="presentation" width="480" cellpadding="0" cellspacing="0" border="0" style="max-width:480px; width:100%;">
