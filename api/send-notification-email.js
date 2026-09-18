@@ -37,6 +37,19 @@ const TYPE_SUBJECTS = {
   group_join: 'Someone joined your group',
 };
 
+// Mirrors the TYPE_EMOJI map in cookzer-notifications.html, so the email
+// and the in-app notification list read as the same visual language.
+const TYPE_EMOJI = {
+  follow: '👋',
+  heart: '❤️',
+  comment: '💬',
+  remake: '🍳',
+  challenge_join: '🏆',
+  message: '✉️',
+  review: '⭐',
+  group_join: '👥',
+};
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -71,14 +84,55 @@ module.exports = async function handler(req, res) {
 
   const subject = TYPE_SUBJECTS[record.type] || 'New activity on Cookzer';
   const link = record.link_url ? 'https://cookzer.com/' + record.link_url : 'https://cookzer.com/cookzer-feed.html';
-  const html = `
-    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-      <div style="font-size: 20px; font-weight: 600; color: #009C4A; margin-bottom: 16px;">Cookzer</div>
-      <p style="font-size: 15px; color: #2B2620;">${escapeHtml(record.message)}</p>
-      <a href="${link}" style="display: inline-block; margin-top: 12px; background: #009C4A; color: #fff; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 600;">Open on Cookzer</a>
-      <p style="font-size: 12px; color: #6B6255; margin-top: 28px;">You're getting this because email notifications are on for your Cookzer account. Turn them off anytime in Settings.</p>
-    </div>
-  `;
+  const emoji = TYPE_EMOJI[record.type] || '🔔';
+  const message = escapeHtml(record.message);
+
+  // Table-based layout with inline styles throughout — Gmail/Outlook strip
+  // <style> blocks and don't reliably support flex/grid, so this sticks to
+  // the lowest-common-denominator approach real transactional email needs.
+  // Colors match the site's own palette (styles.css / master-plan.html).
+  const html = `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Cookzer</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F7F2E9;">
+<span style="display:none; font-size:1px; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">${message}</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F7F2E9;">
+<tr><td align="center" style="padding:40px 16px;">
+<table role="presentation" width="480" cellpadding="0" cellspacing="0" border="0" style="max-width:480px; width:100%; background-color:#FFFFFF; border:1px solid #E7DFCF; border-radius:16px;">
+<tr><td style="padding:28px 32px 20px 32px; font-family:Georgia,'Times New Roman',serif; font-size:22px; font-weight:700;">
+<span style="color:#00733A;">Cook</span><span style="color:#CE2B37;">zer</span>
+</td></tr>
+<tr><td style="padding:0 32px;"><div style="height:1px; line-height:1px; font-size:1px; background-color:#E7DFCF;">&nbsp;</div></td></tr>
+<tr><td style="padding:24px 32px 0 32px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+<td width="44" height="44" align="center" valign="middle" style="width:44px; height:44px; background-color:#F7F2E9; border-radius:22px; font-size:20px;">${emoji}</td>
+</tr></table>
+</td></tr>
+<tr><td style="padding:16px 32px 0 32px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:16px; line-height:1.55; color:#2B2620;">
+${message}
+</td></tr>
+<tr><td style="padding:22px 32px 32px 32px;">
+<a href="${link}" style="display:inline-block; background-color:#009246; color:#FFFFFF; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:14px; font-weight:600; text-decoration:none; padding:12px 26px; border-radius:10px;">Open on Cookzer</a>
+</td></tr>
+</table>
+<table role="presentation" width="480" cellpadding="0" cellspacing="0" border="0" style="max-width:480px; width:100%;">
+<tr><td align="center" style="padding:20px 32px 0 32px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:12px; line-height:1.7; color:#A69C89;">
+You're getting this because email notifications are on for your Cookzer account.<br>
+<a href="https://cookzer.com/cookzer-settings.html" style="color:#A69C89; text-decoration:underline;">Turn them off anytime in Settings</a>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+
+  const text = `${record.message}\n\nOpen on Cookzer: ${link}\n\nTurn off email notifications anytime in Settings: https://cookzer.com/cookzer-settings.html`;
 
   const sendResp = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -91,6 +145,7 @@ module.exports = async function handler(req, res) {
       to: record.recipient_email,
       subject,
       html,
+      text,
     }),
   });
 
