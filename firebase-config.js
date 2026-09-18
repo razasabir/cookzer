@@ -5,11 +5,11 @@
 // apps -> Web app, and the VAPID key from Project Settings -> Cloud
 // Messaging -> Web configuration -> Web Push certificates.
 const COOKZER_FIREBASE_CONFIG = {
-  apiKey: 'REPLACE_WITH_YOUR_FIREBASE_API_KEY',
-  authDomain: 'REPLACE_WITH_YOUR_PROJECT.firebaseapp.com',
-  projectId: 'REPLACE_WITH_YOUR_PROJECT_ID',
-  storageBucket: 'REPLACE_WITH_YOUR_PROJECT.appspot.com',
-  messagingSenderId: 'REPLACE_WITH_YOUR_SENDER_ID',
-  appId: 'REPLACE_WITH_YOUR_APP_ID',
-  vapidKey: 'REPLACE_WITH_YOUR_VAPID_PUBLIC_KEY',
+  apiKey: 'AIzaSyC9xeX50GfStFFmTZxNvJVqdv0B7dtUTec',
+  authDomain: 'cookzer-c3103.firebaseapp.com',
+  projectId: 'cookzer-c3103',
+  storageBucket: 'cookzer-c3103.firebasestorage.app',
+  messagingSenderId: '399270908248',
+  appId: '1:399270908248:web:4bf52c14033e6c80e5152d',
+  vapidKey: 'BPVJF2ZoShwe4pCSujEoS7_isZ8SHNKTuoDR4tBnjBl67a0kpJzPtot5uEYFVIB_TsAwkQvicl1LLSAoF28bL5k',
 };
