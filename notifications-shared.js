@@ -1,90 +1,70 @@
 // Shared notification fetching, used by the bell dropdown (auth-guard.js)
 // and the full Notifications page — keeps both in sync on preferences
 // and read-state instead of duplicating the query logic.
+//
+// Backed by the real public.notifications table (see
+// supabase/migrations/025_real_notifications.sql) — a database trigger
+// on each source table (follows/hearts/comments/etc.) writes a row here
+// with the display text already built, so this file just reads it back;
+// it used to re-derive everything live from 5 source tables on every
+// open, which only ever caught activity if you happened to be looking
+// right then and couldn't be the basis for an email.
 (function () {
+  const DEFAULT_PREFS = {
+    notify_follows: true,
+    notify_hearts: true,
+    notify_comments: true,
+    notify_remakes: true,
+    notify_challenge_joins: true,
+    notify_messages: true,
+    notify_reviews: true,
+    notify_group_joins: true,
+    notify_email: true,
+  };
+
   async function loadPrefs(userId) {
     const { data } = await sb
       .from('notification_prefs')
-      .select('notify_follows, notify_hearts, notify_comments, notify_remakes, notify_challenge_joins')
+      .select('notify_follows, notify_hearts, notify_comments, notify_remakes, notify_challenge_joins, notify_messages, notify_reviews, notify_group_joins, notify_email')
       .eq('user_id', userId)
       .maybeSingle();
-    return data || { notify_follows: true, notify_hearts: true, notify_comments: true, notify_remakes: true, notify_challenge_joins: true };
+    return data || DEFAULT_PREFS;
   }
 
-  async function fetchItems(userId, limitPer) {
-    limitPer = limitPer || 5;
-    const prefs = await loadPrefs(userId);
-
-    const followsP = prefs.notify_follows
-      ? sb.from('follows')
-          .select('follower_id, created_at, profiles!follows_follower_id_fkey(display_name)')
-          .eq('followee_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(limitPer)
-          .then(({ data }) => (data || [])
-            .filter((f) => f.profiles)
-            .map((f) => ({ created_at: f.created_at, actorId: f.follower_id, text: (f.profiles.display_name || 'Someone') + ' followed you' })))
-      : Promise.resolve([]);
-
-    const heartsP = prefs.notify_hearts
-      ? sb.from('hearts')
-          .select('user_id, created_at, profiles(display_name), posts!inner(author_id)')
-          .eq('posts.author_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(limitPer)
-          .then(({ data }) => (data || [])
-            .filter((h) => h.profiles)
-            .map((h) => ({ created_at: h.created_at, actorId: h.user_id, text: (h.profiles.display_name || 'Someone') + ' hearted your post' })))
-      : Promise.resolve([]);
-
-    const commentsP = prefs.notify_comments
-      ? sb.from('comments')
-          .select('author_id, created_at, text, profiles(display_name), posts!inner(author_id)')
-          .eq('posts.author_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(limitPer)
-          .then(({ data }) => (data || [])
-            .filter((c) => c.profiles)
-            .map((c) => ({ created_at: c.created_at, actorId: c.author_id, text: (c.profiles.display_name || 'Someone') + ' commented on your post' })))
-      : Promise.resolve([]);
-
-    const remakesP = prefs.notify_remakes
-      ? sb.from('posts')
-          .select('author_id, created_at, profiles!posts_author_id_fkey(display_name), recipes!posts_recipe_id_fkey!inner(author_id, title)')
-          .eq('kind', 'remake')
-          .eq('recipes.author_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(limitPer)
-          .then(({ data }) => (data || [])
-            .filter((p) => p.profiles && p.recipes)
-            .map((p) => ({ created_at: p.created_at, actorId: p.author_id, text: (p.profiles.display_name || 'Someone') + ' remade your "' + p.recipes.title + '"' })))
-      : Promise.resolve([]);
-
-    const challengeJoinsP = prefs.notify_challenge_joins
-      ? sb.from('challenge_entries')
-          .select('user_id, created_at, profiles(display_name), challenges!inner(created_by, title)')
-          .eq('challenges.created_by', userId)
-          .order('created_at', { ascending: false })
-          .limit(limitPer)
-          .then(({ data }) => (data || [])
-            .filter((e) => e.profiles && e.challenges && e.user_id !== userId)
-            .map((e) => ({ created_at: e.created_at, actorId: e.user_id, text: (e.profiles.display_name || 'Someone') + ' joined your challenge "' + e.challenges.title + '"' })))
-      : Promise.resolve([]);
-
-    const [follows, hearts, comments, remakes, challengeJoins] = await Promise.all([followsP, heartsP, commentsP, remakesP, challengeJoinsP]);
-    const items = [...follows, ...hearts, ...comments, ...remakes, ...challengeJoins];
-    items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    return items;
+  async function fetchItems(userId, limit) {
+    const { data } = await sb
+      .from('notifications')
+      .select('id, type, message, link_url, actor_id, read_at, created_at')
+      .eq('recipient_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit || 30);
+    return (data || []).map((n) => ({
+      id: n.id,
+      type: n.type,
+      text: n.message,
+      linkUrl: n.link_url,
+      actorId: n.actor_id,
+      read_at: n.read_at,
+      created_at: n.created_at,
+    }));
   }
 
-  async function getReadAt(userId) {
-    const { data } = await sb.from('profiles').select('notifications_read_at').eq('id', userId).maybeSingle();
-    return data && data.notifications_read_at ? new Date(data.notifications_read_at) : null;
+  async function getUnreadCount(userId) {
+    const { count } = await sb
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('recipient_id', userId)
+      .is('read_at', null);
+    return count || 0;
   }
 
-  async function markRead(userId) {
-    await sb.from('profiles').update({ notifications_read_at: new Date().toISOString() }).eq('id', userId);
+  async function markAllRead(userId) {
+    await sb
+      .from('notifications')
+      .update({ read_at: new Date().toISOString() })
+      .eq('recipient_id', userId)
+      .is('read_at', null);
   }
 
-  window.CookzerNotifications = { loadPrefs, fetchItems, getReadAt, markRead };
+  window.CookzerNotifications = { loadPrefs, fetchItems, getUnreadCount, markAllRead };
 })();

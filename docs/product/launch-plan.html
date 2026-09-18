@@ -251,9 +251,19 @@
 
     <div class="section-head">
       <h2>Done</h2>
-      <span class="section-count">5</span>
+      <span class="section-count">6</span>
     </div>
     <ul class="task-list">
+      <li class="task done">
+        <div class="task-mark"></div>
+        <div class="task-body">
+          <p class="task-title">Real notifications — in-app and email, with per-category on/off controls</p>
+          <p class="task-note">Requested: the platform wasn't actually sending notifications, and needed settings to turn them on/off per category. The bell and Notifications page now read from a real database table (written by triggers on the source events, so nothing depends on a client tab staying open), covering 8 event types — follow, heart, comment, remake, challenge join, new message, recipe review, group join. A new "Also email me" toggle sends the same notification by email too — in-app and email are additive, not either/or, so both can be on at once. <code>cookzer-settings.html</code> has an on/off switch for every category plus the email toggle. <strong>Needs 3 manual setup steps</strong>: run <code>supabase/migrations/025_real_notifications.sql</code>, sign up for Resend and set <code>RESEND_API_KEY</code>/<code>NOTIFICATION_WEBHOOK_SECRET</code> as Vercel env vars, and create a Supabase Database Webhook (INSERT on <code>notifications</code>) pointing at the new email endpoint.</p>
+          <div class="task-meta">
+            <span class="pill done">Done — Sep 18, 2026</span>
+          </div>
+        </div>
+      </li>
       <li class="task done">
         <div class="task-mark"></div>
         <div class="task-body">

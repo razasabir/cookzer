@@ -224,7 +224,7 @@
 
     <div class="settings-section">
       <h2>Notifications</h2>
-      <div class="section-dek">Which activity shows up in your notification bell and the Notifications page. These are in-app only — Cookzer doesn't send emails or push notifications yet.</div>
+      <div class="section-dek">Which activity you get notified about, and how. Turn off a category here and it stops showing up in your bell, the Notifications page, and any email — all at once.</div>
       <div class="toggle-row">
         <div>
           <div class="toggle-row-label">New followers</div>
@@ -254,6 +254,31 @@
           <div class="toggle-row-label">Someone joins your challenge</div>
         </div>
         <label class="switch"><input type="checkbox" id="prefChallengeJoins"><span class="switch-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-row-label">New messages</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="prefMessages"><span class="switch-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-row-label">Someone reviews your recipe</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="prefReviews"><span class="switch-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-row-label">Someone joins your group</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="prefGroupJoins"><span class="switch-slider"></span></label>
+      </div>
+      <div class="toggle-row" style="border-top: 1px solid var(--line); margin-top: 6px; padding-top: 16px;">
+        <div>
+          <div class="toggle-row-label">Also email me</div>
+          <div class="toggle-row-dek">On top of the bell and Notifications page — sent to your account email for whichever categories above are turned on.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="prefEmail"><span class="switch-slider"></span></label>
       </div>
       <div class="settings-status" id="prefsStatus"></div>
     </div>
@@ -327,13 +352,17 @@
       notify_comments: document.getElementById('prefComments').checked,
       notify_remakes: document.getElementById('prefRemakes').checked,
       notify_challenge_joins: document.getElementById('prefChallengeJoins').checked,
+      notify_messages: document.getElementById('prefMessages').checked,
+      notify_reviews: document.getElementById('prefReviews').checked,
+      notify_group_joins: document.getElementById('prefGroupJoins').checked,
+      notify_email: document.getElementById('prefEmail').checked,
       updated_at: new Date().toISOString(),
     };
     const { error } = await sb.from('notification_prefs').upsert(prefs, { onConflict: 'user_id' });
     status.textContent = error ? 'Could not save: ' + error.message : 'Saved.';
   }
 
-  ['prefFollows', 'prefHearts', 'prefComments', 'prefRemakes', 'prefChallengeJoins'].forEach((id) => {
+  ['prefFollows', 'prefHearts', 'prefComments', 'prefRemakes', 'prefChallengeJoins', 'prefMessages', 'prefReviews', 'prefGroupJoins', 'prefEmail'].forEach((id) => {
     document.getElementById(id).addEventListener('change', savePrefs);
   });
 
@@ -379,6 +408,10 @@
     document.getElementById('prefComments').checked = prefs.notify_comments;
     document.getElementById('prefRemakes').checked = prefs.notify_remakes;
     document.getElementById('prefChallengeJoins').checked = prefs.notify_challenge_joins;
+    document.getElementById('prefMessages').checked = prefs.notify_messages;
+    document.getElementById('prefReviews').checked = prefs.notify_reviews;
+    document.getElementById('prefGroupJoins').checked = prefs.notify_group_joins;
+    document.getElementById('prefEmail').checked = prefs.notify_email;
   })();
 </script>
 </body>

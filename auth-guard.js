@@ -83,25 +83,22 @@
     btn.appendChild(dot);
 
     async function refreshUnreadDot() {
-      const items = await window.CookzerNotifications.fetchItems(userId, 1);
-      if (items.length === 0) { dot.style.display = 'none'; return; }
-      const readAt = await window.CookzerNotifications.getReadAt(userId);
-      const latest = new Date(items[0].created_at);
-      dot.style.display = (!readAt || latest > readAt) ? 'block' : 'none';
+      const count = await window.CookzerNotifications.getUnreadCount(userId);
+      dot.style.display = count > 0 ? 'block' : 'none';
     }
 
     async function loadNotifications() {
       panel.innerHTML = '<div style="padding:12px; font-size:13px; color:var(--ink-soft);">Loading…</div>';
-      const items = await window.CookzerNotifications.fetchItems(userId, 5);
+      const items = await window.CookzerNotifications.fetchItems(userId, 8);
 
       panel.innerHTML = '';
       if (items.length === 0) {
         panel.innerHTML = '<div style="padding:12px; font-size:13px; color:var(--ink-soft);">No activity yet.</div>';
       } else {
-        items.slice(0, 8).forEach((item) => {
+        items.forEach((item) => {
           const row = document.createElement('a');
-          row.href = 'cookzer-profile.html?id=' + item.actorId;
-          row.style.cssText = 'display:block; padding:10px 8px; font-size:13px; color:var(--ink); border-bottom:1px solid var(--line); text-decoration:none;';
+          row.href = item.linkUrl || ('cookzer-profile.html?id=' + item.actorId);
+          row.style.cssText = 'display:block; padding:10px 8px; font-size:13px; color:var(--ink); border-bottom:1px solid var(--line); text-decoration:none;' + (item.read_at ? '' : ' background:rgba(0,156,74,0.06);');
           const text = document.createElement('div');
           text.textContent = item.text;
           const time = document.createElement('div');
@@ -119,7 +116,7 @@
       seeAll.textContent = 'See all notifications';
       panel.appendChild(seeAll);
 
-      await window.CookzerNotifications.markRead(userId);
+      await window.CookzerNotifications.markAllRead(userId);
       dot.style.display = 'none';
     }
 
