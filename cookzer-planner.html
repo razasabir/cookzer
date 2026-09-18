@@ -158,6 +158,95 @@
 
   .shopping-list-item:last-child { border-bottom: none; }
 
+  /* Sharing + family suggestions — a week's plan stays private by
+     default (meal_plan_entries.group_id is nullable); picking a group
+     here just makes new/updated entries visible to that group's other
+     members (migration 028's extra SELECT policy), it never lets them
+     edit your plan. */
+  .share-row {
+      width: 100%;
+      max-width: 700px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: var(--ink-soft);
+    }
+
+  .share-row select {
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--cream);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+  .share-apply-link {
+      background: none;
+      border: none;
+      color: var(--olive-dark);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+
+  .planner-day-wrap { margin-bottom: 12px; }
+  .planner-day-wrap .planner-day { margin-bottom: 0; }
+  .planner-day-wrap.has-suggestions .planner-day { border-radius: 18px 18px 0 0; }
+
+  .day-suggestions {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-top: none;
+      border-radius: 0 0 18px 18px;
+      padding: 10px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+  .suggestion-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      font-size: 12px;
+      color: var(--ink);
+    }
+
+  .suggestion-chip .use-btn {
+      background: none;
+      border: none;
+      color: var(--olive-dark);
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 0;
+      margin-left: 2px;
+    }
+
+  .add-suggestion-btn {
+      background: none;
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      padding: 5px 10px;
+      font-size: 12px;
+      color: var(--ink-soft);
+      cursor: pointer;
+    }
+
+  .add-suggestion-btn:hover { border-color: var(--olive); color: var(--olive-dark); }
+
   /* Cart section */
     .cart-section {
       width: 100%;
@@ -294,6 +383,12 @@
   <div class="planner-content">
     <h1 class="page-title">This week's plan</h1>
 
+    <div class="share-row">
+      Share this week with:
+      <select id="shareGroupSelect"><option value="">Just me</option></select>
+      <button class="share-apply-link" id="shareApplyBtn" type="button" hidden>Also share this week's existing meals →</button>
+    </div>
+
     <div style="width:100%; max-width:700px; display:flex; justify-content:flex-end; margin-bottom:12px;">
       <button class="meal-add-btn" id="copyLastWeekBtn" type="button">📋 Copy last week's plan</button>
     </div>
@@ -345,6 +440,147 @@
   }
 
   let entriesByDate = {};
+  let suggestionsByDate = {};
+  let currentShareGroupId = localStorage.getItem('cookzer-planner-share-group') || '';
+  let familyProfilesCache = null;
+
+  async function loadMyGroups() {
+    const { data } = await sb.from('group_members').select('group_id, groups(id, name)').eq('user_id', currentUser.id);
+    const groups = (data || []).map((r) => r.groups).filter(Boolean);
+    const select = document.getElementById('shareGroupSelect');
+    select.innerHTML = '<option value="">Just me</option>';
+    groups.forEach((g) => {
+      const opt = document.createElement('option');
+      opt.value = g.id;
+      opt.textContent = g.name;
+      select.appendChild(opt);
+    });
+    // A group this account left/lost access to since last visit
+    // shouldn't silently keep "sharing" — fall back to private.
+    if (currentShareGroupId && !groups.some((g) => g.id === currentShareGroupId)) {
+      currentShareGroupId = '';
+      localStorage.removeItem('cookzer-planner-share-group');
+    }
+    select.value = currentShareGroupId;
+  }
+
+  document.getElementById('shareGroupSelect').addEventListener('change', async (e) => {
+    currentShareGroupId = e.target.value;
+    if (currentShareGroupId) localStorage.setItem('cookzer-planner-share-group', currentShareGroupId);
+    else localStorage.removeItem('cookzer-planner-share-group');
+    document.getElementById('shareApplyBtn').hidden = !currentShareGroupId;
+    await loadSuggestions();
+    renderWeek(weekDates());
+  });
+
+  document.getElementById('shareApplyBtn').addEventListener('click', async () => {
+    if (!currentShareGroupId) return;
+    await sb.from('meal_plan_entries').update({ group_id: currentShareGroupId }).eq('user_id', currentUser.id).in('plan_date', weekDates());
+    await CookzerModal.alert('This week\'s existing meals are now shared with that group too.');
+  });
+
+  async function loadFamilyProfilesCache() {
+    if (familyProfilesCache) return familyProfilesCache;
+    const { data } = await sb.from('family_profiles').select('id, name, avatar_emoji').eq('owner_id', currentUser.id);
+    familyProfilesCache = data || [];
+    return familyProfilesCache;
+  }
+
+  async function loadSuggestions() {
+    suggestionsByDate = {};
+    if (!currentShareGroupId) return;
+    const { data } = await sb
+      .from('meal_suggestions')
+      .select('id, suggestion_date, dish_text, recipe_id, suggested_by_user_id, suggested_by_family_profile_id, profiles(display_name), family_profiles(name, avatar_emoji)')
+      .eq('group_id', currentShareGroupId)
+      .in('suggestion_date', weekDates())
+      .order('created_at', { ascending: true });
+    (data || []).forEach((s) => {
+      if (!suggestionsByDate[s.suggestion_date]) suggestionsByDate[s.suggestion_date] = [];
+      suggestionsByDate[s.suggestion_date].push(s);
+    });
+  }
+
+  function suggesterLabel(s) {
+    if (s.family_profiles) return s.family_profiles.avatar_emoji + ' ' + s.family_profiles.name;
+    return (s.profiles && s.profiles.display_name) || 'Someone';
+  }
+
+  async function useSuggestion(s, date) {
+    const { error } = await sb.from('meal_plan_entries').insert({
+      user_id: currentUser.id,
+      plan_date: date,
+      recipe_id: s.recipe_id,
+      free_text: s.recipe_id ? null : s.dish_text,
+      source_note: 'suggested by ' + suggesterLabel(s),
+      group_id: currentShareGroupId || null,
+    });
+    if (error) { await CookzerModal.alert('Could not use this suggestion: ' + error.message); return; }
+    await loadWeek();
+  }
+
+  async function openAddSuggestion(date) {
+    const familyProfiles = await loadFamilyProfilesCache();
+    let suggesterFields = { suggested_by_user_id: currentUser.id };
+
+    if (familyProfiles.length > 0) {
+      const options = ['You'].concat(familyProfiles.map((f) => f.avatar_emoji + ' ' + f.name));
+      const listText = options.map((o, i) => (i + 1) + '. ' + o).join('\n');
+      const pick = await CookzerModal.prompt('Who\'s suggesting?\n' + listText);
+      if (pick === null) return;
+      const idx = parseInt(pick, 10) - 1;
+      if (idx === 0) {
+        suggesterFields = { suggested_by_user_id: currentUser.id };
+      } else if (familyProfiles[idx - 1]) {
+        suggesterFields = { suggested_by_family_profile_id: familyProfiles[idx - 1].id };
+      } else {
+        return;
+      }
+    }
+
+    const dish = await CookzerModal.prompt('What do you want to eat that day?');
+    if (!dish || !dish.trim()) return;
+
+    const { error } = await sb.from('meal_suggestions').insert({
+      group_id: currentShareGroupId,
+      suggestion_date: date,
+      dish_text: dish.trim(),
+      ...suggesterFields,
+    });
+    if (error) { await CookzerModal.alert('Could not add suggestion: ' + error.message); return; }
+    await loadSuggestions();
+    renderWeek(weekDates());
+  }
+
+  function renderDaySuggestions(date) {
+    const wrap = document.createElement('div');
+    wrap.className = 'day-suggestions';
+
+    const dayEntries = suggestionsByDate[date] || [];
+    dayEntries.slice(0, 5).forEach((s) => {
+      const chip = document.createElement('span');
+      chip.className = 'suggestion-chip';
+      chip.textContent = suggesterLabel(s) + ': ' + s.dish_text;
+      const useBtn = document.createElement('button');
+      useBtn.type = 'button';
+      useBtn.className = 'use-btn';
+      useBtn.textContent = 'Use this →';
+      useBtn.addEventListener('click', () => useSuggestion(s, date));
+      chip.appendChild(useBtn);
+      wrap.appendChild(chip);
+    });
+
+    if (dayEntries.length < 5) {
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.className = 'add-suggestion-btn';
+      addBtn.textContent = '+ Suggest';
+      addBtn.addEventListener('click', () => openAddSuggestion(date));
+      wrap.appendChild(addBtn);
+    }
+
+    return wrap;
+  }
 
   function lastWeekDates() {
     return weekDates().map((d) => {
@@ -405,6 +641,7 @@
       entriesByDate[e.plan_date] = e;
     });
 
+    await loadSuggestions();
     renderWeek(dates);
     renderNutritionSummary(data || []);
   }
@@ -519,7 +756,11 @@
         row.appendChild(addBtn);
       }
 
-      grid.appendChild(row);
+      const wrap = document.createElement('div');
+      wrap.className = 'planner-day-wrap' + (currentShareGroupId ? ' has-suggestions' : '');
+      wrap.appendChild(row);
+      if (currentShareGroupId) wrap.appendChild(renderDaySuggestions(date));
+      grid.appendChild(wrap);
     });
   }
 
@@ -566,6 +807,7 @@
     const { error } = await sb.from('meal_plan_entries').insert({
       user_id: currentUser.id,
       plan_date: date,
+      group_id: currentShareGroupId || null,
       ...choice,
     });
     if (error) {
@@ -649,6 +891,8 @@
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
     currentUser = user;
+    await loadMyGroups();
+    document.getElementById('shareApplyBtn').hidden = !currentShareGroupId;
     await loadWeek();
   })();
 </script>

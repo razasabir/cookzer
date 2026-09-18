@@ -141,6 +141,53 @@
       padding: 6px 0;
     }
 
+  .family-profile-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+  .family-profile-row:last-child { border-bottom: none; }
+
+  .family-profile-emoji {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--cream);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+  .family-profile-name { flex: 1; font-size: 14px; color: var(--ink); }
+
+  .family-profile-remove {
+      background: none;
+      border: none;
+      color: var(--brick);
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+  .family-emoji-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+  .family-emoji-btn.selected { border-color: var(--olive); background: var(--plus-tint); }
+
   @media (max-width: 900px) { .right-sidebar { display: none; } }
   @media (max-width: 768px) {
       .sidebar { position: fixed; top: 0; left: -280px; height: 100vh; height: 100dvh; z-index: 100; transition: left 0.25s ease; }
@@ -229,6 +276,20 @@
         </div>
       </div>
       <div class="settings-status" id="accountStatus"></div>
+    </div>
+
+    <div class="settings-section">
+      <h2>Family Profiles</h2>
+      <div class="section-dek">Named profiles for household members who don't want their own login — a kid can pick their own name on a shared device to suggest a meal, without a real Cookzer account. Visible to anyone in a group you share a meal plan with.</div>
+      <div id="familyProfilesList"></div>
+      <div class="field-row" style="margin-top:10px;">
+        <div style="display:flex; gap:4px;" id="familyEmojiPicker"></div>
+        <div class="field" style="flex:1; min-width:140px; margin-bottom:0;">
+          <input type="text" id="familyNameInput" placeholder="Name (e.g. Emma)" maxlength="40">
+        </div>
+        <button class="settings-btn" id="addFamilyProfileBtn" type="button">Add</button>
+      </div>
+      <div class="settings-status" id="familyProfilesStatus"></div>
     </div>
 
     <div class="settings-section">
@@ -333,6 +394,68 @@
   }
 
   let currentUser = null;
+
+  const FAMILY_EMOJIS = ['🧑', '👧', '👦', '🧒', '👶', '👴', '👵'];
+  let selectedFamilyEmoji = FAMILY_EMOJIS[0];
+  const emojiPicker = document.getElementById('familyEmojiPicker');
+  FAMILY_EMOJIS.forEach((emoji, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'family-emoji-btn' + (i === 0 ? ' selected' : '');
+    btn.textContent = emoji;
+    btn.addEventListener('click', () => {
+      selectedFamilyEmoji = emoji;
+      emojiPicker.querySelectorAll('.family-emoji-btn').forEach((b) => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+    emojiPicker.appendChild(btn);
+  });
+
+  async function loadFamilyProfiles() {
+    const { data: profiles } = await sb
+      .from('family_profiles')
+      .select('id, name, avatar_emoji')
+      .eq('owner_id', currentUser.id)
+      .order('created_at', { ascending: true });
+
+    const listEl = document.getElementById('familyProfilesList');
+    listEl.innerHTML = '';
+    (profiles || []).forEach((p) => {
+      const row = document.createElement('div');
+      row.className = 'family-profile-row';
+      const emoji = document.createElement('div');
+      emoji.className = 'family-profile-emoji';
+      emoji.textContent = p.avatar_emoji;
+      const name = document.createElement('div');
+      name.className = 'family-profile-name';
+      name.textContent = p.name;
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'family-profile-remove';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', async () => {
+        if (!(await CookzerModal.confirm('Remove "' + p.name + '"? Their past meal suggestions stay, but they can no longer be picked as the suggester.'))) return;
+        await sb.from('family_profiles').delete().eq('id', p.id);
+        await loadFamilyProfiles();
+      });
+      row.appendChild(emoji);
+      row.appendChild(name);
+      row.appendChild(removeBtn);
+      listEl.appendChild(row);
+    });
+  }
+
+  document.getElementById('addFamilyProfileBtn').addEventListener('click', async () => {
+    const nameInput = document.getElementById('familyNameInput');
+    const name = nameInput.value.trim();
+    const status = document.getElementById('familyProfilesStatus');
+    if (!name) { status.textContent = 'Give them a name first.'; return; }
+    const { error } = await sb.from('family_profiles').insert({ owner_id: currentUser.id, name, avatar_emoji: selectedFamilyEmoji });
+    if (error) { status.textContent = 'Could not add: ' + error.message; return; }
+    nameInput.value = '';
+    status.textContent = '';
+    await loadFamilyProfiles();
+  });
 
   document.getElementById('saveNameBtn').addEventListener('click', async () => {
     const name = document.getElementById('displayNameInput').value.trim();
@@ -439,6 +562,8 @@
 
     const { data: profile } = await sb.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
     if (profile) document.getElementById('displayNameInput').value = profile.display_name || '';
+
+    await loadFamilyProfiles();
 
     const prefs = await window.CookzerNotifications.loadPrefs(user.id);
     document.getElementById('prefFollows').checked = prefs.notify_follows;

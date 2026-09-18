@@ -287,7 +287,10 @@
   <div class="groups-content">
     <div class="page-header-row">
       <h1 class="page-title">Groups</h1>
-      <button class="create-group-btn" id="createGroupBtn" type="button">+ Create group</button>
+      <div style="display:flex; gap:10px;">
+        <button class="create-group-btn" id="joinGroupBtn" type="button" style="background:var(--cream); color:var(--olive-dark); border:1px solid var(--line);">Join with code</button>
+        <button class="create-group-btn" id="createGroupBtn" type="button">+ Create group</button>
+      </div>
     </div>
 
     <div class="create-group-panel hidden" id="createGroupPanel">
@@ -297,9 +300,22 @@
       <textarea id="groupDescInput" rows="3" placeholder="What's this group about?" maxlength="300"></textarea>
       <label>Cover color</label>
       <div class="cover-swatch-row" id="coverSwatchRow"></div>
+      <label style="display:flex; align-items:center; gap:8px; text-transform:none; font-weight:500; margin-top:16px;">
+        <input type="checkbox" id="groupPrivateInput" style="width:auto;">
+        🔒 Private — only people with an invite code can join (for a household or a close circle, not an open community)
+      </label>
       <div class="create-group-actions">
         <button class="create-group-btn" id="cancelGroupBtn" type="button" style="background:var(--cream); color:var(--ink-soft);">Cancel</button>
         <button class="create-group-btn" id="saveGroupBtn" type="button">Create</button>
+      </div>
+    </div>
+
+    <div class="create-group-panel hidden" id="joinGroupPanel">
+      <label>Invite code</label>
+      <input type="text" id="joinCodeInput" placeholder="e.g. 7F3KQ2A1" maxlength="12" style="text-transform:uppercase;">
+      <div class="create-group-actions">
+        <button class="create-group-btn" id="cancelJoinBtn" type="button" style="background:var(--cream); color:var(--ink-soft);">Cancel</button>
+        <button class="create-group-btn" id="submitJoinBtn" type="button">Join</button>
       </div>
     </div>
 
@@ -338,20 +354,58 @@
   });
 
   document.getElementById('createGroupBtn').addEventListener('click', () => {
+    document.getElementById('joinGroupPanel').classList.add('hidden');
     document.getElementById('createGroupPanel').classList.toggle('hidden');
   });
   document.getElementById('cancelGroupBtn').addEventListener('click', () => {
     document.getElementById('createGroupPanel').classList.add('hidden');
   });
 
+  document.getElementById('joinGroupBtn').addEventListener('click', () => {
+    document.getElementById('createGroupPanel').classList.add('hidden');
+    document.getElementById('joinGroupPanel').classList.toggle('hidden');
+  });
+  document.getElementById('cancelJoinBtn').addEventListener('click', () => {
+    document.getElementById('joinGroupPanel').classList.add('hidden');
+  });
+
+  document.getElementById('submitJoinBtn').addEventListener('click', async () => {
+    const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+    if (!code) return;
+    const { data: groupId, error } = await sb.rpc('join_private_group', { p_invite_code: code });
+    if (error) {
+      await CookzerModal.alert('Could not join: ' + error.message);
+      return;
+    }
+    window.location.href = 'cookzer-group.html?id=' + groupId;
+  });
+
+  // 8 chars from a wide alphabet is plenty to make guessing a private
+  // group's code impractical — this is a household/close-circle gate,
+  // not a security boundary against a targeted attacker.
+  function generateInviteCode() {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)];
+    return code;
+  }
+
   document.getElementById('saveGroupBtn').addEventListener('click', async () => {
     const name = document.getElementById('groupNameInput').value.trim();
     if (!name) return;
     const description = document.getElementById('groupDescInput').value.trim();
+    const isPrivate = document.getElementById('groupPrivateInput').checked;
 
     const { data: group, error } = await sb
       .from('groups')
-      .insert({ name, description: description || null, cover_gradient: selectedCover, created_by: currentUser.id })
+      .insert({
+        name,
+        description: description || null,
+        cover_gradient: selectedCover,
+        created_by: currentUser.id,
+        is_private: isPrivate,
+        invite_code: isPrivate ? generateInviteCode() : null,
+      })
       .select('id')
       .single();
 
@@ -368,7 +422,7 @@
   async function loadGroups() {
     const { data: groups } = await sb
       .from('groups')
-      .select('id, name, description, cover_gradient, created_at')
+      .select('id, name, description, cover_gradient, is_private, created_at')
       .order('created_at', { ascending: false });
 
     const grid = document.getElementById('groupsGrid');
@@ -397,7 +451,7 @@
       body.className = 'group-body';
       const name = document.createElement('div');
       name.className = 'group-name';
-      name.textContent = g.name;
+      name.textContent = (g.is_private ? '🔒 ' : '') + g.name;
       const desc = document.createElement('div');
       desc.className = 'group-desc';
       desc.textContent = g.description || '';
