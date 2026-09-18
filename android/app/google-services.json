@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "399270908248",
+    "project_id": "cookzer-c3103",
+    "storage_bucket": "cookzer-c3103.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:399270908248:android:17b223f4fff1c206e5152d",
+        "android_client_info": {
+          "package_name": "com.cookzer.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDMOP_LBrg9u_nCNgjzvke5MGz4Opba5DE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
