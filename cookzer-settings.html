@@ -290,7 +290,6 @@
         <label class="switch"><input type="checkbox" id="prefPush"><span class="switch-slider"></span></label>
       </div>
       <div class="settings-status" id="prefsStatus"></div>
-      <div id="nativeDebugInfo" style="margin-top:10px;padding:8px 10px;border-radius:8px;background:#f4f4f4;font-family:monospace;font-size:12px;color:#333;white-space:pre-wrap;word-break:break-all;"></div>
     </div>
 
     <div class="settings-section">
@@ -446,21 +445,6 @@
     document.getElementById('prefEmail').checked = prefs.notify_email;
     document.getElementById('prefPush').checked = prefs.notify_push;
   })();
-
-  // Temporary diagnostic — remove once the Android push/OAuth
-  // investigation is done. Confirms whether Capacitor's native bridge is
-  // actually present in this WebView; run twice (immediately and after a
-  // beat) in case the bridge injects slightly after this script runs.
-  function renderNativeDebug() {
-    const el = document.getElementById('nativeDebugInfo');
-    const hasCapacitor = !!window.Capacitor;
-    const isNative = hasCapacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
-    const platform = hasCapacitor && window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : 'n/a';
-    const plugins = hasCapacitor && window.Capacitor.Plugins ? Object.keys(window.Capacitor.Plugins).join(', ') : 'n/a';
-    el.textContent = 'window.Capacitor: ' + hasCapacitor + '\nisNativePlatform(): ' + isNative + '\ngetPlatform(): ' + platform + '\nPlugins: ' + plugins;
-  }
-  renderNativeDebug();
-  setTimeout(renderNativeDebug, 1500);
 </script>
 </body>
 </html>
