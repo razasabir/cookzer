@@ -49,7 +49,7 @@
       },
       { onConflict: 'user_id' }
     );
-    return !error;
+    return error ? error.message : null;
   }
 
   function enableNative(userId) {
@@ -64,8 +64,8 @@
       }
       return new Promise((resolve) => {
         PushNotifications.addListener('registration', (token) => {
-          savePushPrefs(userId, token.value, 'android').then((saved) => {
-            resolve(saved ? { ok: true } : { ok: false, error: 'Got a device token but could not save it.' });
+          savePushPrefs(userId, token.value, 'android').then((saveError) => {
+            resolve(saveError ? { ok: false, error: 'Could not save device token: ' + saveError } : { ok: true });
           });
         });
         PushNotifications.addListener('registrationError', (err) => {
@@ -100,8 +100,8 @@
       const registration = await navigator.serviceWorker.ready;
       const token = await messaging.getToken({ vapidKey: config.vapidKey, serviceWorkerRegistration: registration });
       if (!token) return { ok: false, error: 'Could not get a push token.' };
-      const saved = await savePushPrefs(userId, token, 'web');
-      if (!saved) return { ok: false, error: 'Got a push token but could not save it.' };
+      const saveError = await savePushPrefs(userId, token, 'web');
+      if (saveError) return { ok: false, error: 'Could not save push token: ' + saveError };
       return { ok: true };
     } catch (e) {
       return { ok: false, error: (e && e.message) || 'Could not register for push notifications.' };
