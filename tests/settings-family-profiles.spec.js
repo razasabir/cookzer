@@ -72,3 +72,63 @@ test.describe('Settings — how many people you cook for', () => {
     await page.locator('.cz-modal-btn').click();
   });
 });
+
+test.describe('Settings — adding a friend as a family member', () => {
+  test('the picker lists people you follow', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-settings.html', 'settings-family-profiles.js');
+    await page.click('#addFriendFamilyProfileBtn');
+    await expect(page.locator('#pickerModal h3')).toContainText('Add a friend as a family member');
+    await expect(page.locator('.cz2-row')).toHaveCount(2);
+    await expect(page.locator('.cz2-row')).toContainText(['Jordan Lee', 'Casey Kim']);
+  });
+
+  test('picking a friend links their real account, name, and avatar — no chip picker', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-settings.html', 'settings-family-profiles.js');
+    await page.click('#addFriendFamilyProfileBtn');
+    await page.locator('.cz2-row', { hasText: 'Jordan Lee' }).click();
+
+    await expect.poll(() => page.evaluate(() => window.__INSERTED_FAMILY_PROFILES__.length)).toBe(1);
+    const inserted = await page.evaluate(() => window.__INSERTED_FAMILY_PROFILES__[0]);
+    expect(inserted.linked_user_id).toBe('friend-1');
+    expect(inserted.name).toBe('Jordan Lee');
+    expect(inserted.avatar_emoji).toBe('JL');
+    await expect(page.locator('#pickerOverlay')).toBeHidden();
+
+    await expect(page.locator('.family-profile-row')).toHaveCount(2);
+    const newRow = page.locator('.family-profile-row', { hasText: 'Jordan Lee' });
+    await expect(newRow.locator('.family-profile-linked-badge')).toHaveText('Friend');
+    await expect(newRow.locator('.family-profile-kidmode')).toHaveCount(0);
+  });
+
+  test('searching the picker filters by name', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-settings.html', 'settings-family-profiles.js');
+    await page.click('#addFriendFamilyProfileBtn');
+    await page.fill('#pickerModal input[type="text"]', 'casey');
+    await expect(page.locator('.cz2-row')).toHaveCount(1);
+    await expect(page.locator('.cz2-row')).toContainText('Casey Kim');
+  });
+
+  test('an already-linked friend no longer appears in the picker', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-settings.html', 'settings-family-profiles.js');
+    await page.click('#addFriendFamilyProfileBtn');
+    await page.locator('.cz2-row', { hasText: 'Jordan Lee' }).click();
+    await expect.poll(() => page.evaluate(() => window.__INSERTED_FAMILY_PROFILES__.length)).toBe(1);
+
+    await page.click('#addFriendFamilyProfileBtn');
+    await expect(page.locator('.cz2-row')).toHaveCount(1);
+    await expect(page.locator('.cz2-row')).toContainText('Casey Kim');
+  });
+
+  test('once every followed friend is added, the picker explains there\'s no one left', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-settings.html', 'settings-family-profiles.js');
+    await page.click('#addFriendFamilyProfileBtn');
+    await page.locator('.cz2-row', { hasText: 'Jordan Lee' }).click();
+    await expect.poll(() => page.evaluate(() => window.__INSERTED_FAMILY_PROFILES__.length)).toBe(1);
+    await page.click('#addFriendFamilyProfileBtn');
+    await page.locator('.cz2-row', { hasText: 'Casey Kim' }).click();
+    await expect.poll(() => page.evaluate(() => window.__INSERTED_FAMILY_PROFILES__.length)).toBe(2);
+
+    await page.click('#addFriendFamilyProfileBtn');
+    await expect(page.locator('#pickerModal')).toContainText('Everyone you follow is already added.');
+  });
+});
