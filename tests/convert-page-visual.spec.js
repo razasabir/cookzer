@@ -126,6 +126,22 @@ test.describe('Convert page — pan quick picker', () => {
     await expect(page.locator('.pan-size-card:visible')).toContainText('9" Pie Plate');
     await expect(page.locator('.pan-size-card:visible')).toContainText('4 cups');
   });
+
+  test('tapping a pan card itself (not just its icon above) filters the list and loads the calculator', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.click('.convert-tab[data-tab="pans"]');
+
+    const loafCard = page.locator('.pan-size-card', { hasText: '9" x 5" x 3" Loaf' });
+    await loafCard.click();
+    await expect(loafCard).toHaveClass(/active/);
+    await expect(page.locator('.pan-picker-btn').nth(6)).toHaveClass(/active/); // loaf icon
+    await expect(page.locator('.pan-size-card:visible')).toHaveCount(1);
+    await expect(page.locator('#customPanShapeLabel')).toHaveText('Loaf');
+
+    await loafCard.click();
+    await expect(loafCard).not.toHaveClass(/active/);
+    await expect(page.locator('.pan-size-card:visible')).toHaveCount(8);
+  });
 });
 
 test.describe('Convert page — custom pan calculator', () => {

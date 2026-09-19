@@ -156,7 +156,12 @@
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 14px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
     }
+    .pan-size-card:hover { border-color: var(--olive); }
+    .pan-size-card:focus-visible { outline: 2px solid var(--olive); outline-offset: 2px; }
+    .pan-size-card.active { background: var(--plus-tint); border-color: var(--olive); }
     .pan-size-icon {
       flex-shrink: 0;
       width: 48px;
@@ -879,7 +884,7 @@
   let customPanShapeKey = 'round';
 
   function resetPanFilter() {
-    document.querySelectorAll('.pan-picker-btn').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('.pan-picker-btn, .pan-size-card').forEach((b) => b.classList.remove('active'));
     panCardEls.forEach((c) => { c.hidden = false; });
     panPickerReset.classList.remove('visible');
   }
@@ -888,6 +893,8 @@
     const card = document.createElement('div');
     card.className = 'pan-size-card';
     card.dataset.icon = pan.icon;
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
     card.innerHTML = `
       <div class="pan-size-icon">${panIconSVG(pan.icon)}</div>
       <div class="pan-size-body">
@@ -898,28 +905,41 @@
     panSizeList.appendChild(card);
     panCardEls.push(card);
 
-    // Quick picker — tap the shape you actually have to filter the list
-    // down to just that one, instead of reading through all seven.
+    // Quick picker — tap the shape you actually have (either its icon
+    // above, or its card in the list) to filter the list down to just
+    // that one and load it into the custom calculator, instead of
+    // reading through all eight.
     const pickerBtn = document.createElement('button');
     pickerBtn.type = 'button';
     pickerBtn.className = 'pan-picker-btn';
     pickerBtn.title = pan.name;
     pickerBtn.innerHTML = panIconSVG(pan.icon);
-    pickerBtn.addEventListener('click', () => {
+    panPickerStrip.appendChild(pickerBtn);
+
+    function selectThisPan() {
       const isActive = pickerBtn.classList.contains('active');
       if (isActive) {
         resetPanFilter();
         return;
       }
-      document.querySelectorAll('.pan-picker-btn').forEach((b) => b.classList.remove('active'));
+      document.querySelectorAll('.pan-picker-btn, .pan-size-card').forEach((b) => b.classList.remove('active'));
       pickerBtn.classList.add('active');
+      card.classList.add('active');
       panCardEls.forEach((c) => { c.hidden = c.dataset.icon !== pan.icon; });
       panPickerReset.classList.add('visible');
 
       customPanShapeKey = pan.icon;
       renderCustomPanFields();
+    }
+
+    pickerBtn.addEventListener('click', selectThisPan);
+    card.addEventListener('click', selectThisPan);
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        selectThisPan();
+      }
     });
-    panPickerStrip.appendChild(pickerBtn);
   });
 
   panPickerReset.addEventListener('click', resetPanFilter);
