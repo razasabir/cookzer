@@ -3,6 +3,10 @@ window.__INSERTED_ENTRIES__ = [];
 
 const MY_GROUPS = [{ group_id: 'group-1', groups: { id: 'group-1', name: 'The Smiths' } }];
 const FAMILY_PROFILES = [{ id: 'fam-1', name: 'Emma', avatar_emoji: '👧' }];
+const RECIPES = [
+  { id: 'r1', title: 'Lemon Herb Chicken' },
+  { id: 'r2', title: 'Spaghetti Carbonara' },
+];
 
 // The planner always keys suggestions off the real clock's Monday of
 // this week — rather than hardcode a date, this seeded suggestion is
@@ -44,7 +48,7 @@ function chain(table) {
       } else if (table === 'family_profiles') {
         result = FAMILY_PROFILES;
       } else if (table === 'recipes') {
-        result = [];
+        result = RECIPES;
       }
       return Promise.resolve({ data: result, error: null }).then(resolve);
     },
