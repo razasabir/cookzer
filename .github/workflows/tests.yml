@@ -24,6 +24,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
-      - run: npx playwright install --with-deps chromium
+          cache: npm
+      - run: npm ci
+      # The Chromium download (the slow part) is skipped whenever the
+      # pinned @playwright/test version hasn't changed; the runner VM is
+      # fresh every run, so the system deps step below still has to run
+      # regardless of the cache — it's just an apt install, not a download.
+      - name: Cache Playwright browser binaries
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright browser (cache miss only)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Playwright's system deps (cache hit — browser already downloaded)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
       - run: npm test
