@@ -4,7 +4,6 @@ const { loadPageWithMock } = require('./helpers/loadPage');
 test.describe('Tips & Tricks composer toggle', () => {
   test('posting with the Tip toggle active inserts kind: "tip"', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-tips-filter.js');
-    await page.click('#composerAddBtn');
     await page.click('#composerTipBtn');
     await expect(page.locator('#composerTipBtn')).toHaveClass(/active-tip-tag/);
     await expect(page.locator('.composer-modifier-chip', { hasText: 'Tip' })).toBeVisible();
@@ -25,7 +24,6 @@ test.describe('Tips & Tricks composer toggle', () => {
 
   test('the toggle resets after a successful post', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-tips-filter.js');
-    await page.click('#composerAddBtn');
     await page.click('#composerTipBtn');
     await page.fill('#postCaption', 'A tip.');
     await page.click('#composerPostBtn');

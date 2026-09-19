@@ -143,15 +143,18 @@
       align-items: center;
     }
 
-  /* Post composer */
+  /* Post composer — Facebook-style minimalism: a colorful surface instead
+     of a plain white card, and every add-on shown as a plain clickable
+     icon + label (no button chrome, no hidden menu) instead of a
+     "+ Add to post" trigger. */
     .composer {
-      background: var(--card-bg);
-      border: 1px solid var(--line);
+      background: linear-gradient(135deg, var(--olive) 0%, var(--olive-dark) 55%, var(--mustard) 135%);
+      border: none;
       border-radius: 18px;
-      padding: 16px;
+      padding: 18px;
       margin-bottom: 24px;
       width: 100%;
-      box-shadow: 0 1px 3px rgba(43, 38, 32, 0.05);
+      box-shadow: 0 10px 28px rgba(31, 122, 74, 0.28);
     }
 
   .composer-header {
@@ -164,13 +167,14 @@
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      background: rgba(255, 255, 255, 0.9);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
-      font-weight: 600;
+      color: var(--olive-dark);
+      font-weight: 700;
       font-size: 14px;
+      flex-shrink: 0;
     }
 
   .composer-input {
@@ -179,9 +183,9 @@
 
   .composer-input input {
       width: 100%;
-      padding: 10px 14px;
-      background: var(--cream);
-      border: 1px solid var(--line);
+      padding: 11px 16px;
+      background: rgba(255, 255, 255, 0.94);
+      border: none;
       border-radius: 20px;
       font-size: 13px;
       color: var(--ink);
@@ -192,103 +196,50 @@
       color: var(--ink-soft);
     }
 
-
-  .composer-mood-chip {
-      padding: 4px 11px;
-      background: transparent;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      font-size: 11.5px;
-      color: var(--ink-soft);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-  .composer-mood-chip:hover { border-color: var(--mustard); color: var(--mustard); }
-
-  .composer-mood-chip.active { background: var(--mustard); color: #fff; border-color: var(--mustard); }
-
-  /* Composer "+" menu — replaces a row of 6 buttons that overflowed into
-     an ugly horizontal scrollbar on any narrow screen. One trigger,
-     a dropdown of the same actions; Photo/Video/Recipe fire immediately
-     and close it, Challenge/Tip toggle a modifier (shown as a removable
-     chip below, since their old on-button highlight is now hidden inside
-     a closed menu) and Dining out opens its own existing panel. */
-  .composer-add-wrap {
-      position: relative;
+  /* Icon row — every add-on is one tap away, styled as a plain icon +
+     label (like a logo you click, not a button you press) rather than
+     chrome hidden behind a "+ Add to post" menu. */
+  .composer-icons-row {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 2px;
       margin-top: 12px;
       padding-top: 12px;
-      border-top: 1px solid var(--line);
+      border-top: 1px solid rgba(255, 255, 255, 0.28);
     }
 
-  .composer-add-btn {
+  .composer-icon-btn {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 8px 14px;
-      background: var(--cream);
-      border: 1px solid var(--line);
-      border-radius: 20px;
+      padding: 7px 10px;
+      background: none;
+      border: none;
+      border-radius: 10px;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 600;
       font-family: inherit;
-      color: var(--olive-dark);
-      transition: background 0.15s ease, border-color 0.15s ease;
-    }
-
-  .composer-add-btn:hover { background: #f0e6d2; border-color: var(--olive); }
-  .composer-add-btn .plus { font-size: 16px; line-height: 1; }
-
-  .composer-add-dropdown {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      margin-top: 6px;
-      width: 220px;
-      background: var(--card-bg);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-      z-index: 60;
-      padding: 6px;
-    }
-
-  .composer-add-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-      padding: 9px 10px;
-      border-radius: 10px;
-      border: none;
-      background: none;
-      font-size: 13.5px;
-      font-family: inherit;
-      color: var(--ink);
-      text-align: left;
+      color: #fff;
       text-decoration: none;
-      cursor: pointer;
+      transition: background 0.15s ease, transform 0.15s ease;
     }
 
-  .composer-add-item:hover { background: var(--cream); }
-  .composer-add-item .emoji { font-size: 15px; }
-  .composer-add-item .check { margin-left: auto; color: var(--olive); font-weight: 700; }
-  .composer-add-item.active-modifier { color: var(--olive-dark); font-weight: 600; background: var(--plus-tint); }
+  .composer-icon-btn:hover { background: rgba(255, 255, 255, 0.16); transform: translateY(-1px); }
+  .composer-icon-btn .composer-icon { font-size: 19px; line-height: 1; }
+  .composer-icon-btn .check { color: #fff; font-weight: 700; }
+  .composer-icon-btn.active-modifier { background: rgba(255, 255, 255, 0.26); }
 
-  .composer-active-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .composer-active-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 
   .composer-modifier-chip {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       padding: 5px 10px;
-      background: var(--plus-tint);
-      border: 1px solid var(--plus-border);
+      background: rgba(255, 255, 255, 0.94);
+      border: none;
       border-radius: 14px;
       font-size: 12px;
       font-weight: 600;
@@ -1035,34 +986,24 @@
         <span id="videoUploadStatusText">Uploading…</span>
         <div class="upload-progress-track"><div class="upload-progress-fill" id="videoUploadProgressFill"></div></div>
       </div>
-      <div class="composer-add-wrap">
-        <button class="composer-add-btn" id="composerAddBtn" type="button" aria-haspopup="true" aria-expanded="false">
-          <span class="plus">+</span> Add to post
-        </button>
-        <div class="composer-add-dropdown" id="composerAddDropdown" hidden>
-          <button class="composer-add-item" id="composerPhotoBtn" type="button"><span class="emoji">📸</span> Photo</button>
-          <button class="composer-add-item" id="composerVideoBtn" type="button"><span class="emoji">🎥</span> Video</button>
-          <a class="composer-add-item" href="cookzer-recipe-new.html?share=1"><span class="emoji">📝</span> Recipe</a>
-          <button class="composer-add-item" id="composerChallengeBtn" type="button"><span class="emoji">🏆</span> Challenge entry<span class="check" hidden>✓</span></button>
-          <button class="composer-add-item" id="composerRestaurantBtn" type="button"><span class="emoji">📍</span> Dining out</button>
-          <button class="composer-add-item" id="composerTipBtn" type="button" title="Mark this as a Tips &amp; Tricks post"><span class="emoji">💡</span> Tip<span class="check" hidden>✓</span></button>
-        </div>
-        <div class="composer-active-chips" id="composerActiveChips"></div>
+      <div class="composer-icons-row" id="composerIconsRow">
+        <button class="composer-icon-btn" id="composerPhotoBtn" type="button" title="Photo"><span class="composer-icon">📸</span> Photo</button>
+        <button class="composer-icon-btn" id="composerVideoBtn" type="button" title="Video"><span class="composer-icon">🎥</span> Video</button>
+        <a class="composer-icon-btn" href="cookzer-recipe-new.html?share=1" title="Recipe"><span class="composer-icon">📝</span> Recipe</a>
+        <button class="composer-icon-btn" id="composerChallengeBtn" type="button" title="Challenge entry"><span class="composer-icon">🏆</span> Challenge<span class="check" hidden>✓</span></button>
+        <button class="composer-icon-btn" id="composerRestaurantBtn" type="button" title="Dining out"><span class="composer-icon">📍</span> Dining out</button>
+        <button class="composer-icon-btn" id="composerTipBtn" type="button" title="Mark this as a Tips &amp; Tricks post"><span class="composer-icon">💡</span> Tip<span class="check" hidden>✓</span></button>
       </div>
+      <div class="composer-active-chips" id="composerActiveChips"></div>
       <div id="restaurantPanel" hidden style="margin-top:10px; background:var(--cream); border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-size:13px;">
         <div id="restaurantPanelBody">Finding nearby places…</div>
       </div>
-      <div id="restaurantTag" hidden style="margin-top:8px; display:flex; align-items:center; gap:8px; font-size:13px; color:var(--olive-dark);">
+      <div id="restaurantTag" hidden style="margin-top:8px; display:flex; align-items:center; gap:8px; font-size:13px; color:#fff; font-weight:600;">
         📍 <span id="restaurantTagName"></span>
-        <button type="button" id="restaurantTagRemove" style="background:none; border:none; color:var(--brick); cursor:pointer; font-size:13px;">✕</button>
+        <button type="button" id="restaurantTagRemove" style="background:none; border:none; color:#fff; cursor:pointer; font-size:13px; opacity:0.85;">✕</button>
       </div>
-      <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">
-        <div class="composer-mood-chip" data-mood="Comfort food">🍲 Comfort food</div>
-        <div class="composer-mood-chip" data-mood="Quick and easy">⚡ Quick &amp; easy</div>
-        <div class="composer-mood-chip" data-mood="Fancy tonight">✨ Fancy tonight</div>
-      </div>
-      <div style="display:flex; justify-content:flex-end; margin-top:10px;">
-        <button class="challenge-btn" id="composerPostBtn" type="button" style="background:var(--olive); color:#fff;">Post</button>
+      <div style="display:flex; justify-content:center; margin-top:14px;">
+        <button class="challenge-btn" id="composerPostBtn" type="button" style="background:linear-gradient(135deg, var(--mustard), var(--brick)); color:#fff; padding:10px 40px; font-size:13.5px; border-radius:22px;">Post</button>
       </div>
     </div>
 
@@ -1306,31 +1247,6 @@
     }).start();
   }
 
-  // Composer "+" dropdown — Photo/Video open their file pickers and
-  // Recipe navigates away (all close the menu via the delegated listener
-  // below); Challenge/Tip instead toggle a modifier that's shown as a
-  // removable chip once the menu is closed, since the old on-button
-  // highlight this replaced isn't visible while the menu is shut.
-  function closeComposerAddDropdown() {
-    document.getElementById('composerAddDropdown').hidden = true;
-    document.getElementById('composerAddBtn').setAttribute('aria-expanded', 'false');
-  }
-
-  document.getElementById('composerAddBtn').addEventListener('click', () => {
-    const dropdown = document.getElementById('composerAddDropdown');
-    const opening = dropdown.hidden;
-    dropdown.hidden = !opening;
-    document.getElementById('composerAddBtn').setAttribute('aria-expanded', String(opening));
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.composer-add-wrap')) closeComposerAddDropdown();
-  });
-
-  document.getElementById('composerAddDropdown').addEventListener('click', (e) => {
-    if (e.target.closest('.composer-add-item')) closeComposerAddDropdown();
-  });
-
   function makeModifierChip(label, onRemove) {
     const chip = document.createElement('span');
     chip.className = 'composer-modifier-chip';
@@ -1447,19 +1363,10 @@
     }
   });
 
+  // Mood is no longer settable from the composer (its chip row was
+  // removed), but stays a real column other posts already carry, read
+  // by the feed's mood badges and filter chips.
   let selectedMood = null;
-  document.querySelectorAll('.composer-mood-chip').forEach((chip) => {
-    chip.addEventListener('click', () => {
-      const isActive = chip.classList.contains('active');
-      document.querySelectorAll('.composer-mood-chip').forEach((c) => c.classList.remove('active'));
-      if (isActive) {
-        selectedMood = null;
-      } else {
-        chip.classList.add('active');
-        selectedMood = chip.dataset.mood;
-      }
-    });
-  });
 
   document.getElementById('composerPostBtn').addEventListener('click', createPost);
 
@@ -1644,7 +1551,6 @@
     document.getElementById('restaurantTag').hidden = true;
     document.getElementById('restaurantPanel').hidden = true;
     selectedRestaurant = null;
-    document.querySelectorAll('.composer-mood-chip').forEach((c) => c.classList.remove('active'));
     selectedMood = null;
 
     await loadFeed();
