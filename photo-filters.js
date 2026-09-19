@@ -56,6 +56,65 @@
     ctx.fillRect(0, 0, width, height);
   }
 
+  // Samples the photo at a small fixed size (fast, and resolution doesn't
+  // change what these averages mean) to get a rough read on exposure,
+  // color cast, and how punchy the colors already are.
+  function analyzePhoto(imgEl) {
+    const size = 48;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(imgEl, 0, 0, size, size);
+    const { data } = ctx.getImageData(0, 0, size, size);
+    let rSum = 0, gSum = 0, bSum = 0, satSum = 0;
+    const n = data.length / 4;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i], g = data[i + 1], b = data[i + 2];
+      rSum += r; gSum += g; bSum += b;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      satSum += max === 0 ? 0 : (max - min) / max;
+    }
+    const r = rSum / n, g = gSum / n, b = bSum / n;
+    return {
+      luma: 0.2126 * r + 0.7152 * g + 0.0722 * b, // perceived brightness, 0-255
+      warmth: r - b, // positive = yellow/orange cast, negative = blue cast
+      saturation: satSum / n, // 0-1, how punchy the colors already are
+    };
+  }
+
+  // Suggests a single starting filter from the existing preset list based
+  // on the photo's own exposure/cast/saturation — never a new manual
+  // control, just which swatch to pre-select. Returns null when the photo
+  // is already reasonably well-balanced (Original stays the default).
+  function suggestFilter(imgEl) {
+    let stats;
+    try {
+      stats = analyzePhoto(imgEl);
+    } catch (e) {
+      return null; // e.g. a tainted canvas — fail quiet, no suggestion
+    }
+    const { luma, warmth, saturation } = stats;
+    if (luma < 95) {
+      return warmth > 8
+        ? { key: 'fresh', reason: 'this photo looks a little dark' }
+        : { key: 'golden-hour', reason: 'this photo looks a little dark' };
+    }
+    if (luma > 195) {
+      return { key: 'crisp', reason: 'this photo looks a little washed out' };
+    }
+    if (saturation < 0.22) {
+      return { key: 'vivid', reason: 'the colors look a little flat' };
+    }
+    if (warmth < -18) {
+      return { key: 'warm', reason: 'this photo has a cool, bluish cast' };
+    }
+    if (warmth > 30) {
+      return { key: 'cool', reason: 'this photo has a warm, yellowish cast — common under indoor lighting' };
+    }
+    return null;
+  }
+
   function loadImage(src) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -105,8 +164,37 @@
       .pf-vignette-icon { font-size: 18px; line-height: 1; }
       .pf-vignette-label { font-size: 10px; color: var(--ink-soft, #6b6255); }
       .pf-vignette-toggle.active .pf-vignette-label { color: var(--forest, #2f6b3a); font-weight: 600; }
+      .pf-suggestion { font-size: 12px; color: var(--ink-soft, #6b6255); margin: 2px 2px 8px; }
+      .pf-suggestion strong { color: var(--forest, #2f6b3a); }
     `;
     document.head.appendChild(style);
+  }
+
+  // Renders (or hides, when suggestion is null) a one-line "✨ Suggested
+  // X — why" hint into containerEl. Purely informational — it doesn't
+  // wire up any control of its own; the caller pre-selects the suggested
+  // swatch and the existing swatch row remains how the user picks
+  // anything else, including Original.
+  function renderSuggestion(containerEl, suggestion) {
+    injectStyle();
+    if (!suggestion) {
+      containerEl.hidden = true;
+      containerEl.textContent = '';
+      return;
+    }
+    const f = FILTERS.find((x) => x.key === suggestion.key);
+    if (!f) {
+      containerEl.hidden = true;
+      return;
+    }
+    containerEl.className = (containerEl.className ? containerEl.className.replace(/\bpf-suggestion\b/, '').trim() + ' ' : '') + 'pf-suggestion';
+    containerEl.innerHTML = '';
+    containerEl.appendChild(document.createTextNode('✨ Suggested '));
+    const strong = document.createElement('strong');
+    strong.textContent = f.label;
+    containerEl.appendChild(strong);
+    containerEl.appendChild(document.createTextNode(' — ' + suggestion.reason + '.'));
+    containerEl.hidden = false;
   }
 
   // Renders the swatch row into containerEl and wires click handling.
@@ -157,5 +245,8 @@
     }
   }
 
-  window.CookzerPhotoFilters = { FILTERS, FILTER_CSS, VIGNETTE_PREVIEW_CSS, loadImage, bakeFilter, renderSwatches, injectStyle };
+  window.CookzerPhotoFilters = {
+    FILTERS, FILTER_CSS, VIGNETTE_PREVIEW_CSS,
+    loadImage, bakeFilter, renderSwatches, renderSuggestion, suggestFilter, injectStyle,
+  };
 })();

@@ -524,6 +524,7 @@
         </div>
       </div>
       <img id="composerPhotoPreview" hidden style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:10px;">
+      <div id="composerFilterSuggestion" hidden></div>
       <div id="composerFilterRow" hidden></div>
       <input type="file" id="composerPhotoInput" accept="image/*" hidden>
       <div class="composer-actions">
@@ -553,6 +554,7 @@
   let isMember = false;
   let pendingPhotoFilter = 'original';
   let pendingVignette = false;
+  let pendingFilterUserPicked = false;
   let pendingPhotoFile = null;
   let canManageGroup = false;
 
@@ -1019,7 +1021,9 @@
     const filterRow = document.getElementById('composerFilterRow');
     CookzerPhotoFilters.renderSwatches(filterRow, preview.src, pendingPhotoFilter, (f) => {
       pendingPhotoFilter = f.key;
+      pendingFilterUserPicked = true; // stop an in-flight suggestion from later overriding this
       preview.style.filter = f.css;
+      document.getElementById('composerFilterSuggestion').hidden = true; // the user made their own choice — stop suggesting
       renderComposerFilterRow();
     }, pendingVignette, (v) => {
       pendingVignette = v;
@@ -1034,14 +1038,32 @@
     pendingPhotoFile = file;
     pendingPhotoFilter = 'original';
     pendingVignette = false;
+    pendingFilterUserPicked = false;
     const preview = document.getElementById('composerPhotoPreview');
-    preview.src = URL.createObjectURL(file);
+    const url = URL.createObjectURL(file);
+    preview.src = url;
     preview.style.filter = 'none';
     preview.style.boxShadow = 'none';
     preview.hidden = false;
+    document.getElementById('composerFilterSuggestion').hidden = true;
 
     document.getElementById('composerFilterRow').hidden = false;
     renderComposerFilterRow();
+
+    // Suggest a starting filter based on the photo itself — a default +
+    // a hint only; every swatch, including Original, is still one click
+    // away. Guarded against a newer photo, or the user's own pick,
+    // landing first.
+    CookzerPhotoFilters.loadImage(url).then((img) => {
+      if (pendingPhotoFile !== file || pendingFilterUserPicked) return;
+      const suggestion = CookzerPhotoFilters.suggestFilter(img);
+      CookzerPhotoFilters.renderSuggestion(document.getElementById('composerFilterSuggestion'), suggestion);
+      if (suggestion) {
+        pendingPhotoFilter = suggestion.key;
+        preview.style.filter = CookzerPhotoFilters.FILTER_CSS[suggestion.key];
+        renderComposerFilterRow();
+      }
+    }).catch(() => {});
   });
 
   async function uploadPostPhoto(file, filterKey, vignette) {
@@ -1085,10 +1107,12 @@
     pendingPhotoFile = null;
     pendingPhotoFilter = 'original';
     pendingVignette = false;
+    pendingFilterUserPicked = false;
     document.getElementById('composerPhotoPreview').hidden = true;
     document.getElementById('composerPhotoPreview').style.filter = 'none';
     document.getElementById('composerPhotoPreview').style.boxShadow = 'none';
     document.getElementById('composerFilterRow').hidden = true;
+    document.getElementById('composerFilterSuggestion').hidden = true;
     await loadGroupFeed();
   });
 

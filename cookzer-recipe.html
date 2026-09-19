@@ -18,6 +18,7 @@
   <script src="auth-guard.js"></script>
   <script src="friends-widget.js"></script>
   <script src="cookzer-modal.js"></script>
+  <script src="photo-filters.js"></script>
   <script src="theme.js"></script>
 <script src="nutrition-data.js"></script>
   <script src="unit-convert.js"></script>
@@ -710,6 +711,7 @@
 
     <div class="preview-section" id="previewSection">
       <img class="preview-image" id="previewImage" alt="Your photo preview">
+      <div id="filterSuggestion" hidden></div>
       <div class="filter-row-label">Choose a filter</div>
       <div class="filter-row" id="filterRow"></div>
       <div class="modal-actions">
@@ -1508,6 +1510,7 @@
   let currentImageFile = null;
   let currentImageData = null;
   let currentFilter = FILTERS[0];
+  let filterUserPicked = false;
 
   const modalOverlay = document.getElementById('uploadModal');
   const dropzone = document.getElementById('dropzone');
@@ -1529,9 +1532,22 @@
     currentImageFile = null;
     currentImageData = null;
     currentFilter = FILTERS[0];
+    filterUserPicked = false;
     fileInput.value = '';
     dropzone.style.display = 'block';
     previewSection.style.display = 'none';
+    document.getElementById('filterSuggestion').hidden = true;
+  }
+
+  // Picks the given filter, updates the big preview, and reflects it in
+  // the swatch row's active state — shared by clicking a swatch and by
+  // the auto-suggestion below landing once its analysis finishes.
+  function applyFilterChoice(f) {
+    currentFilter = f;
+    previewImage.style.filter = f.css;
+    filterRow.querySelectorAll('.filter-swatch').forEach((el) => {
+      el.classList.toggle('active', el.dataset.filterKey === f.key);
+    });
   }
 
   dropzone.addEventListener('click', () => fileInput.click());
@@ -1540,6 +1556,7 @@
     const file = fileInput.files[0];
     if (!file) return;
     currentImageFile = file;
+    filterUserPicked = false;
     const reader = new FileReader();
     reader.onload = (e) => {
       currentImageData = e.target.result;
@@ -1558,6 +1575,7 @@
     FILTERS.forEach((f) => {
       const swatch = document.createElement('div');
       swatch.className = 'filter-swatch' + (f.key === currentFilter.key ? ' active' : '');
+      swatch.dataset.filterKey = f.key;
 
       const img = document.createElement('img');
       img.src = currentImageData;
@@ -1570,14 +1588,28 @@
       swatch.appendChild(img);
       swatch.appendChild(label);
       swatch.addEventListener('click', () => {
-        currentFilter = f;
-        previewImage.style.filter = f.css;
-        filterRow.querySelectorAll('.filter-swatch').forEach((el) => el.classList.remove('active'));
-        swatch.classList.add('active');
+        applyFilterChoice(f);
+        filterUserPicked = true; // stop an in-flight suggestion from later overriding this
+        document.getElementById('filterSuggestion').hidden = true; // the user made their own choice — stop suggesting
       });
 
       filterRow.appendChild(swatch);
     });
+
+    // Suggest a starting filter based on the photo itself — purely a
+    // default + a hint; every swatch, including Original, is still one
+    // click away. Guarded against a newer photo, or the user's own pick,
+    // landing first (this modal reuses the same DOM for repeat uploads).
+    const analyzedImageData = currentImageData;
+    CookzerPhotoFilters.loadImage(currentImageData).then((img) => {
+      if (currentImageData !== analyzedImageData || filterUserPicked) return;
+      const suggestion = CookzerPhotoFilters.suggestFilter(img);
+      CookzerPhotoFilters.renderSuggestion(document.getElementById('filterSuggestion'), suggestion);
+      if (suggestion) {
+        const f = FILTERS.find((x) => x.key === suggestion.key);
+        if (f) applyFilterChoice(f);
+      }
+    }).catch(() => {});
   }
 
   postBtn.addEventListener('click', async () => {
