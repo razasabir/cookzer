@@ -552,6 +552,7 @@
   let currentUser = null;
   let isMember = false;
   let pendingPhotoFilter = 'original';
+  let pendingVignette = false;
   let pendingPhotoFile = null;
   let canManageGroup = false;
 
@@ -1020,6 +1021,10 @@
       pendingPhotoFilter = f.key;
       preview.style.filter = f.css;
       renderComposerFilterRow();
+    }, pendingVignette, (v) => {
+      pendingVignette = v;
+      preview.style.boxShadow = v ? CookzerPhotoFilters.VIGNETTE_PREVIEW_CSS : 'none';
+      renderComposerFilterRow();
     });
   }
 
@@ -1028,23 +1033,25 @@
     if (!file) return;
     pendingPhotoFile = file;
     pendingPhotoFilter = 'original';
+    pendingVignette = false;
     const preview = document.getElementById('composerPhotoPreview');
     preview.src = URL.createObjectURL(file);
     preview.style.filter = 'none';
+    preview.style.boxShadow = 'none';
     preview.hidden = false;
 
     document.getElementById('composerFilterRow').hidden = false;
     renderComposerFilterRow();
   });
 
-  async function uploadPostPhoto(file, filterKey) {
+  async function uploadPostPhoto(file, filterKey, vignette) {
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
     const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
     let toUpload = file;
-    if (filterKey && filterKey !== 'original') {
+    if ((filterKey && filterKey !== 'original') || vignette) {
       try {
         const img = await CookzerPhotoFilters.loadImage(URL.createObjectURL(file));
-        toUpload = await CookzerPhotoFilters.bakeFilter(img, CookzerPhotoFilters.FILTER_CSS[filterKey], file.type);
+        toUpload = await CookzerPhotoFilters.bakeFilter(img, CookzerPhotoFilters.FILTER_CSS[filterKey], file.type, vignette);
       } catch (e) {
         toUpload = file; // filter failed — post the unfiltered photo rather than blocking
       }
@@ -1063,7 +1070,7 @@
     if (!caption && !pendingPhotoFile) return;
 
     let photoPath = null;
-    if (pendingPhotoFile) photoPath = await uploadPostPhoto(pendingPhotoFile, pendingPhotoFilter);
+    if (pendingPhotoFile) photoPath = await uploadPostPhoto(pendingPhotoFile, pendingPhotoFilter, pendingVignette);
 
     const { error } = await sb
       .from('posts')
@@ -1077,8 +1084,10 @@
     captionInput.value = '';
     pendingPhotoFile = null;
     pendingPhotoFilter = 'original';
+    pendingVignette = false;
     document.getElementById('composerPhotoPreview').hidden = true;
     document.getElementById('composerPhotoPreview').style.filter = 'none';
+    document.getElementById('composerPhotoPreview').style.boxShadow = 'none';
     document.getElementById('composerFilterRow').hidden = true;
     await loadGroupFeed();
   });
