@@ -1165,6 +1165,7 @@
   let challengeCountdownTimer = null;
   let pendingPhotoFile = null;
   let pendingPhotoFilter = 'original';
+  let pendingVignette = false;
   let pendingVideoUid = null;
   let videoUploadInProgress = false;
   const MAX_VIDEO_SECONDS = 90;
@@ -1276,14 +1277,14 @@
     inputEl.addEventListener('blur', () => setTimeout(closeDropdown, 150));
   }
 
-  async function uploadPostPhoto(file, filterKey) {
+  async function uploadPostPhoto(file, filterKey, vignette) {
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
     const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
     let toUpload = file;
-    if (filterKey && filterKey !== 'original') {
+    if ((filterKey && filterKey !== 'original') || vignette) {
       try {
         const img = await CookzerPhotoFilters.loadImage(URL.createObjectURL(file));
-        toUpload = await CookzerPhotoFilters.bakeFilter(img, CookzerPhotoFilters.FILTER_CSS[filterKey], file.type);
+        toUpload = await CookzerPhotoFilters.bakeFilter(img, CookzerPhotoFilters.FILTER_CSS[filterKey], file.type, vignette);
       } catch (e) {
         toUpload = file; // filter failed — post the unfiltered photo rather than blocking
       }
@@ -1307,15 +1308,21 @@
       pendingPhotoFilter = f.key;
       preview.style.filter = f.css;
       renderComposerFilterRow();
+    }, pendingVignette, (v) => {
+      pendingVignette = v;
+      preview.style.boxShadow = v ? CookzerPhotoFilters.VIGNETTE_PREVIEW_CSS : 'none';
+      renderComposerFilterRow();
     });
   }
 
   function handleComposerPhotoFile(file) {
     pendingPhotoFile = file;
     pendingPhotoFilter = 'original';
+    pendingVignette = false;
     const preview = document.getElementById('composerPhotoPreview');
     preview.src = URL.createObjectURL(file);
     preview.style.filter = 'none';
+    preview.style.boxShadow = 'none';
     preview.hidden = false;
 
     document.getElementById('composerFilterRow').hidden = false;
@@ -1679,7 +1686,7 @@
 
     let photoPath = null;
     if (pendingPhotoFile) {
-      photoPath = await uploadPostPhoto(pendingPhotoFile, pendingPhotoFilter);
+      photoPath = await uploadPostPhoto(pendingPhotoFile, pendingPhotoFilter, pendingVignette);
     }
 
     const isTip = document.getElementById('composerTipBtn').classList.contains('active-tip-tag');
@@ -1706,9 +1713,11 @@
     captionInput.value = '';
     pendingPhotoFile = null;
     pendingPhotoFilter = 'original';
+    pendingVignette = false;
     pendingVideoUid = null;
     document.getElementById('composerPhotoPreview').hidden = true;
     document.getElementById('composerPhotoPreview').style.filter = 'none';
+    document.getElementById('composerPhotoPreview').style.boxShadow = 'none';
     document.getElementById('composerFilterRow').hidden = true;
     document.getElementById('composerVideoPreview').hidden = true;
     document.getElementById('videoUploadStatus').hidden = true;
