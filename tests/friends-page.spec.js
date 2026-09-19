@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const { test, expect } = require('@playwright/test');
-const { loadPageWithMock } = require('./helpers/loadPage');
+const { loadPageWithMock, blockExternalRequests } = require('./helpers/loadPage');
 
 // People You May Know + Invite Friends on cookzer-friends.html
 // (migration 033), and the invite-link referral-capture flow that
@@ -86,6 +86,7 @@ test.describe('Invite-link referral capture', () => {
     await page.addInitScript(() => {
       window.__STATE__.profiles.find((p) => p.id === 'me-1').referred_by = 'alice-1';
     });
+    await blockExternalRequests(page);
     await page.goto('file://' + path.join(__dirname, '..', 'cookzer-friends.html'));
 
     await expect.poll(() => page.evaluate(() => localStorage.getItem('cz_ref'))).toBeNull();

@@ -126,6 +126,164 @@
     @media (max-width: 480px) {
       .convert-common-grid { grid-template-columns: 1fr; }
     }
+
+    /* Pan size substitutions — a lookup table, not a formula (there's no
+       math from "9x9 square" to "11x7 rectangular", just shared volume),
+       so it's a static reference list rather than wired into the live
+       converter above. Each row gets a small line-icon of the pan's
+       silhouette so it reads at a glance instead of requiring the
+       dimensions to be parsed as text first. */
+    .pan-size-dek { font-size: 12.5px; color: var(--ink-soft); margin: -4px 0 14px; }
+    .pan-size-list { display: flex; flex-direction: column; gap: 10px; }
+    .pan-size-card {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .pan-size-icon {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--plus-tint, rgba(244, 185, 66, 0.1));
+      color: var(--olive-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pan-size-icon svg { width: 28px; height: 28px; }
+    .pan-size-body { flex: 1; min-width: 0; }
+    .pan-size-name { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+    .pan-size-volume {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--olive-dark);
+      background: var(--plus-tint, rgba(46, 143, 92, 0.1));
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin: 4px 0 6px;
+    }
+    .pan-size-subs { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; }
+    .pan-size-subs .label { font-weight: 600; color: var(--ink); }
+    .pan-size-card[hidden] { display: none; }
+
+    /* Category tabs — Unit Converter / Pan Sizes / Oven Temps, so the
+       page is three focused screens instead of one long scroll once
+       there's more than the live converter on it. */
+    .convert-tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 22px; flex-wrap: wrap; }
+    .convert-tab {
+      padding: 9px 18px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: var(--card-bg);
+      color: var(--ink-soft);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .convert-tab.active { background: var(--olive); border-color: var(--olive); color: #fff; }
+    .convert-panel[hidden] { display: none; }
+
+    /* Fill-level graphic under the live converter — a small measuring cup
+       that fills to match the result, so "2.3 cups" also reads as a
+       picture (2 full cups, this one just under a third full) instead of
+       only a number. Only shown when the "to" unit is one you'd actually
+       measure with a container (volume units), not a kitchen scale. */
+    .fill-graphic-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+    .fill-graphic-wrap[hidden] { display: none; }
+    .fill-graphic-wrap svg { color: var(--line); display: block; }
+    .fill-graphic-caption { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+
+    /* Pan quick-picker — tap the shape that matches what's in your hand
+       to filter the list to just that one, instead of reading down a
+       list of seven to find it. */
+    .pan-picker-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .pan-picker-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--card-bg);
+      color: var(--ink-soft);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pan-picker-btn svg { width: 24px; height: 24px; display: block; }
+    .pan-picker-btn.active { background: var(--plus-tint); border-color: var(--olive); color: var(--olive-dark); }
+    .pan-picker-reset {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--olive-dark);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+      margin: 0 0 14px;
+      display: none;
+    }
+    .pan-picker-reset.visible { display: inline-block; }
+
+    /* Oven temps — a live °F/°C pair plus a thermometer that fills and
+       reddens with the reading, and the same graphic reused (small,
+       static) next to each row of the reference list below it. */
+    .oven-input-row { display: flex; align-items: flex-end; justify-content: center; gap: 14px; margin-bottom: 4px; flex-wrap: wrap; }
+    .oven-input-field { width: 120px; }
+    .oven-input-field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--ink-soft);
+      margin-bottom: 6px;
+    }
+    .oven-input-field input {
+      width: 100%;
+      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px 8px;
+      font-family: inherit;
+      font-size: 16px;
+      color: var(--ink);
+      background: var(--card-bg);
+    }
+    .oven-equals { font-size: 18px; color: var(--ink-soft); padding-bottom: 11px; }
+    .oven-thermo-wrap { display: flex; justify-content: center; margin: 16px 0 4px; }
+    .oven-thermo-wrap svg { width: 26px; height: 64px; display: block; }
+    .oven-descriptor { text-align: center; font-size: 13px; font-weight: 700; color: var(--olive-dark); }
+    .oven-list { display: flex; flex-direction: column; gap: 8px; margin-top: 22px; }
+    .oven-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+    .oven-row-thermo { flex-shrink: 0; }
+    .oven-row-thermo svg { width: 16px; height: 40px; display: block; }
+    .oven-row-body { flex: 1; }
+    .oven-row-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+    .oven-row-temp { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   </style>
 </head>
 <body>
@@ -174,43 +332,87 @@
     <h1 class="page-title">Convert</h1>
     <p class="page-sub">Heard a measurement you can't measure? Convert it to whatever you've actually got in the kitchen.</p>
 
-    <div class="convert-card">
-      <div class="convert-row">
-        <div class="convert-field">
-          <label for="convertAmount">Amount</label>
-          <input type="number" id="convertAmount" value="1" min="0" step="any">
+    <div class="convert-tabs" id="convertTabs">
+      <button class="convert-tab active" type="button" data-tab="units">📏 Unit Converter</button>
+      <button class="convert-tab" type="button" data-tab="pans">🍰 Pan Sizes</button>
+      <button class="convert-tab" type="button" data-tab="oven">🌡️ Oven Temps</button>
+    </div>
+
+    <div class="convert-panel" data-panel="units">
+      <div class="convert-card">
+        <div class="convert-row">
+          <div class="convert-field">
+            <label for="convertAmount">Amount</label>
+            <input type="number" id="convertAmount" value="1" min="0" step="any">
+          </div>
+          <div class="convert-field">
+            <label for="convertFrom">From</label>
+            <select id="convertFrom"></select>
+          </div>
+          <button class="convert-swap-btn" id="convertSwapBtn" type="button" title="Swap units" aria-label="Swap units">⇄</button>
+          <div class="convert-field">
+            <label for="convertTo">To</label>
+            <select id="convertTo"></select>
+          </div>
         </div>
-        <div class="convert-field">
-          <label for="convertFrom">From</label>
-          <select id="convertFrom"></select>
+
+        <div class="convert-field" style="margin-bottom: 8px;">
+          <label for="convertIngredient">Ingredient (optional)</label>
+          <input type="text" id="convertIngredient" placeholder="e.g. flour, butter, sugar">
         </div>
-        <button class="convert-swap-btn" id="convertSwapBtn" type="button" title="Swap units" aria-label="Swap units">⇄</button>
-        <div class="convert-field">
-          <label for="convertTo">To</label>
-          <select id="convertTo"></select>
+        <div class="convert-ingredient-hint">Only needed to convert between weight and volume (like grams to cups) — exact weight-to-weight or volume-to-volume conversions work without it.</div>
+
+        <div class="convert-result" id="convertResult">
+          <div class="convert-result-value" id="convertResultValue">—</div>
+          <div class="convert-result-note" id="convertResultNote"></div>
+        </div>
+
+        <div class="fill-graphic-wrap" id="fillGraphicWrap" hidden>
+          <div id="fillGraphicSvg"></div>
+          <div class="fill-graphic-caption" id="fillGraphicCaption"></div>
         </div>
       </div>
 
-      <div class="convert-field" style="margin-bottom: 8px;">
-        <label for="convertIngredient">Ingredient (optional)</label>
-        <input type="text" id="convertIngredient" placeholder="e.g. flour, butter, sugar">
-      </div>
-      <div class="convert-ingredient-hint">Only needed to convert between weight and volume (like grams to cups) — exact weight-to-weight or volume-to-volume conversions work without it.</div>
-
-      <div class="convert-result" id="convertResult">
-        <div class="convert-result-value" id="convertResultValue">—</div>
-        <div class="convert-result-note" id="convertResultNote"></div>
+      <div class="convert-common-title">Common cooking conversions</div>
+      <div class="convert-common-grid">
+        <div class="convert-common-item"><b>3 tsp</b> = 1 tbsp</div>
+        <div class="convert-common-item"><b>16 tbsp</b> = 1 cup</div>
+        <div class="convert-common-item"><b>1 cup</b> ≈ 237 ml</div>
+        <div class="convert-common-item"><b>1 oz</b> ≈ 28.3 g</div>
+        <div class="convert-common-item"><b>1 lb</b> ≈ 454 g</div>
+        <div class="convert-common-item"><b>1 kg</b> = 1000 g</div>
       </div>
     </div>
 
-    <div class="convert-common-title">Common cooking conversions</div>
-    <div class="convert-common-grid">
-      <div class="convert-common-item"><b>3 tsp</b> = 1 tbsp</div>
-      <div class="convert-common-item"><b>16 tbsp</b> = 1 cup</div>
-      <div class="convert-common-item"><b>1 cup</b> ≈ 237 ml</div>
-      <div class="convert-common-item"><b>1 oz</b> ≈ 28.3 g</div>
-      <div class="convert-common-item"><b>1 lb</b> ≈ 454 g</div>
-      <div class="convert-common-item"><b>1 kg</b> = 1000 g</div>
+    <div class="convert-panel" data-panel="pans" hidden>
+      <div class="convert-common-title" style="margin-top:0;">Pan size substitutions</div>
+      <div class="pan-size-dek">Don't have the pan a recipe calls for? Tap the shape that matches, or match it yourself by volume below — these hold roughly the same amount of batter.</div>
+      <div class="pan-picker-strip" id="panPickerStrip"></div>
+      <button class="pan-picker-reset" id="panPickerReset" type="button">← Show all pans</button>
+      <div class="pan-size-list" id="panSizeList"></div>
+    </div>
+
+    <div class="convert-panel" data-panel="oven" hidden>
+      <div class="convert-common-title" style="margin-top:0;">Oven temperature</div>
+      <div class="pan-size-dek">Recipe written for a different oven scale? Convert it, and see roughly how hot that actually is.</div>
+      <div class="convert-card">
+        <div class="oven-input-row">
+          <div class="oven-input-field">
+            <label for="ovenF">°F</label>
+            <input type="number" id="ovenF" value="350">
+          </div>
+          <div class="oven-equals">=</div>
+          <div class="oven-input-field">
+            <label for="ovenC">°C</label>
+            <input type="number" id="ovenC" value="177">
+          </div>
+        </div>
+        <div class="oven-thermo-wrap" id="ovenThermoWrap"></div>
+        <div class="oven-descriptor" id="ovenDescriptor"></div>
+      </div>
+
+      <div class="convert-common-title">Common oven temperatures</div>
+      <div class="oven-list" id="ovenList"></div>
     </div>
   </div>
 </div>
@@ -221,6 +423,61 @@
     document.querySelector('.sidebar-overlay').classList.toggle('open');
   }
 
+  // Category tabs — one visible panel at a time.
+  document.querySelectorAll('.convert-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.convert-tab').forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      const target = tab.dataset.tab;
+      document.querySelectorAll('.convert-panel').forEach((panel) => {
+        panel.hidden = panel.dataset.panel !== target;
+      });
+    });
+  });
+
+  // A word doesn't pluralize the same way its abbreviation would ("2
+  // cups" but nobody writes "2 tsps" — close enough is fine for a
+  // caption); only "cup" gets real pluralization, everything else is
+  // left as-is since cooking abbreviations don't take a trailing "s".
+  function pluralUnit(unit, n) {
+    if (n === 1 || unit !== 'cup') return unit;
+    return 'cups';
+  }
+
+  // Fills a measuring-cup outline to `ratio` (0–1) via a clip-path, so
+  // the same markup works for any fill level without redrawing the cup.
+  let cupIdCounter = 0;
+  function cupSVGString(ratio) {
+    const clamped = Math.max(0, Math.min(1, ratio));
+    const top = 6, bottom = 44;
+    const fillY = top + (1 - clamped) * (bottom - top);
+    const id = 'cupClip' + (cupIdCounter++);
+    const path = 'M9,6 H31 L28,40 Q28,44 24,44 H16 Q12,44 12,40 Z';
+    return '<svg viewBox="0 0 40 48" width="40" height="48" fill="none">'
+      + '<clipPath id="' + id + '"><path d="' + path + '"/></clipPath>'
+      + '<rect x="8" y="' + fillY + '" width="24" height="' + (48 - fillY) + '" fill="var(--olive)" clip-path="url(#' + id + ')"/>'
+      + '<path d="' + path + '" stroke="currentColor" stroke-width="2"/>'
+      + '</svg>';
+  }
+
+  // Same fill-via-clip-path approach for a thermometer (tube + bulb).
+  let thermoIdCounter = 0;
+  function thermoSVGString(ratio) {
+    const clamped = Math.max(0, Math.min(1, ratio));
+    const top = 4, bottom = 40;
+    const fillY = top + (1 - clamped) * (bottom - top);
+    const id = 'thermoClip' + (thermoIdCounter++);
+    return '<svg viewBox="0 0 24 60" width="24" height="60" fill="none">'
+      + '<clipPath id="' + id + '"><rect x="8" y="' + top + '" width="8" height="' + (bottom - top) + '" rx="4"/><circle cx="12" cy="48" r="8"/></clipPath>'
+      + '<rect x="0" y="' + fillY + '" width="24" height="' + (60 - fillY) + '" fill="var(--brick)" clip-path="url(#' + id + ')"/>'
+      + '<rect x="8" y="' + top + '" width="8" height="' + (bottom - top) + '" rx="4" stroke="currentColor" stroke-width="2"/>'
+      + '<circle cx="12" cy="48" r="8" stroke="currentColor" stroke-width="2"/>'
+      + '</svg>';
+  }
+
+  const UNIT_ICONS = { g: '⚖️', kg: '⚖️', oz: '⚖️', lb: '⚖️', ml: '🥛', l: '🥛', tsp: '🥄', tbsp: '🥄', cup: '☕', 'fl oz': '🥛' };
+  const VOLUME_CONTAINER_UNITS = ['tsp', 'tbsp', 'cup', 'ml', 'l', 'fl oz'];
+
   const UNIT_LIST = window.CookzerUnitConvert.UNIT_LIST;
   const fromSelect = document.getElementById('convertFrom');
   const toSelect = document.getElementById('convertTo');
@@ -228,11 +485,11 @@
   UNIT_LIST.forEach((u) => {
     const optFrom = document.createElement('option');
     optFrom.value = u.unit;
-    optFrom.textContent = u.label;
+    optFrom.textContent = (UNIT_ICONS[u.unit] || '') + ' ' + u.label;
     fromSelect.appendChild(optFrom);
     const optTo = document.createElement('option');
     optTo.value = u.unit;
-    optTo.textContent = u.label;
+    optTo.textContent = (UNIT_ICONS[u.unit] || '') + ' ' + u.label;
     toSelect.appendChild(optTo);
   });
   fromSelect.value = 'g';
@@ -272,6 +529,32 @@
     noteEl.textContent = (fromCat !== toCat && ingredient)
       ? 'Based on typical density for "' + ingredient + '" — exact weight varies by how it\'s packed/measured.'
       : '';
+
+    updateFillGraphic(converted, to);
+  }
+
+  // Fills a small cup graphic to match the result — only makes sense for
+  // "to" units you'd actually measure with a container, not a scale
+  // reading (there's no intuitive "how full" picture for grams).
+  const fillGraphicWrap = document.getElementById('fillGraphicWrap');
+  function updateFillGraphic(converted, to) {
+    if (converted == null || !VOLUME_CONTAINER_UNITS.includes(to) || converted < 0) {
+      fillGraphicWrap.hidden = true;
+      return;
+    }
+    const whole = Math.floor(converted);
+    const rawFrac = converted - whole;
+    const exactWhole = rawFrac < 1e-9 && whole > 0;
+    const ratio = exactWhole ? 1 : (whole > 0 ? rawFrac : Math.min(converted, 1));
+    const othersFullCount = exactWhole ? whole - 1 : whole;
+
+    document.getElementById('fillGraphicSvg').innerHTML = cupSVGString(ratio);
+    let caption = Math.round(ratio * 100) + '% full';
+    if (othersFullCount >= 1) {
+      caption += ' (+ ' + othersFullCount + ' more full ' + pluralUnit(to, othersFullCount) + ')';
+    }
+    document.getElementById('fillGraphicCaption').textContent = caption;
+    fillGraphicWrap.hidden = false;
   }
 
   ['convertAmount', 'convertFrom', 'convertTo', 'convertIngredient'].forEach((id) => {
@@ -286,6 +569,148 @@
   });
 
   runConversion();
+
+  // Pan silhouettes — top-down line icons so each row reads as a shape
+  // first, dimensions second. Proportions are the differentiator (a loaf
+  // pan's icon is a long narrow rectangle, a springform's is a circle
+  // with its clasp) rather than trying to render realistic pans.
+  const PAN_ICONS = {
+    square: '<rect x="7" y="7" width="26" height="26" rx="3"/>',
+    round: '<circle cx="20" cy="20" r="14"/>',
+    rectangle: '<rect x="3" y="11" width="34" height="18" rx="3"/>',
+    springform: '<circle cx="18" cy="20" r="13"/><rect x="29" y="17" width="7" height="6" rx="1.5"/>',
+    muffin: '<rect x="3" y="6" width="34" height="28" rx="4"/>'
+      + '<circle cx="10" cy="14" r="4"/><circle cx="20" cy="14" r="4"/><circle cx="30" cy="14" r="4"/>'
+      + '<circle cx="10" cy="26" r="4"/><circle cx="20" cy="26" r="4"/><circle cx="30" cy="26" r="4"/>',
+    bundt: '<circle cx="20" cy="20" r="15"/><circle cx="20" cy="20" r="6"/>',
+    loaf: '<rect x="3" y="14" width="34" height="12" rx="3"/>',
+  };
+
+  const PAN_SIZES = [
+    { icon: 'square', name: '9" x 9" x 2" Square', volume: '8 cups', subs: '10" x 2" Round · 11" x 7" x 2" Rectangular · 9" x 13" x 2" Rectangular' },
+    { icon: 'round', name: '9" x 2" Round', volume: '8 cups', subs: '8" x 8" x 2" Square · 9" x 5" x 3" Loaf' },
+    { icon: 'rectangle', name: '9" x 13" x 2" Rectangle', volume: '14 cups', subs: '(2) 9" Rounds · (2) 8" Rounds · 9" x 9" x 2" Square · 10" Bundt · 20–30 Cupcakes' },
+    { icon: 'springform', name: '9" x 3" Springform', volume: '12 cups', subs: '10" Springform · 9" Tube Pan · 10" Bundt Pan' },
+    { icon: 'muffin', name: 'Muffin Pan (12 cavity)', volume: '12 cavity', subs: '1 standard cupcake = 3 mini cupcakes' },
+    { icon: 'bundt', name: '10" Bundt Pan', volume: '12 cups', subs: '10" Springform · 9" Tube Pan · 18–24 Cupcakes · (2) 9" Rounds · 9" x 13" x 2" Rectangle' },
+    { icon: 'loaf', name: '9" x 5" x 3" Loaf', volume: '8 cups', subs: '3 Mini Loaves · 8" or 9" Square · 12–18 Cupcakes · 10" Pie Plate' },
+  ];
+
+  function panIconSVG(iconKey) {
+    return '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">' + PAN_ICONS[iconKey] + '</svg>';
+  }
+
+  const panSizeList = document.getElementById('panSizeList');
+  const panPickerStrip = document.getElementById('panPickerStrip');
+  const panPickerReset = document.getElementById('panPickerReset');
+  const panCardEls = [];
+
+  function resetPanFilter() {
+    document.querySelectorAll('.pan-picker-btn').forEach((b) => b.classList.remove('active'));
+    panCardEls.forEach((c) => { c.hidden = false; });
+    panPickerReset.classList.remove('visible');
+  }
+
+  PAN_SIZES.forEach((pan) => {
+    const card = document.createElement('div');
+    card.className = 'pan-size-card';
+    card.dataset.icon = pan.icon;
+    card.innerHTML = `
+      <div class="pan-size-icon">${panIconSVG(pan.icon)}</div>
+      <div class="pan-size-body">
+        <div class="pan-size-name">${pan.name}</div>
+        <div class="pan-size-volume">${pan.volume}</div>
+        <div class="pan-size-subs"><span class="label">Use instead:</span> ${pan.subs}</div>
+      </div>
+    `;
+    panSizeList.appendChild(card);
+    panCardEls.push(card);
+
+    // Quick picker — tap the shape you actually have to filter the list
+    // down to just that one, instead of reading through all seven.
+    const pickerBtn = document.createElement('button');
+    pickerBtn.type = 'button';
+    pickerBtn.className = 'pan-picker-btn';
+    pickerBtn.title = pan.name;
+    pickerBtn.innerHTML = panIconSVG(pan.icon);
+    pickerBtn.addEventListener('click', () => {
+      const isActive = pickerBtn.classList.contains('active');
+      if (isActive) {
+        resetPanFilter();
+        return;
+      }
+      document.querySelectorAll('.pan-picker-btn').forEach((b) => b.classList.remove('active'));
+      pickerBtn.classList.add('active');
+      panCardEls.forEach((c) => { c.hidden = c.dataset.icon !== pan.icon; });
+      panPickerReset.classList.add('visible');
+    });
+    panPickerStrip.appendChild(pickerBtn);
+  });
+
+  panPickerReset.addEventListener('click', resetPanFilter);
+
+  // ----- Oven temperatures -----
+  const OVEN_ROWS = [
+    { name: 'Very Low', f: 250, c: 121 },
+    { name: 'Low', f: 300, c: 150 },
+    { name: 'Moderate', f: 350, c: 177 },
+    { name: 'Moderately Hot', f: 375, c: 190 },
+    { name: 'Hot', f: 400, c: 204 },
+    { name: 'Very Hot', f: 450, c: 232 },
+    { name: 'Broil', f: 500, c: 260 },
+  ];
+  const OVEN_MIN_F = 150, OVEN_MAX_F = 550;
+
+  function ovenRatio(f) {
+    return Math.max(0, Math.min(1, (f - OVEN_MIN_F) / (OVEN_MAX_F - OVEN_MIN_F)));
+  }
+
+  function ovenDescriptorFor(f) {
+    if (f < 275) return 'Very low';
+    if (f < 325) return 'Low';
+    if (f < 375) return 'Moderate';
+    if (f < 400) return 'Moderately hot';
+    if (f < 450) return 'Hot';
+    if (f < 500) return 'Very hot';
+    return 'Broil';
+  }
+
+  const ovenFInput = document.getElementById('ovenF');
+  const ovenCInput = document.getElementById('ovenC');
+  const ovenThermoWrap = document.getElementById('ovenThermoWrap');
+  const ovenDescriptorEl = document.getElementById('ovenDescriptor');
+
+  function updateOvenLive(editedF) {
+    if (editedF) {
+      const f = parseFloat(ovenFInput.value);
+      if (!Number.isNaN(f)) ovenCInput.value = Math.round((f - 32) * 5 / 9);
+    } else {
+      const c = parseFloat(ovenCInput.value);
+      if (!Number.isNaN(c)) ovenFInput.value = Math.round(c * 9 / 5 + 32);
+    }
+    const currentF = parseFloat(ovenFInput.value);
+    if (Number.isNaN(currentF)) return;
+    ovenThermoWrap.innerHTML = thermoSVGString(ovenRatio(currentF));
+    ovenDescriptorEl.textContent = ovenDescriptorFor(currentF);
+  }
+
+  ovenFInput.addEventListener('input', () => updateOvenLive(true));
+  ovenCInput.addEventListener('input', () => updateOvenLive(false));
+  updateOvenLive(true);
+
+  const ovenList = document.getElementById('ovenList');
+  OVEN_ROWS.forEach((row) => {
+    const el = document.createElement('div');
+    el.className = 'oven-row';
+    el.innerHTML = `
+      <div class="oven-row-thermo">${thermoSVGString(ovenRatio(row.f))}</div>
+      <div class="oven-row-body">
+        <div class="oven-row-name">${row.name}</div>
+        <div class="oven-row-temp">${row.f}°F / ${row.c}°C</div>
+      </div>
+    `;
+    ovenList.appendChild(el);
+  });
 </script>
 </body>
 </html>

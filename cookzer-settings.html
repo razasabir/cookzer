@@ -173,6 +173,15 @@
       font-size: 13px;
     }
 
+  .family-profile-kidmode {
+      background: none;
+      border: none;
+      color: var(--olive-dark);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
   .family-emoji-btn {
       width: 30px;
       height: 30px;
@@ -429,6 +438,12 @@
       const name = document.createElement('div');
       name.className = 'family-profile-name';
       name.textContent = p.name;
+      const kidModeBtnEl = document.createElement('button');
+      kidModeBtnEl.type = 'button';
+      kidModeBtnEl.className = 'family-profile-kidmode';
+      kidModeBtnEl.textContent = 'Kid Mode';
+      kidModeBtnEl.title = 'Lock this device to just the Meal Planner, as ' + p.name;
+      kidModeBtnEl.addEventListener('click', () => openKidModeSetupModal(p));
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'family-profile-remove';
@@ -440,9 +455,58 @@
       });
       row.appendChild(emoji);
       row.appendChild(name);
+      row.appendChild(kidModeBtnEl);
       row.appendChild(removeBtn);
       listEl.appendChild(row);
     });
+  }
+
+  // Kid Mode setup: locks *this device* to just the Meal Planner under one
+  // family profile, PIN-protected to exit. Reuses auth-guard.js's overlay
+  // helper (kidModeModal/kidModeBtn) rather than duplicating the pattern.
+  function openKidModeSetupModal(profile) {
+    const modal = kidModeModal();
+    modal.innerHTML = '';
+    const title = document.createElement('h3');
+    title.textContent = 'Enable Kid Mode for ' + profile.avatar_emoji + ' ' + profile.name;
+    modal.appendChild(title);
+    const label = document.createElement('div');
+    label.className = 'cz2-label';
+    label.textContent = 'This locks this device to just the Meal Planner. Set a PIN (4+ digits) to exit Kid Mode later on this device.';
+    modal.appendChild(label);
+    const pinInput = document.createElement('input');
+    pinInput.type = 'password';
+    pinInput.inputMode = 'numeric';
+    pinInput.placeholder = 'PIN';
+    modal.appendChild(pinInput);
+    const confirmInput = document.createElement('input');
+    confirmInput.type = 'password';
+    confirmInput.inputMode = 'numeric';
+    confirmInput.placeholder = 'Confirm PIN';
+    modal.appendChild(confirmInput);
+    const errorMsg = document.createElement('div');
+    errorMsg.style.cssText = 'color:var(--brick); font-size:12px; margin:-4px 0 10px; min-height:14px;';
+    modal.appendChild(errorMsg);
+    const actions = document.createElement('div');
+    actions.className = 'cz2-actions';
+    const cancelBtn = kidModeBtn('Cancel', false);
+    cancelBtn.addEventListener('click', () => { document.getElementById('kidModeOverlay').hidden = true; });
+    const enableBtn = kidModeBtn('Enable', true);
+    enableBtn.addEventListener('click', async () => {
+      const pin = pinInput.value.trim();
+      const confirmPin = confirmInput.value.trim();
+      if (pin.length < 4) { errorMsg.textContent = 'PIN must be at least 4 digits.'; return; }
+      if (pin !== confirmPin) { errorMsg.textContent = 'PINs don’t match.'; return; }
+      await window.CookzerKidMode.enable(profile, pin);
+      window.location.href = 'cookzer-planner.html';
+    });
+    pinInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirmInput.focus(); });
+    confirmInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') enableBtn.click(); });
+    actions.appendChild(cancelBtn);
+    actions.appendChild(enableBtn);
+    modal.appendChild(actions);
+    document.getElementById('kidModeOverlay').hidden = false;
+    pinInput.focus();
   }
 
   document.getElementById('addFamilyProfileBtn').addEventListener('click', async () => {

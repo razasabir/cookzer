@@ -19,14 +19,19 @@ const executablePath = fs.existsSync(sandboxChromium) ? sandboxChromium : undefi
 module.exports = defineConfig({
   testDir: './tests',
   fullyParallel: true,
-  // GitHub-hosted runners default to a low CPU count; letting Playwright
-  // pick a worker count off that (or running fully unbounded elsewhere)
-  // was causing runs to start fine, then increasingly time out under
-  // resource pressure as more workers/contexts piled up, cascading into
-  // dozens of unrelated failures over a 15-26 minute run — a suite that
-  // finishes in well under a minute locally. Capping workers keeps
-  // concurrency within what the runner can actually sustain.
-  workers: process.env.CI ? 2 : undefined,
+  // CI runs took 15-30 minutes and mass-timed-out on dozens of unrelated
+  // tests, for weeks, unaffected by a worker cap or --disable-dev-shm-usage
+  // (both tried and ruled out first). The real cause turned out to be
+  // nothing to do with worker count: every test page's <head> loads real
+  // external scripts (the Supabase JS CDN build, Google Fonts) that the
+  // window.supabase mock never actually blocked at the network level —
+  // see tests/helpers/loadPage.js's blockExternalRequests(). Once that
+  // was fixed, a full run dropped to under a minute even serialized.
+  // Left at 1 rather than restored to parallel, since this is already
+  // fast and a from-scratch browser launch per worker was real CI-only
+  // overhead of its own; revisit if the suite grows enough for this to
+  // matter again.
+  workers: process.env.CI ? 1 : undefined,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: 'list',

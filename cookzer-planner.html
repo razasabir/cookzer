@@ -549,14 +549,19 @@
   }
 
   async function openAddSuggestion(date) {
-    const familyProfiles = await loadFamilyProfilesCache();
-    let suggesterFields = { suggested_by_user_id: currentUser.id };
+    const kidMode = window.CookzerKidMode && window.CookzerKidMode.get();
+    let suggesterFields = kidMode && kidMode.enabled
+      ? { suggested_by_family_profile_id: kidMode.familyProfileId }
+      : { suggested_by_user_id: currentUser.id };
+    const familyProfiles = kidMode && kidMode.enabled ? [] : await loadFamilyProfilesCache();
 
     const modal = document.getElementById('pickerModal');
     modal.innerHTML = '';
 
     const title = document.createElement('h3');
-    title.textContent = 'Suggest a meal';
+    title.textContent = kidMode && kidMode.enabled
+      ? 'Suggest a meal as ' + kidMode.familyProfileEmoji + ' ' + kidMode.familyProfileName
+      : 'Suggest a meal';
     modal.appendChild(title);
 
     if (familyProfiles.length > 0) {

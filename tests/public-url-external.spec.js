@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { blockExternalRequests } = require('./helpers/loadPage');
 
 // Bulk-seeded recipes will use a licensed stock photo URL (Unsplash/Pexels)
 // as hero_photo_path instead of a path inside our own Storage bucket.
@@ -58,6 +59,7 @@ test.describe('publicUrl external URL passthrough', () => {
       };
     });
 
+    await blockExternalRequests(page);
     await page.goto('file://' + require('path').resolve(__dirname, '..', 'cookzer-recipe.html') + '?id=r1');
     await expect(page.locator('#rHero')).toHaveCSS('background-image', /images\.unsplash\.com\/photo-test/);
     const bg = await page.locator('#rHero').evaluate((el) => el.style.backgroundImage);

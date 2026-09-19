@@ -487,7 +487,8 @@ body {
   margin-bottom: 14px;
 }
 
-.cz2-modal input[type="text"] {
+.cz2-modal input[type="text"],
+.cz2-modal input[type="password"] {
   width: 100%;
   padding: 10px 14px;
   background: var(--cream);

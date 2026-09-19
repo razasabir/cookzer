@@ -5,6 +5,17 @@ on:
     branches: [main]
   pull_request:
 
+# Without this, every push to a PR queues a brand-new ~full-length run
+# without touching the previous one, so a few quick follow-up commits
+# leave several runs genuinely executing at once for the same PR — only
+# the latest ever matters for merge gating, so the rest are pure waste
+# (and, worse, extra queued runs delay the one that actually counts).
+# Cancel whatever's still running in the same PR/branch when a new run
+# for it starts.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   playwright:
     runs-on: ubuntu-latest
