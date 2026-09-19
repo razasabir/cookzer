@@ -19,7 +19,7 @@ test.describe('Photo filters on post composers', () => {
     });
     await loadPageWithMock(page, 'cookzer-feed.html', 'photo-composer.js');
 
-    const photoInput = page.locator('#composerPhotoInput');
+    const photoInput = page.locator('#composerMediaInput');
     await photoInput.setInputFiles(SAMPLE_IMAGE);
 
     const filterRow = page.locator('#composerFilterRow');

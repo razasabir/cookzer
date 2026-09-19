@@ -979,20 +979,18 @@
       </div>
       <img id="composerPhotoPreview" hidden style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:10px;">
       <div id="composerFilterRow" hidden></div>
-      <input type="file" id="composerPhotoInput" accept="image/*" hidden>
       <video id="composerVideoPreview" hidden muted controls style="width:100%;max-height:220px;border-radius:12px;margin-top:10px;"></video>
-      <input type="file" id="composerVideoInput" accept="video/*" hidden>
+      <input type="file" id="composerMediaInput" accept="image/*,video/*" hidden>
       <div id="videoUploadStatus" hidden style="margin-top:6px; font-size:12px; color:var(--ink-soft);">
         <span id="videoUploadStatusText">Uploading…</span>
         <div class="upload-progress-track"><div class="upload-progress-fill" id="videoUploadProgressFill"></div></div>
       </div>
       <div class="composer-icons-row" id="composerIconsRow">
-        <button class="composer-icon-btn" id="composerPhotoBtn" type="button" title="Photo"><span class="composer-icon">📸</span> Photo</button>
-        <button class="composer-icon-btn" id="composerVideoBtn" type="button" title="Video"><span class="composer-icon">🎥</span> Video</button>
+        <button class="composer-icon-btn" id="composerMediaBtn" type="button" title="Photo or video"><span class="composer-icon">🖼️</span> Media</button>
         <a class="composer-icon-btn" href="cookzer-recipe-new.html?share=1" title="Recipe"><span class="composer-icon">📝</span> Recipe</a>
-        <button class="composer-icon-btn" id="composerChallengeBtn" type="button" title="Challenge entry"><span class="composer-icon">🏆</span> Challenge<span class="check" hidden>✓</span></button>
-        <button class="composer-icon-btn" id="composerRestaurantBtn" type="button" title="Dining out"><span class="composer-icon">📍</span> Dining out</button>
         <button class="composer-icon-btn" id="composerTipBtn" type="button" title="Mark this as a Tips &amp; Tricks post"><span class="composer-icon">💡</span> Tip<span class="check" hidden>✓</span></button>
+        <button class="composer-icon-btn" id="composerRestaurantBtn" type="button" title="Dining out"><span class="composer-icon">📍</span> Dining Out</button>
+        <button class="composer-icon-btn" id="composerChallengeBtn" type="button" title="Challenge entry"><span class="composer-icon">🏆</span> Challenge<span class="check" hidden>✓</span></button>
       </div>
       <div class="composer-active-chips" id="composerActiveChips"></div>
       <div id="restaurantPanel" hidden style="margin-top:10px; background:var(--cream); border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-size:13px;">
@@ -1135,8 +1133,8 @@
     return path;
   }
 
-  document.getElementById('composerPhotoBtn').addEventListener('click', () => {
-    document.getElementById('composerPhotoInput').click();
+  document.getElementById('composerMediaBtn').addEventListener('click', () => {
+    document.getElementById('composerMediaInput').click();
   });
 
   function renderComposerFilterRow() {
@@ -1149,9 +1147,7 @@
     });
   }
 
-  document.getElementById('composerPhotoInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  function handleComposerPhotoFile(file) {
     pendingPhotoFile = file;
     pendingPhotoFilter = 'original';
     const preview = document.getElementById('composerPhotoPreview');
@@ -1161,16 +1157,9 @@
 
     document.getElementById('composerFilterRow').hidden = false;
     renderComposerFilterRow();
-  });
+  }
 
-  document.getElementById('composerVideoBtn').addEventListener('click', () => {
-    document.getElementById('composerVideoInput').click();
-  });
-
-  document.getElementById('composerVideoInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
+  function handleComposerVideoFile(file, inputEl) {
     const preview = document.getElementById('composerVideoPreview');
     const probe = document.createElement('video');
     probe.preload = 'metadata';
@@ -1178,7 +1167,7 @@
       URL.revokeObjectURL(probe.src);
       if (probe.duration > MAX_VIDEO_SECONDS) {
         await CookzerModal.alert('Videos are limited to ' + MAX_VIDEO_SECONDS + ' seconds — trim this clip and try again.');
-        e.target.value = '';
+        inputEl.value = '';
         return;
       }
       preview.src = URL.createObjectURL(file);
@@ -1186,6 +1175,20 @@
       startVideoUpload(file);
     };
     probe.src = URL.createObjectURL(file);
+  }
+
+  // One "Media" picker covers both photo and video (the OS file dialog
+  // already lets you pick either when accept lists both types) — routes
+  // to the existing photo-filter or video-upload flow by the chosen
+  // file's actual type rather than which icon was clicked.
+  document.getElementById('composerMediaInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.type.startsWith('video/')) {
+      handleComposerVideoFile(file, e.target);
+    } else if (file.type.startsWith('image/')) {
+      handleComposerPhotoFile(file);
+    }
   });
 
   async function startVideoUpload(file) {
