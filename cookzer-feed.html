@@ -609,6 +609,7 @@
 
   .share-action-btn { color: var(--brick); }
   .share-action-btn:hover { background: var(--cream); color: var(--brick); }
+  .share-action-btn svg { display: block; }
 
   /* Right sidebar */
     .right-sidebar {
@@ -1172,6 +1173,16 @@
   let pendingFilterUserPicked = false;
   let pendingVideoUid = null;
   let videoUploadInProgress = false;
+
+  // The classic three-node "share" icon (used by Android's native share
+  // sheet and widely recognized as "share" outside of link-specific
+  // contexts) rather than an outbound-arrow/external-link icon — this is
+  // a social share (in-app popup with a copy link + quick-share links,
+  // via CookzerModal.share), not "open this in another app."
+  const SHARE_ICON_SVG = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'
+    + '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>'
+    + '<line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/>'
+    + '</svg>';
   const MAX_VIDEO_SECONDS = 90;
 
   function timeAgo(iso) {
@@ -1898,9 +1909,11 @@
     const shareBtn = document.createElement('button');
     shareBtn.className = 'action-btn share-action-btn';
     shareBtn.title = 'Share';
-    // Plain arrow, not the VS16 emoji form — the emoji form is a fixed-color
-    // glyph that CSS can't tint, and the brand-orange color below needs to apply.
-    shareBtn.textContent = '↗';
+    // An SVG icon, not an emoji or a plain text glyph — a color emoji is a
+    // fixed-color image CSS can't tint, and a lone Unicode arrow character
+    // reads as too thin/faint next to the bold ❤️/💬 emoji beside it.
+    // stroke="currentColor" picks up .share-action-btn's brand-orange color.
+    shareBtn.innerHTML = SHARE_ICON_SVG;
     shareBtn.addEventListener('click', () => sharePost(post.id));
     actions.appendChild(heartBtn);
     actions.appendChild(commentBtn);

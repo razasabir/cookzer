@@ -63,6 +63,20 @@ test.describe('Feed — action buttons', () => {
     expect(color).toBe('rgb(255, 107, 74)'); // var(--brick)
   });
 
+  test('the Share icon is a real SVG icon, not a thin/hard-to-see text glyph', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
+    const shareBtn = page.locator('#post-post-plain .action-btn[title="Share"]');
+    await expect(shareBtn).toHaveText(''); // no leftover character alongside the icon
+    const svg = shareBtn.locator('svg');
+    await expect(svg).toHaveCount(1);
+    // Bold enough to hold its own next to the ❤️/💬 emoji beside it — not
+    // a hairline stroke.
+    const strokeWidth = await svg.evaluate((el) => Number(el.getAttribute('stroke-width')));
+    expect(strokeWidth).toBeGreaterThanOrEqual(2);
+    const strokeColor = await svg.evaluate((el) => getComputedStyle(el).color);
+    expect(strokeColor).toBe('rgb(255, 107, 74)'); // stroke="currentColor" picks up the brand orange
+  });
+
   test('Share opens an in-app popup with the link, not the OS share sheet', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
     await page.locator('#post-post-plain .action-btn[title="Share"]').click();
