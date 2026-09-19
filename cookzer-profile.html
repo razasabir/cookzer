@@ -1421,27 +1421,7 @@
   async function shareProfile() {
     const url = location.origin + location.pathname + '?id=' + viewedId;
     const name = document.getElementById('profileName') ? document.getElementById('profileName').textContent : 'a Cookzer profile';
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: name, url });
-        return;
-      } catch (e) {
-        if (e.name === 'AbortError') return;
-      }
-    }
-
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(url);
-        await CookzerModal.alert('Profile link copied: ' + url);
-        return;
-      }
-    } catch (e) {
-      // Clipboard blocked — fall through to prompt.
-    }
-
-    await CookzerModal.prompt('Copy this profile link:', url);
+    await CookzerModal.share({ title: name, url });
   }
 
   async function loadStats() {

@@ -53,13 +53,17 @@ test.describe('Feed — action buttons', () => {
     await expect(actions.nth(3)).toContainText('Save');
   });
 
-  test('Share copies a link to the post to the clipboard', async ({ page }) => {
+  test('Share opens an in-app popup with the link, not the OS share sheet', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
     await page.locator('#post-post-plain .action-btn', { hasText: 'Share' }).click();
-    await expect(page.locator('.cz-modal-message')).toContainText('copied');
-    await page.locator('.cz-modal-btn').click();
+    await expect(page.locator('.cz-share-link-row input')).toHaveValue(/post=post-plain/);
+
+    await page.locator('.cz-share-copy-btn').click();
     const clipboard = await page.evaluate(() => window.__CLIPBOARD__);
     expect(clipboard).toContain('post=post-plain');
+
+    await page.locator('.cz-share-close').click();
+    await expect(page.locator('.cz-modal-overlay')).toHaveCount(0);
   });
 });
 

@@ -870,28 +870,7 @@
   document.getElementById('shareBtn').addEventListener('click', async () => {
     const url = location.origin + location.pathname + '?id=' + recipeId;
     const title = document.getElementById('rTitle').textContent || 'A recipe on Cookzer';
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title, url });
-        return;
-      } catch (e) {
-        if (e.name === 'AbortError') return;
-        // Share failed (or isn't wired up in this browser) — fall through to clipboard.
-      }
-    }
-
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(url);
-        await CookzerModal.alert('Recipe link copied: ' + url);
-        return;
-      }
-    } catch (e) {
-      // Clipboard blocked (common in in-app browsers/webviews) — fall through to prompt.
-    }
-
-    await CookzerModal.prompt('Copy this recipe link:', url);
+    await CookzerModal.share({ title, url });
   });
 
   document.getElementById('printBtn').addEventListener('click', () => {

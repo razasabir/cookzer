@@ -551,20 +551,7 @@
     });
 
     document.getElementById('shareInviteLinkBtn').addEventListener('click', async () => {
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: 'Join me on Cookzer', text: 'Come cook with me on Cookzer 🍳', url: link });
-          return;
-        } catch (e) {
-          if (e.name === 'AbortError') return;
-        }
-      }
-      try {
-        await navigator.clipboard.writeText(link);
-        await CookzerModal.alert('Invite link copied: ' + link);
-      } catch (e) {
-        await CookzerModal.prompt('Copy this invite link:', link);
-      }
+      await CookzerModal.share({ title: 'Join me on Cookzer', text: 'Come cook with me on Cookzer 🍳', url: link });
     });
 
     const { count } = await sb.from('profiles').select('*', { count: 'exact', head: true }).eq('referred_by', currentUser.id);

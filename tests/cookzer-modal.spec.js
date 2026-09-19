@@ -79,4 +79,44 @@ test.describe('CookzerModal', () => {
     await result;
     await expect(page.locator('.cz-modal-overlay')).toHaveCount(0);
   });
+
+  test('share shows the link and lets you copy it, closes on the × button', async ({ page }) => {
+    await setup(page);
+    // setContent() doesn't navigate, so an addInitScript override wouldn't
+    // fire here — stub the clipboard directly on the already-loaded page.
+    await page.evaluate(() => {
+      window.__CLIPBOARD__ = null;
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: { writeText: (text) => { window.__CLIPBOARD__ = text; return Promise.resolve(); } },
+      });
+    });
+
+    const result = page.evaluate(() => window.CookzerModal.share({ title: 'A recipe', url: 'https://cookzer.com/r/1' }));
+    await expect(page.locator('.cz-share-link-row input')).toHaveValue('https://cookzer.com/r/1');
+
+    await page.locator('.cz-share-copy-btn').click();
+    expect(await page.evaluate(() => window.__CLIPBOARD__)).toBe('https://cookzer.com/r/1');
+    await expect(page.locator('.cz-share-copy-btn')).toHaveText('Copied!');
+
+    await page.locator('.cz-share-close').click();
+    await result;
+    await expect(page.locator('.cz-modal-overlay')).toHaveCount(0);
+  });
+
+  test('share never calls navigator.share — the quick-share row links out instead', async ({ page }) => {
+    await setup(page);
+    await page.evaluate(() => {
+      window.__SHARE_CALLED__ = false;
+      navigator.share = () => { window.__SHARE_CALLED__ = true; return Promise.resolve(); };
+    });
+
+    const result = page.evaluate(() => window.CookzerModal.share({ title: 'A recipe', url: 'https://cookzer.com/r/1', text: 'Check this out' }));
+    await expect(page.locator('.cz-share-options a', { hasText: 'WhatsApp' })).toHaveAttribute('href', /wa\.me/);
+    await expect(page.locator('.cz-share-options a', { hasText: 'Facebook' })).toHaveAttribute('href', /facebook\.com\/sharer/);
+    expect(await page.evaluate(() => window.__SHARE_CALLED__)).toBe(false);
+
+    await page.locator('.cz-share-close').click();
+    await result;
+  });
 });

@@ -1913,24 +1913,7 @@
 
   async function sharePost(postId) {
     const url = location.origin + location.pathname.replace(/[^/]*$/, '') + 'cookzer-feed.html?post=' + postId;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Cookzer', url });
-        return;
-      } catch (e) {
-        // A user-cancelled share sheet rejects with AbortError — not an
-        // error, just stop. Any other rejection means share exists but
-        // isn't actually usable here (e.g. no secure-context support in
-        // this browser/environment) — fall through to the clipboard.
-        if (e && e.name === 'AbortError') return;
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      await CookzerModal.alert('Link copied to clipboard!');
-    } catch (e) {
-      await CookzerModal.alert('Could not copy the link: ' + e.message);
-    }
+    await CookzerModal.share({ title: 'Cookzer', url });
   }
 
   async function deletePost(postId, cardEl) {
