@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch: {}
 
 # Without this, every push to a PR queues a brand-new ~full-length run
 # without touching the previous one, so a few quick follow-up commits
