@@ -328,7 +328,7 @@
       <div class="section-dek">Add household members two ways: a no-login profile a kid can pick on a shared device to suggest a meal, or a friend who already has their own Cookzer account, linked directly so their name and avatar come along automatically. Visible to anyone in a group you share a meal plan with.</div>
 
       <div class="field" style="max-width:320px;">
-        <label>How many people do you usually cook for?
+        <label>How many people do you usually cook for, including yourself?
           <button type="button" id="householdSizeHint" class="hint-btn" title="What's this?" aria-label="What's this?">?</button>
         </label>
         <div class="field-row">
@@ -711,7 +711,7 @@
   });
 
   document.getElementById('householdSizeHint').addEventListener('click', async () => {
-    await CookzerModal.alert('This sets how many columns show on your Meal Planner — one per person you cook for. Give each one a name under Family Profiles below so their column shows who they are; any columns beyond your named profiles show as "+ Add a family member" until you do.');
+    await CookzerModal.alert('This sets how many columns show on your Meal Planner, counting yourself as one of them — a household of 4 (you + 3 others) means 4 columns total, not 5. Give each of the others a name under Family Profiles below so their column shows who they are; any columns beyond your named profiles show as "+ Add a family member" until you do.');
   });
 
   document.getElementById('saveHouseholdSizeBtn').addEventListener('click', async () => {
@@ -719,7 +719,9 @@
     const val = parseInt(document.getElementById('householdSizeInput').value, 10);
     if (!Number.isInteger(val) || val < 1 || val > 12) { status.textContent = 'Enter a number between 1 and 12.'; return; }
     const { error } = await sb.from('profiles').update({ household_size: val }).eq('id', currentUser.id);
-    status.textContent = error ? 'Could not save: ' + error.message : 'Saved — your Meal Planner will show ' + val + ' column' + (val === 1 ? '' : 's') + '.';
+    if (error) { status.textContent = 'Could not save: ' + error.message; return; }
+    const others = val - 1;
+    status.textContent = 'Saved — your Meal Planner will show ' + val + ' column' + (val === 1 ? '' : 's') + ' (you' + (others > 0 ? ' + ' + others + ' other' + (others === 1 ? '' : 's') : '') + ').';
   });
 
   document.getElementById('saveNameBtn').addEventListener('click', async () => {
