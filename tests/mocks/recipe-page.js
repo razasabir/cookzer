@@ -1,6 +1,7 @@
 window.__DELETED_COMMENT_IDS__ = [];
 window.__INSERTED_COMMENTS__ = [];
 window.__SAVED_UPSERTS__ = [];
+window.__INSERTED_PLANNER_ENTRIES__ = [];
 
 const RECIPE = {
   id: 'r1',
@@ -45,7 +46,7 @@ function chain(table) {
     order() { return builder; },
     limit() { return builder; },
     or() { return builder; },
-    in() { return builder; },
+    in(col, vals) { eqArgs.push([col, vals]); return builder; },
     single() { return Promise.resolve({ data: null, error: null }); },
     maybeSingle() {
       if (table === 'recipes') return Promise.resolve({ data: RECIPE, error: null });
@@ -74,6 +75,13 @@ function chain(table) {
         }
       } else if (table === 'cookbook_folders') {
         result = FOLDERS;
+      } else if (table === 'meal_plan_entries') {
+        // Seed one already-planned day: whichever date is first in the
+        // .in('plan_date', [...]) list the page actually queried for —
+        // deterministic against the real calendar without hardcoding a
+        // weekday, same trick used in tests/mocks/planner-family.js.
+        const dateFilter = eqArgs.find((a) => a[0] === 'plan_date');
+        result = dateFilter ? [{ plan_date: dateFilter[1][0], free_text: 'Leftover Pasta', recipes: null }] : [];
       } else if (table === 'recipe_photos' || table === 'recipe_reviews') {
         result = [];
       }
@@ -113,6 +121,8 @@ function chain(table) {
         comments = comments.concat([row]);
       } else if (table === 'hearts') {
         hearts = hearts.concat([payload]);
+      } else if (table === 'meal_plan_entries') {
+        window.__INSERTED_PLANNER_ENTRIES__.push(payload);
       }
       return Promise.resolve({ data: null, error: null });
     },
