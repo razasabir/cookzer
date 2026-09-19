@@ -2,13 +2,20 @@ window.__INSERTED_FAMILY_PROFILES__ = [];
 window.__DELETED_FAMILY_PROFILE_IDS__ = [];
 window.__PROFILE_UPDATES__ = [];
 
-let profiles = [{ id: 'fam-1', name: 'Emma', avatar_emoji: '👧' }];
+let profiles = [{ id: 'fam-1', name: 'Emma', avatar_emoji: '👧', linked_user_id: null }];
+
+const FOLLOWS = [
+  { followee_id: 'friend-1', profiles: { id: 'friend-1', display_name: 'Jordan Lee', initials: 'JL' } },
+  { followee_id: 'friend-2', profiles: { id: 'friend-2', display_name: 'Casey Kim', initials: 'CK' } },
+];
 
 function chain(table) {
+  let notArgs = null;
   const builder = {
     select() { return builder; },
     eq(col, val) { builder._eqId = val; return builder; },
     order() { return builder; },
+    not(col, op, val) { notArgs = [col, op, val]; return builder; },
     maybeSingle() {
       if (table === 'profiles') return Promise.resolve({ data: { display_name: 'Test Cook', household_size: 4 }, error: null });
       return Promise.resolve({ data: null, error: null });
@@ -16,14 +23,23 @@ function chain(table) {
     single() { return Promise.resolve({ data: null, error: null }); },
     then(resolve) {
       let result = [];
-      if (table === 'family_profiles') result = profiles;
-      else if (table === 'profiles') result = { display_name: 'Test Cook' };
+      if (table === 'family_profiles') {
+        result = (notArgs && notArgs[0] === 'linked_user_id')
+          ? profiles.filter((p) => p.linked_user_id != null)
+          : profiles;
+      } else if (table === 'profiles') result = { display_name: 'Test Cook' };
+      else if (table === 'follows') result = FOLLOWS;
       return Promise.resolve({ data: result, error: null }).then(resolve);
     },
     insert(payload) {
       if (table === 'family_profiles') {
         window.__INSERTED_FAMILY_PROFILES__.push(payload);
-        profiles = profiles.concat([{ id: 'fam-2', name: payload.name, avatar_emoji: payload.avatar_emoji }]);
+        profiles = profiles.concat([{
+          id: 'fam-' + (profiles.length + 1),
+          name: payload.name,
+          avatar_emoji: payload.avatar_emoji,
+          linked_user_id: payload.linked_user_id || null,
+        }]);
       }
       return Promise.resolve({ data: null, error: null });
     },

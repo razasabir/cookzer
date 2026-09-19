@@ -183,7 +183,23 @@
       flex-shrink: 0;
     }
 
+  .family-profile-emoji.linked {
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
   .family-profile-name { flex: 1; font-size: 14px; color: var(--ink); }
+
+  .family-profile-linked-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--olive-dark);
+      background: var(--plus-tint);
+      border-radius: 10px;
+      padding: 3px 8px;
+    }
 
   .family-profile-remove {
       background: none;
@@ -309,7 +325,7 @@
 
     <div class="settings-section">
       <h2>Family Profiles</h2>
-      <div class="section-dek">Named profiles for household members who don't want their own login — a kid can pick their own name on a shared device to suggest a meal, without a real Cookzer account. Visible to anyone in a group you share a meal plan with.</div>
+      <div class="section-dek">Add household members two ways: a no-login profile a kid can pick on a shared device to suggest a meal, or a friend who already has their own Cookzer account, linked directly so their name and avatar come along automatically. Visible to anyone in a group you share a meal plan with.</div>
 
       <div class="field" style="max-width:320px;">
         <label>How many people do you usually cook for?
@@ -329,6 +345,9 @@
           <input type="text" id="familyNameInput" placeholder="Name (e.g. Emma)" maxlength="40">
         </div>
         <button class="settings-btn" id="addFamilyProfileBtn" type="button">Add</button>
+      </div>
+      <div class="field-row" style="margin-top:6px;">
+        <button class="settings-btn secondary" id="addFriendFamilyProfileBtn" type="button">+ Add a friend</button>
       </div>
       <div class="settings-status" id="familyProfilesStatus"></div>
     </div>
@@ -428,6 +447,13 @@
   </div>
 </div>
 
+<!-- Friend picker — a real clickable list + search, replacing a
+     "type the number from this list" text prompt for choosing a friend
+     to add as a family member. -->
+<div class="cz2-overlay" id="pickerOverlay" hidden>
+  <div class="cz2-modal" id="pickerModal"></div>
+</div>
+
 <script>
   function toggleSidebar() {
     document.querySelector('.sidebar').classList.toggle('open');
@@ -455,7 +481,7 @@
   async function loadFamilyProfiles() {
     const { data: profiles } = await sb
       .from('family_profiles')
-      .select('id, name, avatar_emoji')
+      .select('id, name, avatar_emoji, linked_user_id')
       .eq('owner_id', currentUser.id)
       .order('created_at', { ascending: true });
 
@@ -465,17 +491,31 @@
       const row = document.createElement('div');
       row.className = 'family-profile-row';
       const emoji = document.createElement('div');
-      emoji.className = 'family-profile-emoji';
+      emoji.className = 'family-profile-emoji' + (p.linked_user_id ? ' linked' : '');
       emoji.textContent = p.avatar_emoji;
       const name = document.createElement('div');
       name.className = 'family-profile-name';
       name.textContent = p.name;
-      const kidModeBtnEl = document.createElement('button');
-      kidModeBtnEl.type = 'button';
-      kidModeBtnEl.className = 'family-profile-kidmode';
-      kidModeBtnEl.textContent = 'Kid Mode';
-      kidModeBtnEl.title = 'Lock this device to just the Meal Planner, as ' + p.name;
-      kidModeBtnEl.addEventListener('click', () => openKidModeSetupModal(p));
+      row.appendChild(emoji);
+      row.appendChild(name);
+
+      if (p.linked_user_id) {
+        // A real account — Kid Mode (a no-login device lock) doesn't
+        // apply to them, so just mark how they got here.
+        const badge = document.createElement('span');
+        badge.className = 'family-profile-linked-badge';
+        badge.textContent = 'Friend';
+        row.appendChild(badge);
+      } else {
+        const kidModeBtnEl = document.createElement('button');
+        kidModeBtnEl.type = 'button';
+        kidModeBtnEl.className = 'family-profile-kidmode';
+        kidModeBtnEl.textContent = 'Kid Mode';
+        kidModeBtnEl.title = 'Lock this device to just the Meal Planner, as ' + p.name;
+        kidModeBtnEl.addEventListener('click', () => openKidModeSetupModal(p));
+        row.appendChild(kidModeBtnEl);
+      }
+
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'family-profile-remove';
@@ -485,9 +525,6 @@
         await sb.from('family_profiles').delete().eq('id', p.id);
         await loadFamilyProfiles();
       });
-      row.appendChild(emoji);
-      row.appendChild(name);
-      row.appendChild(kidModeBtnEl);
       row.appendChild(removeBtn);
       listEl.appendChild(row);
     });
@@ -551,6 +588,126 @@
     nameInput.value = '';
     status.textContent = '';
     await loadFamilyProfiles();
+  });
+
+  // Friend picker (#pickerOverlay/#pickerModal, .cz2-* — same pattern as
+  // the Meal Planner's suggestion/meal pickers) for adding an adult in
+  // the family who already has their own Cookzer account, instead of
+  // retyping them as a fresh no-login profile.
+  function closePicker() {
+    document.getElementById('pickerOverlay').hidden = true;
+    document.getElementById('pickerModal').innerHTML = '';
+  }
+
+  document.getElementById('pickerOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'pickerOverlay') closePicker();
+  });
+
+  function cz2Button(label, primary) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'settings-btn' + (primary ? '' : ' secondary');
+    btn.textContent = label;
+    return btn;
+  }
+
+  async function addFriendAsFamilyMember(friend) {
+    closePicker();
+    const status = document.getElementById('familyProfilesStatus');
+    const { error } = await sb.from('family_profiles').insert({
+      owner_id: currentUser.id,
+      name: friend.display_name || 'Someone',
+      avatar_emoji: friend.initials || '??',
+      linked_user_id: friend.id,
+    });
+    if (error) { status.textContent = 'Could not add: ' + error.message; return; }
+    status.textContent = '';
+    await loadFamilyProfiles();
+  }
+
+  document.getElementById('addFriendFamilyProfileBtn').addEventListener('click', async () => {
+    const { data: followData } = await sb
+      .from('follows')
+      .select('followee_id, profiles!follows_followee_id_fkey(id, display_name, initials)')
+      .eq('follower_id', currentUser.id)
+      .order('created_at', { ascending: false });
+    const friends = (followData || []).map((f) => f.profiles).filter(Boolean);
+
+    const { data: existingLinks } = await sb
+      .from('family_profiles')
+      .select('linked_user_id')
+      .eq('owner_id', currentUser.id)
+      .not('linked_user_id', 'is', null);
+    const linkedIds = new Set((existingLinks || []).map((r) => r.linked_user_id));
+    const candidates = friends.filter((f) => !linkedIds.has(f.id));
+
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+    const title = document.createElement('h3');
+    title.textContent = 'Add a friend as a family member';
+    modal.appendChild(title);
+
+    if (candidates.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'cz2-label';
+      empty.style.textTransform = 'none';
+      empty.style.letterSpacing = 'normal';
+      empty.textContent = friends.length === 0
+        ? "You're not following anyone yet — follow them first, then come back here to add them."
+        : 'Everyone you follow is already added.';
+      modal.appendChild(empty);
+      const actions = document.createElement('div');
+      actions.className = 'cz2-actions';
+      const closeBtn = cz2Button('Close', true);
+      closeBtn.addEventListener('click', closePicker);
+      actions.appendChild(closeBtn);
+      modal.appendChild(actions);
+      document.getElementById('pickerOverlay').hidden = false;
+      return;
+    }
+
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search your friends...';
+    modal.appendChild(searchInput);
+
+    const list = document.createElement('div');
+    list.className = 'cz2-list';
+    modal.appendChild(list);
+
+    function renderList(filter) {
+      list.innerHTML = '';
+      const filtered = candidates.filter((f) => !filter || (f.display_name || '').toLowerCase().includes(filter.toLowerCase()));
+      if (filtered.length === 0) {
+        list.innerHTML = '<div class="cz2-empty">No matching friends.</div>';
+        return;
+      }
+      filtered.forEach((f) => {
+        const row = document.createElement('div');
+        row.className = 'cz2-row';
+        const avatar = document.createElement('div');
+        avatar.className = 'cz2-row-avatar';
+        avatar.textContent = f.initials || '??';
+        const name = document.createElement('span');
+        name.textContent = f.display_name || 'Someone';
+        row.appendChild(avatar);
+        row.appendChild(name);
+        row.addEventListener('click', () => addFriendAsFamilyMember(f));
+        list.appendChild(row);
+      });
+    }
+    renderList('');
+    searchInput.addEventListener('input', () => renderList(searchInput.value));
+
+    const actions = document.createElement('div');
+    actions.className = 'cz2-actions';
+    const cancelBtn = cz2Button('Cancel', false);
+    cancelBtn.addEventListener('click', closePicker);
+    actions.appendChild(cancelBtn);
+    modal.appendChild(actions);
+
+    document.getElementById('pickerOverlay').hidden = false;
+    searchInput.focus();
   });
 
   document.getElementById('householdSizeHint').addEventListener('click', async () => {
