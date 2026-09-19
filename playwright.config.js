@@ -19,11 +19,23 @@ const executablePath = fs.existsSync(sandboxChromium) ? sandboxChromium : undefi
 module.exports = defineConfig({
   testDir: './tests',
   fullyParallel: true,
+  // GitHub-hosted runners default to a low CPU count; letting Playwright
+  // pick a worker count off that (or running fully unbounded elsewhere)
+  // was causing runs to start fine, then increasingly time out under
+  // resource pressure as more workers/contexts piled up, cascading into
+  // dozens of unrelated failures over a 15-26 minute run — a suite that
+  // finishes in well under a minute locally. Capping workers keeps
+  // concurrency within what the runner can actually sustain.
+  workers: process.env.CI ? 2 : undefined,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: 'list',
   use: {
-    trace: 'retain-on-failure',
+    // Full trace-on-failure retention adds per-test overhead that's fine
+    // for one-off local debugging but compounds under the CI worker cap
+    // above; first-failure-only keeps the essential debugging artifact
+    // without paying that cost on every retry.
+    trace: process.env.CI ? 'retain-on-first-failure' : 'retain-on-failure',
   },
   projects: [
     {
