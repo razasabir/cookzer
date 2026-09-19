@@ -19,6 +19,7 @@
   <script src="friends-widget.js"></script>
 <script src="cookzer-modal.js"></script>
 <script src="photo-cropper.js"></script>
+<script src="recipe-tag-suggest.js"></script>
 <script src="theme.js"></script>
 <script src="nutrition-data.js"></script>
 <script src="shortcuts.js"></script>
@@ -257,6 +258,9 @@
       <div class="field">
         <label>Tags (helps people search for this recipe)</label>
         <input type="text" id="rTags" placeholder="e.g. quick, spicy, one-pot, kid-friendly">
+        <button class="add-row-btn" id="suggestTagsBtn" type="button" style="margin-top:8px;">✨ Suggest tags</button>
+        <div id="suggestTagsStatus" style="font-size:12px; color:var(--ink-soft); margin-top:6px;"></div>
+        <div class="chip-group" id="suggestedTagsChips" style="margin-top:8px;"></div>
       </div>
       <div class="row-2">
         <div class="field"><label>Prep time (min)</label><input type="number" id="rPrep" min="0"></div>
@@ -562,6 +566,68 @@
     document.getElementById('rCost').value = cost.toFixed(2);
     status.style.color = 'var(--ink-soft)';
     status.textContent = 'Filled in from a lookup-table estimate ($' + cost.toFixed(2) + '/serve) — adjust if it looks off.';
+  });
+
+  // Suggests tags from whatever's filled in so far — title, category,
+  // spice level, dietary tags, prep/cook time, and any ingredients or
+  // steps already added (this is a single-page wizard, so that data
+  // exists in the DOM regardless of which step is currently showing).
+  // Never written in on its own — each suggestion is its own chip the
+  // author taps to add, same as the estimate buttons above never submit
+  // a value without the author seeing it first.
+  document.getElementById('suggestTagsBtn').addEventListener('click', () => {
+    const status = document.getElementById('suggestTagsStatus');
+    const chipsEl = document.getElementById('suggestedTagsChips');
+    chipsEl.innerHTML = '';
+
+    const ingredientNames = Array.from(document.querySelectorAll('#ingredientRows .ing-name'))
+      .map((el) => el.value.trim()).filter(Boolean);
+    const stepTexts = Array.from(document.querySelectorAll('#stepRows .step-text-input'))
+      .map((el) => el.value.trim()).filter(Boolean);
+
+    const suggestions = window.CookzerTagSuggest ? window.CookzerTagSuggest.suggest({
+      title: document.getElementById('rTitle').value,
+      description: document.getElementById('rDescription').value,
+      category: document.getElementById('rCategory').value,
+      spiceLevel: document.getElementById('rSpice').value,
+      dietaryTags: Array.from(selectedTags),
+      prepMinutes: document.getElementById('rPrep').value,
+      cookMinutes: document.getElementById('rCook').value,
+      ingredientNames,
+      stepTexts,
+    }) : [];
+
+    const tagsInput = document.getElementById('rTags');
+    const existing = new Set(tagsInput.value.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean));
+    const newOnes = suggestions.filter((t) => !existing.has(t));
+
+    status.style.color = 'var(--ink-soft)';
+    if (suggestions.length === 0) {
+      status.textContent = 'Not enough filled in yet to suggest tags — add a title, category, prep/cook time, or a few ingredients first.';
+      return;
+    }
+    if (newOnes.length === 0) {
+      status.textContent = 'No new suggestions — you already have all of these.';
+      return;
+    }
+    status.textContent = 'Tap any to add it:';
+
+    newOnes.forEach((tag) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip-toggle';
+      chip.textContent = tag;
+      chip.addEventListener('click', () => {
+        const current = tagsInput.value.split(',').map((t) => t.trim()).filter(Boolean);
+        if (chip.classList.contains('active')) {
+          tagsInput.value = current.filter((t) => t.toLowerCase() !== tag).join(', ');
+          chip.classList.remove('active');
+        } else {
+          tagsInput.value = current.concat([tag]).join(', ');
+          chip.classList.add('active');
+        }
+      });
+      chipsEl.appendChild(chip);
+    });
   });
 
   document.getElementById('importUrlBtn').addEventListener('click', async () => {
