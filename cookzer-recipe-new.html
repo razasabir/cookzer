@@ -19,6 +19,7 @@
   <script src="friends-widget.js"></script>
 <script src="cookzer-modal.js"></script>
 <script src="photo-cropper.js"></script>
+<script src="photo-filters.js"></script>
 <script src="recipe-tag-suggest.js"></script>
 <script src="theme.js"></script>
 <script src="nutrition-data.js"></script>
@@ -376,6 +377,116 @@
     return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
   }
 
+  // Every photo picked for a step or an extra slot goes through this —
+  // same filter set as the feed composer and the recipe page's own gallery
+  // upload, baked into the pixels (not stored as a separate filter key)
+  // since a wizard photo can end up shown in several places (a step, the
+  // gallery, the cover) with no single spot to look the key back up from.
+  // Resolves the final File to use, or null if the person backs out.
+  function pickPhotoFilter(file) {
+    return new Promise((resolve) => {
+      let filterKey = 'original';
+      let vignette = false;
+      let userPicked = false;
+      const objectUrl = URL.createObjectURL(file);
+
+      const overlay = document.createElement('div');
+      overlay.className = 'cz2-overlay';
+      const modal = document.createElement('div');
+      // Its own class, not .pc-modal — that class also names the crop
+      // step's modal, and tests (and any future styling) need to tell
+      // the two apart even though they never show at the same time.
+      modal.className = 'cz2-modal photo-filter-modal';
+
+      const heading = document.createElement('h3');
+      heading.textContent = 'Choose a filter';
+
+      const previewWrap = document.createElement('div');
+      previewWrap.style.cssText = 'display:flex; justify-content:center; margin-bottom:10px;';
+      const preview = document.createElement('img');
+      preview.className = 'photo-filter-modal-preview';
+      preview.src = objectUrl;
+      preview.style.cssText = 'width:100%; max-width:320px; max-height:220px; object-fit:cover; border-radius:12px; display:block;';
+      previewWrap.appendChild(preview);
+
+      const suggestion = document.createElement('div');
+      const swatchRow = document.createElement('div');
+
+      const actions = document.createElement('div');
+      actions.className = 'cz2-actions';
+      const cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'pc-btn';
+      cancelBtn.textContent = 'Cancel';
+      const useBtn = document.createElement('button');
+      useBtn.type = 'button';
+      useBtn.className = 'pc-btn pc-btn-primary';
+      useBtn.textContent = 'Use this photo';
+      actions.appendChild(cancelBtn);
+      actions.appendChild(useBtn);
+
+      modal.appendChild(heading);
+      modal.appendChild(previewWrap);
+      modal.appendChild(suggestion);
+      modal.appendChild(swatchRow);
+      modal.appendChild(actions);
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      function renderRow() {
+        CookzerPhotoFilters.renderSwatches(swatchRow, objectUrl, filterKey, (f) => {
+          filterKey = f.key;
+          userPicked = true; // stop an in-flight suggestion from later overriding this
+          preview.style.filter = f.css;
+          suggestion.hidden = true; // the user made their own choice — stop suggesting
+          renderRow();
+        }, vignette, (v) => {
+          vignette = v;
+          preview.style.boxShadow = v ? CookzerPhotoFilters.VIGNETTE_PREVIEW_CSS : 'none';
+          renderRow();
+        });
+      }
+      renderRow();
+
+      // Suggest a starting filter based on the photo itself — purely a
+      // default + a hint; every swatch, including Original, is still one
+      // click away.
+      CookzerPhotoFilters.loadImage(objectUrl).then((img) => {
+        if (userPicked) return;
+        const s = CookzerPhotoFilters.suggestFilter(img);
+        CookzerPhotoFilters.renderSuggestion(suggestion, s);
+        if (s) {
+          filterKey = s.key;
+          preview.style.filter = CookzerPhotoFilters.FILTER_CSS[s.key];
+          renderRow();
+        }
+      }).catch(() => {});
+
+      function close(result) {
+        URL.revokeObjectURL(objectUrl);
+        overlay.remove();
+        resolve(result);
+      }
+
+      cancelBtn.addEventListener('click', () => close(null));
+      useBtn.addEventListener('click', async () => {
+        if (filterKey === 'original' && !vignette) {
+          close(file);
+          return;
+        }
+        useBtn.disabled = true;
+        useBtn.textContent = 'Applying...';
+        try {
+          const img = await CookzerPhotoFilters.loadImage(objectUrl);
+          const baked = await CookzerPhotoFilters.bakeFilter(img, CookzerPhotoFilters.FILTER_CSS[filterKey], file.type, vignette);
+          close(new File([baked], file.name, { type: file.type }));
+        } catch (e) {
+          close(file); // filter failed — use the unfiltered photo rather than blocking
+        }
+      });
+    });
+  }
+
   const STEP_LABELS = ['Basics', 'Ingredients', 'Steps & photos', 'Cover photo', 'Review & publish'];
   const STEP_DEKS = [
     "What is it, and the basics people search by.",
@@ -500,9 +611,11 @@
       // photo can be picked as the cover photo in the next step.
       const cropped = await CookzerPhotoCropper.open(file, { aspect: 4 / 3, title: 'Crop your photo' });
       if (!cropped) return;
-      row._photoFile = cropped;
+      const filtered = await pickPhotoFilter(cropped);
+      if (!filtered) return;
+      row._photoFile = filtered;
       row._existingPhotoPath = null; // replaced, not kept as the already-uploaded one
-      row._photoPreviewUrl = URL.createObjectURL(cropped);
+      row._photoPreviewUrl = URL.createObjectURL(filtered);
       thumb.src = row._photoPreviewUrl;
       thumb.style.display = 'block';
       removeBtn.style.display = 'inline-block';
@@ -732,8 +845,10 @@
     // photo can be picked as the cover photo in the next step.
     const cropped = await CookzerPhotoCropper.open(file, { aspect: 4 / 3, title: 'Crop your photo' });
     if (!cropped) return;
+    const filtered = await pickPhotoFilter(cropped);
+    if (!filtered) return;
     extraPhotoIdCounter++;
-    extraPhotos.push({ id: extraPhotoIdCounter, file: cropped, existingPath: null, previewUrl: URL.createObjectURL(cropped) });
+    extraPhotos.push({ id: extraPhotoIdCounter, file: filtered, existingPath: null, previewUrl: URL.createObjectURL(filtered) });
     renderExtraPhotos();
   });
 
