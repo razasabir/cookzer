@@ -116,13 +116,27 @@
       height: 36px;
       border-radius: 50%;
       background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      background-size: cover;
+      background-position: center;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
       font-weight: 600;
       cursor: pointer;
+      flex-shrink: 0;
     }
+
+  .header-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+  @media (max-width: 560px) {
+    .header-name { display: none; }
+  }
 
   /* Main content */
     .main {
@@ -168,6 +182,8 @@
       height: 40px;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.9);
+      background-size: cover;
+      background-position: center;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -324,11 +340,14 @@
       width: 100%;
     }
 
-  /* A post with an attached recipe gets a distinct left accent — color
-     alone isn't enough (misses colorblind readers, easy to miss scanning
-     fast), so it's paired with the "📖 Recipe" badge next to the title
-     below rather than relying on the border by itself. */
-  .feed-card.has-recipe { border-left: 3px solid var(--olive); }
+  /* A post with an attached recipe (green) or a Tip (orange) gets a
+     full, thin border in that color — color alone isn't enough (misses
+     colorblind readers, easy to miss scanning fast), so each is paired
+     with its own badge next to the title below rather than relying on
+     the border alone. Kept to the card's existing 1px width so it stays
+     sleek rather than heavy. */
+  .feed-card.has-recipe { border-color: var(--olive); }
+  .feed-card.has-tip { border-color: var(--brick); }
 
   .recipe-badge {
       display: inline-flex;
@@ -358,12 +377,15 @@
       height: 40px;
       border-radius: 50%;
       background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      background-size: cover;
+      background-position: center;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
       font-weight: 600;
       font-size: 14px;
+      flex-shrink: 0;
     }
 
   .card-meta {
@@ -409,6 +431,38 @@
       background: var(--cream);
       color: var(--brick);
     }
+
+  /* @mention autocomplete — a real clickable list of friends instead of
+     asking someone to type/remember a name (see CLAUDE.md: never a
+     numbered-list prompt for picking among options). Anchored under
+     whichever input is active via a relatively-positioned wrapper. */
+  .mention-anchor { position: relative; }
+
+  .mention-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 4px;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 20;
+    }
+
+  .mention-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+  .mention-row:hover { background: var(--cream); }
 
   .card-delete-btn:hover {
       background: var(--cream);
@@ -980,7 +1034,8 @@
     <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
     <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
     <a href="cookzer-settings.html" style="text-decoration:none;"><button class="icon-btn" title="Settings" type="button">⚙️</button></a>
-    <div class="avatar">--</div>
+    <span class="header-name" id="headerName"></span>
+    <div class="avatar" id="headerAvatar">--</div>
   </div>
 </div>
 
@@ -991,7 +1046,7 @@
     <div class="composer">
       <div class="composer-header">
         <div class="composer-avatar" id="composerAvatar">--</div>
-        <div class="composer-input">
+        <div class="composer-input mention-anchor" id="captionMentionAnchor">
           <input type="text" id="postCaption" placeholder="Share what you cooked today..." maxlength="500">
         </div>
       </div>
@@ -1129,6 +1184,96 @@
     if (!path) return null;
     if (path.indexOf('http://') === 0 || path.indexOf('https://') === 0) return path; // external URL (e.g. a licensed stock photo) — use as-is
     return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  }
+
+  // Shows a real profile photo (avatar_url) when someone has one — an
+  // OAuth sign-in fills this in automatically, or it's set by hand on
+  // cookzer-profile.html — falling back to the initials circle otherwise.
+  function setAvatarEl(el, person) {
+    if (!el) return;
+    if (person && person.avatar_url) {
+      el.style.backgroundImage = "url('" + person.avatar_url + "')";
+      el.textContent = '';
+    } else {
+      el.style.backgroundImage = '';
+      el.textContent = (person && person.initials) || '??';
+    }
+  }
+
+  // @mention autocomplete — a real clickable list of the people you
+  // follow (this app's own definition of "friends"), not a numbered
+  // prompt. Attaches to any text input sitting inside a
+  // .mention-anchor wrapper; typing "@" + letters shows matches,
+  // clicking one inserts "@Name " in place of what was typed.
+  let friendsForMentionsCache = null;
+  async function loadFriendsForMentions() {
+    if (friendsForMentionsCache) return friendsForMentionsCache;
+    const { data } = await sb
+      .from('follows')
+      .select('followee_id, profiles!follows_followee_id_fkey(id, display_name, initials)')
+      .eq('follower_id', currentUser.id);
+    friendsForMentionsCache = (data || []).map((f) => f.profiles).filter(Boolean);
+    return friendsForMentionsCache;
+  }
+
+  function attachMentionAutocomplete(inputEl) {
+    const anchor = inputEl.closest('.mention-anchor');
+    if (!anchor) return;
+    let dropdown = null;
+    let activeMatch = null; // { start, end } — the "@fragment" span being replaced
+
+    function closeDropdown() {
+      if (dropdown) { dropdown.remove(); dropdown = null; }
+      activeMatch = null;
+    }
+
+    function pickFriend(friend) {
+      const text = inputEl.value;
+      const name = friend.display_name || 'Someone';
+      const before = text.slice(0, activeMatch.start);
+      const after = text.slice(activeMatch.end);
+      inputEl.value = before + '@' + name + ' ' + after;
+      const cursor = (before + '@' + name + ' ').length;
+      inputEl.focus();
+      inputEl.setSelectionRange(cursor, cursor);
+      closeDropdown();
+    }
+
+    async function updateDropdown() {
+      const cursor = inputEl.selectionStart;
+      const before = inputEl.value.slice(0, cursor);
+      const match = before.match(/@([\w' -]*)$/);
+      if (!match) { closeDropdown(); return; }
+      activeMatch = { start: cursor - match[0].length, end: cursor };
+      const fragment = match[1].toLowerCase();
+      const friends = await loadFriendsForMentions();
+      const results = friends.filter((f) => (f.display_name || '').toLowerCase().includes(fragment)).slice(0, 6);
+
+      if (!dropdown) {
+        dropdown = document.createElement('div');
+        dropdown.className = 'mention-dropdown';
+        anchor.appendChild(dropdown);
+      }
+      dropdown.innerHTML = '';
+      if (results.length === 0) {
+        dropdown.remove();
+        dropdown = null;
+        return;
+      }
+      results.forEach((f) => {
+        const row = document.createElement('div');
+        row.className = 'mention-row';
+        row.textContent = (f.display_name || 'Someone');
+        // mousedown (not click) fires before the input's blur, so the
+        // pick registers before closeDropdown() would otherwise run first.
+        row.addEventListener('mousedown', (e) => { e.preventDefault(); pickFriend(f); });
+        dropdown.appendChild(row);
+      });
+    }
+
+    inputEl.addEventListener('input', updateDropdown);
+    inputEl.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDropdown(); });
+    inputEl.addEventListener('blur', () => setTimeout(closeDropdown, 150));
   }
 
   async function uploadPostPhoto(file, filterKey) {
@@ -1579,13 +1724,14 @@
 
   function cardShell(post) {
     const card = document.createElement('div');
-    card.className = 'feed-card' + (post.recipes ? ' has-recipe' : '');
+    card.id = 'post-' + post.id;
+    card.className = 'feed-card' + (post.recipes ? ' has-recipe' : '') + (post.kind === 'tip' ? ' has-tip' : '');
 
     const header = document.createElement('div');
     header.className = 'card-header';
     const avatar = document.createElement('div');
     avatar.className = 'card-avatar';
-    avatar.textContent = post.profiles ? post.profiles.initials : '??';
+    setAvatarEl(avatar, post.profiles);
     const meta = document.createElement('div');
     meta.className = 'card-meta';
     const name = document.createElement('div');
@@ -1710,14 +1856,23 @@
     commentBtn.className = 'action-btn';
     commentBtn.textContent = '💬 Comment';
     commentBtn.addEventListener('click', () => toggleCommentBox(post.id, post.author_id));
-    const bookmarkBtn = document.createElement('button');
-    bookmarkBtn.className = 'action-btn';
-    bookmarkBtn.id = 'bookmarkBtn-' + post.id;
-    bookmarkBtn.textContent = '🔖 Save';
-    bookmarkBtn.addEventListener('click', () => toggleBookmark(post.id));
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'action-btn';
+    shareBtn.textContent = '↗️ Share';
+    shareBtn.addEventListener('click', () => sharePost(post.id));
     actions.appendChild(heartBtn);
     actions.appendChild(commentBtn);
-    actions.appendChild(bookmarkBtn);
+    actions.appendChild(shareBtn);
+    // Save is a recipe-specific action — a plain post/tip/dining-out/
+    // challenge share has nothing to save for later the way a recipe does.
+    if (post.recipes) {
+      const bookmarkBtn = document.createElement('button');
+      bookmarkBtn.className = 'action-btn';
+      bookmarkBtn.id = 'bookmarkBtn-' + post.id;
+      bookmarkBtn.textContent = '🔖 Save';
+      bookmarkBtn.addEventListener('click', () => toggleBookmark(post.id));
+      actions.appendChild(bookmarkBtn);
+    }
     content.appendChild(actions);
 
     const commentBox = document.createElement('div');
@@ -1754,6 +1909,28 @@
     const { error } = await sb.from('reports').insert({ reporter_id: currentUser.id, target_type: 'post', target_id: postId, reason });
     if (error) await CookzerModal.alert('Could not send report: ' + error.message);
     else await CookzerModal.alert('Thanks — this post has been reported for review.');
+  }
+
+  async function sharePost(postId) {
+    const url = location.origin + location.pathname.replace(/[^/]*$/, '') + 'cookzer-feed.html?post=' + postId;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Cookzer', url });
+        return;
+      } catch (e) {
+        // A user-cancelled share sheet rejects with AbortError — not an
+        // error, just stop. Any other rejection means share exists but
+        // isn't actually usable here (e.g. no secure-context support in
+        // this browser/environment) — fall through to the clipboard.
+        if (e && e.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      await CookzerModal.alert('Link copied to clipboard!');
+    } catch (e) {
+      await CookzerModal.alert('Could not copy the link: ' + e.message);
+    }
   }
 
   async function deletePost(postId, cardEl) {
@@ -1899,10 +2076,13 @@
     inputRow.style.display = 'flex';
     inputRow.style.gap = '8px';
     inputRow.style.marginTop = '8px';
+    const inputWrap = document.createElement('div');
+    inputWrap.className = 'mention-anchor';
+    inputWrap.style.flex = '1';
     const input = document.createElement('input');
     input.type = 'text';
     input.placeholder = 'Write a comment...';
-    input.style.flex = '1';
+    input.style.width = '100%';
     input.style.padding = '8px 12px';
     input.style.border = '1px solid var(--line)';
     input.style.borderRadius = '16px';
@@ -1910,11 +2090,13 @@
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') submitComment(postId, input, box, postAuthorId);
     });
+    inputWrap.appendChild(input);
+    attachMentionAutocomplete(input);
     const sendBtn = document.createElement('button');
     sendBtn.className = 'action-btn';
     sendBtn.textContent = 'Send';
     sendBtn.addEventListener('click', () => submitComment(postId, input, box, postAuthorId));
-    inputRow.appendChild(input);
+    inputRow.appendChild(inputWrap);
     inputRow.appendChild(sendBtn);
     box.appendChild(inputRow);
   }
@@ -2015,7 +2197,7 @@
 
     let postsQuery = sb
       .from('posts')
-      .select('id, author_id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles!posts_author_id_fkey(display_name, initials), recipes!posts_recipe_id_fkey(title, hero_photo_path)')
+      .select('id, author_id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles!posts_author_id_fkey(display_name, initials, avatar_url), recipes!posts_recipe_id_fkey(title, hero_photo_path)')
       .order('created_at', { ascending: false })
       .range(feedOffset, feedOffset + FEED_PAGE_SIZE - 1);
 
@@ -2401,9 +2583,12 @@
   (async function init() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
-    const { data: profile } = await sb.from('profiles').select('display_name, initials').eq('id', user.id).single();
+    const { data: profile } = await sb.from('profiles').select('display_name, initials, avatar_url').eq('id', user.id).single();
     currentUser = { id: user.id, ...(profile || { display_name: user.email, initials: '??' }) };
-    document.getElementById('composerAvatar').textContent = currentUser.initials;
+    setAvatarEl(document.getElementById('composerAvatar'), currentUser);
+    setAvatarEl(document.getElementById('headerAvatar'), currentUser);
+    document.getElementById('headerName').textContent = currentUser.display_name || '';
+    attachMentionAutocomplete(document.getElementById('postCaption'));
 
     document.getElementById('feedEmpty').textContent = FEED_EMPTY_MESSAGE[currentFeedFilter];
 
@@ -2415,6 +2600,14 @@
     await loadBirthdays();
     await loadPYMKWidget();
     showWelcomeModalIfFirstVisit();
+
+    // A shared post link (?post=<id>) — jump to it if it's on the page
+    // already loaded; a post further back just isn't found, no error.
+    const sharedPostId = new URLSearchParams(location.search).get('post');
+    if (sharedPostId) {
+      const target = document.getElementById('post-' + sharedPostId);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   })();
 
   function showWelcomeModalIfFirstVisit() {
