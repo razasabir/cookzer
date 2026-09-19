@@ -2180,8 +2180,20 @@
     'mood-quick': 'No quick & easy posts yet.',
     'mood-fancy': 'No fancy-tonight posts yet.',
   };
+  // Tag chips (e.g. "#quick") are appended to the filter bar dynamically
+  // by loadTrendingFeedTags() below, one per free-form recipe tag —
+  // there's no fixed list of these the way there is for kind/mood, so
+  // they're encoded as "tag:<value>" rather than getting their own key
+  // in FEED_EMPTY_MESSAGE.
+  const TAG_FILTER_PREFIX = 'tag:';
+  function feedEmptyMessage(filter) {
+    if (filter.indexOf(TAG_FILTER_PREFIX) === 0) {
+      return 'No posts tagged "#' + filter.slice(TAG_FILTER_PREFIX.length) + '" yet.';
+    }
+    return FEED_EMPTY_MESSAGE[filter] || FEED_EMPTY_MESSAGE.all;
+  }
   let currentFeedFilter = new URLSearchParams(location.search).get('filter') || 'all';
-  if (!(currentFeedFilter in FEED_EMPTY_MESSAGE)) currentFeedFilter = 'all';
+  if (!(currentFeedFilter in FEED_EMPTY_MESSAGE) && currentFeedFilter.indexOf(TAG_FILTER_PREFIX) !== 0) currentFeedFilter = 'all';
 
   function setFeedFilter(filter) {
     currentFeedFilter = filter;
@@ -2189,14 +2201,46 @@
     const url = new URL(location.href);
     if (filter === 'all') url.searchParams.delete('filter'); else url.searchParams.set('filter', filter);
     history.replaceState(null, '', url);
-    document.getElementById('feedEmpty').textContent = FEED_EMPTY_MESSAGE[filter];
+    document.getElementById('feedEmpty').textContent = feedEmptyMessage(filter);
     loadFeed();
   }
 
-  document.querySelectorAll('.feed-filter-chip').forEach((chip) => {
+  function wireFilterChip(chip) {
     chip.classList.toggle('active', chip.dataset.filter === currentFeedFilter);
     chip.addEventListener('click', () => setFeedFilter(chip.dataset.filter));
-  });
+  }
+  document.querySelectorAll('.feed-filter-chip').forEach(wireFilterChip);
+
+  // Surfaces the most-used free-form recipe tags (from recipes people
+  // have actually posted, not every tag ever typed) as extra chips
+  // alongside the fixed kind/mood ones, so tags added in the recipe
+  // creation wizard become a real way to filter the feed instead of
+  // only being searchable one recipe at a time.
+  async function loadTrendingFeedTags() {
+    const { data } = await sb
+      .from('posts')
+      .select('recipes!posts_recipe_id_fkey!inner(tags)')
+      .not('recipe_id', 'is', null)
+      .limit(300);
+
+    const counts = {};
+    (data || []).forEach((row) => {
+      (row.recipes && row.recipes.tags || []).forEach((t) => { counts[t] = (counts[t] || 0) + 1; });
+    });
+    const topTags = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([t]) => t);
+    if (topTags.length === 0) return;
+
+    const bar = document.getElementById('feedFilterBar');
+    topTags.forEach((tag) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'feed-filter-chip';
+      chip.dataset.filter = TAG_FILTER_PREFIX + tag;
+      chip.textContent = '#' + tag;
+      wireFilterChip(chip);
+      bar.appendChild(chip);
+    });
+  }
 
   async function loadFeed() {
     feedOffset = 0;
@@ -2232,6 +2276,18 @@
       } else {
         ({ data: rawPosts, error } = await postsQuery.in('id', ids));
       }
+    } else if (currentFeedFilter.indexOf(TAG_FILTER_PREFIX) === 0) {
+      // Filtering on the embedded recipe's own tags needs an inner join
+      // (recipes!...!inner) — a left-joined embed can't be filtered on
+      // by PostgREST, and would otherwise just return every post with no
+      // attached recipe as well as every wrongly-tagged one.
+      const tag = currentFeedFilter.slice(TAG_FILTER_PREFIX.length).replace(/"/g, '');
+      ({ data: rawPosts, error } = await sb
+        .from('posts')
+        .select('id, author_id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles!posts_author_id_fkey(display_name, initials, avatar_url), recipes!posts_recipe_id_fkey!inner(title, hero_photo_path)')
+        .order('created_at', { ascending: false })
+        .range(feedOffset, feedOffset + FEED_PAGE_SIZE - 1)
+        .filter('recipes.tags', 'cs', '{"' + tag + '"}'));
     } else {
       if (currentFeedFilter === 'tips') postsQuery = postsQuery.eq('kind', 'tip');
       else if (currentFeedFilter === 'recipes') postsQuery = postsQuery.not('recipe_id', 'is', null);
@@ -2609,9 +2665,10 @@
     document.getElementById('headerName').textContent = currentUser.display_name || '';
     attachMentionAutocomplete(document.getElementById('postCaption'));
 
-    document.getElementById('feedEmpty').textContent = FEED_EMPTY_MESSAGE[currentFeedFilter];
+    document.getElementById('feedEmpty').textContent = feedEmptyMessage(currentFeedFilter);
 
     await loadFeed();
+    await loadTrendingFeedTags();
     await loadChallenge();
     await loadTopRecipes();
     await loadTrendingIngredients();
