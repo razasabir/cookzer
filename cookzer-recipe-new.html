@@ -397,6 +397,13 @@
       // step's modal, and tests (and any future styling) need to tell
       // the two apart even though they never show at the same time.
       modal.className = 'cz2-modal photo-filter-modal';
+      // Wider than a typical .cz2-modal (420px) on purpose: at that width
+      // only half the 12 swatches fit before the row scrolls out of view,
+      // with nothing showing that there's more — this needs to read as
+      // "here are all the filters," the same as the composer's own wider,
+      // page-width row does. Still shrinks to fit (and falls back to
+      // horizontal scroll) on a narrow/mobile viewport, same as there.
+      modal.style.maxWidth = '860px';
 
       const heading = document.createElement('h3');
       heading.textContent = 'Choose a filter';
@@ -406,7 +413,7 @@
       const preview = document.createElement('img');
       preview.className = 'photo-filter-modal-preview';
       preview.src = objectUrl;
-      preview.style.cssText = 'width:100%; max-width:320px; max-height:220px; object-fit:cover; border-radius:12px; display:block;';
+      preview.style.cssText = 'width:100%; max-width:420px; max-height:260px; object-fit:cover; border-radius:12px; display:block;';
       previewWrap.appendChild(preview);
 
       const suggestion = document.createElement('div');
