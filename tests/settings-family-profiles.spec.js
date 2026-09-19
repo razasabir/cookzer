@@ -46,7 +46,12 @@ test.describe('Settings — how many people you cook for', () => {
     await expect(page.locator('#householdSizeInput')).toHaveValue('4');
   });
 
-  test('saving a new value updates the profile and confirms the new column count', async ({ page }) => {
+  test('the field label says the count includes yourself', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-settings.html', 'settings-family-profiles.js');
+    await expect(page.locator('label', { hasText: 'How many people do you usually cook for' })).toContainText('including yourself');
+  });
+
+  test('saving a new value updates the profile and confirms the new column count, spelling out you + others', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-settings.html', 'settings-family-profiles.js');
     await page.fill('#householdSizeInput', '3');
     await page.click('#saveHouseholdSizeBtn');
@@ -55,6 +60,15 @@ test.describe('Settings — how many people you cook for', () => {
     const updated = await page.evaluate(() => window.__PROFILE_UPDATES__[0]);
     expect(updated.household_size).toBe(3);
     await expect(page.locator('#householdSizeStatus')).toContainText('3 columns');
+    await expect(page.locator('#householdSizeStatus')).toContainText('you + 2 others');
+  });
+
+  test('saving 1 confirms just yourself, with no "+ others" clause', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-settings.html', 'settings-family-profiles.js');
+    await page.fill('#householdSizeInput', '1');
+    await page.click('#saveHouseholdSizeBtn');
+    await expect.poll(() => page.evaluate(() => window.__PROFILE_UPDATES__.length)).toBe(1);
+    await expect(page.locator('#householdSizeStatus')).toContainText('1 column (you)');
   });
 
   test('rejects an out-of-range value without saving', async ({ page }) => {
@@ -65,10 +79,11 @@ test.describe('Settings — how many people you cook for', () => {
     expect(await page.evaluate(() => window.__PROFILE_UPDATES__.length)).toBe(0);
   });
 
-  test('the hint button explains what the columns are and where to change them', async ({ page }) => {
+  test('the hint button explains what the columns are, that the count includes yourself, and where to change them', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-settings.html', 'settings-family-profiles.js');
     await page.click('#householdSizeHint');
     await expect(page.locator('.cz-modal-message')).toContainText('Meal Planner');
+    await expect(page.locator('.cz-modal-message')).toContainText('counting yourself');
     await page.locator('.cz-modal-btn').click();
   });
 });
