@@ -587,7 +587,7 @@
     suggestionsByDate = {};
     const { data } = await sb
       .from('meal_suggestions')
-      .select('id, suggestion_date, dish_text, recipe_id, suggested_by_user_id, suggested_by_family_profile_id, profiles(display_name), family_profiles(name, avatar_emoji)')
+      .select('id, suggestion_date, dish_text, recipe_id, suggested_by_user_id, suggested_by_family_profile_id, profiles!meal_suggestions_suggested_by_user_id_fkey(display_name), family_profiles(name, avatar_emoji)')
       .eq('owner_id', currentUser.id)
       .in('suggestion_date', weekDates())
       .order('created_at', { ascending: true });
@@ -681,7 +681,7 @@
           dish_text: dish,
           ...suggesterFields,
         })
-        .select('id, suggestion_date, dish_text, recipe_id, suggested_by_user_id, suggested_by_family_profile_id, profiles(display_name), family_profiles(name, avatar_emoji)')
+        .select('id, suggestion_date, dish_text, recipe_id, suggested_by_user_id, suggested_by_family_profile_id, profiles!meal_suggestions_suggested_by_user_id_fkey(display_name), family_profiles(name, avatar_emoji)')
         .single();
       if (error || !data) { await CookzerModal.alert('Could not add suggestion: ' + (error ? error.message : 'the save didn\'t go through — please try again.')); return; }
       if (!suggestionsByDate[date]) suggestionsByDate[date] = [];
