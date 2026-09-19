@@ -253,6 +253,10 @@
           <div class="chip-toggle" data-tag="Low-carb">Low-carb</div>
         </div>
       </div>
+      <div class="field">
+        <label>Tags (helps people search for this recipe)</label>
+        <input type="text" id="rTags" placeholder="e.g. quick, spicy, one-pot, kid-friendly">
+      </div>
       <div class="row-2">
         <div class="field"><label>Prep time (min)</label><input type="number" id="rPrep" min="0"></div>
         <div class="field"><label>Cook time (min)</label><input type="number" id="rCook" min="0"></div>
@@ -802,6 +806,9 @@
       description: document.getElementById('rDescription').value.trim() || null,
       category: document.getElementById('rCategory').value || null,
       dietary_tags: Array.from(selectedTags),
+      tags: Array.from(new Set(
+        document.getElementById('rTags').value.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean)
+      )),
       prep_time_minutes: Number(document.getElementById('rPrep').value) || null,
       cook_time_minutes: Number(document.getElementById('rCook').value) || null,
       servings: Number(document.getElementById('rServings').value) || null,

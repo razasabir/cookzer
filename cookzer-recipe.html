@@ -156,6 +156,27 @@
 
   .dietary-pill { background: var(--cream); border: 1px solid var(--line); padding: 5px 12px; border-radius: 14px; font-size: 12px; color: var(--olive-dark); font-weight: 500; }
 
+  .search-tags-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
+
+  .search-tag-pill { background: none; border: 1px solid var(--forest); padding: 4px 11px; border-radius: 14px; font-size: 12px; color: var(--forest); font-weight: 600; }
+
+  .comment-row { display: flex; align-items: flex-start; font-size: 13.5px; margin-bottom: 10px; }
+
+  .comment-delete-btn {
+      margin-left: auto;
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      color: var(--ink-faint);
+      font-size: 11px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 6px;
+    }
+
+  .comment-delete-btn:hover { background: var(--cream); color: var(--rosso); }
+
   /* Ingredients as a clean two-column table: name | qty */
     .ingredient-header-row {
       display: grid;
@@ -585,6 +606,7 @@
     <div class="rule"></div>
 
     <div class="dietary-tags-row" id="rDietaryTags"></div>
+    <div class="search-tags-row" id="rSearchTags"></div>
 
     <div class="byline">
       <div class="byline-avatar" id="rByAvatar">--</div>
@@ -644,13 +666,19 @@
     </section>
 
     <div class="actions-row">
-      <button class="action-pill" id="cookInBtn">🍳 I cooked this</button>
+      <button class="action-pill" id="shareBtn">🔗 Share</button>
       <button class="action-pill" id="saveBtn">🔖 Save to Cookbook</button>
+      <button class="action-pill" id="heartBtn">❤️ Heart</button>
+      <button class="action-pill" id="cookInBtn">🍳 I cooked this</button>
       <button class="action-pill" id="rateBtn">⭐ <span id="ratingSummary">Rate this</span></button>
       <button class="action-pill" id="remakeBtn">🔁 Remake &amp; post</button>
-      <button class="action-pill" id="shareBtn">🔗 Share</button>
       <button class="action-pill" id="printBtn">🖨️ Print</button>
     </div>
+
+    <section class="block">
+      <div class="section-heading">Comments</div>
+      <div id="rCommentsBox"></div>
+    </section>
   </div>
 
   <div id="recipeNotFound" hidden style="max-width:480px;margin:80px auto;text-align:center;">
@@ -658,6 +686,11 @@
     <p style="color:var(--ink-soft);margin-bottom:20px;">This recipe doesn't exist yet, or the link is missing an id.</p>
     <a href="cookzer-recipe-new.html" style="color:var(--olive);font-weight:600;">Create a recipe &rarr;</a>
   </div>
+</div>
+
+<!-- Folder picker (Save to Cookbook) -->
+<div class="cz2-overlay" id="pickerOverlay" hidden>
+  <div class="cz2-modal" id="pickerModal"></div>
 </div>
 
 <!-- Photo upload + filter modal -->
@@ -899,7 +932,7 @@
 
     const { data, error } = await sb
       .from('recipes')
-      .select('id, title, description, category, dietary_tags, prep_time_minutes, cook_time_minutes, servings, spice_level, ingredients, steps, nutrition, cost_per_serve, hero_photo_path, created_at, author_id, profiles!recipes_author_id_fkey(display_name, initials)')
+      .select('id, title, description, category, dietary_tags, tags, prep_time_minutes, cook_time_minutes, servings, spice_level, ingredients, steps, nutrition, cost_per_serve, hero_photo_path, created_at, author_id, profiles!recipes_author_id_fkey(display_name, initials)')
       .eq('id', recipeId)
       .maybeSingle();
 
@@ -925,6 +958,15 @@
       pill.className = 'dietary-pill';
       pill.textContent = tag;
       tagsEl.appendChild(pill);
+    });
+
+    const searchTagsEl = document.getElementById('rSearchTags');
+    searchTagsEl.innerHTML = '';
+    (recipe.tags || []).forEach((tag) => {
+      const pill = document.createElement('div');
+      pill.className = 'search-tag-pill';
+      pill.textContent = '#' + tag;
+      searchTagsEl.appendChild(pill);
     });
 
     document.getElementById('rByAvatar').textContent = recipe.profiles ? recipe.profiles.initials : 'C';
@@ -1072,6 +1114,8 @@
 
     await loadGallery();
     await loadRatingSummary();
+    await refreshHeartStatus();
+    await renderRecipeComments();
   }
 
   async function loadGallery() {
@@ -1135,18 +1179,15 @@
     document.getElementById('cookInBtn').textContent = '✅ Cooked!';
   });
 
-  document.getElementById('saveBtn').addEventListener('click', async () => {
-    const { data: folders } = await sb.from('cookbook_folders').select('id, name, emoji').eq('user_id', currentUser.id).order('created_at');
+  function closePicker() {
+    document.getElementById('pickerOverlay').hidden = true;
+    document.getElementById('pickerModal').innerHTML = '';
+  }
+  document.getElementById('pickerOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'pickerOverlay') closePicker();
+  });
 
-    let folderId = null;
-    if (folders && folders.length > 0) {
-      const listText = folders.map((f, i) => (i + 1) + '. ' + f.emoji + ' ' + f.name).join('\n');
-      const pick = await CookzerModal.prompt('Save into which cookbook? Enter a number, or 0 for no folder:\n' + listText, '0');
-      if (pick === null) return;
-      const idx = parseInt(pick, 10);
-      if (idx > 0 && folders[idx - 1]) folderId = folders[idx - 1].id;
-    }
-
+  async function saveRecipeToCookbook(folderId) {
     const { error } = await sb.from('saved_recipes').upsert(
       { user_id: currentUser.id, recipe_id: recipeId, folder_id: folderId },
       { onConflict: 'user_id,recipe_id' }
@@ -1157,7 +1198,166 @@
     }
     document.getElementById('saveBtn').classList.add('active');
     document.getElementById('saveBtn').textContent = '🔖 Saved';
+  }
+
+  // Picking a folder to save into is picking one of several options, so
+  // it gets a real clickable list (the established .cz2-* picker
+  // pattern) instead of a "type the folder's number" text prompt.
+  document.getElementById('saveBtn').addEventListener('click', async () => {
+    const { data: folders } = await sb.from('cookbook_folders').select('id, name, emoji').eq('user_id', currentUser.id).order('created_at');
+
+    if (!folders || folders.length === 0) {
+      await saveRecipeToCookbook(null);
+      return;
+    }
+
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+    const title = document.createElement('h3');
+    title.textContent = 'Save into which cookbook?';
+    modal.appendChild(title);
+
+    const list = document.createElement('div');
+    list.className = 'cz2-list';
+
+    const noneRow = document.createElement('div');
+    noneRow.className = 'cz2-row';
+    noneRow.textContent = 'No folder';
+    noneRow.addEventListener('click', async () => {
+      closePicker();
+      await saveRecipeToCookbook(null);
+    });
+    list.appendChild(noneRow);
+
+    folders.forEach((f) => {
+      const row = document.createElement('div');
+      row.className = 'cz2-row';
+      row.textContent = f.emoji + ' ' + f.name;
+      row.addEventListener('click', async () => {
+        closePicker();
+        await saveRecipeToCookbook(f.id);
+      });
+      list.appendChild(row);
+    });
+    modal.appendChild(list);
+
+    document.getElementById('pickerOverlay').hidden = false;
   });
+
+  async function refreshHeartStatus() {
+    const { count } = await sb.from('hearts').select('*', { count: 'exact', head: true }).eq('recipe_id', recipeId);
+    const { data: mine } = await sb
+      .from('hearts')
+      .select('recipe_id')
+      .eq('recipe_id', recipeId)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+    const heartBtn = document.getElementById('heartBtn');
+    heartBtn.textContent = (mine ? '❤️ Hearted' : '❤️ Heart') + ' (' + (count || 0) + ')';
+    heartBtn.classList.toggle('active', !!mine);
+  }
+
+  document.getElementById('heartBtn').addEventListener('click', async () => {
+    const { data: mine } = await sb
+      .from('hearts')
+      .select('recipe_id')
+      .eq('recipe_id', recipeId)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    if (mine) {
+      await sb.from('hearts').delete().eq('recipe_id', recipeId).eq('user_id', currentUser.id);
+    } else {
+      await sb.from('hearts').insert({ recipe_id: recipeId, user_id: currentUser.id });
+    }
+    await refreshHeartStatus();
+  });
+
+  // Comments on a recipe — same table, shape, and moderation rules as a
+  // post's comments (the recipe's own author can delete anyone's
+  // comment here, same as a post owner can on their post).
+  async function renderRecipeComments() {
+    const box = document.getElementById('rCommentsBox');
+    box.innerHTML = '';
+    const { data: comments } = await sb
+      .from('comments')
+      .select('id, author_id, text, created_at, profiles(display_name, initials)')
+      .eq('recipe_id', recipeId)
+      .order('created_at', { ascending: true });
+
+    (comments || []).forEach((c) => {
+      const row = document.createElement('div');
+      row.className = 'comment-row';
+      row.dataset.commentId = c.id;
+      const textSpan = document.createElement('span');
+      const nameLink = document.createElement('a');
+      nameLink.href = 'cookzer-profile.html?id=' + c.author_id;
+      nameLink.style.color = 'inherit';
+      nameLink.style.fontWeight = '700';
+      nameLink.style.textDecoration = 'none';
+      nameLink.textContent = (c.profiles ? c.profiles.display_name : 'Someone') + ': ';
+      textSpan.appendChild(nameLink);
+      textSpan.appendChild(document.createTextNode(c.text));
+      row.appendChild(textSpan);
+
+      if (currentUser && (c.author_id === currentUser.id || recipe.author_id === currentUser.id)) {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'comment-delete-btn';
+        deleteBtn.type = 'button';
+        deleteBtn.title = c.author_id === currentUser.id ? 'Delete your comment' : 'Delete this comment';
+        deleteBtn.textContent = '✕';
+        deleteBtn.addEventListener('click', () => deleteRecipeComment(c.id));
+        row.appendChild(deleteBtn);
+      }
+
+      box.appendChild(row);
+    });
+
+    const inputRow = document.createElement('div');
+    inputRow.style.display = 'flex';
+    inputRow.style.gap = '8px';
+    inputRow.style.marginTop = '8px';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Write a comment...';
+    input.style.flex = '1';
+    input.style.padding = '8px 12px';
+    input.style.border = '1px solid var(--line)';
+    input.style.borderRadius = '16px';
+    input.style.fontFamily = 'inherit';
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitRecipeComment(input);
+    });
+    const sendBtn = document.createElement('button');
+    sendBtn.className = 'action-pill';
+    sendBtn.textContent = 'Send';
+    sendBtn.addEventListener('click', () => submitRecipeComment(input));
+    inputRow.appendChild(input);
+    inputRow.appendChild(sendBtn);
+    box.appendChild(inputRow);
+  }
+
+  async function submitRecipeComment(input) {
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    const { error } = await sb.from('comments').insert({ recipe_id: recipeId, author_id: currentUser.id, text });
+    if (error) {
+      await CookzerModal.alert('Could not comment: ' + error.message);
+      return;
+    }
+    await renderRecipeComments();
+  }
+
+  async function deleteRecipeComment(commentId) {
+    if (!(await CookzerModal.confirm('Delete this comment?', { confirmLabel: 'Delete', danger: true }))) return;
+    const { error } = await sb.from('comments').delete().eq('id', commentId);
+    if (error) {
+      await CookzerModal.alert('Could not delete comment: ' + error.message);
+      return;
+    }
+    await renderRecipeComments();
+  }
 
   document.getElementById('remakeBtn').addEventListener('click', async () => {
     const { error } = await sb.from('posts').insert({

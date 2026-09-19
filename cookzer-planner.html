@@ -973,7 +973,7 @@
   async function openAddMeal(date) {
     const { data: recipes } = await sb
       .from('recipes')
-      .select('id, title')
+      .select('id, title, tags')
       .or('author_id.eq.' + currentUser.id)
       .order('created_at', { ascending: false })
       .limit(50);
@@ -999,7 +999,10 @@
 
       function renderList(filter) {
         list.innerHTML = '';
-        const filtered = recipes.filter((r) => !filter || r.title.toLowerCase().includes(filter.toLowerCase()));
+        const needle = filter ? filter.toLowerCase() : '';
+        const filtered = recipes.filter((r) => !needle
+          || r.title.toLowerCase().includes(needle)
+          || (r.tags || []).some((t) => t.toLowerCase().includes(needle)));
         if (filtered.length === 0) {
           list.innerHTML = '<div class="cz2-empty">No matching recipes.</div>';
           return;

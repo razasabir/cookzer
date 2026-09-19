@@ -90,6 +90,16 @@ test.describe('Meal planner — per-person suggestion columns', () => {
     await expect(page.locator('#pickerOverlay')).toBeHidden();
   });
 
+  test('the recipe search also matches on tags, not just the title', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
+    await page.locator('.meal-add-btn', { hasText: '+ Add meal' }).first().click();
+
+    // "weeknight" matches Lemon Herb Chicken's tags, not its title.
+    await page.fill('#pickerModal input[type="text"]', 'weeknight');
+    await expect(page.locator('.cz2-row')).toHaveCount(1);
+    await expect(page.locator('.cz2-row')).toContainText('Lemon Herb Chicken');
+  });
+
   test('"+ Add meal" also accepts a plain meal name with no recipe attached', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
     await page.locator('.meal-add-btn', { hasText: '+ Add meal' }).first().click();
