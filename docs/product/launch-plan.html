@@ -171,6 +171,18 @@
   }
   .pill.todo { background: var(--todo-bg); color: var(--gold); }
   .pill.done { background: var(--done-bg); color: var(--green-dark); }
+  .pill.risk { background: rgba(206, 43, 55, 0.12); color: var(--red); }
+  .pill.confirmed { background: var(--done-bg); color: var(--green-dark); }
+
+  .role-block { margin-bottom: 22px; }
+  .role-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ink-faint);
+    margin: 0 0 10px;
+  }
   .added {
     font-size: 12px;
     color: var(--ink-faint);
@@ -200,9 +212,20 @@
 
     <div class="section-head">
       <h2>To do</h2>
-      <span class="section-count">4</span>
+      <span class="section-count">5</span>
     </div>
     <ul class="task-list">
+      <li class="task">
+        <div class="task-mark"></div>
+        <div class="task-body">
+          <p class="task-title">Verify migration 025 (real notifications) actually reached production</p>
+          <p class="task-note">Found during the Sep 19 QA/architecture review below: migration <code>024_tip_posts.sql</code> was marked "Done" on this plan but had never actually run against the live database (the automated migration runner's bootstrap wrongly assumed everything 001-029 was already applied by hand) — a real user hit a save error posting a Tip. That's now fixed (migration 037 repairs it). <code>025_real_notifications.sql</code> carries the identical risk: it's also bootstrap-assumed-applied, and this plan's own "Real notifications" entry below already flags it as needing a manual run. Can't confirm from code alone — please test live: toggle "New messages"/"Someone joins your group" in Settings → Notifications and confirm it saves, and check that a new message, a recipe review, or a group join actually produces a bell notification. If any of those fail, it's the same class of fix as the Tip bug.</p>
+          <div class="task-meta">
+            <span class="pill todo">To do</span>
+            <span class="added">Added Sep 19, 2026</span>
+          </div>
+        </div>
+      </li>
       <li class="task">
         <div class="task-mark"></div>
         <div class="task-body">
@@ -251,9 +274,19 @@
 
     <div class="section-head">
       <h2>Done</h2>
-      <span class="section-count">6</span>
+      <span class="section-count">7</span>
     </div>
     <ul class="task-list">
+      <li class="task done">
+        <div class="task-mark"></div>
+        <div class="task-body">
+          <p class="task-title">Fixed: posting a Tip failed with a database error</p>
+          <p class="task-note">Reported: "Could not post: new row for relation posts violates check constraint posts_kind_check" when posting with the Tip toggle. Root cause: migration <code>024_tip_posts.sql</code> (which widens the allowed post kinds to include <code>'tip'</code>) was marked "Done" below on Sep 17 but never actually reached the live database — the same gap a repair migration already fixed once for group management (<code>034_repair_group_management.sql</code>, migration 029). Migration <code>037_repair_tip_posts_constraint.sql</code> re-applies it defensively (safe regardless of whether 024 partially applied). See the QA/architecture review at the bottom of this page for how this was found and what else is still unconfirmed.</p>
+          <div class="task-meta">
+            <span class="pill done">Done — Sep 19, 2026</span>
+          </div>
+        </div>
+      </li>
       <li class="task done">
         <div class="task-mark"></div>
         <div class="task-body">
@@ -315,6 +348,93 @@
         </div>
       </li>
     </ul>
+
+    <div class="section-head">
+      <h2>QA &amp; architecture review — Sep 19, 2026</h2>
+    </div>
+    <p class="dek" style="margin-bottom:24px;">A tester → architect → PM pass across the whole site, kicked off after the Tip-posting bug below turned out to be a database migration that never actually ran — the question was whether that was a one-off or a pattern. This section gets kept up to date as the pattern gets chased down; it isn't a one-time snapshot.</p>
+
+    <div class="role-block">
+      <p class="role-label">Tester findings</p>
+      <ul class="task-list">
+        <li class="task done">
+          <div class="task-mark"></div>
+          <div class="task-body">
+            <p class="task-title">Automated suite: 189/190 passing</p>
+            <p class="task-note">Full Playwright run (<code>npx playwright test</code>). The 1 failure (<code>cookzer-modal.spec.js</code>, "prompt returns null on Cancel or Escape") is a pre-existing intermittent timing flake, not a regression — re-ran that file alone and all 7 tests passed. These tests run against a mocked Supabase client, so they verify the client's own logic but can never catch a real database gap like the two below.</p>
+            <div class="task-meta"><span class="pill confirmed">Confirmed</span></div>
+          </div>
+        </li>
+        <li class="task done">
+          <div class="task-mark"></div>
+          <div class="task-body">
+            <p class="task-title">Migration 024 (Tip posts) never reached production — now fixed</p>
+            <p class="task-note">Reported live by the account owner: posting a Tip failed with a <code>posts_kind_check</code> violation. Confirmed root cause and shipped the fix (see "Fixed: posting a Tip failed" above, migration 037).</p>
+            <div class="task-meta"><span class="pill confirmed">Confirmed &amp; fixed</span></div>
+          </div>
+        </li>
+        <li class="task">
+          <div class="task-mark"></div>
+          <div class="task-body">
+            <p class="task-title">Migration 025 (Real notifications) — same risk, not yet confirmed either way</p>
+            <p class="task-note">This plan's own "Real notifications" entry already flags migration 025 as needing a manual run, and it sits in the same bootstrap-assumed-applied range (001-029) that migration 024 turned out to be wrong about. Can't confirm from reading code alone — see the new To do item above for the live check needed.</p>
+            <div class="task-meta"><span class="pill risk">Unconfirmed</span></div>
+          </div>
+        </li>
+        <li class="task">
+          <div class="task-mark"></div>
+          <div class="task-body">
+            <p class="task-title">Stale "manual steps" note inside master-plan.html</p>
+            <p class="task-note">Near the Real Notifications entry, <code>master-plan.html</code> still carries an old note describing a fully-manual, run-each-file-in-the-SQL-Editor workflow and says migrations 017-020 were "not yet confirmed" — written before the automated <code>deploy-migrations.yml</code> pipeline (migration 030 onward) existed. It's now misleading next to the pipeline's actual behavior. Flagged for PM cleanup rather than fixed here, since it's documentation, not code.</p>
+            <div class="task-meta"><span class="pill risk">Needs cleanup</span></div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="role-block">
+      <p class="role-label">Architecture review</p>
+      <ul class="task-list">
+        <li class="task">
+          <div class="task-mark"></div>
+          <div class="task-body">
+            <p class="task-title">The gap is systemic, not two isolated incidents</p>
+            <p class="task-note">Two for two so far: migration 029 (group management, found and repaired earlier) and migration 024 (Tip posts, found and repaired today) were both bootstrap-assumed "already applied by hand" in <code>scripts/apply-migrations.sh</code> and both turned out not to be. That script's tracking table (<code>public._schema_migrations</code>) only marks a migration done when the runner itself applies it — anything before migration 030 rests entirely on a one-time assumption made when the pipeline was first built, and that assumption has now failed verification twice. Every feature built on migrations 017-029 should be treated as <em>unverified</em> on production, not confirmed, until checked individually or a defensive repair is written for it (the pattern from 034 and 037: <code>drop ... if exists</code> / <code>add column if not exists</code> / <code>create ... if not exists</code>, safe to run regardless of current state).</p>
+            <div class="task-meta"><span class="pill risk">Systemic risk</span></div>
+          </div>
+        </li>
+        <li class="task">
+          <div class="task-mark"></div>
+          <div class="task-body">
+            <p class="task-title">Why CI passing doesn't rule this class of bug out</p>
+            <p class="task-note">The Playwright suite mocks <code>window.supabase</code> entirely, so a client that sends the exact right payload (as the Tip composer did) still shows green even when the live database would reject that same payload. The deploy pipeline's own migration-apply step is real evidence, though — it's now been checked directly for migrations 035-037 (this session's own additions) via GitHub Actions job logs, and all applied cleanly. The gap is specifically in the pre-030 range the pipeline never actually verified, not in anything shipped since.</p>
+            <div class="task-meta"><span class="pill confirmed">Confirmed</span></div>
+          </div>
+        </li>
+        <li class="task">
+          <div class="task-mark"></div>
+          <div class="task-body">
+            <p class="task-title">Everything checked this round is correctly wired end to end</p>
+            <p class="task-note">Family Profiles ↔ Meal Planner columns ↔ household size, the friend-linking picker, and the migration-driven RLS policies behind all of it (owner_id/group_id sharing on meal_suggestions) all trace cleanly from client call → RLS policy → table, with no other dangling references found. The only structural issue this round was the pre-030 migration-application gap above, not a design or wiring problem.</p>
+            <div class="task-meta"><span class="pill confirmed">Confirmed</span></div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="role-block">
+      <p class="role-label">PM notes</p>
+      <ul class="task-list">
+        <li class="task">
+          <div class="task-mark"></div>
+          <div class="task-body">
+            <p class="task-title">Plan updated to reflect this round</p>
+            <p class="task-note">Added the Tip-posting fix to Done, and a new To do item for verifying migration 025 live (the next most likely repeat of this same bug). The stale manual-migration note in <code>master-plan.html</code> is a documentation cleanup, tracked here rather than duplicated as a separate To do. This section will keep getting updated in place as each unconfirmed item above gets checked, rather than spawning a new one every round.</p>
+            <div class="task-meta"><span class="added">Updated Sep 19, 2026</span></div>
+          </div>
+        </li>
+      </ul>
+    </div>
 
     <footer>Maintained alongside <code>docs/product/master-plan.html</code>. This file tracks incoming delivery requests; the master plan tracks what's actually shipped in detail.</footer>
   </div>
