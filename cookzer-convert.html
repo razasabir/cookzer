@@ -7,7 +7,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="theme-color" content="#2E8F5C">
-  <title>Convert — Cookzer</title>
+  <title>Measure & Convert — Cookzer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -370,7 +370,7 @@
   <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants">Restaurants</div></a>
   <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
   <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
-  <a href="cookzer-convert.html" style="text-decoration: none;"><div class="sidebar-item icon convert active">Convert</div></a>
+  <a href="cookzer-convert.html" style="text-decoration: none;"><div class="sidebar-item icon convert active">Measure &amp; Convert</div></a>
   <a href="cookzer-feed.html?filter=tips" style="text-decoration: none;"><div class="sidebar-item icon tips">Tips &amp; Tricks</div></a>
 
 <div class="sidebar-plus">
@@ -399,7 +399,7 @@
 <!-- Main content -->
 <div class="main">
   <div class="convert-content">
-    <h1 class="page-title">Convert</h1>
+    <h1 class="page-title">Measure & Convert</h1>
     <p class="page-sub">Heard a measurement you can't measure? Convert it to whatever you've actually got in the kitchen.</p>
 
     <div class="convert-tabs" id="convertTabs">
@@ -468,6 +468,29 @@
       <div class="pan-picker-strip" id="panPickerStrip"></div>
       <button class="pan-picker-reset" id="panPickerReset" type="button">← Show all pans</button>
       <div class="pan-size-list" id="panSizeList"></div>
+
+      <div class="convert-common-title">Calculate a custom pan</div>
+      <div class="pan-size-dek">Got a pan that isn't listed? Enter its shape and dimensions — depth included — to get its volume and the closest standard pan to substitute.</div>
+      <div class="convert-card">
+        <div class="convert-row">
+          <div class="convert-field">
+            <label for="customPanShape">Shape</label>
+            <select id="customPanShape">
+              <option value="round">Round</option>
+              <option value="square">Square</option>
+              <option value="rectangle">Rectangular</option>
+              <option value="loaf">Loaf</option>
+              <option value="bundt">Bundt / Tube</option>
+              <option value="muffin">Muffin / Cupcake</option>
+            </select>
+          </div>
+        </div>
+        <div class="convert-row" id="customPanDims"></div>
+        <div class="convert-result" id="customPanResult">
+          <div class="convert-result-value" id="customPanResultValue">—</div>
+          <div class="convert-result-note" id="customPanResultNote"></div>
+        </div>
+      </div>
     </div>
 
     <div class="convert-panel" data-panel="oven" hidden>
@@ -887,6 +910,129 @@
   });
 
   panPickerReset.addEventListener('click', resetPanFilter);
+
+  // ----- Custom pan volume calculator -----
+  // 1 US cup = 14.4375 in³. Depth is always one of the fields, per shape,
+  // since a pan's volume can't be pinned down without knowing how deep it
+  // actually is — the whole point of this calculator over the fixed list
+  // above.
+  const CUPS_PER_CUBIC_INCH = 1 / 14.4375;
+
+  const CUSTOM_PAN_SHAPES = {
+    round: {
+      fields: [{ key: 'diameter', label: 'Diameter (in)' }, { key: 'depth', label: 'Depth (in)' }],
+      volume: (v) => Math.PI * Math.pow(v.diameter / 2, 2) * v.depth,
+    },
+    square: {
+      fields: [{ key: 'side', label: 'Side length (in)' }, { key: 'depth', label: 'Depth (in)' }],
+      volume: (v) => v.side * v.side * v.depth,
+    },
+    rectangle: {
+      fields: [{ key: 'length', label: 'Length (in)' }, { key: 'width', label: 'Width (in)' }, { key: 'depth', label: 'Depth (in)' }],
+      volume: (v) => v.length * v.width * v.depth,
+    },
+    loaf: {
+      fields: [{ key: 'length', label: 'Length (in)' }, { key: 'width', label: 'Width (in)' }, { key: 'depth', label: 'Depth (in)' }],
+      volume: (v) => v.length * v.width * v.depth,
+    },
+    bundt: {
+      fields: [{ key: 'outerDiameter', label: 'Outer diameter (in)' }, { key: 'innerDiameter', label: 'Center tube diameter (in)' }, { key: 'depth', label: 'Depth (in)' }],
+      volume: (v) => Math.PI * (Math.pow(v.outerDiameter / 2, 2) - Math.pow(v.innerDiameter / 2, 2)) * v.depth,
+    },
+    muffin: {
+      fields: [{ key: 'cavityDiameter', label: 'Cavity diameter (in)' }, { key: 'depth', label: 'Cavity depth (in)' }, { key: 'count', label: 'Number of cavities' }],
+      volume: (v) => Math.PI * Math.pow(v.cavityDiameter / 2, 2) * v.depth * (v.count || 1),
+    },
+  };
+
+  // Rounds to the nearest quarter cup — nobody's measuring batter to
+  // three decimal places — and trims a bare trailing zero (7.50 -> 7.5).
+  function formatCups(n) {
+    const rounded = Math.round(n * 4) / 4;
+    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/0$/, '');
+  }
+
+  // Pulls the numeric cup value out of a PAN_SIZES entry's volume label
+  // (e.g. "8 cups" -> 8) so a custom pan's computed volume can be matched
+  // against it. Non-cup entries (the Muffin Pan's "12 cavity") return null
+  // and are skipped rather than compared.
+  function cupsFromPanLabel(label) {
+    const m = /^([\d.]+)\s*cups?$/i.exec(label.trim());
+    return m ? parseFloat(m[1]) : null;
+  }
+
+  function renderCustomPanFields() {
+    const shape = document.getElementById('customPanShape').value;
+    const wrap = document.getElementById('customPanDims');
+    wrap.innerHTML = '';
+    CUSTOM_PAN_SHAPES[shape].fields.forEach((f) => {
+      const field = document.createElement('div');
+      field.className = 'convert-field';
+      const label = document.createElement('label');
+      label.setAttribute('for', 'customPan_' + f.key);
+      label.textContent = f.label;
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.id = 'customPan_' + f.key;
+      input.min = '0';
+      input.step = 'any';
+      input.addEventListener('input', computeCustomPan);
+      field.appendChild(label);
+      field.appendChild(input);
+      wrap.appendChild(field);
+    });
+    computeCustomPan();
+  }
+
+  function computeCustomPan() {
+    const shape = document.getElementById('customPanShape').value;
+    const def = CUSTOM_PAN_SHAPES[shape];
+    const valueEl = document.getElementById('customPanResultValue');
+    const noteEl = document.getElementById('customPanResultNote');
+    const resultEl = document.getElementById('customPanResult');
+
+    const values = {};
+    let complete = true;
+    def.fields.forEach((f) => {
+      const raw = document.getElementById('customPan_' + f.key).value;
+      const num = parseFloat(raw);
+      if (!raw || isNaN(num) || num <= 0) complete = false;
+      values[f.key] = num;
+    });
+
+    if (!complete) {
+      resultEl.classList.add('unavailable');
+      valueEl.textContent = 'Enter all the dimensions above';
+      noteEl.textContent = '';
+      return;
+    }
+
+    resultEl.classList.remove('unavailable');
+    const cubicInches = def.volume(values);
+    const cups = cubicInches * CUPS_PER_CUBIC_INCH;
+
+    if (shape === 'muffin') {
+      const perCavityCups = Math.PI * Math.pow(values.cavityDiameter / 2, 2) * values.depth * CUPS_PER_CUBIC_INCH;
+      valueEl.textContent = '≈ ' + formatCups(perCavityCups) + ' cups per cavity';
+      noteEl.textContent = '≈ ' + formatCups(cups) + ' cups total across ' + values.count + ' cavities.';
+      return;
+    }
+
+    valueEl.textContent = '≈ ' + formatCups(cups) + ' cups';
+
+    let closest = null;
+    let closestDiff = Infinity;
+    PAN_SIZES.forEach((pan) => {
+      const panCups = cupsFromPanLabel(pan.volume);
+      if (panCups == null) return;
+      const diff = Math.abs(panCups - cups);
+      if (diff < closestDiff) { closestDiff = diff; closest = pan; }
+    });
+    noteEl.textContent = closest ? 'Closest standard pan: ' + closest.name + ' (' + closest.volume + ').' : '';
+  }
+
+  document.getElementById('customPanShape').addEventListener('change', renderCustomPanFields);
+  renderCustomPanFields();
 
   // ----- Oven temperatures -----
   const OVEN_ROWS = [
