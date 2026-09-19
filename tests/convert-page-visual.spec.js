@@ -119,6 +119,66 @@ test.describe('Convert page — pan quick picker', () => {
   });
 });
 
+test.describe('Convert page — custom pan calculator', () => {
+  test('each shape shows the right dimension fields, depth always included', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.click('.convert-tab[data-tab="pans"]');
+
+    // Round is the default shape.
+    await expect(page.locator('#customPanDims label')).toHaveText(['Diameter (in)', 'Depth (in)']);
+
+    await page.selectOption('#customPanShape', 'bundt');
+    await expect(page.locator('#customPanDims label')).toHaveText(['Outer diameter (in)', 'Center tube diameter (in)', 'Depth (in)']);
+
+    await page.selectOption('#customPanShape', 'muffin');
+    await expect(page.locator('#customPanDims label')).toHaveText(['Cavity diameter (in)', 'Cavity depth (in)', 'Number of cavities']);
+
+    await page.selectOption('#customPanShape', 'rectangle');
+    await expect(page.locator('#customPanDims label')).toHaveText(['Length (in)', 'Width (in)', 'Depth (in)']);
+  });
+
+  test('leaving a dimension blank (including depth) shows the incomplete state, not a wrong number', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.click('.convert-tab[data-tab="pans"]');
+    await page.fill('#customPan_diameter', '8');
+    // depth left blank
+    await expect(page.locator('#customPanResult')).toHaveClass(/unavailable/);
+    await expect(page.locator('#customPanResultValue')).toHaveText('Enter all the dimensions above');
+  });
+
+  test('computes a round pan\'s volume from diameter and depth, and names the closest standard pan', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.click('.convert-tab[data-tab="pans"]');
+    await page.fill('#customPan_diameter', '8');
+    await page.fill('#customPan_depth', '2');
+
+    await expect(page.locator('#customPanResult')).not.toHaveClass(/unavailable/);
+    await expect(page.locator('#customPanResultValue')).toHaveText('≈ 7 cups');
+    await expect(page.locator('#customPanResultNote')).toHaveText('Closest standard pan: 9" x 9" x 2" Square (8 cups).');
+  });
+
+  test('a bundt pan\'s volume accounts for the center tube, not just the outer diameter', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.click('.convert-tab[data-tab="pans"]');
+    await page.selectOption('#customPanShape', 'bundt');
+    await page.fill('#customPan_outerDiameter', '10');
+    await page.fill('#customPan_innerDiameter', '3');
+    await page.fill('#customPan_depth', '4');
+    await expect(page.locator('#customPanResultValue')).toHaveText('≈ 19.75 cups');
+  });
+
+  test('muffin/cupcake shows both per-cavity and total volume', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.click('.convert-tab[data-tab="pans"]');
+    await page.selectOption('#customPanShape', 'muffin');
+    await page.fill('#customPan_cavityDiameter', '2.5');
+    await page.fill('#customPan_depth', '1.25');
+    await page.fill('#customPan_count', '12');
+    await expect(page.locator('#customPanResultValue')).toHaveText('≈ 0.5 cups per cavity');
+    await expect(page.locator('#customPanResultNote')).toHaveText('≈ 5 cups total across 12 cavities.');
+  });
+});
+
 test.describe('Convert page — oven temperatures', () => {
   test('editing °F live-updates °C, the thermometer, and the descriptor', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
