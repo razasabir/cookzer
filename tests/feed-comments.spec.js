@@ -5,7 +5,7 @@ test.describe('Feed comments — deleting', () => {
   test('on your own post, you can delete both your own and someone else\'s comment', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-comments.js');
     const mineCard = page.locator('.feed-card', { hasText: 'My own post.' });
-    await mineCard.locator('.action-btn', { hasText: 'Comment' }).click();
+    await mineCard.locator('.action-btn[title="Comment"]').click();
 
     const box = page.locator('#commentBox-post-mine');
     await expect(box.locator('.comment-row')).toHaveCount(2);
@@ -24,7 +24,7 @@ test.describe('Feed comments — deleting', () => {
   test('on someone else\'s post, you can delete only your own comment', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-comments.js');
     const otherCard = page.locator('.feed-card', { hasText: "Someone else's post." });
-    await otherCard.locator('.action-btn', { hasText: 'Comment' }).click();
+    await otherCard.locator('.action-btn[title="Comment"]').click();
 
     const box = page.locator('#commentBox-post-other');
     await expect(box.locator('.comment-row')).toHaveCount(2);
@@ -45,7 +45,7 @@ test.describe('Feed comments — deleting', () => {
   test('canceling the confirm leaves the comment in place', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-comments.js');
     const mineCard = page.locator('.feed-card', { hasText: 'My own post.' });
-    await mineCard.locator('.action-btn', { hasText: 'Comment' }).click();
+    await mineCard.locator('.action-btn[title="Comment"]').click();
 
     const box = page.locator('#commentBox-post-mine');
     await box.locator('.comment-row[data-comment-id="c-mine-on-mine"] .comment-delete-btn').click();
@@ -58,7 +58,7 @@ test.describe('Feed comments — deleting', () => {
   test('posting a new comment inserts with the current user as author', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-comments.js');
     const mineCard = page.locator('.feed-card', { hasText: 'My own post.' });
-    await mineCard.locator('.action-btn', { hasText: 'Comment' }).click();
+    await mineCard.locator('.action-btn[title="Comment"]').click();
 
     const box = page.locator('#commentBox-post-mine');
     await box.locator('input[type="text"]').fill('Nice recipe!');

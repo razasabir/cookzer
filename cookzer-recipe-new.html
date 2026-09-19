@@ -337,7 +337,7 @@
         <h3>Ingredients &amp; steps</h3>
         <div class="review-line" id="reviewCounts"></div>
       </div>
-      <div class="share-toggle-row">
+      <div class="share-toggle-row" id="shareToggleRow">
         <input type="checkbox" id="shareToFeedCheck">
         <label for="shareToFeedCheck">Also share this to your feed</label>
       </div>
@@ -359,6 +359,22 @@
 
   let currentUser = null;
   const selectedTags = new Set();
+  const params = new URLSearchParams(location.search);
+  const editRecipeId = params.get('edit');
+
+  if (editRecipeId) {
+    document.getElementById('formTitle').textContent = 'Edit recipe';
+    document.title = 'Edit Recipe — Cookzer';
+    document.getElementById('importField').style.display = 'none';
+    document.getElementById('shareToggleRow').style.display = 'none';
+    document.getElementById('submitBtn').textContent = 'Save changes';
+  }
+
+  function publicUrl(bucket, path) {
+    if (!path) return null;
+    if (path.indexOf('http://') === 0 || path.indexOf('https://') === 0) return path;
+    return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  }
 
   const STEP_LABELS = ['Basics', 'Ingredients', 'Steps & photos', 'Cover photo', 'Review & publish'];
   const STEP_DEKS = [
@@ -439,7 +455,7 @@
     document.getElementById('ingredientRows').appendChild(row);
   }
 
-  function addStepRow(text = '') {
+  function addStepRow(text = '', existingPhotoPath = null) {
     stepIdCounter++;
     const stepId = stepIdCounter;
     const row = document.createElement('div');
@@ -485,6 +501,7 @@
       const cropped = await CookzerPhotoCropper.open(file, { aspect: 4 / 3, title: 'Crop your photo' });
       if (!cropped) return;
       row._photoFile = cropped;
+      row._existingPhotoPath = null; // replaced, not kept as the already-uploaded one
       row._photoPreviewUrl = URL.createObjectURL(cropped);
       thumb.src = row._photoPreviewUrl;
       thumb.style.display = 'block';
@@ -493,12 +510,22 @@
     });
     removeBtn.addEventListener('click', () => {
       row._photoFile = null;
+      row._existingPhotoPath = null;
       row._photoPreviewUrl = null;
       photoInput.value = '';
       thumb.style.display = 'none';
       removeBtn.style.display = 'none';
       photoBtn.textContent = '📷 Add photo for this step';
     });
+
+    if (existingPhotoPath) {
+      row._existingPhotoPath = existingPhotoPath;
+      row._photoPreviewUrl = publicUrl('recipe-photos', existingPhotoPath);
+      thumb.src = row._photoPreviewUrl;
+      thumb.style.display = 'block';
+      removeBtn.style.display = 'inline-block';
+      photoBtn.textContent = '📷 Change photo';
+    }
 
     photoRow.appendChild(photoBtn);
     photoRow.appendChild(photoInput);
@@ -686,9 +713,11 @@
 
   document.getElementById('addIngredientBtn').addEventListener('click', () => addIngredientRow());
   document.getElementById('addStepBtn').addEventListener('click', () => addStepRow());
-  addIngredientRow();
-  addIngredientRow();
-  addStepRow();
+  if (!editRecipeId) {
+    addIngredientRow();
+    addIngredientRow();
+    addStepRow();
+  }
 
   // ----- Extra photos (not tied to a step) -----
   const extraPhotoInput = document.getElementById('extraPhotoInput');
@@ -704,7 +733,7 @@
     const cropped = await CookzerPhotoCropper.open(file, { aspect: 4 / 3, title: 'Crop your photo' });
     if (!cropped) return;
     extraPhotoIdCounter++;
-    extraPhotos.push({ id: extraPhotoIdCounter, file: cropped, previewUrl: URL.createObjectURL(cropped) });
+    extraPhotos.push({ id: extraPhotoIdCounter, file: cropped, existingPath: null, previewUrl: URL.createObjectURL(cropped) });
     renderExtraPhotos();
   });
 
@@ -732,15 +761,24 @@
   }
 
   // ----- Cover photo picker -----
+  // A candidate is either a newly-picked File pending upload, or (when
+  // editing) an existingPath already in storage — either way it carries
+  // a previewUrl so the grid renders the same way.
   function getAllPhotoCandidates() {
     const candidates = [];
     document.querySelectorAll('#stepRows .step-row').forEach((row, idx) => {
-      if (row._photoFile) {
-        candidates.push({ key: 'step-' + row.dataset.stepId, file: row._photoFile, previewUrl: row._photoPreviewUrl, label: 'Step ' + (idx + 1) });
+      if (row._photoFile || row._existingPhotoPath) {
+        candidates.push({
+          key: 'step-' + row.dataset.stepId,
+          file: row._photoFile || null,
+          existingPath: row._photoFile ? null : (row._existingPhotoPath || null),
+          previewUrl: row._photoPreviewUrl,
+          label: 'Step ' + (idx + 1),
+        });
       }
     });
     extraPhotos.forEach((p) => {
-      candidates.push({ key: 'extra-' + p.id, file: p.file, previewUrl: p.previewUrl, label: 'Extra photo' });
+      candidates.push({ key: 'extra-' + p.id, file: p.file || null, existingPath: p.existingPath || null, previewUrl: p.previewUrl, label: 'Extra photo' });
     });
     return candidates;
   }
@@ -817,7 +855,6 @@
     }
   }
 
-  const params = new URLSearchParams(location.search);
   const shareParam = params.get('share') === '1';
   document.getElementById('shareToFeedCheck').checked = shareParam;
 
@@ -830,8 +867,10 @@
     }
 
     const submitBtn = document.getElementById('submitBtn');
+    const busyLabel = editRecipeId ? 'Saving...' : 'Publishing...';
+    const idleLabel = editRecipeId ? 'Save changes' : 'Publish recipe';
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Publishing...';
+    submitBtn.textContent = busyLabel;
 
     const ingredients = Array.from(document.querySelectorAll('#ingredientRows .dynamic-row')).map((row) => ({
       name: row.querySelector('.ing-name').value.trim(),
@@ -848,16 +887,22 @@
     if (carb) nutrition.carbs = Number(carb);
     if (fat) nutrition.fat = Number(fat);
 
-    // Upload every photo (step-attached + extras) up front, keyed by candidate.key.
+    // Upload every new photo (step-attached + extras) up front, keyed by
+    // candidate.key — one already in storage (editing an existing recipe)
+    // is reused as-is instead of re-uploaded.
     const candidates = getAllPhotoCandidates();
     for (const c of candidates) {
+      if (c.existingPath) {
+        c.uploadedPath = c.existingPath;
+        continue;
+      }
       const ext = (c.file.name.split('.').pop() || 'jpg').toLowerCase();
       const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
       const { error: uploadErr } = await sb.storage.from('recipe-photos').upload(path, c.file);
       if (uploadErr) {
         await CookzerModal.alert('Could not upload a photo (' + c.label + '): ' + uploadErr.message);
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Publish recipe';
+        submitBtn.textContent = idleLabel;
         return;
       }
       c.uploadedPath = path;
@@ -877,7 +922,6 @@
     const heroPhotoPath = coverCandidate ? coverCandidate.uploadedPath : null;
 
     const payload = {
-      author_id: currentUser.id,
       title,
       description: document.getElementById('rDescription').value.trim() || null,
       category: document.getElementById('rCategory').value || null,
@@ -896,47 +940,143 @@
       hero_photo_path: heroPhotoPath,
     };
 
-    const { data: recipe, error } = await sb.from('recipes').insert(payload).select('id').single();
-    if (error) {
-      await CookzerModal.alert('Could not save recipe: ' + error.message);
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Publish recipe';
-      return;
+    let savedRecipeId;
+    if (editRecipeId) {
+      const { error } = await sb.from('recipes').update(payload).eq('id', editRecipeId);
+      if (error) {
+        await CookzerModal.alert('Could not save changes: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = idleLabel;
+        return;
+      }
+      savedRecipeId = editRecipeId;
+    } else {
+      const { data: recipe, error } = await sb.from('recipes').insert({ ...payload, author_id: currentUser.id }).select('id').single();
+      if (error) {
+        await CookzerModal.alert('Could not save recipe: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = idleLabel;
+        return;
+      }
+      savedRecipeId = recipe.id;
     }
 
-    // Every uploaded photo also lands in the recipe's general gallery.
-    if (candidates.length > 0) {
+    // Only freshly-uploaded photos are new to the gallery — one carried
+    // over from editing (existingPath) is already in there.
+    const newCandidates = candidates.filter((c) => !c.existingPath);
+    if (newCandidates.length > 0) {
       await sb.from('recipe_photos').insert(
-        candidates.map((c) => ({ recipe_id: recipe.id, user_id: currentUser.id, storage_path: c.uploadedPath }))
+        newCandidates.map((c) => ({ recipe_id: savedRecipeId, user_id: currentUser.id, storage_path: c.uploadedPath }))
       );
     }
 
-    // Your own recipes show up in My Recipes right away, same as anything
-    // you'd save from someone else — no separate "authored" list to check.
-    await sb.from('saved_recipes').upsert(
-      { user_id: currentUser.id, recipe_id: recipe.id },
-      { onConflict: 'user_id,recipe_id' }
-    );
+    if (!editRecipeId) {
+      // Your own recipes show up in My Recipes right away, same as anything
+      // you'd save from someone else — no separate "authored" list to check.
+      await sb.from('saved_recipes').upsert(
+        { user_id: currentUser.id, recipe_id: savedRecipeId },
+        { onConflict: 'user_id,recipe_id' }
+      );
 
-    if (document.getElementById('shareToFeedCheck').checked) {
-      await sb.from('posts').insert({
-        author_id: currentUser.id,
-        kind: 'post',
-        recipe_id: recipe.id,
-        caption: 'Just shared ' + title + '.',
-      });
-      window.location.href = 'cookzer-feed.html';
-    } else {
-      window.location.href = 'cookzer-recipe.html?id=' + recipe.id;
+      if (document.getElementById('shareToFeedCheck').checked) {
+        await sb.from('posts').insert({
+          author_id: currentUser.id,
+          kind: 'post',
+          recipe_id: savedRecipeId,
+          caption: 'Just shared ' + title + '.',
+        });
+        window.location.href = 'cookzer-feed.html';
+        return;
+      }
     }
+
+    window.location.href = 'cookzer-recipe.html?id=' + savedRecipeId;
   });
 
   showStep(1);
+
+  // Loads an existing recipe's data into the same wizard used to create
+  // one, so editing reuses every field, the step-photo/extra-photo/cover
+  // machinery, and the review step rather than duplicating them.
+  async function loadRecipeForEdit(id) {
+    const { data: recipeData, error } = await sb
+      .from('recipes')
+      .select('id, title, description, category, dietary_tags, tags, prep_time_minutes, cook_time_minutes, servings, spice_level, ingredients, steps, nutrition, cost_per_serve, hero_photo_path, author_id')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error || !recipeData) {
+      await CookzerModal.alert('Could not load this recipe to edit.');
+      window.location.href = 'cookzer-cookbook.html';
+      return;
+    }
+    if (recipeData.author_id !== currentUser.id) {
+      await CookzerModal.alert('You can only edit your own recipes.');
+      window.location.href = 'cookzer-recipe.html?id=' + id;
+      return;
+    }
+
+    document.getElementById('rTitle').value = recipeData.title || '';
+    document.getElementById('rDescription').value = recipeData.description || '';
+    document.getElementById('rCategory').value = recipeData.category || '';
+    document.getElementById('rSpice').value = recipeData.spice_level || '';
+    document.getElementById('rTags').value = (recipeData.tags || []).join(', ');
+    document.getElementById('rPrep').value = recipeData.prep_time_minutes || '';
+    document.getElementById('rCook').value = recipeData.cook_time_minutes || '';
+    document.getElementById('rServings').value = recipeData.servings || 4;
+    document.getElementById('rCost').value = recipeData.cost_per_serve || '';
+
+    (recipeData.dietary_tags || []).forEach((tag) => {
+      const chip = document.querySelector('.chip-toggle[data-tag="' + tag + '"]');
+      if (chip) { chip.classList.add('active'); selectedTags.add(tag); }
+    });
+
+    const nutrition = recipeData.nutrition || {};
+    if (nutrition.calories != null) document.getElementById('rCalories').value = nutrition.calories;
+    if (nutrition.protein != null) document.getElementById('rProtein').value = nutrition.protein;
+    if (nutrition.carbs != null) document.getElementById('rCarbs').value = nutrition.carbs;
+    if (nutrition.fat != null) document.getElementById('rFat').value = nutrition.fat;
+
+    document.getElementById('ingredientRows').innerHTML = '';
+    (recipeData.ingredients || []).forEach((ing) => addIngredientRow(ing.name, ing.qty));
+    if ((recipeData.ingredients || []).length === 0) { addIngredientRow(); addIngredientRow(); }
+
+    document.getElementById('stepRows').innerHTML = '';
+    (recipeData.steps || []).forEach((s) => addStepRow(s.text, s.photo_path || null));
+    if ((recipeData.steps || []).length === 0) addStepRow();
+
+    // Extra photos — this author's own gallery uploads for this recipe,
+    // minus whatever's already shown against a step above.
+    const usedStepPaths = new Set((recipeData.steps || []).map((s) => s.photo_path).filter(Boolean));
+    const { data: galleryPhotos } = await sb
+      .from('recipe_photos')
+      .select('id, storage_path')
+      .eq('recipe_id', id)
+      .eq('user_id', currentUser.id);
+    (galleryPhotos || []).forEach((p) => {
+      if (usedStepPaths.has(p.storage_path)) return;
+      extraPhotoIdCounter++;
+      extraPhotos.push({ id: extraPhotoIdCounter, file: null, existingPath: p.storage_path, previewUrl: publicUrl('recipe-photos', p.storage_path) });
+    });
+    renderExtraPhotos();
+
+    // Keep the current cover photo choosable even if it isn't among the
+    // step/extra photos above (e.g. it was set some other way).
+    let coverMatch = getAllPhotoCandidates().find((c) => c.existingPath === recipeData.hero_photo_path);
+    if (!coverMatch && recipeData.hero_photo_path) {
+      extraPhotoIdCounter++;
+      extraPhotos.push({ id: extraPhotoIdCounter, file: null, existingPath: recipeData.hero_photo_path, previewUrl: publicUrl('recipe-photos', recipeData.hero_photo_path) });
+      renderExtraPhotos();
+      coverMatch = { key: 'extra-' + extraPhotoIdCounter };
+    }
+    if (coverMatch) selectedCoverKey = coverMatch.key;
+  }
 
   (async function init() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
     currentUser = user;
+    if (editRecipeId) await loadRecipeForEdit(editRecipeId);
   })();
 </script>
 </body>

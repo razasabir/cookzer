@@ -668,6 +668,7 @@
     </section>
 
     <div class="actions-row">
+      <a class="action-pill" id="editRecipeBtn" href="#" hidden style="text-decoration:none;">✏️ Edit Recipe</a>
       <button class="action-pill" id="shareBtn">🔗 Share</button>
       <button class="action-pill" id="saveBtn">🔖 Save to Cookbook</button>
       <button class="action-pill" id="heartBtn">❤️ Heart</button>
@@ -948,6 +949,12 @@
     recipe = data;
     document.getElementById('recipePage').hidden = false;
     document.title = recipe.title + ' — Cookzer';
+
+    if (currentUser && recipe.author_id === currentUser.id) {
+      const editBtn = document.getElementById('editRecipeBtn');
+      editBtn.href = 'cookzer-recipe-new.html?edit=' + recipeId;
+      editBtn.hidden = false;
+    }
 
     const tagline = [recipe.category, recipe.spice_level, (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0) ? ((recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0)) + ' Minutes' : null]
       .filter(Boolean).join(' · ');
