@@ -92,7 +92,7 @@ test.describe('Convert page — pan quick picker', () => {
   test('tapping a pan icon filters the list to that pan; reset shows all again', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
     await page.click('.convert-tab[data-tab="pans"]');
-    await expect(page.locator('.pan-size-card')).toHaveCount(7);
+    await expect(page.locator('.pan-size-card')).toHaveCount(8);
     await expect(page.locator('#panPickerReset')).toBeHidden();
 
     const bundtIcon = page.locator('.pan-picker-btn').nth(5); // 6th entry = 10" Bundt Pan
@@ -104,7 +104,7 @@ test.describe('Convert page — pan quick picker', () => {
     await expect(page.locator('.pan-size-card:visible')).toContainText('10" x 4" Bundt Pan');
 
     await page.click('#panPickerReset');
-    await expect(page.locator('.pan-size-card:visible')).toHaveCount(7);
+    await expect(page.locator('.pan-size-card:visible')).toHaveCount(8);
     await expect(bundtIcon).not.toHaveClass(/active/);
   });
 
@@ -115,15 +115,25 @@ test.describe('Convert page — pan quick picker', () => {
     await squareIcon.click();
     await expect(page.locator('.pan-size-card:visible')).toHaveCount(1);
     await squareIcon.click();
-    await expect(page.locator('.pan-size-card:visible')).toHaveCount(7);
+    await expect(page.locator('.pan-size-card:visible')).toHaveCount(8);
+  });
+
+  test('the pie plate is browsable as its own shape', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.click('.convert-tab[data-tab="pans"]');
+    await page.locator('.pan-picker-btn').nth(7).click(); // 8th entry = 9" Pie Plate
+    await expect(page.locator('.pan-size-card:visible')).toHaveCount(1);
+    await expect(page.locator('.pan-size-card:visible')).toContainText('9" Pie Plate');
+    await expect(page.locator('.pan-size-card:visible')).toContainText('4 cups');
   });
 });
 
 test.describe('Convert page — custom pan calculator', () => {
   // Picker icon order matches PAN_SIZES: 0 square, 1 round, 2 rectangle,
-  // 3 springform, 4 muffin, 5 bundt, 6 loaf (see the pan quick picker
-  // tests above, which already rely on this same order for the bundt icon).
-  const ICON = { square: 0, round: 1, rectangle: 2, springform: 3, muffin: 4, bundt: 5, loaf: 6 };
+  // 3 springform, 4 muffin, 5 bundt, 6 loaf, 7 pie (see the pan quick
+  // picker tests above, which already rely on this same order for the
+  // bundt icon).
+  const ICON = { square: 0, round: 1, rectangle: 2, springform: 3, muffin: 4, bundt: 5, loaf: 6, pie: 7 };
 
   test('picking a shape has no separate dropdown — tapping a picker icon drives both the reference list and the calculator', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
@@ -157,6 +167,9 @@ test.describe('Convert page — custom pan calculator', () => {
 
     await page.locator('.pan-picker-btn').nth(ICON.springform).click();
     await expect(page.locator('#customPanDims label')).toHaveText(['Diameter (in)', 'Depth (in)']);
+
+    await page.locator('.pan-picker-btn').nth(ICON.pie).click();
+    await expect(page.locator('#customPanDims label')).toHaveText(['Top diameter (in)', 'Bottom diameter (in)', 'Depth (in)']);
   });
 
   test('leaving a dimension blank (including depth) shows the incomplete state, not a wrong number', async ({ page }) => {
@@ -198,6 +211,42 @@ test.describe('Convert page — custom pan calculator', () => {
     await page.fill('#customPan_count', '12');
     await expect(page.locator('#customPanResultValue')).toHaveText('≈ 0.5 cups per cavity');
     await expect(page.locator('#customPanResultNote')).toHaveText('≈ 5 cups total across 12 cavities.');
+  });
+
+  test('a pie plate\'s volume accounts for its taper (top and bottom diameter differ), not a plain cylinder', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.click('.convert-tab[data-tab="pans"]');
+    await page.locator('.pan-picker-btn').nth(ICON.pie).click();
+    await page.fill('#customPan_topDiameter', '9');
+    await page.fill('#customPan_bottomDiameter', '7');
+    await page.fill('#customPan_depth', '1.25');
+    await expect(page.locator('#customPanResultValue')).toHaveText('≈ 4.25 cups');
+    await expect(page.locator('#customPanResultNote')).toHaveText('Closest standard pan: 9" Pie Plate (4 cups).');
+  });
+
+  test('"Enter length × width × height" covers any shape with no icon, flagged as an approximation', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.click('.convert-tab[data-tab="pans"]');
+
+    await page.click('#customPanGenericBtn');
+    await expect(page.locator('#customPanShapeLabel')).toHaveText('Custom shape (L × W × H)');
+    await expect(page.locator('#customPanDims label')).toHaveText(['Length (in)', 'Width (in)', 'Height (in)']);
+    // No picker icon corresponds to "custom", so none should read as active,
+    // and the reference list should show everything again.
+    await expect(page.locator('.pan-picker-btn.active')).toHaveCount(0);
+    await expect(page.locator('.pan-size-card:visible')).toHaveCount(8);
+
+    await page.fill('#customPan_length', '10');
+    await page.fill('#customPan_width', '6');
+    await page.fill('#customPan_height', '3');
+    await expect(page.locator('#customPanResultValue')).toHaveText('≈ 12.5 cups (approximate)');
+    await expect(page.locator('#customPanResultNote')).toHaveText(
+      'Based on its outer length × width × height — a curved or tapered pan will actually hold a bit less. Closest standard pan: 9" x 3" Springform (12 cups).'
+    );
+
+    // Tapping a real shape icon afterward switches back out of custom mode.
+    await page.locator('.pan-picker-btn').nth(ICON.round).click();
+    await expect(page.locator('#customPanShapeLabel')).toHaveText('Round');
   });
 });
 

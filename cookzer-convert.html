@@ -134,10 +134,19 @@
        silhouette so it reads at a glance instead of requiring the
        dimensions to be parsed as text first. */
     .pan-size-dek { font-size: 12.5px; color: var(--ink-soft); margin: -4px 0 14px; }
+    .custom-pan-shape-row {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+      margin-bottom: 14px;
+    }
     .custom-pan-shape-label {
       font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
-      color: var(--olive-dark); margin-bottom: 14px;
+      color: var(--olive-dark);
     }
+    .custom-pan-generic-btn {
+      background: none; border: none; padding: 0; font-family: inherit; font-size: 12px;
+      color: var(--ink-soft); text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+    }
+    .custom-pan-generic-btn:hover { color: var(--olive-dark); }
     .pan-size-list { display: flex; flex-direction: column; gap: 10px; }
     .pan-size-card {
       display: flex;
@@ -474,9 +483,12 @@
       <div class="pan-size-list" id="panSizeList"></div>
 
       <div class="convert-common-title">Calculate a custom pan</div>
-      <div class="pan-size-dek">Got a pan that isn't listed? Tap its shape above, then enter its dimensions — depth included — to get its volume and the closest standard pan to substitute.</div>
+      <div class="pan-size-dek">Got a pan that isn't listed? Tap its shape above, then enter its dimensions — depth included — to get its volume and the closest standard pan to substitute. (Tart pans and ring molds use the same math as Round and Bundt/Tube.)</div>
       <div class="convert-card">
-        <div class="custom-pan-shape-label" id="customPanShapeLabel"></div>
+        <div class="custom-pan-shape-row">
+          <div class="custom-pan-shape-label" id="customPanShapeLabel"></div>
+          <button class="custom-pan-generic-btn" id="customPanGenericBtn" type="button">Don't see your shape? Enter length × width × height →</button>
+        </div>
         <div class="convert-row" id="customPanDims"></div>
         <div class="convert-result" id="customPanResult">
           <div class="convert-result-value" id="customPanResultValue">—</div>
@@ -838,6 +850,7 @@
       + '<circle cx="10" cy="26" r="4"/><circle cx="20" cy="26" r="4"/><circle cx="30" cy="26" r="4"/>',
     bundt: '<circle cx="20" cy="20" r="15"/><circle cx="20" cy="20" r="6"/>',
     loaf: '<rect x="3" y="14" width="34" height="12" rx="3"/>',
+    pie: '<circle cx="20" cy="20" r="15"/><line x1="20" y1="20" x2="20" y2="5"/><line x1="20" y1="20" x2="31" y2="29"/>',
   };
 
   const PAN_SIZES = [
@@ -848,6 +861,7 @@
     { icon: 'muffin', name: 'Muffin Pan (12 × 2¾" x 1¼")', volume: '12 cavity', subs: '1 standard cupcake = 3 mini cupcakes' },
     { icon: 'bundt', name: '10" x 4" Bundt Pan', volume: '12 cups', subs: '10" Springform · 9" Tube Pan · 18–24 Cupcakes · (2) 9" Rounds · 9" x 13" x 2" Rectangle' },
     { icon: 'loaf', name: '9" x 5" x 3" Loaf', volume: '8 cups', subs: '3 Mini Loaves · 8" or 9" Square · 12–18 Cupcakes · 10" Pie Plate' },
+    { icon: 'pie', name: '9" Pie Plate', volume: '4 cups', subs: '9" Round (shallow) · 9" Tart Pan · 6 Individual Ramekins' },
   ];
 
   function panIconSVG(iconKey) {
@@ -952,11 +966,36 @@
       fields: [{ key: 'diameter', label: 'Diameter (in)' }, { key: 'depth', label: 'Depth (in)' }],
       volume: (v) => Math.PI * Math.pow(v.diameter / 2, 2) * v.depth,
     },
+    // Pie plates taper — the rim is wider than the base — so a plain
+    // cylinder formula (as used for Round) would overstate the volume.
+    // This is the frustum (cone-with-the-tip-cut-off) formula instead.
+    pie: {
+      fields: [
+        { key: 'topDiameter', label: 'Top diameter (in)' },
+        { key: 'bottomDiameter', label: 'Bottom diameter (in)' },
+        { key: 'depth', label: 'Depth (in)' },
+      ],
+      volume: (v) => {
+        const rTop = v.topDiameter / 2;
+        const rBottom = v.bottomDiameter / 2;
+        return ((Math.PI * v.depth) / 3) * (rTop * rTop + rTop * rBottom + rBottom * rBottom);
+      },
+    },
+    // The catch-all for anything with no icon above — a novelty shape
+    // (heart, star, hexagon…) or an odd casserole dish. Volume is just
+    // its outer bounding box, so it's flagged as approximate in the
+    // result rather than presented as exact like the shapes above.
+    custom: {
+      fields: [{ key: 'length', label: 'Length (in)' }, { key: 'width', label: 'Width (in)' }, { key: 'height', label: 'Height (in)' }],
+      volume: (v) => v.length * v.width * v.height,
+      approximate: true,
+    },
   };
 
   const SHAPE_LABEL = {
-    round: 'Round', square: 'Square', rectangle: 'Rectangular', loaf: 'Loaf',
+    round: 'Round', square: 'Square', rectangle: 'Rectangular / Sheet Pan', loaf: 'Loaf',
     bundt: 'Bundt / Tube', muffin: 'Muffin / Cupcake', springform: 'Springform',
+    pie: 'Pie Plate', custom: 'Custom shape (L × W × H)',
   };
 
   // Rounds to the nearest quarter cup — nobody's measuring batter to
@@ -1033,7 +1072,7 @@
       return;
     }
 
-    valueEl.textContent = '≈ ' + formatCups(cups) + ' cups';
+    valueEl.textContent = '≈ ' + formatCups(cups) + ' cups' + (def.approximate ? ' (approximate)' : '');
 
     let closest = null;
     let closestDiff = Infinity;
@@ -1043,8 +1082,17 @@
       const diff = Math.abs(panCups - cups);
       if (diff < closestDiff) { closestDiff = diff; closest = pan; }
     });
-    noteEl.textContent = closest ? 'Closest standard pan: ' + closest.name + ' (' + closest.volume + ').' : '';
+    const closestNote = closest ? 'Closest standard pan: ' + closest.name + ' (' + closest.volume + ').' : '';
+    noteEl.textContent = def.approximate
+      ? 'Based on its outer length × width × height — a curved or tapered pan will actually hold a bit less. ' + closestNote
+      : closestNote;
   }
+
+  document.getElementById('customPanGenericBtn').addEventListener('click', () => {
+    resetPanFilter();
+    customPanShapeKey = 'custom';
+    renderCustomPanFields();
+  });
 
   renderCustomPanFields();
 
