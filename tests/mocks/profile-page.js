@@ -7,6 +7,7 @@
 // way every other mock in this suite sidesteps parsing PostgREST
 // select-string syntax.
 window.__CALLS__ = [];
+window.__UPLOADS__ = [];
 window.__STATE__ = {
   profiles: [
     { id: 'me-1', display_name: 'Me', initials: 'ME', bio: '', location: '', avatar_url: null, is_kitchen_cv: true, cv_title: 'Home cook', cv_bio: '', open_to_work: false, cover_gradient: null, created_at: '2024-01-01T00:00:00Z', birthday_month: null, birthday_day: null },
@@ -134,7 +135,15 @@ window.supabase = {
       signOut: () => Promise.resolve({}),
     },
     from: (table) => chain(table),
-    storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: 'https://example.com/x.jpg' } }), upload: () => Promise.resolve({ data: {}, error: null }) }) },
+    storage: {
+      from: (bucket) => ({
+        getPublicUrl: () => ({ data: { publicUrl: 'https://example.com/x.jpg' } }),
+        upload: (path, fileOrBlob) => {
+          window.__UPLOADS__.push({ bucket, path, hasName: typeof fileOrBlob.name === 'string', size: fileOrBlob.size, type: fileOrBlob.type });
+          return Promise.resolve({ data: {}, error: null });
+        },
+      }),
+    },
     channel: () => ({ on: () => ({ subscribe: () => ({}) }), subscribe: () => ({}) }),
     removeChannel: () => {},
   }),

@@ -18,6 +18,7 @@
 <script src="auth-guard.js"></script>
   <script src="friends-widget.js"></script>
 <script src="cookzer-modal.js"></script>
+<script src="photo-cropper.js"></script>
 <script src="theme.js"></script>
 <script src="nutrition-data.js"></script>
 <script src="shortcuts.js"></script>
@@ -471,11 +472,16 @@
     removeBtn.textContent = 'Remove';
 
     photoBtn.addEventListener('click', () => photoInput.click());
-    photoInput.addEventListener('change', () => {
+    photoInput.addEventListener('change', async () => {
       const file = photoInput.files[0];
       if (!file) return;
-      row._photoFile = file;
-      row._photoPreviewUrl = URL.createObjectURL(file);
+      photoInput.value = ''; // let picking the exact same file again re-fire change
+      // Cropped wide (matching the recipe hero) since any step or extra
+      // photo can be picked as the cover photo in the next step.
+      const cropped = await CookzerPhotoCropper.open(file, { aspect: 4 / 3, title: 'Crop your photo' });
+      if (!cropped) return;
+      row._photoFile = cropped;
+      row._photoPreviewUrl = URL.createObjectURL(cropped);
       thumb.src = row._photoPreviewUrl;
       thumb.style.display = 'block';
       removeBtn.style.display = 'inline-block';
@@ -623,12 +629,16 @@
   let pendingExtraSlot = null;
 
   document.getElementById('addExtraPhotoTile').addEventListener('click', () => extraPhotoInput.click());
-  extraPhotoInput.addEventListener('change', () => {
+  extraPhotoInput.addEventListener('change', async () => {
     const file = extraPhotoInput.files[0];
     if (!file) return;
-    extraPhotoIdCounter++;
-    extraPhotos.push({ id: extraPhotoIdCounter, file, previewUrl: URL.createObjectURL(file) });
     extraPhotoInput.value = '';
+    // Cropped wide (matching the recipe hero) since any extra or step
+    // photo can be picked as the cover photo in the next step.
+    const cropped = await CookzerPhotoCropper.open(file, { aspect: 4 / 3, title: 'Crop your photo' });
+    if (!cropped) return;
+    extraPhotoIdCounter++;
+    extraPhotos.push({ id: extraPhotoIdCounter, file: cropped, previewUrl: URL.createObjectURL(cropped) });
     renderExtraPhotos();
   });
 

@@ -1,6 +1,7 @@
 const path = require('path');
 const { test, expect } = require('@playwright/test');
 const { loadPageWithMock } = require('./helpers/loadPage');
+const { confirmCrop } = require('./helpers/cropper');
 
 const SAMPLE_IMAGE = path.join(__dirname, '..', 'icon-192.png');
 const SAMPLE_IMAGE_2 = path.join(__dirname, '..', 'icon-512.png');
@@ -12,6 +13,11 @@ const SAMPLE_IMAGE_2 = path.join(__dirname, '..', 'icon-512.png');
 // filter (and vignette) into the uploaded image (canvas) rather than
 // storing it as metadata — simpler than teaching every place a post
 // photo renders about a stored filter key.
+//
+// Every one of these flows now opens the CookzerPhotoCropper crop step
+// first (see tests/photo-cropper.spec.js for that step itself) — these
+// tests confirmCrop() past it to get to the filter row, same as a real
+// upload would after the person clicks "Use Photo".
 test.describe('Photo filters on post composers', () => {
   test('feed composer: filter row appears, a swatch can be selected, and only a non-Original choice bakes a new file', async ({ page }) => {
     // Skip the first-visit welcome modal — unrelated to this test, but it
@@ -23,6 +29,7 @@ test.describe('Photo filters on post composers', () => {
 
     const photoInput = page.locator('#composerMediaInput');
     await photoInput.setInputFiles(SAMPLE_IMAGE);
+    await confirmCrop(page);
 
     const filterRow = page.locator('#composerFilterRow');
     await expect(filterRow).toBeVisible();
@@ -51,6 +58,7 @@ test.describe('Photo filters on post composers', () => {
     // Second post, this time picking a real filter — the uploaded object
     // should now be a baked Blob (no .name), proving the filter was applied.
     await photoInput.setInputFiles(SAMPLE_IMAGE);
+    await confirmCrop(page);
     await expect(filterRow.locator('.pf-swatch')).toHaveCount(12);
     const vividSwatch = filterRow.locator('.pf-swatch', { hasText: 'Vivid' });
     await vividSwatch.click();
@@ -72,6 +80,7 @@ test.describe('Photo filters on post composers', () => {
 
     const photoInput = page.locator('#composerPhotoInput');
     await photoInput.setInputFiles(SAMPLE_IMAGE);
+    await confirmCrop(page);
 
     const filterRow = page.locator('#composerFilterRow');
     await expect(filterRow).toBeVisible();
@@ -148,6 +157,7 @@ test.describe('Auto filter suggestion in the composer UI', () => {
 
     const photoInput = page.locator('#composerMediaInput');
     await photoInput.setInputFiles(SAMPLE_IMAGE);
+    await confirmCrop(page);
 
     const filterRow = page.locator('#composerFilterRow');
     await expect(filterRow).toBeVisible();
@@ -184,6 +194,7 @@ test.describe('Auto filter suggestion in the composer UI', () => {
     await loadPageWithMock(page, 'cookzer-recipe.html?id=r1', 'recipe-page.js');
     await page.locator('#addPhotoTile').click();
     await page.locator('#photoInput').setInputFiles(SAMPLE_IMAGE);
+    await confirmCrop(page);
 
     const filterRow = page.locator('#filterRow');
     await expect(filterRow.locator('.filter-swatch')).toHaveCount(12);
@@ -212,6 +223,7 @@ test.describe('Vignette toggle on post composers', () => {
 
     const photoInput = page.locator('#composerMediaInput');
     await photoInput.setInputFiles(SAMPLE_IMAGE);
+    await confirmCrop(page);
 
     const filterRow = page.locator('#composerFilterRow');
     const vignetteToggle = filterRow.locator('.pf-vignette-toggle');
@@ -239,6 +251,7 @@ test.describe('Vignette toggle on post composers', () => {
 
     const photoInput = page.locator('#composerPhotoInput');
     await photoInput.setInputFiles(SAMPLE_IMAGE);
+    await confirmCrop(page);
 
     const filterRow = page.locator('#composerFilterRow');
     const vignetteToggle = filterRow.locator('.pf-vignette-toggle');
@@ -247,6 +260,7 @@ test.describe('Vignette toggle on post composers', () => {
 
     // Picking a fresh photo resets vignette along with the filter choice.
     await photoInput.setInputFiles(SAMPLE_IMAGE_2);
+    await confirmCrop(page);
     await expect(filterRow.locator('.pf-vignette-toggle')).not.toHaveClass(/active/);
   });
 });
