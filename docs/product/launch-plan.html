@@ -218,10 +218,23 @@
       <li class="task">
         <div class="task-mark"></div>
         <div class="task-body">
-          <p class="task-title">Verify migration 025 (real notifications) actually reached production</p>
-          <p class="task-note">Found during the Sep 19 QA/architecture review below: migration <code>024_tip_posts.sql</code> was marked "Done" on this plan but had never actually run against the live database (the automated migration runner's bootstrap wrongly assumed everything 001-029 was already applied by hand) — a real user hit a save error posting a Tip. That's now fixed (migration 037 repairs it). <code>025_real_notifications.sql</code> carries the identical risk: it's also bootstrap-assumed-applied, and this plan's own "Real notifications" entry below already flags it as needing a manual run. Can't confirm from code alone — please test live: toggle "New messages"/"Someone joins your group" in Settings → Notifications and confirm it saves, and check that a new message, a recipe review, or a group join actually produces a bell notification. If any of those fail, it's the same class of fix as the Tip bug.</p>
+          <p class="task-title">Push notifications don't arrive (email does) — needs one SQL statement run with your real webhook secret</p>
+          <p class="task-note">Reported live: email notifications work, but push (phone + laptop) don't — which actually confirms migration 025 <em>did</em> reach production (email depends on the same <code>notifications</code> table). Root cause found by reading <code>027_push_notifications.sql</code>: its trigger function hardcodes the literal placeholder string <code>'REPLACE_WITH_YOUR_WEBHOOK_SECRET'</code> as the <code>x-webhook-secret</code> header it sends to <code>api/send-notification-push.js</code> — which checks that header against your real <code>NOTIFICATION_WEBHOOK_SECRET</code> Vercel env var and silently rejects (401) anything that doesn't match. The sibling email trigger (migration 026) has the identical placeholder pattern but its comment explicitly says "replace this before running" — it looks like that step happened for 026 but was missed for 027. This can't be fixed by me shipping a migration file, since the real secret must never be committed to git (per 026's own comment) — I don't have access to it either.</p>
+          <p class="task-note" style="margin-top:8px;"><strong>What to run yourself</strong>, in the Supabase SQL Editor, replacing the placeholder with your actual <code>NOTIFICATION_WEBHOOK_SECRET</code> value (Vercel → Project Settings → Environment Variables):</p>
+          <p class="task-note" style="margin-top:6px; font-family:monospace; font-size:12px; white-space:pre-wrap; background:var(--cream); border:1px solid var(--line); border-radius:8px; padding:10px 12px;">create or replace function public.trigger_notification_push()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  perform net.http_post(
+    url := 'https://cookzer.com/api/send-notification-push',
+    headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', 'PASTE_YOUR_REAL_SECRET_HERE'),
+    body := jsonb_build_object('type', 'INSERT', 'table', 'notifications', 'record', to_jsonb(new))
+  );
+  return new;
+end;
+$$;</p>
+          <p class="task-note" style="margin-top:8px;">Also worth a quick check while you're there: confirm <code>FIREBASE_SERVICE_ACCOUNT_JSON</code> is actually set as a Vercel env var (<code>api/send-notification-push.js</code> needs it too, and fails the same silent-from-the-trigger's-view way if it's missing).</p>
           <div class="task-meta">
-            <span class="pill todo">To do</span>
+            <span class="pill todo">To do — needs you</span>
             <span class="added">Added Sep 19, 2026</span>
           </div>
         </div>
