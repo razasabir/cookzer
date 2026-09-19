@@ -7,7 +7,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="theme-color" content="#2E8F5C">
-  <title>Co-Cooks — Cookzer</title>
+  <title>Friends — Cookzer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -16,7 +16,7 @@
   <script src="firebase-config.js"></script>
   <script src="push-notifications.js"></script>
   <script src="auth-guard.js"></script>
-  <script src="cocooks-widget.js"></script>
+  <script src="friends-widget.js"></script>
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -42,7 +42,7 @@
       overflow-y: auto;
     }
 
-  .cocooks-content {
+  .friends-content {
       max-width: 700px;
       margin: 0 auto;
       padding: 24px;
@@ -173,14 +173,14 @@
       border-bottom-color: var(--olive);
     }
 
-  .cocooks-list {
+  .friends-list {
       width: 100%;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
-  .cocooks-list .person-row {
+  .friends-list .person-row {
       border: 1px solid var(--line);
       border-radius: 14px;
       background: var(--card-bg);
@@ -268,12 +268,12 @@
 
 <!-- Main content -->
 <div class="main">
-  <div class="cocooks-content">
-    <h1 class="page-title">Co-Cooks</h1>
+  <div class="friends-content">
+    <h1 class="page-title">Friends</h1>
     <div class="page-sub">The people you cook alongside — find them, follow them, and jump straight to their profile.</div>
 
     <div class="search-panel">
-      <input type="text" id="cocooksSearchInput" placeholder="Find a co-cook by name..." autocomplete="off">
+      <input type="text" id="friendsSearchInput" placeholder="Find a friend by name..." autocomplete="off">
       <div class="search-results" id="searchResults"></div>
     </div>
 
@@ -283,7 +283,7 @@
       <button class="tab-btn" id="blockedTab" type="button">Blocked</button>
     </div>
 
-    <div class="cocooks-list" id="cocooksList"></div>
+    <div class="friends-list" id="friendsList"></div>
   </div>
 </div>
 
@@ -380,7 +380,7 @@
   }
 
   async function loadList() {
-    const listEl = document.getElementById('cocooksList');
+    const listEl = document.getElementById('friendsList');
     listEl.innerHTML = '<div class="empty-note">Loading...</div>';
 
     if (activeTab === 'following') {
@@ -392,7 +392,7 @@
       const people = (data || []).map((f) => f.profiles).filter(Boolean);
       listEl.innerHTML = '';
       if (people.length === 0) {
-        listEl.innerHTML = '<div class="empty-note">You\'re not following anyone yet — search above to find co-cooks.</div>';
+        listEl.innerHTML = '<div class="empty-note">You\'re not following anyone yet — search above to find friends.</div>';
         return;
       }
       people.forEach((p) => listEl.appendChild(personRow(p, true)));
@@ -405,7 +405,7 @@
       const people = (data || []).map((f) => f.profiles).filter(Boolean);
       listEl.innerHTML = '';
       if (people.length === 0) {
-        listEl.innerHTML = '<div class="empty-note">No followers yet — share your profile to find co-cooks.</div>';
+        listEl.innerHTML = '<div class="empty-note">No followers yet — share your profile to find friends.</div>';
         return;
       }
       people.forEach((p) => listEl.appendChild(personRow(p, true)));
@@ -449,7 +449,7 @@
     loadList();
   });
 
-  document.getElementById('cocooksSearchInput').addEventListener('input', (e) => {
+  document.getElementById('friendsSearchInput').addEventListener('input', (e) => {
     const query = e.target.value.trim();
     clearTimeout(searchDebounce);
     const results = document.getElementById('searchResults');
