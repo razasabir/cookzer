@@ -69,12 +69,25 @@ test.describe('Feed — action buttons', () => {
     await expect(shareBtn).toHaveText(''); // no leftover character alongside the icon
     const svg = shareBtn.locator('svg');
     await expect(svg).toHaveCount(1);
-    // Bold enough to hold its own next to the ❤️/💬 emoji beside it — not
-    // a hairline stroke.
-    const strokeWidth = await svg.evaluate((el) => Number(el.getAttribute('stroke-width')));
+    // A solid filled arrow, not just a thin outline — bold enough to hold
+    // its own next to the ❤️/💬 emoji beside it.
+    const filledPath = svg.locator('path[fill="currentColor"]');
+    await expect(filledPath).toHaveCount(1);
+    const strokedPath = svg.locator('path[stroke="currentColor"]');
+    const strokeWidth = await strokedPath.evaluate((el) => Number(el.getAttribute('stroke-width')));
     expect(strokeWidth).toBeGreaterThanOrEqual(2);
     const strokeColor = await svg.evaluate((el) => getComputedStyle(el).color);
-    expect(strokeColor).toBe('rgb(255, 107, 74)'); // stroke="currentColor" picks up the brand orange
+    expect(strokeColor).toBe('rgb(255, 107, 74)'); // currentColor picks up the brand orange
+  });
+
+  test('Heart and Comment icons render larger than plain body text, matching the Share icon\'s size', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
+    const heartBtn = page.locator('#post-post-plain .action-btn[title="Heart"]');
+    const commentBtn = page.locator('#post-post-plain .action-btn[title="Comment"]');
+    const heartSize = await heartBtn.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    const commentSize = await commentBtn.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(heartSize).toBeGreaterThanOrEqual(20);
+    expect(commentSize).toBeGreaterThanOrEqual(20);
   });
 
   test('Share opens an in-app popup with the link, not the OS share sheet', async ({ page }) => {

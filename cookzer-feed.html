@@ -611,6 +611,11 @@
   .share-action-btn:hover { background: var(--cream); color: var(--brick); }
   .share-action-btn svg { display: block; }
 
+  /* Heart/Comment/Share carry no label anymore — just an icon — so each
+     one reads at a size that actually registers next to the others,
+     instead of inheriting the row's small 13px text size. */
+  .action-btn-icon-only { font-size: 22px; }
+
   /* Right sidebar */
     .right-sidebar {
       width: 320px;
@@ -1174,14 +1179,16 @@
   let pendingVideoUid = null;
   let videoUploadInProgress = false;
 
-  // The classic three-node "share" icon (used by Android's native share
-  // sheet and widely recognized as "share" outside of link-specific
-  // contexts) rather than an outbound-arrow/external-link icon — this is
-  // a social share (in-app popup with a copy link + quick-share links,
-  // via CookzerModal.share), not "open this in another app."
-  const SHARE_ICON_SVG = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'
-    + '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>'
-    + '<line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/>'
+  // The "export" share icon (a solid upward arrow rising out of an open
+  // tray) — the glyph iOS standardized as Share and most apps now use for
+  // it, recognizable at a glance unlike a 3-node "network" icon (tried,
+  // and rejected as unclear/too faint). Drawn with a filled arrow, not a
+  // thin outline throughout, so it carries real visual weight next to the
+  // solid-colored ❤️/💬 emoji beside it rather than reading as a faint
+  // line-art leftover.
+  const SHARE_ICON_SVG = '<svg viewBox="0 0 24 24" width="23" height="23">'
+    + '<path d="M12 2 L7 8.5 H9.5 V15 H14.5 V8.5 H17 Z" fill="currentColor"/>'
+    + '<path d="M6 13 V18 C6 19.1 6.9 20 8 20 H16 C17.1 20 18 19.1 18 18 V13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>'
     + '</svg>';
   const MAX_VIDEO_SECONDS = 90;
 
@@ -1896,13 +1903,13 @@
     const actions = document.createElement('div');
     actions.className = 'card-actions';
     const heartBtn = document.createElement('button');
-    heartBtn.className = 'action-btn';
+    heartBtn.className = 'action-btn action-btn-icon-only';
     heartBtn.id = 'heartBtn-' + post.id;
     heartBtn.title = 'Heart';
     heartBtn.textContent = '❤️';
     heartBtn.addEventListener('click', () => toggleHeart(post.id));
     const commentBtn = document.createElement('button');
-    commentBtn.className = 'action-btn';
+    commentBtn.className = 'action-btn action-btn-icon-only';
     commentBtn.title = 'Comment';
     commentBtn.textContent = '💬';
     commentBtn.addEventListener('click', () => toggleCommentBox(post.id, post.author_id));
