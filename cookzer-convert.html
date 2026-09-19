@@ -208,6 +208,70 @@
     .fill-graphic-wrap svg { color: var(--line); display: block; }
     .fill-graphic-caption { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
 
+    /* Unit picker — trigger button + anchored dropdown of rows, replacing
+       a plain <select> so each unit can carry its own distinct line-icon
+       (an <option> can only ever hold text, never an SVG). The real
+       <select> stays in the DOM as the source of truth — visually
+       collapsed to a point via opacity, not display:none — so existing
+       value-reading code (and tests) keep working unchanged. */
+    .unit-picker { position: relative; }
+    .unit-native-select {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .unit-picker-trigger {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 9px 12px;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--card-bg);
+      cursor: pointer;
+      text-align: left;
+    }
+    .unit-picker-trigger svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--olive-dark); }
+    .unit-picker-trigger-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .unit-picker-chevron { flex-shrink: 0; font-size: 11px; color: var(--ink-faint); }
+    .unit-picker-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      z-index: 20;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+      max-height: 260px;
+      overflow-y: auto;
+      padding: 6px;
+    }
+    .unit-picker-dropdown[hidden] { display: none; }
+    .unit-picker-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13.5px;
+      color: var(--ink);
+    }
+    .unit-picker-row svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--olive-dark); }
+    .unit-picker-row:hover, .unit-picker-row.active { background: var(--plus-tint, rgba(46, 143, 92, 0.08)); }
+    .unit-picker-row-code { margin-left: auto; font-size: 11px; color: var(--ink-faint); }
+
     /* Pan quick-picker — tap the shape that matches what's in your hand
        to filter the list to just that one, instead of reading down a
        list of seven to find it. */
@@ -346,13 +410,21 @@
             <input type="number" id="convertAmount" value="1" min="0" step="any">
           </div>
           <div class="convert-field">
-            <label for="convertFrom">From</label>
-            <select id="convertFrom"></select>
+            <label id="convertFromLabel">From</label>
+            <div class="unit-picker">
+              <button type="button" class="unit-picker-trigger" id="convertFromTrigger" aria-haspopup="listbox" aria-labelledby="convertFromLabel"></button>
+              <div class="unit-picker-dropdown" id="convertFromDropdown" hidden></div>
+            </div>
+            <select id="convertFrom" class="unit-native-select" aria-hidden="true" tabindex="-1"></select>
           </div>
           <button class="convert-swap-btn" id="convertSwapBtn" type="button" title="Swap units" aria-label="Swap units">⇄</button>
           <div class="convert-field">
-            <label for="convertTo">To</label>
-            <select id="convertTo"></select>
+            <label id="convertToLabel">To</label>
+            <div class="unit-picker">
+              <button type="button" class="unit-picker-trigger" id="convertToTrigger" aria-haspopup="listbox" aria-labelledby="convertToLabel"></button>
+              <div class="unit-picker-dropdown" id="convertToDropdown" hidden></div>
+            </div>
+            <select id="convertTo" class="unit-native-select" aria-hidden="true" tabindex="-1"></select>
           </div>
         </div>
 
@@ -435,28 +507,113 @@
     });
   });
 
-  // A word doesn't pluralize the same way its abbreviation would ("2
-  // cups" but nobody writes "2 tsps" — close enough is fine for a
-  // caption); only "cup" gets real pluralization, everything else is
-  // left as-is since cooking abbreviations don't take a trailing "s".
-  function pluralUnit(unit, n) {
-    if (n === 1 || unit !== 'cup') return unit;
-    return 'cups';
+  // Full unit words, for captions that read as a recipe would say them
+  // ("teaspoons", not "tsp") — singular/plural pair per unit.
+  const UNIT_FULL_NAMES = {
+    g: ['gram', 'grams'], kg: ['kilogram', 'kilograms'], oz: ['ounce', 'ounces'], lb: ['pound', 'pounds'],
+    ml: ['milliliter', 'milliliters'], l: ['liter', 'liters'],
+    tsp: ['teaspoon', 'teaspoons'], tbsp: ['tablespoon', 'tablespoons'],
+    cup: ['cup', 'cups'], 'fl oz': ['fluid ounce', 'fluid ounces'],
+  };
+  function unitWord(unit, n) {
+    const pair = UNIT_FULL_NAMES[unit];
+    if (!pair) return unit;
+    return n === 1 ? pair[0] : pair[1];
   }
 
-  // Fills a measuring-cup outline to `ratio` (0–1) via a clip-path, so
-  // the same markup works for any fill level without redrawing the cup.
-  let cupIdCounter = 0;
-  function cupSVGString(ratio) {
+  // Recognizes a fractional remainder as one of the common baking
+  // fractions rather than always falling back to a decimal.
+  const NICE_FRACTIONS = [
+    { glyph: '¼', value: 0.25 }, { glyph: '⅓', value: 1 / 3 }, { glyph: '½', value: 0.5 },
+    { glyph: '⅔', value: 2 / 3 }, { glyph: '¾', value: 0.75 },
+  ];
+  function niceFraction(frac) {
+    for (const f of NICE_FRACTIONS) {
+      if (Math.abs(frac - f.value) < 0.02) return f.glyph;
+    }
+    return null;
+  }
+
+  // Turns a converted amount into a caption that reads the way a recipe
+  // would say it: a clean multiple gets a multiplier sign ("×3
+  // teaspoons") instead of "+ 3 more full tsp", and a recognizable
+  // fraction like 1.5 is spelled out as "1 and ½ teaspoons" — separate
+  // whole and half — rather than a bare decimal.
+  function amountCaption(converted, to) {
+    // Round to the same 2 decimals formatAmount() displays first —
+    // conversions rarely land on an exactly-representable float (e.g.
+    // 6 tsp -> tbsp is 1.99997...), so comparing the raw value against a
+    // near-zero epsilon would miss "clean" results that are only clean
+    // once rounded for display.
+    const rounded = Math.round(converted * 100) / 100;
+    const whole = Math.floor(rounded + 1e-6);
+    const frac = rounded - whole;
+    const glyph = frac > 1e-6 ? niceFraction(frac) : null;
+
+    if (glyph) {
+      if (whole === 0) return glyph + ' ' + unitWord(to, 1);
+      return whole + ' and ' + glyph + ' ' + unitWord(to, 2);
+    }
+    if (Math.abs(frac) < 1e-6) {
+      if (whole > 1) return '×' + whole + ' ' + unitWord(to, whole);
+      return whole + ' ' + unitWord(to, whole);
+    }
+    return window.CookzerUnitConvert.formatAmount(converted) + ' ' + unitWord(to, 2);
+  }
+
+  // Distinct line-icon shapes per unit (viewBox 0 0 40 48, closed body
+  // path for the fill clip + static outline drawn on top) — a spoon's
+  // bowl fills like a container does, its handle stays outline-only.
+  let unitFillIdCounter = 0;
+  const UNIT_FILL_SHAPES = {
+    cup: {
+      top: 6, bottom: 44,
+      clip: '<path d="M9,6 H31 L28,40 Q28,44 24,44 H16 Q12,44 12,40 Z"/>',
+      outline: '<path d="M9,6 H31 L28,40 Q28,44 24,44 H16 Q12,44 12,40 Z" stroke="currentColor" stroke-width="2"/>'
+        + '<path d="M31,14 Q38,14 38,20 Q38,26 31,25" stroke="currentColor" stroke-width="2"/>',
+    },
+    l: {
+      top: 4, bottom: 44,
+      clip: '<path d="M17,4 H23 V10 L27,14 V40 Q27,44 23,44 H17 Q13,44 13,40 V14 L17,10 Z"/>',
+      outline: '<path d="M17,4 H23 V10 L27,14 V40 Q27,44 23,44 H17 Q13,44 13,40 V14 L17,10 Z" stroke="currentColor" stroke-width="2"/>',
+    },
+    ml: {
+      top: 4, bottom: 44,
+      clip: '<path d="M20,4 C20,4 8,22 8,32 A12,12 0 0 0 32,32 C32,22 20,4 20,4 Z"/>',
+      outline: '<path d="M20,4 C20,4 8,22 8,32 A12,12 0 0 0 32,32 C32,22 20,4 20,4 Z" stroke="currentColor" stroke-width="2"/>',
+    },
+    'fl oz': {
+      top: 6, bottom: 44,
+      clip: '<path d="M13,6 H27 L25,40 Q25,44 20,44 Q15,44 15,40 Z"/>',
+      outline: '<path d="M13,6 H27 L25,40 Q25,44 20,44 Q15,44 15,40 Z" stroke="currentColor" stroke-width="2"/>'
+        + '<line x1="14.3" y1="18" x2="25.7" y2="18" stroke="currentColor" stroke-width="1.6"/>'
+        + '<line x1="14.7" y1="28" x2="25.3" y2="28" stroke="currentColor" stroke-width="1.6"/>',
+    },
+    tsp: {
+      top: 4, bottom: 28,
+      clip: '<ellipse cx="17" cy="16" rx="9" ry="12"/>',
+      outline: '<ellipse cx="17" cy="16" rx="9" ry="12" stroke="currentColor" stroke-width="2"/>'
+        + '<line x1="24" y1="26" x2="35" y2="45" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+    },
+    tbsp: {
+      top: 1, bottom: 29,
+      clip: '<ellipse cx="16" cy="15" rx="11" ry="14"/>',
+      outline: '<ellipse cx="16" cy="15" rx="11" ry="14" stroke="currentColor" stroke-width="2"/>'
+        + '<line x1="25" y1="27" x2="37" y2="46" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
+    },
+  };
+
+  // Fills a unit's shape to `ratio` (0–1) via a clip-path, so the same
+  // per-unit outline works at any fill level without redrawing it.
+  function unitFillSVGString(unit, ratio) {
+    const shape = UNIT_FILL_SHAPES[unit] || UNIT_FILL_SHAPES.cup;
     const clamped = Math.max(0, Math.min(1, ratio));
-    const top = 6, bottom = 44;
-    const fillY = top + (1 - clamped) * (bottom - top);
-    const id = 'cupClip' + (cupIdCounter++);
-    const path = 'M9,6 H31 L28,40 Q28,44 24,44 H16 Q12,44 12,40 Z';
+    const fillY = shape.top + (1 - clamped) * (shape.bottom - shape.top);
+    const id = 'unitFillClip' + (unitFillIdCounter++);
     return '<svg viewBox="0 0 40 48" width="40" height="48" fill="none">'
-      + '<clipPath id="' + id + '"><path d="' + path + '"/></clipPath>'
-      + '<rect x="8" y="' + fillY + '" width="24" height="' + (48 - fillY) + '" fill="var(--olive)" clip-path="url(#' + id + ')"/>'
-      + '<path d="' + path + '" stroke="currentColor" stroke-width="2"/>'
+      + '<clipPath id="' + id + '">' + shape.clip + '</clipPath>'
+      + '<rect x="0" y="' + fillY + '" width="40" height="' + (48 - fillY) + '" fill="var(--olive)" clip-path="url(#' + id + ')"/>'
+      + shape.outline
       + '</svg>';
   }
 
@@ -475,7 +632,30 @@
       + '</svg>';
   }
 
-  const UNIT_ICONS = { g: '⚖️', kg: '⚖️', oz: '⚖️', lb: '⚖️', ml: '🥛', l: '🥛', tsp: '🥄', tbsp: '🥄', cup: '☕', 'fl oz': '🥛' };
+  // Distinct compact line-icons for the unit pickers (viewBox 0 0 40 40,
+  // matching the pan-silhouette style below) — a real shape per unit
+  // instead of two units sharing one emoji.
+  const UNIT_ICON_SHAPES = {
+    weight: '<line x1="20" y1="7" x2="20" y2="24"/><line x1="8" y1="13" x2="32" y2="13"/>'
+      + '<path d="M8,13 L4,22 Q4,26 9,26 Q14,26 14,22 Z"/>'
+      + '<path d="M32,13 L28,22 Q28,26 33,26 Q38,26 38,22 Z"/>'
+      + '<rect x="15" y="25" width="10" height="6" rx="1.5"/>',
+    ml: '<path d="M20,5 C20,5 9,20 9,28 A11,11 0 0 0 31,28 C31,20 20,5 20,5 Z"/>',
+    l: '<path d="M17,4 H23 V9 L27,13 V32 Q27,36 23,36 H17 Q13,36 13,32 V13 L17,9 Z"/>',
+    tsp: '<ellipse cx="16" cy="14" rx="8" ry="10" transform="rotate(-15 16 14)"/><line x1="22" y1="21" x2="32" y2="33"/>',
+    tbsp: '<ellipse cx="15" cy="13" rx="10" ry="12" transform="rotate(-15 15 13)"/><line x1="23" y1="22" x2="35" y2="35"/>',
+    cup: '<path d="M9,7 H29 L26,31 Q26,35 22,35 H16 Q12,35 12,31 Z"/><path d="M29,13 Q36,13 36,19 Q36,25 29,24"/>',
+    flOz: '<path d="M12,6 H28 L26,32 Q26,35 21,35 Q15,35 15,32 Z"/><line x1="13.5" y1="16" x2="26.5" y2="16"/><line x1="14" y1="24" x2="26" y2="24"/>',
+  };
+  function unitIconKey(unit) {
+    if (unit === 'g' || unit === 'kg' || unit === 'oz' || unit === 'lb') return 'weight';
+    if (unit === 'fl oz') return 'flOz';
+    return unit;
+  }
+  function unitIconSVG(unit) {
+    return '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">' + UNIT_ICON_SHAPES[unitIconKey(unit)] + '</svg>';
+  }
+
   const VOLUME_CONTAINER_UNITS = ['tsp', 'tbsp', 'cup', 'ml', 'l', 'fl oz'];
 
   const UNIT_LIST = window.CookzerUnitConvert.UNIT_LIST;
@@ -485,15 +665,65 @@
   UNIT_LIST.forEach((u) => {
     const optFrom = document.createElement('option');
     optFrom.value = u.unit;
-    optFrom.textContent = (UNIT_ICONS[u.unit] || '') + ' ' + u.label;
+    optFrom.textContent = u.label;
     fromSelect.appendChild(optFrom);
     const optTo = document.createElement('option');
     optTo.value = u.unit;
-    optTo.textContent = (UNIT_ICONS[u.unit] || '') + ' ' + u.label;
+    optTo.textContent = u.label;
     toSelect.appendChild(optTo);
   });
   fromSelect.value = 'g';
   toSelect.value = 'cup';
+
+  // Custom icon picker — a trigger button + anchored row list, backed by
+  // the (visually collapsed) <select> above as the real source of truth,
+  // so selectOption()/inputValue() and the existing 'input' listener on
+  // the select keep working exactly as before.
+  function buildUnitPicker(selectEl, triggerId, dropdownId) {
+    const trigger = document.getElementById(triggerId);
+    const dropdown = document.getElementById(dropdownId);
+
+    function renderTrigger() {
+      const entry = UNIT_LIST.find((u) => u.unit === selectEl.value);
+      // Drop the "(tsp)"-style abbreviation here — the icon already
+      // carries it, and the field is too narrow for the full label
+      // ("Fluid ounces (fl oz)") without truncating.
+      const shortLabel = entry ? entry.label.replace(/\s*\([^)]*\)\s*$/, '') : selectEl.value;
+      trigger.innerHTML = unitIconSVG(selectEl.value)
+        + '<span class="unit-picker-trigger-label">' + shortLabel + '</span>'
+        + '<span class="unit-picker-chevron">▾</span>';
+    }
+    function closeDropdown() { dropdown.hidden = true; }
+    function renderDropdown() {
+      dropdown.innerHTML = '';
+      UNIT_LIST.forEach((entry) => {
+        const row = document.createElement('div');
+        row.className = 'unit-picker-row' + (entry.unit === selectEl.value ? ' active' : '');
+        row.innerHTML = unitIconSVG(entry.unit) + '<span>' + entry.label + '</span><span class="unit-picker-row-code">' + entry.unit + '</span>';
+        row.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          selectEl.value = entry.unit;
+          selectEl.dispatchEvent(new Event('input', { bubbles: true }));
+          renderTrigger();
+          closeDropdown();
+        });
+        dropdown.appendChild(row);
+      });
+    }
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = dropdown.hidden;
+      document.querySelectorAll('.unit-picker-dropdown').forEach((d) => { d.hidden = true; });
+      if (willOpen) { renderDropdown(); dropdown.hidden = false; }
+    });
+    selectEl.addEventListener('input', renderTrigger);
+    renderTrigger();
+    return { renderTrigger, closeDropdown };
+  }
+
+  const fromPicker = buildUnitPicker(fromSelect, 'convertFromTrigger', 'convertFromDropdown');
+  const toPicker = buildUnitPicker(toSelect, 'convertToTrigger', 'convertToDropdown');
+  document.addEventListener('click', () => { fromPicker.closeDropdown(); toPicker.closeDropdown(); });
 
   function runConversion() {
     const amount = parseFloat(document.getElementById('convertAmount').value);
@@ -533,27 +763,24 @@
     updateFillGraphic(converted, to);
   }
 
-  // Fills a small cup graphic to match the result — only makes sense for
-  // "to" units you'd actually measure with a container, not a scale
-  // reading (there's no intuitive "how full" picture for grams).
+  // Fills a small graphic — shaped like the actual "to" unit (a spoon
+  // for tsp/tbsp, a bottle for liters, a cup for cups...) — to match the
+  // result. Only makes sense for "to" units you'd actually measure with
+  // a container, not a scale reading (there's no intuitive "how full"
+  // picture for grams).
   const fillGraphicWrap = document.getElementById('fillGraphicWrap');
   function updateFillGraphic(converted, to) {
     if (converted == null || !VOLUME_CONTAINER_UNITS.includes(to) || converted < 0) {
       fillGraphicWrap.hidden = true;
       return;
     }
-    const whole = Math.floor(converted);
+    const whole = Math.floor(converted + 1e-9);
     const rawFrac = converted - whole;
     const exactWhole = rawFrac < 1e-9 && whole > 0;
     const ratio = exactWhole ? 1 : (whole > 0 ? rawFrac : Math.min(converted, 1));
-    const othersFullCount = exactWhole ? whole - 1 : whole;
 
-    document.getElementById('fillGraphicSvg').innerHTML = cupSVGString(ratio);
-    let caption = Math.round(ratio * 100) + '% full';
-    if (othersFullCount >= 1) {
-      caption += ' (+ ' + othersFullCount + ' more full ' + pluralUnit(to, othersFullCount) + ')';
-    }
-    document.getElementById('fillGraphicCaption').textContent = caption;
+    document.getElementById('fillGraphicSvg').innerHTML = unitFillSVGString(to, ratio);
+    document.getElementById('fillGraphicCaption').textContent = amountCaption(converted, to);
     fillGraphicWrap.hidden = false;
   }
 
@@ -565,6 +792,8 @@
     const f = fromSelect.value;
     fromSelect.value = toSelect.value;
     toSelect.value = f;
+    fromPicker.renderTrigger();
+    toPicker.renderTrigger();
     runConversion();
   });
 
@@ -591,8 +820,8 @@
     { icon: 'round', name: '9" x 2" Round', volume: '8 cups', subs: '8" x 8" x 2" Square · 9" x 5" x 3" Loaf' },
     { icon: 'rectangle', name: '9" x 13" x 2" Rectangle', volume: '14 cups', subs: '(2) 9" Rounds · (2) 8" Rounds · 9" x 9" x 2" Square · 10" Bundt · 20–30 Cupcakes' },
     { icon: 'springform', name: '9" x 3" Springform', volume: '12 cups', subs: '10" Springform · 9" Tube Pan · 10" Bundt Pan' },
-    { icon: 'muffin', name: 'Muffin Pan (12 cavity)', volume: '12 cavity', subs: '1 standard cupcake = 3 mini cupcakes' },
-    { icon: 'bundt', name: '10" Bundt Pan', volume: '12 cups', subs: '10" Springform · 9" Tube Pan · 18–24 Cupcakes · (2) 9" Rounds · 9" x 13" x 2" Rectangle' },
+    { icon: 'muffin', name: 'Muffin Pan (12 × 2¾" x 1¼")', volume: '12 cavity', subs: '1 standard cupcake = 3 mini cupcakes' },
+    { icon: 'bundt', name: '10" x 4" Bundt Pan', volume: '12 cups', subs: '10" Springform · 9" Tube Pan · 18–24 Cupcakes · (2) 9" Rounds · 9" x 13" x 2" Rectangle' },
     { icon: 'loaf', name: '9" x 5" x 3" Loaf', volume: '8 cups', subs: '3 Mini Loaves · 8" or 9" Square · 12–18 Cupcakes · 10" Pie Plate' },
   ];
 

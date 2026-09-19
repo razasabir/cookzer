@@ -29,8 +29,7 @@ test.describe('Convert page — fill graphic', () => {
     await expect(page.locator('#convertResultValue')).toContainText('2.75 cup');
     await expect(page.locator('#fillGraphicWrap')).toBeVisible();
     await expect(page.locator('#fillGraphicSvg svg')).toBeVisible();
-    await expect(page.locator('#fillGraphicCaption')).toContainText('75% full');
-    await expect(page.locator('#fillGraphicCaption')).toContainText('2 more full cups');
+    await expect(page.locator('#fillGraphicCaption')).toHaveText('2 and ¾ cups');
   });
 
   test('a mass ("to") result hides the fill graphic — no intuitive fill picture for a scale reading', async ({ page }) => {
@@ -40,6 +39,52 @@ test.describe('Convert page — fill graphic', () => {
     await page.selectOption('#convertTo', 'kg');
     await expect(page.locator('#convertResultValue')).toContainText('400 g = 0.4 kg');
     await expect(page.locator('#fillGraphicWrap')).toBeHidden();
+  });
+
+  test('a clean whole number greater than one gets a multiplier sign', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.fill('#convertAmount', '6');
+    await page.selectOption('#convertFrom', 'tsp');
+    await page.selectOption('#convertTo', 'tbsp');
+    await expect(page.locator('#fillGraphicCaption')).toHaveText('×2 tablespoons');
+  });
+
+  test('a half amount spells out the whole and the half separately', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.fill('#convertAmount', '1.5');
+    await page.selectOption('#convertFrom', 'tsp');
+    await page.selectOption('#convertTo', 'tsp');
+    await expect(page.locator('#fillGraphicCaption')).toHaveText('1 and ½ teaspoons');
+  });
+});
+
+test.describe('Convert page — unit picker icons', () => {
+  test('teaspoons and tablespoons get distinct icons, not a shared spoon', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.selectOption('#convertFrom', 'tsp');
+    await page.selectOption('#convertTo', 'tbsp');
+    const tspIcon = await page.locator('#convertFromTrigger svg').innerHTML();
+    const tbspIcon = await page.locator('#convertToTrigger svg').innerHTML();
+    expect(tspIcon).not.toBe(tbspIcon);
+  });
+
+  test('milliliters and liters get distinct icons, not a shared glass', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.selectOption('#convertFrom', 'ml');
+    await page.selectOption('#convertTo', 'l');
+    const mlIcon = await page.locator('#convertFromTrigger svg').innerHTML();
+    const lIcon = await page.locator('#convertToTrigger svg').innerHTML();
+    expect(mlIcon).not.toBe(lIcon);
+  });
+
+  test('clicking a row in the unit picker dropdown selects that unit', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.click('#convertFromTrigger');
+    await expect(page.locator('#convertFromDropdown')).toBeVisible();
+    await page.locator('#convertFromDropdown .unit-picker-row', { hasText: /^Liters/ }).click();
+    expect(await page.locator('#convertFrom').inputValue()).toBe('l');
+    await expect(page.locator('#convertFromTrigger')).toContainText('Liters');
+    await expect(page.locator('#convertFromDropdown')).toBeHidden();
   });
 });
 
@@ -56,6 +101,7 @@ test.describe('Convert page — pan quick picker', () => {
     await expect(page.locator('.pan-size-card:visible')).toHaveCount(1);
     await expect(page.locator('.pan-size-card:visible')).toContainText('Bundt Pan');
     await expect(page.locator('#panPickerReset')).toBeVisible();
+    await expect(page.locator('.pan-size-card:visible')).toContainText('10" x 4" Bundt Pan');
 
     await page.click('#panPickerReset');
     await expect(page.locator('.pan-size-card:visible')).toHaveCount(7);
