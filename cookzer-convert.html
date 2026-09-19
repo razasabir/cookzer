@@ -181,8 +181,6 @@
       border-radius: 10px;
       margin: 4px 0 6px;
     }
-    .pan-size-subs { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; }
-    .pan-size-subs .label { font-weight: 600; color: var(--ink); }
     .pan-size-card[hidden] { display: none; }
 
     /* Category tabs — Unit Converter / Pan Sizes / Oven Temps, so the
@@ -854,14 +852,14 @@
   };
 
   const PAN_SIZES = [
-    { icon: 'square', name: '9" x 9" x 2" Square', volume: '8 cups', subs: '10" x 2" Round · 11" x 7" x 2" Rectangular · 9" x 13" x 2" Rectangular' },
-    { icon: 'round', name: '9" x 2" Round', volume: '8 cups', subs: '8" x 8" x 2" Square · 9" x 5" x 3" Loaf' },
-    { icon: 'rectangle', name: '9" x 13" x 2" Rectangle', volume: '14 cups', subs: '(2) 9" Rounds · (2) 8" Rounds · 9" x 9" x 2" Square · 10" Bundt · 20–30 Cupcakes' },
-    { icon: 'springform', name: '9" x 3" Springform', volume: '12 cups', subs: '10" Springform · 9" Tube Pan · 10" Bundt Pan' },
-    { icon: 'muffin', name: 'Muffin Pan (12 × 2¾" x 1¼")', volume: '12 cavity', subs: '1 standard cupcake = 3 mini cupcakes' },
-    { icon: 'bundt', name: '10" x 4" Bundt Pan', volume: '12 cups', subs: '10" Springform · 9" Tube Pan · 18–24 Cupcakes · (2) 9" Rounds · 9" x 13" x 2" Rectangle' },
-    { icon: 'loaf', name: '9" x 5" x 3" Loaf', volume: '8 cups', subs: '3 Mini Loaves · 8" or 9" Square · 12–18 Cupcakes · 10" Pie Plate' },
-    { icon: 'pie', name: '9" Pie Plate', volume: '4 cups', subs: '9" Round (shallow) · 9" Tart Pan · 6 Individual Ramekins' },
+    { icon: 'square', name: '9" x 9" x 2" Square', volume: '8 cups' },
+    { icon: 'round', name: '9" x 2" Round', volume: '8 cups' },
+    { icon: 'rectangle', name: '9" x 13" x 2" Rectangle', volume: '14 cups' },
+    { icon: 'springform', name: '9" x 3" Springform', volume: '12 cups' },
+    { icon: 'muffin', name: 'Muffin Pan (12 × 2¾" x 1¼")', volume: '12 cavity' },
+    { icon: 'bundt', name: '10" x 4" Bundt Pan', volume: '12 cups' },
+    { icon: 'loaf', name: '9" x 5" x 3" Loaf', volume: '8 cups' },
+    { icon: 'pie', name: '9" Pie Plate', volume: '4 cups' },
   ];
 
   function panIconSVG(iconKey) {
@@ -895,7 +893,6 @@
       <div class="pan-size-body">
         <div class="pan-size-name">${pan.name}</div>
         <div class="pan-size-volume">${pan.volume}</div>
-        <div class="pan-size-subs"><span class="label">Use instead:</span> ${pan.subs}</div>
       </div>
     `;
     panSizeList.appendChild(card);
