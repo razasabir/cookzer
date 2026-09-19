@@ -171,6 +171,27 @@
   .member-name:hover { color: var(--olive-dark); }
   .member-owner-tag { font-size: 11px; color: var(--ink-soft); }
 
+  .member-admin-tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--olive-dark);
+      background: var(--plus-tint);
+      border: 1px solid var(--plus-border);
+      border-radius: 10px;
+      padding: 2px 8px;
+    }
+
+  .member-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+  .member-role-btn {
+      background: none;
+      border: none;
+      color: var(--ink-soft);
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
   .member-remove-btn {
       background: none;
       border: none;
@@ -179,6 +200,19 @@
       cursor: pointer;
       flex-shrink: 0;
     }
+
+  .add-members-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .add-members-row input[type="text"] {
+      width: 100%;
+      padding: 9px 14px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 13.5px;
+      color: var(--ink);
+    }
+  .add-members-results { margin-top: 8px; }
 
   /* Composer (simplified: caption + photo) */
     .composer {
@@ -451,6 +485,10 @@
     <div class="members-section">
       <div class="members-section-title">Members</div>
       <div id="membersList"></div>
+      <div class="add-members-row" id="addMembersRow" hidden>
+        <input type="text" id="addMembersInput" placeholder="Search people to add by name...">
+        <div class="add-members-results" id="addMembersResults"></div>
+      </div>
     </div>
 
     <div class="composer">
@@ -472,6 +510,10 @@
     <div id="groupFeed"></div>
     <div class="empty-note" id="groupFeedEmpty" hidden>No posts in this group yet — be the first to share something.</div>
   </div>
+</div>
+
+<div class="cz2-overlay" id="pickerOverlay" hidden>
+  <div class="cz2-modal" id="pickerModal"></div>
 </div>
 
 <script>
@@ -506,10 +548,163 @@
 
   let isCreator = false;
 
+  function closePicker() {
+    document.getElementById('pickerOverlay').hidden = true;
+    document.getElementById('pickerModal').innerHTML = '';
+  }
+
+  document.getElementById('pickerOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'pickerOverlay') closePicker();
+  });
+
+  function cz2Button(label, primary) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'admin-btn';
+    if (primary) btn.style.cssText = 'background:var(--olive); color:#fff; border-color:var(--olive);';
+    btn.textContent = label;
+    return btn;
+  }
+
+  const COVER_PRESETS = [
+    'linear-gradient(135deg, var(--olive), var(--olive-dark))',
+    'linear-gradient(135deg, #6B8CBE, #3E5C8A)',
+    'linear-gradient(135deg, #D97AA0, #A94E6E)',
+    'linear-gradient(135deg, #8A6BBE, #5C3E8A)',
+    'linear-gradient(135deg, #4CA5A0, #2E706C)',
+  ];
+
+  function coverBackground(group) {
+    if (group.cover_photo_path) return 'url(\'' + publicUrl('post-photos', group.cover_photo_path) + '\') center/cover';
+    return group.cover_gradient || COVER_PRESETS[0];
+  }
+
+  function openEditGroupModal(group) {
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+
+    const title = document.createElement('h3');
+    title.textContent = 'Edit group';
+    modal.appendChild(title);
+
+    const coverPreview = document.createElement('div');
+    coverPreview.className = 'cz2-cover-preview';
+    coverPreview.style.background = coverBackground(group);
+    modal.appendChild(coverPreview);
+
+    let pendingCoverFile = null;
+    let selectedGradient = group.cover_gradient || COVER_PRESETS[0];
+
+    const photoInput = document.createElement('input');
+    photoInput.type = 'file';
+    photoInput.accept = 'image/*';
+    photoInput.hidden = true;
+    const photoBtn = cz2Button('📸 Change photo', false);
+    photoBtn.style.marginBottom = '14px';
+    photoBtn.addEventListener('click', () => photoInput.click());
+    photoInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      pendingCoverFile = file;
+      coverPreview.style.background = 'url(\'' + URL.createObjectURL(file) + '\') center/cover';
+    });
+    modal.appendChild(photoBtn);
+    modal.appendChild(photoInput);
+
+    const label = document.createElement('div');
+    label.className = 'cz2-label';
+    label.textContent = 'Or pick a color';
+    modal.appendChild(label);
+
+    const swatchRow = document.createElement('div');
+    swatchRow.style.cssText = 'display:flex; gap:10px; margin-bottom:14px;';
+    COVER_PRESETS.forEach((gradient) => {
+      const swatch = document.createElement('div');
+      const isSelected = !pendingCoverFile && gradient === selectedGradient;
+      swatch.style.cssText = 'width:32px; height:32px; border-radius:50%; cursor:pointer; background:' + gradient + '; border:2px solid ' + (isSelected ? 'var(--ink)' : 'transparent') + ';';
+      swatch.addEventListener('click', () => {
+        selectedGradient = gradient;
+        pendingCoverFile = null;
+        coverPreview.style.background = gradient;
+        Array.from(swatchRow.children).forEach((s) => { s.style.borderColor = 'transparent'; });
+        swatch.style.borderColor = 'var(--ink)';
+      });
+      swatchRow.appendChild(swatch);
+    });
+    modal.appendChild(swatchRow);
+
+    const nameLabel = document.createElement('div');
+    nameLabel.className = 'cz2-label';
+    nameLabel.textContent = 'Group name';
+    modal.appendChild(nameLabel);
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = group.name;
+    modal.appendChild(nameInput);
+
+    const descLabel = document.createElement('div');
+    descLabel.className = 'cz2-label';
+    descLabel.textContent = 'Description';
+    modal.appendChild(descLabel);
+    const descField = document.createElement('div');
+    descField.className = 'cz2-field';
+    const descInput = document.createElement('textarea');
+    descInput.rows = 3;
+    descInput.value = group.description || '';
+    descField.appendChild(descInput);
+    modal.appendChild(descField);
+
+    const actions = document.createElement('div');
+    actions.className = 'cz2-actions';
+    const cancelBtn = cz2Button('Cancel', false);
+    cancelBtn.addEventListener('click', closePicker);
+    const saveBtn = cz2Button('Save', true);
+    saveBtn.addEventListener('click', async () => {
+      const name = nameInput.value.trim();
+      if (!name) return;
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+
+      const updates = { name, description: descInput.value.trim() || null };
+      if (pendingCoverFile) {
+        const ext = (pendingCoverFile.name.split('.').pop() || 'jpg').toLowerCase();
+        const path = 'group-covers/' + groupId + '-' + Date.now() + '.' + ext;
+        const { error: uploadErr } = await sb.storage.from('post-photos').upload(path, pendingCoverFile, { contentType: pendingCoverFile.type });
+        if (uploadErr) {
+          await CookzerModal.alert('Photo upload failed: ' + uploadErr.message);
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save';
+          return;
+        }
+        updates.cover_photo_path = path;
+        updates.cover_gradient = null;
+      } else if (selectedGradient !== group.cover_gradient || group.cover_photo_path) {
+        updates.cover_gradient = selectedGradient;
+        updates.cover_photo_path = null;
+      }
+
+      const { error } = await sb.from('groups').update(updates).eq('id', groupId);
+      if (error) {
+        await CookzerModal.alert('Could not save: ' + error.message);
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+        return;
+      }
+      closePicker();
+      await loadGroup();
+    });
+    actions.appendChild(cancelBtn);
+    actions.appendChild(saveBtn);
+    modal.appendChild(actions);
+
+    document.getElementById('pickerOverlay').hidden = false;
+    nameInput.focus();
+  }
+
   async function loadGroup() {
     const { data: group } = await sb
       .from('groups')
-      .select('id, name, description, cover_gradient, created_by, is_private, invite_code')
+      .select('id, name, description, cover_gradient, cover_photo_path, created_by, is_private, invite_code')
       .eq('id', groupId)
       .single();
 
@@ -519,7 +714,7 @@
     }
 
     document.title = group.name + ' — Cookzer';
-    document.getElementById('groupCover').style.background = group.cover_gradient || 'linear-gradient(135deg, var(--olive), var(--olive-dark))';
+    document.getElementById('groupCover').style.background = coverBackground(group);
     document.getElementById('groupName').textContent = group.name;
     document.getElementById('groupDesc').textContent = group.description || '';
     document.getElementById('groupDesc').hidden = !group.description;
@@ -528,14 +723,7 @@
     document.getElementById('editGroupBtn').hidden = !isCreator;
     document.getElementById('deleteGroupBtn').hidden = !isCreator;
 
-    document.getElementById('editGroupBtn').onclick = async () => {
-      const name = await CookzerModal.prompt('Group name:', group.name);
-      if (!name || !name.trim()) return;
-      const description = await CookzerModal.prompt('Group description (optional):', group.description || '');
-      const { error } = await sb.from('groups').update({ name: name.trim(), description: (description || '').trim() || null }).eq('id', groupId);
-      if (error) await CookzerModal.alert('Could not save: ' + error.message);
-      else await loadGroup();
-    };
+    document.getElementById('editGroupBtn').onclick = () => openEditGroupModal(group);
 
     document.getElementById('deleteGroupBtn').onclick = async () => {
       if (!(await CookzerModal.confirm('Delete "' + group.name + '"? This removes all its posts and can\'t be undone.', { confirmLabel: 'Delete', danger: true }))) return;
@@ -546,11 +734,16 @@
 
     const { data: members } = await sb
       .from('group_members')
-      .select('user_id, profiles(display_name, initials)')
+      .select('user_id, role, profiles(display_name, initials)')
       .eq('group_id', groupId)
       .order('joined_at', { ascending: true });
 
     document.getElementById('groupMemberCount').textContent = (members ? members.length : 0) + ((members && members.length === 1) ? ' member' : ' members');
+
+    const myRow = (members || []).find((m) => m.user_id === currentUser.id);
+    isMember = !!myRow;
+    const canManageMembers = isCreator || (myRow && myRow.role === 'admin');
+    const existingMemberIds = new Set((members || []).map((m) => m.user_id));
 
     const membersListEl = document.getElementById('membersList');
     membersListEl.innerHTML = '';
@@ -570,35 +763,96 @@
       row.appendChild(avatar);
       row.appendChild(name);
 
+      const actions = document.createElement('div');
+      actions.className = 'member-actions';
+
       if (m.user_id === group.created_by) {
         const tag = document.createElement('span');
         tag.className = 'member-owner-tag';
         tag.textContent = 'Owner';
-        row.appendChild(tag);
-      } else if (isCreator) {
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'member-remove-btn';
-        removeBtn.type = 'button';
-        removeBtn.textContent = 'Remove';
-        removeBtn.addEventListener('click', async () => {
-          if (!(await CookzerModal.confirm('Remove ' + (m.profiles.display_name || 'this member') + ' from the group?', { confirmLabel: 'Remove', danger: true }))) return;
-          await sb.from('group_members').delete().eq('group_id', groupId).eq('user_id', m.user_id);
-          await loadGroup();
-        });
-        row.appendChild(removeBtn);
+        actions.appendChild(tag);
+      } else {
+        if (m.role === 'admin') {
+          const tag = document.createElement('span');
+          tag.className = 'member-admin-tag';
+          tag.textContent = 'Admin';
+          actions.appendChild(tag);
+        }
+        if (isCreator) {
+          const roleBtn = document.createElement('button');
+          roleBtn.type = 'button';
+          roleBtn.className = 'member-role-btn';
+          roleBtn.textContent = m.role === 'admin' ? 'Remove admin' : 'Make admin';
+          roleBtn.addEventListener('click', async () => {
+            const { error } = await sb.from('group_members').update({ role: m.role === 'admin' ? 'member' : 'admin' }).eq('group_id', groupId).eq('user_id', m.user_id);
+            if (error) await CookzerModal.alert('Could not update role: ' + error.message);
+            else await loadGroup();
+          });
+          actions.appendChild(roleBtn);
+        }
+        if (canManageMembers) {
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'member-remove-btn';
+          removeBtn.type = 'button';
+          removeBtn.textContent = 'Remove';
+          removeBtn.addEventListener('click', async () => {
+            if (!(await CookzerModal.confirm('Remove ' + (m.profiles.display_name || 'this member') + ' from the group?', { confirmLabel: 'Remove', danger: true }))) return;
+            const { error } = await sb.from('group_members').delete().eq('group_id', groupId).eq('user_id', m.user_id);
+            if (error) { await CookzerModal.alert('Could not remove: ' + error.message); return; }
+            await loadGroup();
+          });
+          actions.appendChild(removeBtn);
+        }
       }
 
+      row.appendChild(actions);
       membersListEl.appendChild(row);
     });
 
-    const { data: mine } = await sb
-      .from('group_members')
-      .select('user_id')
-      .eq('group_id', groupId)
-      .eq('user_id', currentUser.id)
-      .maybeSingle();
-
-    isMember = !!mine;
+    const addMembersRow = document.getElementById('addMembersRow');
+    addMembersRow.hidden = !canManageMembers;
+    if (canManageMembers) {
+      const addInput = document.getElementById('addMembersInput');
+      const addResults = document.getElementById('addMembersResults');
+      let addDebounce = null;
+      addInput.oninput = (e) => {
+        const query = e.target.value.trim();
+        clearTimeout(addDebounce);
+        if (!query) { addResults.innerHTML = ''; return; }
+        addDebounce = setTimeout(async () => {
+          const { data: matches } = await sb
+            .from('profiles')
+            .select('id, display_name, initials')
+            .ilike('display_name', '%' + query + '%')
+            .limit(8);
+          addResults.innerHTML = '';
+          (matches || []).filter((p) => !existingMemberIds.has(p.id)).forEach((p) => {
+            const row = document.createElement('div');
+            row.className = 'cz2-row';
+            const av = document.createElement('div');
+            av.className = 'cz2-row-avatar';
+            av.textContent = p.initials || '??';
+            const nm = document.createElement('span');
+            nm.textContent = p.display_name || 'Someone';
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.className = 'cz2-row-action';
+            addBtn.textContent = 'Add';
+            addBtn.addEventListener('click', async () => {
+              const { error } = await sb.from('group_members').insert({ group_id: groupId, user_id: p.id });
+              if (error) { await CookzerModal.alert('Could not add: ' + error.message); return; }
+              addInput.value = '';
+              addResults.innerHTML = '';
+              await loadGroup();
+            });
+            row.appendChild(av);
+            row.appendChild(nm);
+            row.appendChild(addBtn);
+            addResults.appendChild(row);
+          });
+        }, 300);
+      };
+    }
 
     const inviteRow = document.getElementById('inviteCodeRow');
     inviteRow.hidden = !(group.is_private && isMember && group.invite_code);

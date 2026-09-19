@@ -449,3 +449,177 @@ body {
   .pl-image-wrap img { max-height: 50vh; }
   .pl-panel { width: 100%; border-left: none; border-top: 1px solid var(--line); }
 }
+
+/* Shared picker/form modal ("cz2") — a real search-and-click list or a
+   row of selectable chips, standing in for CookzerModal.prompt()
+   wherever a page needs the person to choose among several options
+   rather than type free text (see CLAUDE.md: never a numbered-list
+   prompt for that). Originally built for cookzer-planner.html's meal
+   and suggestion pickers; shared here so any page can reuse the same
+   #pickerOverlay/#pickerModal markup instead of copying the CSS. */
+.cz2-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 26, 20, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.cz2-modal {
+  background: var(--card-bg);
+  border-radius: 18px;
+  padding: 22px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.cz2-modal h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--olive-dark);
+  margin-bottom: 14px;
+}
+
+.cz2-modal input[type="text"] {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.cz2-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+.cz2-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+
+.cz2-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  border-bottom: 1px solid var(--line);
+}
+
+.cz2-row:last-child { border-bottom: none; }
+.cz2-row:hover { background: var(--cream); }
+
+.cz2-row .cz2-row-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cz2-row .cz2-row-action {
+  margin-left: auto;
+  background: var(--olive);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cz2-empty {
+  padding: 14px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.cz2-divider {
+  text-align: center;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft);
+  margin: 4px 0 12px;
+}
+
+.cz2-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.cz2-chip {
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--cream);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.cz2-chip.selected { background: var(--olive); color: #fff; border-color: var(--olive); }
+
+.cz2-free-row { display: flex; gap: 8px; }
+.cz2-free-row input { flex: 1; margin-bottom: 0; }
+
+.cz2-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.cz2-field { margin-bottom: 14px; }
+.cz2-field textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  resize: vertical;
+}
+
+.cz2-cover-preview {
+  width: 100%;
+  height: 90px;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+}

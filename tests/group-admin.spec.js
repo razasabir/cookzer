@@ -26,25 +26,49 @@ test.describe('group admin controls', () => {
     expect(calls).toContainEqual(expect.objectContaining({ op: 'delete', table: 'group_members', filters: { group_id: 'g1', user_id: 'bob-1' } }));
   });
 
-  test('creator can rename the group via the Edit button', async ({ page }) => {
+  test('creator can rename the group via the real Edit modal (no numbered-list prompt)', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-group.html', 'group-admin.js');
     await page.goto(page.url() + '?id=g1');
     await expect(page.locator('#groupName')).toHaveText('Weeknight Cooks');
 
     await page.locator('#editGroupBtn').click();
-    await expect(page.locator('.cz-modal-message')).toContainText('Group name');
-    await expect(page.locator('.cz-modal-input')).toHaveValue('Weeknight Cooks');
-    await page.locator('.cz-modal-input').fill('Sunday Roasts');
-    await page.locator('.cz-modal-btn.cz-primary').click();
-
-    // A second prompt follows for the description — accept its default.
-    await expect(page.locator('.cz-modal-message')).toContainText('description');
-    await page.locator('.cz-modal-btn.cz-primary').click();
+    await expect(page.locator('#pickerModal h3')).toContainText('Edit group');
+    await expect(page.locator('#pickerModal input[type="text"]')).toHaveValue('Weeknight Cooks');
+    await page.fill('#pickerModal input[type="text"]', 'Sunday Roasts');
+    await page.locator('#pickerModal button', { hasText: 'Save' }).click();
 
     await expect(page.locator('#groupName')).toHaveText('Sunday Roasts');
+    await expect(page.locator('#pickerOverlay')).toBeHidden();
   });
 
-  test('non-creator sees no admin controls or Remove buttons', async ({ page }) => {
+  test('creator can add an existing person to the group by searching their name', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-group.html', 'group-admin.js');
+    await page.goto(page.url() + '?id=g1');
+
+    await expect(page.locator('#addMembersRow')).toBeVisible();
+    await page.fill('#addMembersInput', 'Carol');
+    await expect(page.locator('.cz2-row', { hasText: 'Carol Diaz' })).toBeVisible();
+    await page.locator('.cz2-row', { hasText: 'Carol Diaz' }).locator('.cz2-row-action').click();
+
+    await expect.poll(() => page.evaluate(() => window.__CALLS__.some((c) => c.op === 'insert' && c.table === 'group_members'))).toBe(true);
+    const call = await page.evaluate(() => window.__CALLS__.find((c) => c.op === 'insert' && c.table === 'group_members'));
+    expect(call.payload.user_id).toBe('carol-1');
+    await expect(page.locator('#membersList .member-row', { hasText: 'Carol Diaz' })).toBeVisible();
+  });
+
+  test('creator can promote a member to admin, which shows the Admin tag', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-group.html', 'group-admin.js');
+    await page.goto(page.url() + '?id=g1');
+
+    const bobRow = page.locator('#membersList .member-row', { hasText: 'Bob Ortiz' });
+    await expect(bobRow.locator('.member-admin-tag')).toHaveCount(0);
+    await bobRow.locator('.member-role-btn').click();
+
+    await expect(bobRow.locator('.member-admin-tag')).toHaveText('Admin');
+    await expect(bobRow.locator('.member-role-btn')).toHaveText('Remove admin');
+  });
+
+  test('non-creator sees no admin controls, Remove buttons, or add-members search', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-group.html', 'group-admin.js');
     await page.addInitScript(() => {
       window.__STATE__.group.created_by = 'bob-1';
@@ -54,5 +78,6 @@ test.describe('group admin controls', () => {
     await expect(page.locator('#editGroupBtn')).toBeHidden();
     await expect(page.locator('#deleteGroupBtn')).toBeHidden();
     await expect(page.locator('#membersList .member-remove-btn')).toHaveCount(0);
+    await expect(page.locator('#addMembersRow')).toBeHidden();
   });
 });

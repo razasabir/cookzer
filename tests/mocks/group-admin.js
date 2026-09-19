@@ -1,17 +1,21 @@
 window.__CALLS__ = [];
 window.__STATE__ = {
-  group: { id: 'g1', name: 'Weeknight Cooks', description: 'For quick meals', cover_gradient: null, created_by: 'me-1' },
+  group: { id: 'g1', name: 'Weeknight Cooks', description: 'For quick meals', cover_gradient: null, cover_photo_path: null, created_by: 'me-1', is_private: false, invite_code: null },
   members: [
-    { user_id: 'me-1', profiles: { display_name: 'Me', initials: 'ME' } },
-    { user_id: 'bob-1', profiles: { display_name: 'Bob Ortiz', initials: 'BO' } },
+    { user_id: 'me-1', role: 'member', profiles: { display_name: 'Me', initials: 'ME' } },
+    { user_id: 'bob-1', role: 'member', profiles: { display_name: 'Bob Ortiz', initials: 'BO' } },
   ],
 };
 
+const PROFILE_DIRECTORY = [{ id: 'carol-1', display_name: 'Carol Diaz', initials: 'CD' }];
+
 function chain(table) {
   let filters = {};
+  let ilikeQuery = null;
   const builder = {
     select() { return builder; },
     eq(col, val) { filters[col] = val; return builder; },
+    ilike(col, pattern) { ilikeQuery = String(pattern).replace(/%/g, '').toLowerCase(); return builder; },
     order() { return builder; },
     limit() { return builder; },
     single() {
@@ -29,15 +33,25 @@ function chain(table) {
       let result = [];
       if (table === 'group_members') result = window.__STATE__.members;
       else if (table === 'posts') result = [];
+      else if (table === 'profiles' && ilikeQuery) {
+        result = PROFILE_DIRECTORY.filter((p) => p.display_name.toLowerCase().includes(ilikeQuery));
+      }
       return Promise.resolve({ data: result, error: null }).then(resolve);
     },
     delete() { builder._isDelete = true; return builder; },
-    update(payload) {
-      window.__CALLS__.push({ op: 'update', table, payload });
-      Object.assign(window.__STATE__.group, payload);
-      return builder;
+    update(payload) { builder._isUpdate = true; builder._updatePayload = payload; return builder; },
+    insert(payload) {
+      window.__CALLS__.push({ op: 'insert', table, payload });
+      if (table === 'group_members') {
+        const profile = PROFILE_DIRECTORY.find((p) => p.id === payload.user_id);
+        window.__STATE__.members.push({
+          user_id: payload.user_id,
+          role: 'member',
+          profiles: profile ? { display_name: profile.display_name, initials: profile.initials } : null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
     },
-    insert() { return Promise.resolve({ data: null, error: null }); },
   };
   const origThen = builder.then;
   builder.then = function (resolve) {
@@ -47,6 +61,16 @@ function chain(table) {
         window.__STATE__.members = window.__STATE__.members.filter((m) => m.user_id !== filters.user_id);
       } else if (table === 'groups') {
         window.__STATE__.groupDeleted = true;
+      }
+      return Promise.resolve({ data: null, error: null }).then(resolve);
+    }
+    if (builder._isUpdate) {
+      window.__CALLS__.push({ op: 'update', table, filters: Object.assign({}, filters), payload: builder._updatePayload });
+      if (table === 'groups') {
+        Object.assign(window.__STATE__.group, builder._updatePayload);
+      } else if (table === 'group_members') {
+        const m = window.__STATE__.members.find((mm) => mm.user_id === filters.user_id);
+        if (m) Object.assign(m, builder._updatePayload);
       }
       return Promise.resolve({ data: null, error: null }).then(resolve);
     }
