@@ -39,12 +39,18 @@ jobs:
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug
+      # Gradle's own output filename ("app-debug.apk") is a build-tool
+      # artifact name, not something to hand a user downloading the app —
+      # rename it once here so every download (and both upload steps
+      # below) gets the same clean, human-facing name.
+      - name: Rename APK for distribution
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/Cookzer.apk
       - uses: actions/upload-artifact@v4
         with:
           name: cookzer-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/Cookzer.apk
       # Gives the website a stable public download link
-      # (github.com/razasabir/cookzer/releases/download/android-latest/app-debug.apk)
+      # (github.com/razasabir/cookzer/releases/download/android-latest/Cookzer.apk)
       # that doesn't change every build — this action updates the same
       # "android-latest" release in place rather than creating a new one
       # each time. This is a debug build (no Play Console account/signing
@@ -62,7 +68,7 @@ jobs:
             still being set up — Android will show an "unknown sources"
             warning on install, which is expected for a sideloaded app.
           prerelease: true
-          files: android/app/build/outputs/apk/debug/app-debug.apk
+          files: android/app/build/outputs/apk/debug/Cookzer.apk
 
   # Runs only once these 4 secrets exist in the repo (Settings -> Secrets
   # and variables -> Actions). To create them: generate a release keystore
