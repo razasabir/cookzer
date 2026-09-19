@@ -60,7 +60,7 @@
     }
 
     .convert-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px; }
-    .convert-field { flex: 1; min-width: 130px; }
+    .convert-field { flex: 1; min-width: 155px; }
     .convert-field label {
       display: block;
       font-size: 12px;
@@ -199,14 +199,15 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid var(--line);
+      gap: 8px;
+      margin-top: 16px;
+      padding: 22px 16px 20px;
+      background: var(--plus-tint, rgba(46, 143, 92, 0.06));
+      border-radius: 16px;
     }
     .fill-graphic-wrap[hidden] { display: none; }
-    .fill-graphic-wrap svg { color: var(--line); display: block; }
-    .fill-graphic-caption { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+    .fill-graphic-wrap svg { color: var(--line); display: block; width: 96px; height: 115px; }
+    .fill-graphic-caption { font-size: 14.5px; color: var(--ink-soft); font-weight: 600; }
 
     /* Unit picker — trigger button + anchored dropdown of rows, replacing
        a plain <select> so each unit can carry its own distinct line-icon
@@ -247,7 +248,6 @@
       position: absolute;
       top: calc(100% + 4px);
       left: 0;
-      right: 0;
       z-index: 20;
       background: var(--card-bg);
       border: 1px solid var(--line);
@@ -256,7 +256,13 @@
       max-height: 260px;
       overflow-y: auto;
       padding: 6px;
+      width: max-content;
+      min-width: 100%;
+      max-width: 260px;
     }
+    /* The To field sits at the row's right edge — open its dropdown
+       growing leftward instead of off the edge of the card. */
+    .unit-picker-dropdown.align-right { left: auto; right: 0; }
     .unit-picker-dropdown[hidden] { display: none; }
     .unit-picker-row {
       display: flex;
@@ -267,10 +273,10 @@
       cursor: pointer;
       font-size: 13.5px;
       color: var(--ink);
+      white-space: nowrap;
     }
     .unit-picker-row svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--olive-dark); }
     .unit-picker-row:hover, .unit-picker-row.active { background: var(--plus-tint, rgba(46, 143, 92, 0.08)); }
-    .unit-picker-row-code { margin-left: auto; font-size: 11px; color: var(--ink-faint); }
 
     /* Pan quick-picker — tap the shape that matches what's in your hand
        to filter the list to just that one, instead of reading down a
@@ -422,7 +428,7 @@
             <label id="convertToLabel">To</label>
             <div class="unit-picker">
               <button type="button" class="unit-picker-trigger" id="convertToTrigger" aria-haspopup="listbox" aria-labelledby="convertToLabel"></button>
-              <div class="unit-picker-dropdown" id="convertToDropdown" hidden></div>
+              <div class="unit-picker-dropdown align-right" id="convertToDropdown" hidden></div>
             </div>
             <select id="convertTo" class="unit-native-select" aria-hidden="true" tabindex="-1"></select>
           </div>
@@ -589,17 +595,21 @@
         + '<line x1="14.3" y1="18" x2="25.7" y2="18" stroke="currentColor" stroke-width="1.6"/>'
         + '<line x1="14.7" y1="28" x2="25.3" y2="28" stroke="currentColor" stroke-width="1.6"/>',
     },
+    // A spoon drawn upright — oval bowl merging straight down into a
+    // tapered handle — reads unmistakably as a spoon. The earlier
+    // version (a rotated ellipse + a thin diagonal line off to one
+    // side) read as a magnifying glass instead.
     tsp: {
-      top: 4, bottom: 28,
-      clip: '<ellipse cx="17" cy="16" rx="9" ry="12"/>',
-      outline: '<ellipse cx="17" cy="16" rx="9" ry="12" stroke="currentColor" stroke-width="2"/>'
-        + '<line x1="24" y1="26" x2="35" y2="45" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+      top: 4, bottom: 26,
+      clip: '<ellipse cx="17" cy="15" rx="9" ry="11"/>',
+      outline: '<ellipse cx="17" cy="15" rx="9" ry="11" stroke="currentColor" stroke-width="2"/>'
+        + '<path d="M12,24 L12,42 Q12,46 17,46 Q22,46 22,42 L22,24 Z" stroke="currentColor" stroke-width="2" fill="none"/>',
     },
     tbsp: {
-      top: 1, bottom: 29,
-      clip: '<ellipse cx="16" cy="15" rx="11" ry="14"/>',
-      outline: '<ellipse cx="16" cy="15" rx="11" ry="14" stroke="currentColor" stroke-width="2"/>'
-        + '<line x1="25" y1="27" x2="37" y2="46" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
+      top: 2, bottom: 30,
+      clip: '<ellipse cx="16" cy="16" rx="11" ry="14"/>',
+      outline: '<ellipse cx="16" cy="16" rx="11" ry="14" stroke="currentColor" stroke-width="2"/>'
+        + '<path d="M10,27 L10,44 Q10,47 16,47 Q22,47 22,44 L22,27 Z" stroke="currentColor" stroke-width="2" fill="none"/>',
     },
   };
 
@@ -642,8 +652,8 @@
       + '<rect x="15" y="25" width="10" height="6" rx="1.5"/>',
     ml: '<path d="M20,5 C20,5 9,20 9,28 A11,11 0 0 0 31,28 C31,20 20,5 20,5 Z"/>',
     l: '<path d="M17,4 H23 V9 L27,13 V32 Q27,36 23,36 H17 Q13,36 13,32 V13 L17,9 Z"/>',
-    tsp: '<ellipse cx="16" cy="14" rx="8" ry="10" transform="rotate(-15 16 14)"/><line x1="22" y1="21" x2="32" y2="33"/>',
-    tbsp: '<ellipse cx="15" cy="13" rx="10" ry="12" transform="rotate(-15 15 13)"/><line x1="23" y1="22" x2="35" y2="35"/>',
+    tsp: '<ellipse cx="20" cy="11" rx="8" ry="9"/><path d="M16,18 L16,34 Q16,37 20,37 Q24,37 24,34 L24,18 Z"/>',
+    tbsp: '<ellipse cx="20" cy="12" rx="10" ry="11"/><path d="M15,21 L15,36 Q15,39 20,39 Q25,39 25,36 L25,21 Z"/>',
     cup: '<path d="M9,7 H29 L26,31 Q26,35 22,35 H16 Q12,35 12,31 Z"/><path d="M29,13 Q36,13 36,19 Q36,25 29,24"/>',
     flOz: '<path d="M12,6 H28 L26,32 Q26,35 21,35 Q15,35 15,32 Z"/><line x1="13.5" y1="16" x2="26.5" y2="16"/><line x1="14" y1="24" x2="26" y2="24"/>',
   };
@@ -699,7 +709,7 @@
       UNIT_LIST.forEach((entry) => {
         const row = document.createElement('div');
         row.className = 'unit-picker-row' + (entry.unit === selectEl.value ? ' active' : '');
-        row.innerHTML = unitIconSVG(entry.unit) + '<span>' + entry.label + '</span><span class="unit-picker-row-code">' + entry.unit + '</span>';
+        row.innerHTML = unitIconSVG(entry.unit) + '<span>' + entry.label + '</span>';
         row.addEventListener('mousedown', (e) => {
           e.preventDefault();
           selectEl.value = entry.unit;
