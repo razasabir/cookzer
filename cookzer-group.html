@@ -19,6 +19,7 @@
   <script src="friends-widget.js"></script>
   <script src="cookzer-modal.js"></script>
   <script src="photo-filters.js"></script>
+  <script src="photo-cropper.js"></script>
   <script src="theme.js"></script>
   <script src="photo-lightbox.js"></script>
   <script src="shortcuts.js"></script>
@@ -1032,9 +1033,16 @@
     });
   }
 
-  document.getElementById('composerPhotoInput').addEventListener('change', (e) => {
+  document.getElementById('composerPhotoInput').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    e.target.value = ''; // let picking the exact same file again re-fire change
+    const cropped = await CookzerPhotoCropper.open(file, { aspect: 4 / 3, title: 'Crop your photo' });
+    if (!cropped) return;
+    applyComposerPhoto(cropped);
+  });
+
+  function applyComposerPhoto(file) {
     pendingPhotoFile = file;
     pendingPhotoFilter = 'original';
     pendingVignette = false;
@@ -1064,7 +1072,7 @@
         renderComposerFilterRow();
       }
     }).catch(() => {});
-  });
+  }
 
   async function uploadPostPhoto(file, filterKey, vignette) {
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();

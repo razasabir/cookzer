@@ -19,6 +19,7 @@
   <script src="auth-guard.js"></script>
   <script src="cookzer-modal.js"></script>
   <script src="photo-filters.js"></script>
+  <script src="photo-cropper.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
   <script src="theme.js"></script>
   <script src="photo-lightbox.js"></script>
@@ -1373,13 +1374,15 @@
   // already lets you pick either when accept lists both types) — routes
   // to the existing photo-filter or video-upload flow by the chosen
   // file's actual type rather than which icon was clicked.
-  document.getElementById('composerMediaInput').addEventListener('change', (e) => {
+  document.getElementById('composerMediaInput').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.type.startsWith('video/')) {
       handleComposerVideoFile(file, e.target);
     } else if (file.type.startsWith('image/')) {
-      handleComposerPhotoFile(file);
+      e.target.value = ''; // let picking the exact same file again re-fire change
+      const cropped = await CookzerPhotoCropper.open(file, { aspect: 4 / 3, title: 'Crop your photo' });
+      if (cropped) handleComposerPhotoFile(cropped);
     }
   });
 

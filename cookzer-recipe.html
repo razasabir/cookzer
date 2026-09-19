@@ -19,6 +19,7 @@
   <script src="friends-widget.js"></script>
   <script src="cookzer-modal.js"></script>
   <script src="photo-filters.js"></script>
+  <script src="photo-cropper.js"></script>
   <script src="theme.js"></script>
 <script src="nutrition-data.js"></script>
   <script src="unit-convert.js"></script>
@@ -1552,17 +1553,20 @@
 
   dropzone.addEventListener('click', () => fileInput.click());
 
-  fileInput.addEventListener('change', () => {
+  fileInput.addEventListener('change', async () => {
     const file = fileInput.files[0];
     if (!file) return;
-    currentImageFile = file;
+    fileInput.value = ''; // let picking the exact same file again re-fire change
+    const cropped = await CookzerPhotoCropper.open(file, { aspect: 1, title: 'Crop your photo' });
+    if (!cropped) return;
+    currentImageFile = cropped;
     filterUserPicked = false;
     const reader = new FileReader();
     reader.onload = (e) => {
       currentImageData = e.target.result;
       showPreview();
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(cropped);
   });
 
   function showPreview() {

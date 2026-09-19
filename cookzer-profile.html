@@ -19,6 +19,7 @@
   <script src="auth-guard.js"></script>
   <script src="friends-widget.js"></script>
   <script src="cookzer-modal.js"></script>
+  <script src="photo-cropper.js"></script>
   <script src="theme.js"></script>
   <script src="photo-lightbox.js"></script>
   <script src="shortcuts.js"></script>
@@ -1757,12 +1758,15 @@
     document.getElementById('editAvatarInput').click();
   });
 
-  document.getElementById('editAvatarInput').addEventListener('change', (e) => {
+  document.getElementById('editAvatarInput').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    selectedAvatarFile = file;
+    e.target.value = ''; // let picking the exact same file again re-fire change
+    const cropped = await CookzerPhotoCropper.open(file, { shape: 'circle', title: 'Crop your profile photo' });
+    if (!cropped) return;
+    selectedAvatarFile = cropped;
     const preview = document.getElementById('editAvatarPreview');
-    preview.style.backgroundImage = "url('" + URL.createObjectURL(file) + "')";
+    preview.style.backgroundImage = "url('" + URL.createObjectURL(cropped) + "')";
     preview.style.backgroundSize = 'cover';
     preview.style.backgroundPosition = 'center';
     preview.textContent = '';
