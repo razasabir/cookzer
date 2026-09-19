@@ -273,12 +273,11 @@
       padding: 0;
     }
 
-  /* Feed filter bar — combines post kind (Recipes/Challenges/Dining
-     out/Tips) and mood (Comfort food/Quick & easy/Fancy tonight) into
-     one row of chips that actually narrows what loadMorePosts() fetches,
-     instead of the mood chips being compose-only decoration. Wraps to a
-     second line rather than scrolling, same reasoning as the composer
-     menu above. */
+  /* Feed filter bar — chips for post kind (Recipes/Challenges/Dining
+     out/Tips) plus dynamically-added recipe tag chips (see
+     loadTrendingFeedTags()), all narrowing what loadMorePosts() fetches.
+     Wraps to a second line rather than scrolling, same reasoning as the
+     composer menu above. */
   .feed-filter-bar {
       display: flex;
       flex-wrap: wrap;
@@ -1087,9 +1086,6 @@
       <button class="feed-filter-chip" data-filter="challenges" type="button">🏆 Challenges</button>
       <button class="feed-filter-chip" data-filter="dining" type="button">📍 Dining out</button>
       <button class="feed-filter-chip" data-filter="tips" type="button">💡 Tips</button>
-      <button class="feed-filter-chip" data-filter="mood-comfort" type="button">🍲 Comfort food</button>
-      <button class="feed-filter-chip" data-filter="mood-quick" type="button">⚡ Quick &amp; easy</button>
-      <button class="feed-filter-chip" data-filter="mood-fancy" type="button">✨ Fancy tonight</button>
     </div>
 
     <!-- Feed cards rendered by JS -->
@@ -2169,16 +2165,12 @@
   // pages. ?filter=<value> keeps the choice shareable/bookmarkable and
   // preserves the old ?filter=tips link from the sidebar's "Tips &
   // Tricks" item.
-  const FEED_MOOD_BY_FILTER = { 'mood-comfort': 'Comfort food', 'mood-quick': 'Quick and easy', 'mood-fancy': 'Fancy tonight' };
   const FEED_EMPTY_MESSAGE = {
     all: 'No posts yet — be the first to share what you cooked today.',
     recipes: 'No recipe posts yet — attach a recipe next time you share.',
     challenges: 'No challenge entries yet — join this week\'s challenge and post your entry.',
     dining: 'No dining-out posts yet — tag a restaurant next time you eat out.',
     tips: 'No tips shared yet — be the first with a substitution, storage hack, or shortcut.',
-    'mood-comfort': 'No comfort food posts yet.',
-    'mood-quick': 'No quick & easy posts yet.',
-    'mood-fancy': 'No fancy-tonight posts yet.',
   };
   // Tag chips (e.g. "#quick") are appended to the filter bar dynamically
   // by loadTrendingFeedTags() below, one per free-form recipe tag —
@@ -2292,7 +2284,6 @@
       if (currentFeedFilter === 'tips') postsQuery = postsQuery.eq('kind', 'tip');
       else if (currentFeedFilter === 'recipes') postsQuery = postsQuery.not('recipe_id', 'is', null);
       else if (currentFeedFilter === 'dining') postsQuery = postsQuery.not('restaurant_name', 'is', null);
-      else if (FEED_MOOD_BY_FILTER[currentFeedFilter]) postsQuery = postsQuery.eq('mood', FEED_MOOD_BY_FILTER[currentFeedFilter]);
       ({ data: rawPosts, error } = await postsQuery);
     }
 
