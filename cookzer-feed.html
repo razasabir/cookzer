@@ -392,6 +392,24 @@
       border-radius: 8px;
     }
 
+  .comment-delete-btn {
+      margin-left: auto;
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      color: var(--ink-faint);
+      font-size: 11px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 6px;
+    }
+
+  .comment-delete-btn:hover {
+      background: var(--cream);
+      color: var(--brick);
+    }
+
   .card-delete-btn:hover {
       background: var(--cream);
       color: var(--brick);
@@ -1691,7 +1709,7 @@
     const commentBtn = document.createElement('button');
     commentBtn.className = 'action-btn';
     commentBtn.textContent = '💬 Comment';
-    commentBtn.addEventListener('click', () => toggleCommentBox(post.id));
+    commentBtn.addEventListener('click', () => toggleCommentBox(post.id, post.author_id));
     const bookmarkBtn = document.createElement('button');
     bookmarkBtn.className = 'action-btn';
     bookmarkBtn.id = 'bookmarkBtn-' + post.id;
@@ -1822,17 +1840,22 @@
     await refreshPostStats(postId);
   }
 
-  async function toggleCommentBox(postId) {
+  async function toggleCommentBox(postId, postAuthorId) {
     const box = document.getElementById('commentBox-' + postId);
     if (!box.hidden) {
       box.hidden = true;
       return;
     }
     box.hidden = false;
-    await renderComments(postId, box);
+    await renderComments(postId, box, postAuthorId);
   }
 
-  async function renderComments(postId, box) {
+  // Deleting a comment: the comment's own author can always remove it
+  // (migration 003); a post's author can also remove any comment on
+  // their own post, same as Facebook's "delete this comment" on your
+  // own posts (migration 038). Both checks are just "can I see a
+  // delete button here" — the RLS policies are the actual enforcement.
+  async function renderComments(postId, box, postAuthorId) {
     box.innerHTML = '';
     const { data: comments } = await sb
       .from('comments')
@@ -1842,16 +1865,33 @@
 
     (comments || []).forEach((c) => {
       const row = document.createElement('div');
+      row.className = 'comment-row';
+      row.dataset.commentId = c.id;
+      row.style.display = 'flex';
+      row.style.alignItems = 'flex-start';
       row.style.fontSize = '13px';
       row.style.marginBottom = '6px';
+      const textSpan = document.createElement('span');
       const nameLink = document.createElement('a');
       nameLink.href = 'cookzer-profile.html?id=' + c.author_id;
       nameLink.style.color = 'inherit';
       nameLink.style.fontWeight = '700';
       nameLink.style.textDecoration = 'none';
       nameLink.textContent = (c.profiles ? c.profiles.display_name : 'Someone') + ': ';
-      row.appendChild(nameLink);
-      row.appendChild(document.createTextNode(c.text));
+      textSpan.appendChild(nameLink);
+      textSpan.appendChild(document.createTextNode(c.text));
+      row.appendChild(textSpan);
+
+      if (currentUser && (c.author_id === currentUser.id || postAuthorId === currentUser.id)) {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'comment-delete-btn';
+        deleteBtn.type = 'button';
+        deleteBtn.title = c.author_id === currentUser.id ? 'Delete your comment' : 'Delete this comment';
+        deleteBtn.textContent = '✕';
+        deleteBtn.addEventListener('click', () => deleteComment(c.id, postId, box, postAuthorId));
+        row.appendChild(deleteBtn);
+      }
+
       box.appendChild(row);
     });
 
@@ -1868,18 +1908,29 @@
     input.style.borderRadius = '16px';
     input.style.fontFamily = 'inherit';
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') submitComment(postId, input, box);
+      if (e.key === 'Enter') submitComment(postId, input, box, postAuthorId);
     });
     const sendBtn = document.createElement('button');
     sendBtn.className = 'action-btn';
     sendBtn.textContent = 'Send';
-    sendBtn.addEventListener('click', () => submitComment(postId, input, box));
+    sendBtn.addEventListener('click', () => submitComment(postId, input, box, postAuthorId));
     inputRow.appendChild(input);
     inputRow.appendChild(sendBtn);
     box.appendChild(inputRow);
   }
 
-  async function submitComment(postId, input, box) {
+  async function deleteComment(commentId, postId, box, postAuthorId) {
+    if (!(await CookzerModal.confirm('Delete this comment?', { confirmLabel: 'Delete', danger: true }))) return;
+    const { error } = await sb.from('comments').delete().eq('id', commentId);
+    if (error) {
+      await CookzerModal.alert('Could not delete comment: ' + error.message);
+      return;
+    }
+    await renderComments(postId, box, postAuthorId);
+    await refreshPostStats(postId);
+  }
+
+  async function submitComment(postId, input, box, postAuthorId) {
     const text = input.value.trim();
     if (!text) return;
     input.value = '';
@@ -1888,7 +1939,7 @@
       await CookzerModal.alert('Could not comment: ' + error.message);
       return;
     }
-    await renderComments(postId, box);
+    await renderComments(postId, box, postAuthorId);
     await refreshPostStats(postId);
   }
 
