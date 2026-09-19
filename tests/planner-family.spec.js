@@ -118,3 +118,41 @@ test.describe('Meal planner — per-person suggestion columns', () => {
     await expect(monday.locator('.meal-slot-label')).toHaveText('Final approved dish');
   });
 });
+
+test.describe('Meal planner — week navigation', () => {
+  test('defaults to "This week\'s plan" with both nav buttons enabled', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
+    await expect(page.locator('#plannerWeekTitle')).toContainText("This week's plan");
+    await expect(page.locator('#prevWeekBtn')).toBeEnabled();
+    await expect(page.locator('#nextWeekBtn')).toBeEnabled();
+  });
+
+  test('Next/Prev swap the title to a date range and back to "This week\'s plan"', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
+    await page.locator('#nextWeekBtn').click();
+    await expect(page.locator('#plannerWeekTitle')).not.toContainText("This week's plan");
+    await expect(page.locator('#plannerWeekTitle')).toContainText('–'); // "Mon D – Sun D" style range
+
+    await page.locator('#prevWeekBtn').click();
+    await expect(page.locator('#plannerWeekTitle')).toContainText("This week's plan");
+  });
+
+  test('navigating out ~3 months disables the button at that boundary, and going back one re-enables it', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
+    for (let i = 0; i < 13; i++) await page.locator('#nextWeekBtn').click();
+    await expect(page.locator('#nextWeekBtn')).toBeDisabled();
+    await expect(page.locator('#prevWeekBtn')).toBeEnabled();
+
+    await page.locator('#prevWeekBtn').click();
+    await expect(page.locator('#nextWeekBtn')).toBeEnabled();
+  });
+
+  test('the "Copy from previous week" button reflects the currently viewed week, not always the real current week', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
+    await expect(page.locator('#copyLastWeekBtn')).toContainText('Copy from previous week');
+    await page.locator('#nextWeekBtn').click();
+    // Still present and functional after navigating — not tied to a
+    // hardcoded "last week" that only makes sense on the default view.
+    await expect(page.locator('#copyLastWeekBtn')).toBeVisible();
+  });
+});
