@@ -37,13 +37,16 @@ test.describe('Feed — recipe/tip borders', () => {
 });
 
 test.describe('Feed — action buttons', () => {
-  test('a plain post shows exactly Heart, Comment, Share — no Save', async ({ page }) => {
+  test('a plain post shows exactly Heart, Comment, Share as icon-only buttons — no Save', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
     const actions = page.locator('#post-post-plain .action-btn');
     await expect(actions).toHaveCount(3);
-    await expect(actions.nth(0)).toContainText('Heart');
-    await expect(actions.nth(1)).toContainText('Comment');
-    await expect(actions.nth(2)).toContainText('Share');
+    await expect(actions.nth(0)).toHaveAttribute('title', 'Heart');
+    await expect(actions.nth(1)).toHaveAttribute('title', 'Comment');
+    await expect(actions.nth(2)).toHaveAttribute('title', 'Share');
+    // Icon only, no leftover label text next to it.
+    await expect(actions.nth(0)).toHaveText('❤️');
+    await expect(actions.nth(1)).toHaveText('💬');
   });
 
   test('a recipe post shows a 4th option, Save', async ({ page }) => {
@@ -53,9 +56,16 @@ test.describe('Feed — action buttons', () => {
     await expect(actions.nth(3)).toContainText('Save');
   });
 
+  test('the Share icon is the brand orange, not the default action color', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
+    const shareBtn = page.locator('#post-post-plain .action-btn[title="Share"]');
+    const color = await shareBtn.evaluate((el) => getComputedStyle(el).color);
+    expect(color).toBe('rgb(255, 107, 74)'); // var(--brick)
+  });
+
   test('Share opens an in-app popup with the link, not the OS share sheet', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
-    await page.locator('#post-post-plain .action-btn', { hasText: 'Share' }).click();
+    await page.locator('#post-post-plain .action-btn[title="Share"]').click();
     await expect(page.locator('.cz-share-link-row input')).toHaveValue(/post=post-plain/);
 
     await page.locator('.cz-share-copy-btn').click();

@@ -16,12 +16,20 @@ test.describe('Recipe page — search tags', () => {
 });
 
 test.describe('Recipe page — action buttons', () => {
-  test('Share, Save, and Heart appear first, in that order', async ({ page }) => {
+  test('Edit, Share, Save, and Heart appear first, in that order, for the recipe\'s own author', async ({ page }) => {
     await load(page);
     const pills = page.locator('.actions-row .action-pill');
-    await expect(pills.nth(0)).toContainText('Share');
-    await expect(pills.nth(1)).toContainText('Save to Cookbook');
-    await expect(pills.nth(2)).toContainText('Heart');
+    await expect(pills.nth(0)).toContainText('Edit Recipe');
+    await expect(pills.nth(1)).toContainText('Share');
+    await expect(pills.nth(2)).toContainText('Save to Cookbook');
+    await expect(pills.nth(3)).toContainText('Heart');
+  });
+
+  test('the Edit Recipe pill links to the wizard in edit mode for this recipe', async ({ page }) => {
+    await load(page);
+    const editBtn = page.locator('#editRecipeBtn');
+    await expect(editBtn).toBeVisible();
+    await expect(editBtn).toHaveAttribute('href', 'cookzer-recipe-new.html?edit=r1');
   });
 });
 
