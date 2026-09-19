@@ -1,0 +1,16 @@
+-- 039 dropped hearts' primary key (post_id, user_id) to support recipe
+-- hearts, but never replaced its replica identity — Postgres uses a
+-- table's primary key by default to know which row an UPDATE/DELETE
+-- targets in the WAL, which logical replication (and therefore
+-- Supabase Realtime, which hearts is published to) requires. With no
+-- primary key and no replacement, every DELETE against hearts started
+-- failing outright ("could not identify an equality operator" /
+-- "does not have a replica identity" — surfaces through PostgREST as a
+-- bare 500), which is exactly why un-hearting broke while hearting
+-- (an INSERT, which needs no replica identity) kept working fine.
+--
+-- The two partial unique indexes 039 added can't stand in for this —
+-- Postgres only accepts a non-partial unique index for
+-- REPLICA IDENTITY USING INDEX — so FULL (log the whole old row) is
+-- the correct fix here, not a replacement index.
+alter table public.hearts replica identity full;
