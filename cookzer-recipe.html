@@ -669,6 +669,7 @@
       <button class="action-pill" id="shareBtn">🔗 Share</button>
       <button class="action-pill" id="saveBtn">🔖 Save to Cookbook</button>
       <button class="action-pill" id="heartBtn">❤️ Heart</button>
+      <button class="action-pill" id="addToPlannerBtn">📅 Add to Meal Planner</button>
       <button class="action-pill" id="cookInBtn">🍳 I cooked this</button>
       <button class="action-pill" id="rateBtn">⭐ <span id="ratingSummary">Rate this</span></button>
       <button class="action-pill" id="remakeBtn">🔁 Remake &amp; post</button>
@@ -1271,6 +1272,79 @@
       await sb.from('hearts').insert({ recipe_id: recipeId, user_id: currentUser.id });
     }
     await refreshHeartStatus();
+  });
+
+  // "Add to Meal Planner" — picks a day in the current week the same
+  // way the planner's own "+ Add meal" does: a real clickable list
+  // (never a numbered-list prompt), and it inserts a proper recipe_id
+  // link into meal_plan_entries, the same field a manual pick from the
+  // planner would set — not free text standing in for it. A day that
+  // already has a final approved dish is shown but not clickable, same
+  // rule the planner itself follows (one dish per day).
+  function plannerWeekDates() {
+    const now = new Date();
+    const day = now.getDay(); // 0 = Sun
+    const diff = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setHours(0, 0, 0, 0);
+    monday.setDate(now.getDate() + diff);
+    return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return { label, date: d, iso: d.toISOString().slice(0, 10) };
+    });
+  }
+
+  document.getElementById('addToPlannerBtn').addEventListener('click', async () => {
+    const week = plannerWeekDates();
+    const { data: existing } = await sb
+      .from('meal_plan_entries')
+      .select('plan_date, free_text, recipes(title)')
+      .eq('user_id', currentUser.id)
+      .in('plan_date', week.map((w) => w.iso));
+    const existingByDate = {};
+    (existing || []).forEach((e) => { existingByDate[e.plan_date] = e; });
+
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+    const title = document.createElement('h3');
+    title.textContent = 'Add "' + recipe.title + '" to which day?';
+    modal.appendChild(title);
+
+    const list = document.createElement('div');
+    list.className = 'cz2-list';
+
+    week.forEach((w) => {
+      const taken = existingByDate[w.iso];
+      const row = document.createElement('div');
+      row.className = 'cz2-row';
+      const dateLabel = w.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      if (taken) {
+        row.style.opacity = '0.5';
+        row.style.cursor = 'default';
+        row.textContent = dateLabel + ' — already planned: ' + (taken.recipes ? taken.recipes.title : (taken.free_text || 'a meal'));
+      } else {
+        row.textContent = dateLabel;
+        row.addEventListener('click', async () => {
+          closePicker();
+          const { error } = await sb.from('meal_plan_entries').insert({
+            user_id: currentUser.id,
+            plan_date: w.iso,
+            recipe_id: recipeId,
+            source_note: 'added from the recipe page',
+          });
+          if (error) {
+            await CookzerModal.alert('Could not add to Meal Planner: ' + error.message);
+            return;
+          }
+          await CookzerModal.alert('Added to your Meal Planner for ' + dateLabel + '.');
+        });
+      }
+      list.appendChild(row);
+    });
+    modal.appendChild(list);
+
+    document.getElementById('pickerOverlay').hidden = false;
   });
 
   // Comments on a recipe — same table, shape, and moderation rules as a

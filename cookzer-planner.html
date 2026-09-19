@@ -59,10 +59,39 @@
       font-family: 'Fraunces', serif;
       font-weight: 600;
       color: var(--olive-dark);
-      margin-bottom: 24px;
       text-align: center;
-      width: 100%;
     }
+
+  /* Week navigation — the planner defaults to the current week but can
+     browse up to ~3 months either side of it (past weeks to review or
+     copy, future weeks to plan ahead), rather than being locked to
+     "this week" only. */
+    .planner-week-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      width: 100%;
+      margin-bottom: 24px;
+    }
+
+  .week-nav-btn {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: var(--card-bg);
+      color: var(--olive-dark);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+  .week-nav-btn:hover:not(:disabled) { border-color: var(--olive); background: var(--cream); }
+  .week-nav-btn:disabled { opacity: 0.35; cursor: default; }
 
   /* Planner grid */
     .planner-grid {
@@ -445,9 +474,13 @@
 <!-- Main content -->
 <div class="main">
   <div class="planner-content">
-    <h1 class="page-title">This week's plan
-      <button type="button" id="plannerColumnsHint" class="hint-btn" title="What are these columns?" aria-label="What are these columns?">?</button>
-    </h1>
+    <div class="planner-week-nav">
+      <button type="button" id="prevWeekBtn" class="week-nav-btn" aria-label="Previous week">◀</button>
+      <h1 class="page-title" id="plannerWeekTitle">This week's plan
+        <button type="button" id="plannerColumnsHint" class="hint-btn" title="What are these columns?" aria-label="What are these columns?">?</button>
+      </h1>
+      <button type="button" id="nextWeekBtn" class="week-nav-btn" aria-label="Next week">▶</button>
+    </div>
 
     <div class="share-row">
       Share this week with:
@@ -456,7 +489,7 @@
     </div>
 
     <div style="width:100%; max-width:700px; display:flex; justify-content:flex-end; margin-bottom:12px;">
-      <button class="meal-add-btn" id="copyLastWeekBtn" type="button">📋 Copy last week's plan</button>
+      <button class="meal-add-btn" id="copyLastWeekBtn" type="button">📋 Copy from previous week</button>
     </div>
 
     <div class="planner-grid" id="plannerGrid"></div>
@@ -493,24 +526,62 @@
   let currentUser = null;
   const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  function mondayOfThisWeek() {
+  // The planner browses week by week, from the current week out to
+  // roughly 3 months either side (~13 weeks) — far enough to plan
+  // ahead or review/copy an older week, without an unbounded range
+  // that would make "how far back am I?" hard to tell at a glance.
+  let weekOffset = 0;
+  const MAX_WEEK_OFFSET = 13;
+
+  function mondayOfWeek(offset) {
     const now = new Date();
     const day = now.getDay(); // 0 = Sun
     const diff = day === 0 ? -6 : 1 - day;
     const monday = new Date(now);
     monday.setHours(0, 0, 0, 0);
-    monday.setDate(now.getDate() + diff);
+    monday.setDate(now.getDate() + diff + offset * 7);
     return monday;
   }
 
   function weekDates() {
-    const monday = mondayOfThisWeek();
+    const monday = mondayOfWeek(weekOffset);
     return DAY_LABELS.map((_, i) => {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
       return d.toISOString().slice(0, 10);
     });
   }
+
+  function updateWeekNav() {
+    const dates = weekDates();
+    const title = document.getElementById('plannerWeekTitle');
+    const hint = document.getElementById('plannerColumnsHint');
+    if (weekOffset === 0) {
+      title.textContent = "This week's plan ";
+    } else {
+      const start = new Date(dates[0] + 'T00:00:00');
+      const end = new Date(dates[6] + 'T00:00:00');
+      const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      title.textContent = fmt(start) + ' – ' + fmt(end) + ' ';
+    }
+    title.appendChild(hint);
+    document.getElementById('prevWeekBtn').disabled = weekOffset <= -MAX_WEEK_OFFSET;
+    document.getElementById('nextWeekBtn').disabled = weekOffset >= MAX_WEEK_OFFSET;
+  }
+
+  document.getElementById('prevWeekBtn').addEventListener('click', async () => {
+    if (weekOffset <= -MAX_WEEK_OFFSET) return;
+    weekOffset -= 1;
+    updateWeekNav();
+    await loadWeek();
+  });
+
+  document.getElementById('nextWeekBtn').addEventListener('click', async () => {
+    if (weekOffset >= MAX_WEEK_OFFSET) return;
+    weekOffset += 1;
+    updateWeekNav();
+    await loadWeek();
+  });
 
   let entriesByDate = {};
   let suggestionsByDate = {};
@@ -772,7 +843,7 @@
       .in('plan_date', lastWeek);
 
     if (!lastWeekEntries || lastWeekEntries.length === 0) {
-      await CookzerModal.alert('No planned meals found for last week to copy.');
+      await CookzerModal.alert('No planned meals found for the previous week to copy.');
       return;
     }
 
@@ -787,13 +858,13 @@
       }));
 
     if (toInsert.length === 0) {
-      await CookzerModal.alert('This week already has meals planned on every day last week had one.');
+      await CookzerModal.alert('This week already has meals planned on every day the previous week had one.');
       return;
     }
 
     const { error } = await sb.from('meal_plan_entries').insert(toInsert);
     if (error) {
-      await CookzerModal.alert('Could not copy last week: ' + error.message);
+      await CookzerModal.alert('Could not copy the previous week: ' + error.message);
       return;
     }
     await loadWeek();
@@ -1137,6 +1208,7 @@
     currentUser = user;
     await loadMyGroups();
     document.getElementById('shareApplyBtn').hidden = !currentShareGroupId;
+    updateWeekNav();
     await loadWeek();
   })();
 </script>

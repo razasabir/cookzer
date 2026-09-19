@@ -90,3 +90,39 @@ test.describe('Recipe page — comments', () => {
     await expect(box.locator('.comment-row')).toHaveCount(3);
   });
 });
+
+test.describe('Recipe page — add to meal planner', () => {
+  test('clicking the button opens a real day picker, not a numbered-list prompt', async ({ page }) => {
+    await load(page);
+    await page.locator('#addToPlannerBtn').click();
+    await expect(page.locator('.cz-modal-overlay')).toHaveCount(0);
+    await expect(page.locator('#pickerOverlay')).toBeVisible();
+    await expect(page.locator('#pickerModal h3')).toHaveText('Add "Spaghetti Carbonara" to which day?');
+    await expect(page.locator('.cz2-row')).toHaveCount(7);
+  });
+
+  test('the already-planned day shows as disabled with what\'s already there', async ({ page }) => {
+    await load(page);
+    await page.locator('#addToPlannerBtn').click();
+    const takenRow = page.locator('.cz2-row', { hasText: 'already planned: Leftover Pasta' });
+    await expect(takenRow).toHaveCount(1);
+    await expect(takenRow).toHaveCSS('opacity', '0.5');
+  });
+
+  test('clicking a free day inserts the recipe link, confirms, and closes the picker', async ({ page }) => {
+    await load(page);
+    await page.locator('#addToPlannerBtn').click();
+    const freeRow = page.locator('.cz2-row').filter({ hasNotText: 'already planned' }).first();
+    await freeRow.click();
+
+    await expect.poll(() => page.evaluate(() => window.__INSERTED_PLANNER_ENTRIES__.length)).toBe(1);
+    const inserted = await page.evaluate(() => window.__INSERTED_PLANNER_ENTRIES__[0]);
+    expect(inserted.recipe_id).toBe('r1');
+    expect(inserted.user_id).toBe('me-1');
+    expect(typeof inserted.plan_date).toBe('string');
+
+    await expect(page.locator('.cz-modal-message')).toContainText('Added to your Meal Planner for');
+    await page.locator('.cz-modal-btn.cz-primary').click();
+    await expect(page.locator('#pickerOverlay')).toBeHidden();
+  });
+});
