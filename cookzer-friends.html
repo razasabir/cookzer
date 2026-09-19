@@ -17,6 +17,7 @@
   <script src="push-notifications.js"></script>
   <script src="auth-guard.js"></script>
   <script src="friends-widget.js"></script>
+  <script src="people-you-may-know.js"></script>
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -189,6 +190,89 @@
 
   .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 24px; }
 
+  .section-block {
+      width: 100%;
+      margin-bottom: 24px;
+    }
+
+  .section-block-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 10px;
+    }
+
+  .pymk-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+    }
+
+  .pymk-reason {
+      font-size: 11px;
+      color: var(--ink-soft);
+      margin-top: 1px;
+    }
+
+  .pymk-dismiss-btn {
+      background: none;
+      border: none;
+      color: var(--ink-soft);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px 6px;
+      flex-shrink: 0;
+    }
+
+  .invite-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+  .invite-link-row {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+  .invite-link-row input {
+      flex: 1;
+      min-width: 0;
+      padding: 9px 12px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--ink-soft);
+      font-family: inherit;
+    }
+
+  .invite-btn {
+      background: var(--olive);
+      color: #fff;
+      border: none;
+      padding: 9px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+  .invite-btn.secondary {
+      background: var(--cream);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+  .invite-stat {
+      font-size: 12px;
+      color: var(--ink-soft);
+    }
+
   /* Responsive */
     @media (max-width: 900px) {
       .right-sidebar { display: none; }
@@ -275,6 +359,24 @@
     <div class="search-panel">
       <input type="text" id="friendsSearchInput" placeholder="Find a friend by name..." autocomplete="off">
       <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <div class="section-block" id="pymkSection" hidden>
+      <div class="section-block-title">People you may know</div>
+      <div class="friends-list" id="pymkList"></div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-block-title">Invite friends</div>
+      <div class="invite-panel">
+        <div style="font-size:13px; color:var(--ink-soft);">Share your personal link — anyone who joins through it shows up in your Following automatically.</div>
+        <div class="invite-link-row">
+          <input type="text" id="inviteLinkInput" readonly>
+          <button class="invite-btn secondary" id="copyInviteLinkBtn" type="button">Copy</button>
+          <button class="invite-btn" id="shareInviteLinkBtn" type="button">Share</button>
+        </div>
+        <div class="invite-stat" id="inviteStat"></div>
+      </div>
     </div>
 
     <div class="tabs-row">
@@ -372,6 +474,101 @@
     });
     row.appendChild(btn);
     return row;
+  }
+
+  function pymkRow(person) {
+    const row = document.createElement('div');
+    row.className = 'person-row pymk-row';
+
+    const link = document.createElement('a');
+    link.className = 'person-link';
+    link.href = 'cookzer-profile.html?id=' + person.id;
+    const avatar = document.createElement('div');
+    avatar.className = 'person-avatar';
+    avatar.textContent = person.initials || '??';
+    const meta = document.createElement('div');
+    const name = document.createElement('div');
+    name.className = 'person-name';
+    name.textContent = person.display_name || 'Someone';
+    const reason = document.createElement('div');
+    reason.className = 'pymk-reason';
+    reason.textContent = person.score >= 2 ? 'Connected through people/groups you know' : 'Followed by someone you follow';
+    meta.appendChild(name);
+    meta.appendChild(reason);
+    link.appendChild(avatar);
+    link.appendChild(meta);
+    row.appendChild(link);
+
+    const followBtn = document.createElement('button');
+    followBtn.type = 'button';
+    updateToggleBtn(followBtn, false);
+    followBtn.addEventListener('click', async () => {
+      await sb.from('follows').insert({ follower_id: currentUser.id, followee_id: person.id });
+      followingIds.add(person.id);
+      row.remove();
+      if (!document.getElementById('pymkList').children.length) document.getElementById('pymkSection').hidden = true;
+      if (activeTab === 'following') loadList();
+    });
+    row.appendChild(followBtn);
+
+    const dismissBtn = document.createElement('button');
+    dismissBtn.type = 'button';
+    dismissBtn.className = 'pymk-dismiss-btn';
+    dismissBtn.title = 'Not interested';
+    dismissBtn.textContent = '✕';
+    dismissBtn.addEventListener('click', async () => {
+      await CookzerPYMK.dismiss(sb, currentUser.id, person.id);
+      row.remove();
+      if (!document.getElementById('pymkList').children.length) document.getElementById('pymkSection').hidden = true;
+    });
+    row.appendChild(dismissBtn);
+
+    return row;
+  }
+
+  async function loadPYMK() {
+    if (!window.CookzerPYMK) return;
+    const suggestions = await CookzerPYMK.computeSuggestions(sb, currentUser.id, { limit: 8 });
+    const listEl = document.getElementById('pymkList');
+    listEl.innerHTML = '';
+    document.getElementById('pymkSection').hidden = suggestions.length === 0;
+    suggestions.forEach((p) => listEl.appendChild(pymkRow(p)));
+  }
+
+  async function loadInvite() {
+    const link = location.origin + location.pathname.replace('cookzer-friends.html', 'cookzer-auth.html') + '?ref=' + currentUser.id + '&tab=signup';
+    document.getElementById('inviteLinkInput').value = link;
+
+    document.getElementById('copyInviteLinkBtn').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(link);
+        const btn = document.getElementById('copyInviteLinkBtn');
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+      } catch (e) {
+        await CookzerModal.prompt('Copy this invite link:', link);
+      }
+    });
+
+    document.getElementById('shareInviteLinkBtn').addEventListener('click', async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: 'Join me on Cookzer', text: 'Come cook with me on Cookzer 🍳', url: link });
+          return;
+        } catch (e) {
+          if (e.name === 'AbortError') return;
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(link);
+        await CookzerModal.alert('Invite link copied: ' + link);
+      } catch (e) {
+        await CookzerModal.prompt('Copy this invite link:', link);
+      }
+    });
+
+    const { count } = await sb.from('profiles').select('*', { count: 'exact', head: true }).eq('referred_by', currentUser.id);
+    document.getElementById('inviteStat').textContent = count ? count + (count === 1 ? ' person has' : ' people have') + ' joined through your invite so far.' : 'Nobody has joined through your invite yet — be the first to share it.';
   }
 
   async function loadFollowingIds() {
@@ -473,6 +670,8 @@
     currentUser = user;
     await loadFollowingIds();
     await loadList();
+    await loadPYMK();
+    await loadInvite();
   })();
 </script>
 </body>

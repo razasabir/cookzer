@@ -112,7 +112,106 @@
   .profile-location {
       font-size: 14px;
       color: var(--ink-soft);
+      margin-bottom: 6px;
+    }
+
+  .mutual-friends-line {
+      font-size: 13px;
+      color: var(--ink-soft);
       margin-bottom: 20px;
+    }
+
+  .mutual-friends-line b { color: var(--ink); font-weight: 600; }
+
+  .skills-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: 100%;
+    }
+
+  .skill-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--card-bg);
+      font-size: 13px;
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+  .skill-chip .skill-count {
+      font-size: 11px;
+      color: var(--olive-dark);
+      font-weight: 700;
+      background: var(--plus-tint);
+      border-radius: 10px;
+      padding: 1px 7px;
+    }
+
+  .skill-chip.endorsed-by-me { border-color: var(--olive); background: var(--plus-tint); }
+
+  .skill-chip .skill-remove {
+      background: none;
+      border: none;
+      color: var(--ink-soft);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 0;
+    }
+
+  .recommendations-list { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+
+  .recommendation-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+  .recommendation-card.pending { border-style: dashed; }
+
+  .recommendation-author-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+  .recommendation-author {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+  .recommendation-date { font-size: 11px; color: var(--ink-soft); }
+  .recommendation-body { font-size: 14px; color: var(--ink); line-height: 1.5; }
+
+  .recommendation-pending-tag {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+      color: var(--olive-dark);
+      background: var(--plus-tint);
+      border-radius: 8px;
+      padding: 2px 8px;
+    }
+
+  .recommendation-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+  .recommendation-action-btn {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      color: var(--ink);
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
     }
 
   .profile-stats {
@@ -641,6 +740,7 @@
       <h1 class="profile-name" id="profileName">Loading…</h1>
       <p class="profile-bio" id="profileBio"></p>
       <p class="profile-location" id="profileLocation"></p>
+      <div class="mutual-friends-line" id="mutualFriendsLine" hidden></div>
 
       <div class="profile-stats">
         <div class="stat-item">
@@ -693,6 +793,20 @@
       <div class="milestones-list" id="milestonesGrid"></div>
     </div>
 
+    <!-- Kitchen CV: skills + endorsements -->
+    <div class="profile-section" id="skillsSection" hidden>
+      <h2 class="section-title">Skills</h2>
+      <div class="skills-chip-row" id="skillsChipRow"></div>
+      <button class="btn-secondary" id="addSkillBtn" type="button" style="margin-top:10px; padding:7px 14px; font-size:13px;" hidden>+ Add skill</button>
+    </div>
+
+    <!-- Kitchen CV: written recommendations -->
+    <div class="profile-section" id="recommendationsSection" hidden>
+      <h2 class="section-title">Recommendations</h2>
+      <div class="recommendations-list" id="recommendationsList"></div>
+      <button class="btn-secondary" id="writeRecommendationBtn" type="button" style="margin-top:10px; padding:7px 14px; font-size:13px;" hidden>Write a recommendation</button>
+    </div>
+
     <!-- Posts Section -->
     <div class="profile-section">
       <h2 class="section-title" id="recipesSectionTitle">Recipes</h2>
@@ -729,6 +843,17 @@
     <div class="field"><label>Display name</label><input type="text" id="editName"></div>
     <div class="field"><label>Bio</label><textarea id="editBio"></textarea></div>
     <div class="field"><label>Location</label><input type="text" id="editLocation"></div>
+    <div class="field">
+      <label>Birthday (month &amp; day only — no year shown)</label>
+      <div style="display:flex; gap:8px;">
+        <select id="editBirthdayMonth" style="flex:1;">
+          <option value="">Month</option>
+        </select>
+        <select id="editBirthdayDay" style="flex:1;">
+          <option value="">Day</option>
+        </select>
+      </div>
+    </div>
     <div class="field checkbox-row"><input type="checkbox" id="editKitchenCv"><label style="margin:0;">Enable Kitchen CV mode</label></div>
     <div class="field"><label>Kitchen CV title</label><input type="text" id="editCvTitle" placeholder="e.g. Line cook, 4 years"></div>
     <div class="field"><label>Kitchen CV bio</label><textarea id="editCvBio" placeholder="Signature dishes, background..."></textarea></div>
@@ -738,6 +863,10 @@
       <button class="btn-primary" id="editSaveBtn">Save changes</button>
     </div>
   </div>
+</div>
+
+<div class="cz2-overlay" id="pickerOverlay" hidden>
+  <div class="cz2-modal" id="pickerModal"></div>
 </div>
 
 <script>
@@ -753,6 +882,43 @@
   let currentView = 'activity';
   let profileBlockedByMe = false;
   const MOOD_EMOJI = { 'Comfort food': '🍲', 'Quick and easy': '⚡', 'Fancy tonight': '✨' };
+  const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const SKILL_PRESETS = ['Knife Skills', 'Baking', 'Grilling', 'Sauces', 'Plating', 'Meal Prep', 'Fermentation', 'Butchery', 'Wine Pairing', 'Pastry', 'Vegan Cooking', 'Food Styling', 'Sous Vide', 'BBQ'];
+
+  function closePicker() {
+    document.getElementById('pickerOverlay').hidden = true;
+    document.getElementById('pickerModal').innerHTML = '';
+  }
+  document.getElementById('pickerOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'pickerOverlay') closePicker();
+  });
+
+  function cz2Button(label, primary) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = label;
+    btn.style.cssText = primary
+      ? 'padding:10px 20px; border-radius:12px; border:none; background:var(--olive); color:#fff; font-weight:600; font-size:14px; cursor:pointer;'
+      : 'padding:10px 20px; border-radius:12px; border:1px solid var(--line); background:var(--cream); color:var(--ink); font-weight:600; font-size:14px; cursor:pointer;';
+    return btn;
+  }
+
+  (function populateBirthdaySelects() {
+    const monthEl = document.getElementById('editBirthdayMonth');
+    MONTH_NAMES.forEach((name, i) => {
+      const opt = document.createElement('option');
+      opt.value = i + 1;
+      opt.textContent = name;
+      monthEl.appendChild(opt);
+    });
+    const dayEl = document.getElementById('editBirthdayDay');
+    for (let d = 1; d <= 31; d++) {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d;
+      dayEl.appendChild(opt);
+    }
+  })();
 
   function publicUrl(bucket, path) {
     if (!path) return null;
@@ -810,7 +976,7 @@
 
     const { data: profile } = await sb
       .from('profiles')
-      .select('id, display_name, initials, bio, location, avatar_url, is_kitchen_cv, cv_title, cv_bio, open_to_work, cover_gradient, created_at')
+      .select('id, display_name, initials, bio, location, avatar_url, is_kitchen_cv, cv_title, cv_bio, open_to_work, cover_gradient, created_at, birthday_month, birthday_day')
       .eq('id', viewedId)
       .single();
 
@@ -829,7 +995,8 @@
     document.getElementById('profileName').textContent = profile.display_name;
     document.getElementById('profileBio').textContent = profile.bio || '';
     const joined = new Date(profile.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' });
-    document.getElementById('profileLocation').textContent = (profile.location ? profile.location + ' • ' : '') + 'Joined ' + joined;
+    const birthdayText = (profile.birthday_month && profile.birthday_day) ? ('🎂 ' + MONTH_NAMES[profile.birthday_month - 1] + ' ' + profile.birthday_day) : '';
+    document.getElementById('profileLocation').textContent = [profile.location, 'Joined ' + joined, birthdayText].filter(Boolean).join(' • ');
 
     if (profile.is_kitchen_cv) {
       document.getElementById('kitchenCvPanel').hidden = false;
@@ -843,6 +1010,16 @@
     document.getElementById('savedTab').hidden = !isOwn;
     document.getElementById('bookmarksTab').hidden = !isOwn;
     document.getElementById('recipesSectionTitle').textContent = isOwn ? 'Your recipes' : profile.display_name.split(' ')[0] + "'s recipes";
+
+    document.getElementById('mutualFriendsLine').hidden = isOwn;
+    if (!isOwn) await loadMutualFriends();
+
+    document.getElementById('skillsSection').hidden = !profile.is_kitchen_cv;
+    document.getElementById('recommendationsSection').hidden = !profile.is_kitchen_cv;
+    if (profile.is_kitchen_cv) {
+      await loadSkills(isOwn);
+      await loadRecommendations(isOwn);
+    }
 
     const actions = document.getElementById('profileActions');
     actions.innerHTML = '';
@@ -964,6 +1141,281 @@
       await refreshFollowButton();
       await loadStats();
     };
+  }
+
+  // Mutual friends: people you both follow — cheap client-side
+  // intersection of two small id sets, no new schema needed.
+  async function loadMutualFriends() {
+    const el = document.getElementById('mutualFriendsLine');
+    const [{ data: mine }, { data: theirs }] = await Promise.all([
+      sb.from('follows').select('followee_id').eq('follower_id', currentUser.id),
+      sb.from('follows').select('followee_id').eq('follower_id', viewedId),
+    ]);
+    const theirSet = new Set((theirs || []).map((f) => f.followee_id));
+    const mutualIds = (mine || []).map((f) => f.followee_id).filter((id) => theirSet.has(id) && id !== currentUser.id && id !== viewedId);
+
+    if (mutualIds.length === 0) {
+      el.hidden = true;
+      return;
+    }
+
+    const { data: people } = await sb.from('profiles').select('id, display_name').in('id', mutualIds.slice(0, 3));
+    const names = (people || []).map((p) => p.display_name).filter(Boolean);
+    const extra = mutualIds.length - names.length;
+    el.innerHTML = '🤝 <b>' + mutualIds.length + '</b> mutual ' + (mutualIds.length === 1 ? 'friend' : 'friends') + (names.length ? ': ' + names.join(', ') + (extra > 0 ? ' +' + extra + ' more' : '') : '');
+    el.hidden = false;
+  }
+
+  // ----- Kitchen CV: skills + endorsements -----
+  async function loadSkills(isOwn) {
+    const { data: skills } = await sb
+      .from('kitchen_cv_skills')
+      .select('id, skill')
+      .eq('profile_id', viewedId)
+      .order('created_at', { ascending: true });
+
+    const skillIds = (skills || []).map((s) => s.id);
+    let endorsements = [];
+    if (skillIds.length) {
+      const { data } = await sb.from('kitchen_cv_endorsements').select('skill_id, endorser_id').in('skill_id', skillIds);
+      endorsements = data || [];
+    }
+
+    const row = document.getElementById('skillsChipRow');
+    row.innerHTML = '';
+    (skills || []).forEach((s) => {
+      const skillEndorsements = endorsements.filter((e) => e.skill_id === s.id);
+      const endorsedByMe = skillEndorsements.some((e) => e.endorser_id === currentUser.id);
+
+      const chip = document.createElement('div');
+      chip.className = 'skill-chip' + (endorsedByMe ? ' endorsed-by-me' : '');
+
+      const label = document.createElement('span');
+      label.textContent = s.skill;
+      chip.appendChild(label);
+
+      const count = document.createElement('span');
+      count.className = 'skill-count';
+      count.textContent = skillEndorsements.length;
+      chip.appendChild(count);
+
+      if (!isOwn) {
+        chip.title = endorsedByMe ? 'Click to remove your endorsement' : 'Click to endorse';
+        chip.addEventListener('click', () => toggleEndorse(s.id, endorsedByMe, isOwn));
+      } else {
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'skill-remove';
+        removeBtn.textContent = '✕';
+        removeBtn.title = 'Remove this skill';
+        removeBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          await sb.from('kitchen_cv_skills').delete().eq('id', s.id);
+          await loadSkills(isOwn);
+        });
+        chip.appendChild(removeBtn);
+      }
+
+      row.appendChild(chip);
+    });
+
+    const addBtn = document.getElementById('addSkillBtn');
+    addBtn.hidden = !isOwn;
+    addBtn.onclick = () => openAddSkillModal((skills || []).map((s) => s.skill), isOwn);
+  }
+
+  async function toggleEndorse(skillId, endorsedByMe, isOwn) {
+    if (endorsedByMe) {
+      await sb.from('kitchen_cv_endorsements').delete().eq('skill_id', skillId).eq('endorser_id', currentUser.id);
+    } else {
+      await sb.from('kitchen_cv_endorsements').insert({ skill_id: skillId, endorser_id: currentUser.id });
+    }
+    await loadSkills(isOwn);
+  }
+
+  function openAddSkillModal(existingSkills, isOwn) {
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+
+    const title = document.createElement('h3');
+    title.textContent = 'Add a skill';
+    modal.appendChild(title);
+
+    const label = document.createElement('div');
+    label.className = 'cz2-label';
+    label.textContent = 'Pick one, or type your own below';
+    modal.appendChild(label);
+
+    const chipRow = document.createElement('div');
+    chipRow.className = 'cz2-chip-row';
+    SKILL_PRESETS.filter((s) => !existingSkills.includes(s)).forEach((s) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'cz2-chip';
+      chip.textContent = s;
+      chip.addEventListener('click', async () => {
+        await sb.from('kitchen_cv_skills').insert({ profile_id: currentUser.id, skill: s });
+        closePicker();
+        await loadSkills(isOwn);
+      });
+      chipRow.appendChild(chip);
+    });
+    modal.appendChild(chipRow);
+
+    const freeRow = document.createElement('div');
+    freeRow.className = 'cz2-free-row';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Your own skill...';
+    const addBtn = cz2Button('Add', true);
+    addBtn.addEventListener('click', async () => {
+      const skill = input.value.trim();
+      if (!skill || existingSkills.includes(skill)) return;
+      await sb.from('kitchen_cv_skills').insert({ profile_id: currentUser.id, skill });
+      closePicker();
+      await loadSkills(isOwn);
+    });
+    freeRow.appendChild(input);
+    freeRow.appendChild(addBtn);
+    modal.appendChild(freeRow);
+
+    const actions = document.createElement('div');
+    actions.className = 'cz2-actions';
+    const cancelBtn = cz2Button('Cancel', false);
+    cancelBtn.addEventListener('click', closePicker);
+    actions.appendChild(cancelBtn);
+    modal.appendChild(actions);
+
+    document.getElementById('pickerOverlay').hidden = false;
+  }
+
+  // ----- Kitchen CV: written recommendations -----
+  async function loadRecommendations(isOwn) {
+    const { data: recs } = await sb
+      .from('kitchen_cv_recommendations')
+      .select('id, body, status, created_at, author_id, profiles!kitchen_cv_recommendations_author_id_fkey(display_name, initials)')
+      .eq('profile_id', viewedId)
+      .order('created_at', { ascending: false });
+
+    const listEl = document.getElementById('recommendationsList');
+    listEl.innerHTML = '';
+    (recs || []).forEach((r) => {
+      const card = document.createElement('div');
+      card.className = 'recommendation-card' + (r.status === 'pending' ? ' pending' : '');
+
+      const authorRow = document.createElement('div');
+      authorRow.className = 'recommendation-author-row';
+      const author = document.createElement('div');
+      author.className = 'recommendation-author';
+      author.textContent = r.profiles ? r.profiles.display_name : 'Someone';
+      authorRow.appendChild(author);
+
+      if (r.status === 'pending' && isOwn) {
+        const tag = document.createElement('span');
+        tag.className = 'recommendation-pending-tag';
+        tag.textContent = 'Pending your approval';
+        authorRow.appendChild(tag);
+      } else {
+        const date = document.createElement('div');
+        date.className = 'recommendation-date';
+        date.textContent = new Date(r.created_at).toLocaleDateString([], { month: 'short', year: 'numeric' });
+        authorRow.appendChild(date);
+      }
+      card.appendChild(authorRow);
+
+      const body = document.createElement('div');
+      body.className = 'recommendation-body';
+      body.textContent = r.body;
+      card.appendChild(body);
+
+      if (isOwn && r.status !== 'visible') {
+        const actions = document.createElement('div');
+        actions.className = 'recommendation-actions';
+        const approveBtn = document.createElement('button');
+        approveBtn.type = 'button';
+        approveBtn.className = 'recommendation-action-btn';
+        approveBtn.textContent = 'Show on profile';
+        approveBtn.addEventListener('click', async () => {
+          await sb.from('kitchen_cv_recommendations').update({ status: 'visible' }).eq('id', r.id);
+          await loadRecommendations(isOwn);
+        });
+        actions.appendChild(approveBtn);
+        card.appendChild(actions);
+      } else if (isOwn && r.status === 'visible') {
+        const actions = document.createElement('div');
+        actions.className = 'recommendation-actions';
+        const hideBtn = document.createElement('button');
+        hideBtn.type = 'button';
+        hideBtn.className = 'recommendation-action-btn';
+        hideBtn.textContent = 'Hide';
+        hideBtn.addEventListener('click', async () => {
+          await sb.from('kitchen_cv_recommendations').update({ status: 'hidden' }).eq('id', r.id);
+          await loadRecommendations(isOwn);
+        });
+        actions.appendChild(hideBtn);
+        card.appendChild(actions);
+      }
+
+      listEl.appendChild(card);
+    });
+
+    if ((recs || []).length === 0) {
+      listEl.innerHTML = '<div class="empty-note">' + (isOwn ? 'No recommendations yet.' : 'No recommendations yet — be the first to write one.') + '</div>';
+    }
+
+    const writeBtn = document.getElementById('writeRecommendationBtn');
+    const alreadyWrote = (recs || []).some((r) => r.author_id === currentUser.id);
+    writeBtn.hidden = isOwn || alreadyWrote;
+    writeBtn.onclick = openWriteRecommendationModal;
+  }
+
+  function openWriteRecommendationModal() {
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+
+    const title = document.createElement('h3');
+    title.textContent = 'Write a recommendation';
+    modal.appendChild(title);
+
+    const label = document.createElement('div');
+    label.className = 'cz2-label';
+    label.textContent = 'For ' + (viewedProfile ? viewedProfile.display_name : 'this cook') + ' — they\'ll need to approve it before it shows on their profile.';
+    modal.appendChild(label);
+
+    const field = document.createElement('div');
+    field.className = 'cz2-field';
+    const textarea = document.createElement('textarea');
+    textarea.rows = 4;
+    textarea.placeholder = 'What are they like in the kitchen?';
+    field.appendChild(textarea);
+    modal.appendChild(field);
+
+    const actions = document.createElement('div');
+    actions.className = 'cz2-actions';
+    const cancelBtn = cz2Button('Cancel', false);
+    cancelBtn.addEventListener('click', closePicker);
+    const submitBtn = cz2Button('Submit', true);
+    submitBtn.addEventListener('click', async () => {
+      const body = textarea.value.trim();
+      if (!body) return;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting…';
+      const { error } = await sb.from('kitchen_cv_recommendations').insert({ profile_id: viewedId, author_id: currentUser.id, body });
+      if (error) {
+        await CookzerModal.alert('Could not submit: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit';
+        return;
+      }
+      closePicker();
+      await loadRecommendations(false);
+    });
+    actions.appendChild(cancelBtn);
+    actions.appendChild(submitBtn);
+    modal.appendChild(actions);
+
+    document.getElementById('pickerOverlay').hidden = false;
+    textarea.focus();
   }
 
   async function shareProfile() {
@@ -1300,6 +1752,8 @@
     document.getElementById('editName').value = viewedProfile.display_name || '';
     document.getElementById('editBio').value = viewedProfile.bio || '';
     document.getElementById('editLocation').value = viewedProfile.location || '';
+    document.getElementById('editBirthdayMonth').value = viewedProfile.birthday_month || '';
+    document.getElementById('editBirthdayDay').value = viewedProfile.birthday_day || '';
     document.getElementById('editKitchenCv').checked = !!viewedProfile.is_kitchen_cv;
     document.getElementById('editCvTitle').value = viewedProfile.cv_title || '';
     document.getElementById('editCvBio').value = viewedProfile.cv_bio || '';
@@ -1355,6 +1809,8 @@
       initials: name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(),
       bio: document.getElementById('editBio').value.trim() || null,
       location: document.getElementById('editLocation').value.trim() || null,
+      birthday_month: document.getElementById('editBirthdayMonth').value ? Number(document.getElementById('editBirthdayMonth').value) : null,
+      birthday_day: document.getElementById('editBirthdayDay').value ? Number(document.getElementById('editBirthdayDay').value) : null,
       avatar_url: avatarUrl,
       is_kitchen_cv: document.getElementById('editKitchenCv').checked,
       cv_title: document.getElementById('editCvTitle').value.trim() || null,

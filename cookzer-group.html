@@ -99,6 +99,17 @@
       line-height: 1.5;
     }
 
+  .group-rules {
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-top: 8px;
+      line-height: 1.5;
+      background: var(--plus-tint);
+      border-radius: 10px;
+      padding: 10px 14px;
+      white-space: pre-wrap;
+    }
+
   .join-btn {
       padding: 10px 20px;
       border-radius: 12px;
@@ -305,6 +316,15 @@
       border-bottom: 1px solid var(--line);
     }
 
+  .pinned-badge {
+      background: var(--plus-tint);
+      color: var(--olive-dark);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-bottom: 1px solid var(--plus-border);
+    }
+
   .card-avatar {
       width: 40px;
       height: 40px;
@@ -470,11 +490,16 @@
           </div>
           <div class="header-actions">
             <button class="join-btn" id="joinGroupBtn" type="button">Join</button>
+            <button class="admin-btn" id="muteGroupBtn" type="button" hidden>🔔</button>
+            <a href="cookzer-group-events.html" id="groupEventsLink" style="text-decoration:none;"><button class="admin-btn" type="button" hidden id="groupEventsBtn">📅 Events</button></a>
+            <a href="cookzer-group-polls.html" id="groupPollsLink" style="text-decoration:none;"><button class="admin-btn" type="button" hidden id="groupPollsBtn">🗳️ Polls</button></a>
+            <button class="admin-btn" id="transferGroupBtn" type="button" hidden>Transfer</button>
             <button class="admin-btn" id="editGroupBtn" type="button" hidden>Edit</button>
             <button class="admin-btn danger" id="deleteGroupBtn" type="button" hidden>Delete</button>
           </div>
         </div>
         <div class="group-desc" id="groupDesc"></div>
+        <div class="group-rules" id="groupRules" hidden></div>
         <div id="inviteCodeRow" hidden style="margin-top:10px; display:flex; align-items:center; gap:8px; font-size:13px; color:var(--olive-dark);">
           🔒 Invite code: <code id="inviteCodeText" style="font-weight:700; letter-spacing:1px;"></code>
           <button type="button" id="copyInviteCodeBtn" style="background:var(--cream); border:1px solid var(--line); border-radius:8px; padding:4px 10px; font-size:12px; cursor:pointer; color:var(--ink);">Copy</button>
@@ -528,6 +553,7 @@
   let isMember = false;
   let pendingPhotoFilter = 'original';
   let pendingPhotoFile = null;
+  let canManageGroup = false;
 
   function publicUrl(bucket, path) {
     if (!path) return null;
@@ -654,6 +680,19 @@
     descField.appendChild(descInput);
     modal.appendChild(descField);
 
+    const rulesLabel = document.createElement('div');
+    rulesLabel.className = 'cz2-label';
+    rulesLabel.textContent = 'Group rules (optional)';
+    modal.appendChild(rulesLabel);
+    const rulesField = document.createElement('div');
+    rulesField.className = 'cz2-field';
+    const rulesInput = document.createElement('textarea');
+    rulesInput.rows = 3;
+    rulesInput.placeholder = 'e.g. Be kind, no spam, keep it food-related...';
+    rulesInput.value = group.rules || '';
+    rulesField.appendChild(rulesInput);
+    modal.appendChild(rulesField);
+
     const actions = document.createElement('div');
     actions.className = 'cz2-actions';
     const cancelBtn = cz2Button('Cancel', false);
@@ -665,7 +704,7 @@
       saveBtn.disabled = true;
       saveBtn.textContent = 'Saving…';
 
-      const updates = { name, description: descInput.value.trim() || null };
+      const updates = { name, description: descInput.value.trim() || null, rules: rulesInput.value.trim() || null };
       if (pendingCoverFile) {
         const ext = (pendingCoverFile.name.split('.').pop() || 'jpg').toLowerCase();
         const path = 'group-covers/' + groupId + '-' + Date.now() + '.' + ext;
@@ -701,10 +740,71 @@
     nameInput.focus();
   }
 
+  function openTransferOwnershipModal(group, members) {
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+
+    const title = document.createElement('h3');
+    title.textContent = 'Transfer ownership';
+    modal.appendChild(title);
+
+    const label = document.createElement('div');
+    label.className = 'cz2-label';
+    label.textContent = 'Pick a member to hand this group over to. You\'ll keep your membership as a regular member.';
+    modal.appendChild(label);
+
+    const others = members.filter((m) => m.user_id !== group.created_by && m.profiles);
+
+    const list = document.createElement('div');
+    list.className = 'cz2-list';
+
+    if (others.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'cz2-empty';
+      empty.textContent = 'No other members to transfer to yet.';
+      list.appendChild(empty);
+    }
+
+    others.forEach((m) => {
+      const row = document.createElement('div');
+      row.className = 'cz2-row';
+      const av = document.createElement('div');
+      av.className = 'cz2-row-avatar';
+      av.textContent = m.profiles.initials || '??';
+      const nm = document.createElement('span');
+      nm.textContent = m.profiles.display_name || 'Someone';
+      const chooseBtn = document.createElement('button');
+      chooseBtn.type = 'button';
+      chooseBtn.className = 'cz2-row-action';
+      chooseBtn.textContent = 'Make owner';
+      chooseBtn.addEventListener('click', async () => {
+        if (!(await CookzerModal.confirm('Make ' + (m.profiles.display_name || 'this member') + ' the new owner of "' + group.name + '"? You\'ll become a regular member.', { confirmLabel: 'Transfer', danger: true }))) return;
+        const { error } = await sb.from('groups').update({ created_by: m.user_id }).eq('id', groupId);
+        if (error) { await CookzerModal.alert('Could not transfer: ' + error.message); return; }
+        closePicker();
+        await loadGroup();
+      });
+      row.appendChild(av);
+      row.appendChild(nm);
+      row.appendChild(chooseBtn);
+      list.appendChild(row);
+    });
+    modal.appendChild(list);
+
+    const actions = document.createElement('div');
+    actions.className = 'cz2-actions';
+    const cancelBtn = cz2Button('Cancel', false);
+    cancelBtn.addEventListener('click', closePicker);
+    actions.appendChild(cancelBtn);
+    modal.appendChild(actions);
+
+    document.getElementById('pickerOverlay').hidden = false;
+  }
+
   async function loadGroup() {
     const { data: group } = await sb
       .from('groups')
-      .select('id, name, description, cover_gradient, cover_photo_path, created_by, is_private, invite_code')
+      .select('id, name, description, cover_gradient, cover_photo_path, created_by, is_private, invite_code, rules')
       .eq('id', groupId)
       .single();
 
@@ -718,9 +818,10 @@
     document.getElementById('groupName').textContent = group.name;
     document.getElementById('groupDesc').textContent = group.description || '';
     document.getElementById('groupDesc').hidden = !group.description;
+    document.getElementById('groupRules').textContent = group.rules ? 'Group rules: ' + group.rules : '';
+    document.getElementById('groupRules').hidden = !group.rules;
 
     isCreator = group.created_by === currentUser.id;
-    document.getElementById('editGroupBtn').hidden = !isCreator;
     document.getElementById('deleteGroupBtn').hidden = !isCreator;
 
     document.getElementById('editGroupBtn').onclick = () => openEditGroupModal(group);
@@ -734,7 +835,7 @@
 
     const { data: members } = await sb
       .from('group_members')
-      .select('user_id, role, profiles(display_name, initials)')
+      .select('user_id, role, muted, profiles(display_name, initials)')
       .eq('group_id', groupId)
       .order('joined_at', { ascending: true });
 
@@ -743,7 +844,33 @@
     const myRow = (members || []).find((m) => m.user_id === currentUser.id);
     isMember = !!myRow;
     const canManageMembers = isCreator || (myRow && myRow.role === 'admin');
+    canManageGroup = canManageMembers;
     const existingMemberIds = new Set((members || []).map((m) => m.user_id));
+
+    document.getElementById('editGroupBtn').hidden = !canManageMembers;
+
+    document.getElementById('groupEventsBtn').hidden = !isMember;
+    document.getElementById('groupPollsBtn').hidden = !isMember;
+    document.getElementById('groupEventsLink').href = 'cookzer-group-events.html?id=' + groupId;
+    document.getElementById('groupPollsLink').href = 'cookzer-group-polls.html?id=' + groupId;
+
+    const muteBtn = document.getElementById('muteGroupBtn');
+    muteBtn.hidden = !isMember;
+    if (isMember) {
+      muteBtn.textContent = myRow.muted ? '🔕 Muted' : '🔔';
+      muteBtn.title = myRow.muted ? 'Unmute this group' : 'Mute this group';
+      muteBtn.onclick = async () => {
+        const { error } = await sb.from('group_members').update({ muted: !myRow.muted }).eq('group_id', groupId).eq('user_id', currentUser.id);
+        if (error) { await CookzerModal.alert('Could not update: ' + error.message); return; }
+        await loadGroup();
+      };
+    }
+
+    const transferBtn = document.getElementById('transferGroupBtn');
+    transferBtn.hidden = !isCreator;
+    if (isCreator) {
+      transferBtn.onclick = () => openTransferOwnershipModal(group, members || []);
+    }
 
     const membersListEl = document.getElementById('membersList');
     membersListEl.innerHTML = '';
@@ -981,6 +1108,16 @@
     authorLink.appendChild(meta);
     header.appendChild(authorLink);
 
+    if (canManageGroup) {
+      const pinBtn = document.createElement('button');
+      pinBtn.className = 'card-delete-btn';
+      pinBtn.title = post.pinned_at ? 'Unpin' : 'Pin to top';
+      pinBtn.type = 'button';
+      pinBtn.textContent = post.pinned_at ? '📌' : '📍';
+      pinBtn.addEventListener('click', () => togglePin(post));
+      header.appendChild(pinBtn);
+    }
+
     if (currentUser && post.author_id === currentUser.id) {
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'card-delete-btn';
@@ -1000,6 +1137,13 @@
     }
 
     card.appendChild(header);
+
+    if (post.pinned_at) {
+      const pinnedBadge = document.createElement('div');
+      pinnedBadge.className = 'pinned-badge';
+      pinnedBadge.textContent = '📌 Pinned';
+      card.insertBefore(pinnedBadge, header);
+    }
 
     if (post.photo_path) {
       const imageUrl = publicUrl('post-photos', post.photo_path);
@@ -1084,6 +1228,12 @@
 
     cardEl.remove();
     document.getElementById('groupFeedEmpty').hidden = !!document.getElementById('groupFeed').children.length;
+  }
+
+  async function togglePin(post) {
+    const { error } = await sb.from('posts').update({ pinned_at: post.pinned_at ? null : new Date().toISOString() }).eq('id', post.id);
+    if (error) { await CookzerModal.alert('Could not update pin: ' + error.message); return; }
+    await loadGroupFeed();
   }
 
   async function refreshPostStats(postId) {
@@ -1176,19 +1326,24 @@
     const [{ data: rawPosts }, blockedIds] = await Promise.all([
       sb
         .from('posts')
-        .select('id, author_id, caption, photo_path, created_at, profiles!posts_author_id_fkey(display_name, initials)')
+        .select('id, author_id, caption, photo_path, created_at, pinned_at, profiles!posts_author_id_fkey(display_name, initials)')
         .eq('group_id', groupId)
         .order('created_at', { ascending: false })
         .limit(50),
       window.blockedIdsReady || Promise.resolve(new Set()),
     ]);
     const posts = (rawPosts || []).filter((p) => !blockedIds.has(p.author_id));
+    // Pinned posts float to the top (newest-pinned first), everything
+    // else stays in the created_at order the query already fetched.
+    const pinned = posts.filter((p) => p.pinned_at).sort((a, b) => new Date(b.pinned_at) - new Date(a.pinned_at));
+    const unpinned = posts.filter((p) => !p.pinned_at);
+    const ordered = pinned.concat(unpinned);
 
     const listEl = document.getElementById('groupFeed');
     listEl.innerHTML = '';
     document.getElementById('groupFeedEmpty').hidden = !!(posts && posts.length);
 
-    (posts || []).forEach((post) => {
+    ordered.forEach((post) => {
       listEl.appendChild(cardShell(post));
     });
     await refreshAllPostStats(posts.map((p) => p.id));

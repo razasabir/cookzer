@@ -279,6 +279,16 @@
       document.querySelector('[data-tab="signup"]').click();
     }
 
+    // An invite link (cookzer-auth.html?ref=<uid>&tab=signup) stashes the
+    // referrer's id for auth-guard.js to attribute once a real session
+    // exists — see captureReferral() there for why this happens
+    // post-login instead of at signup time.
+    const refId = new URLSearchParams(location.search).get('ref');
+    if (refId) {
+      localStorage.setItem('cz_ref', refId);
+      if (requestedTab !== 'signin') document.querySelector('[data-tab="signup"]').click();
+    }
+
     // If already signed in, skip straight to the app.
     (async () => {
       const { data: { session } } = await sb.auth.getSession();

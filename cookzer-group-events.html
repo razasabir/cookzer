@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#2E8F5C">
+  <title>Group Events — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="notifications-shared.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="push-notifications.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="friends-widget.js"></script>
+  <script src="cookzer-modal.js"></script>
+  <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .brand-header {
+      font-size: 20px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+    }
+
+  .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
+  .main {
+      flex: 1;
+      margin-top: 60px;
+      overflow-y: auto;
+    }
+
+  .events-content {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+  .events-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+  .events-back-link {
+      font-size: 13px;
+      color: var(--ink-soft);
+      text-decoration: none;
+    }
+
+  .events-title {
+      font-family: 'Fraunces', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--olive-dark);
+      margin-top: 4px;
+    }
+
+  .new-event-btn {
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: none;
+      background: var(--olive);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+  .event-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 16px;
+    }
+
+  .event-date-badge {
+      flex-shrink: 0;
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      background: var(--plus-tint);
+      color: var(--olive-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Fraunces', serif;
+    }
+
+  .event-date-badge .month { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .event-date-badge .day { font-size: 20px; font-weight: 700; line-height: 1; }
+
+  .event-body { flex: 1; min-width: 0; }
+
+  .event-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+  .event-title { font-size: 16px; font-weight: 700; color: var(--ink); }
+
+  .event-when {
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-top: 2px;
+    }
+
+  .event-location { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+  .event-desc { font-size: 14px; color: var(--ink); margin-top: 8px; line-height: 1.5; }
+
+  .event-delete-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      color: var(--ink-soft);
+      flex-shrink: 0;
+    }
+
+  .rsvp-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+  .rsvp-btn {
+      padding: 6px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--cream);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+  .rsvp-btn.selected.going { background: var(--olive); color: #fff; border-color: var(--olive); }
+  .rsvp-btn.selected.maybe { background: #E8B33D; color: #fff; border-color: #E8B33D; }
+  .rsvp-btn.selected.no { background: var(--brick); color: #fff; border-color: var(--brick); }
+
+  .empty-note {
+      text-align: center;
+      color: var(--ink-soft);
+      font-size: 14px;
+      padding: 40px 20px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
+
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-groups.html" style="text-decoration: none;"><div class="sidebar-item icon groups active">Groups</div></a>
+  <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants">Restaurants</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+  <a href="cookzer-convert.html" style="text-decoration: none;"><div class="sidebar-item icon convert">Convert</div></a>
+  <a href="cookzer-feed.html?filter=tips" style="text-decoration: none;"><div class="sidebar-item icon tips">Tips &amp; Tricks</div></a>
+
+<div class="sidebar-plus">
+  <div class="sidebar-plus-label">Cookzer+</div>
+  <a href="cookzer-pantry.html" class="sidebar-plus-item pantry">Cooking Ideas</a>
+  <a href="cookzer-pantry.html?tab=leftovers" class="sidebar-plus-item leftovers">Leftover Help</a>
+  <a href="cookzer-health.html" class="sidebar-plus-item health">Health & Nutritions</a>
+</div>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Header -->
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn" id="notifBellBtn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
+    <a href="cookzer-settings.html" style="text-decoration:none;"><button class="icon-btn" title="Settings" type="button">⚙️</button></a>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+  <div class="events-content">
+    <div class="events-top-row">
+      <div>
+        <a class="events-back-link" id="backToGroupLink" href="cookzer-groups.html">&larr; Back to group</a>
+        <div class="events-title" id="pageTitle">Events</div>
+      </div>
+      <button class="new-event-btn" id="newEventBtn" type="button" hidden>+ New event</button>
+    </div>
+
+    <div id="eventsList"></div>
+    <div class="empty-note" id="eventsEmpty" hidden>No events yet. Plan a Sunday roast, a grocery run, a birthday dinner — whatever gets this group together.</div>
+  </div>
+</div>
+
+<div class="cz2-overlay" id="pickerOverlay" hidden>
+  <div class="cz2-modal" id="pickerModal"></div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  const params = new URLSearchParams(location.search);
+  const groupId = params.get('id');
+  let currentUser = null;
+  let isMember = false;
+  let canManageGroup = false;
+
+  document.getElementById('backToGroupLink').href = 'cookzer-group.html?id=' + groupId;
+
+  function closePicker() {
+    document.getElementById('pickerOverlay').hidden = true;
+    document.getElementById('pickerModal').innerHTML = '';
+  }
+  document.getElementById('pickerOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'pickerOverlay') closePicker();
+  });
+
+  function cz2Button(label, primary) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = label;
+    btn.style.cssText = primary
+      ? 'padding:10px 20px; border-radius:12px; border:none; background:var(--olive); color:#fff; font-weight:600; font-size:14px; cursor:pointer;'
+      : 'padding:10px 20px; border-radius:12px; border:1px solid var(--line); background:var(--cream); color:var(--ink); font-weight:600; font-size:14px; cursor:pointer;';
+    return btn;
+  }
+
+  function formatEventWhen(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function openNewEventModal() {
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+
+    const title = document.createElement('h3');
+    title.textContent = 'New event';
+    modal.appendChild(title);
+
+    const titleLabel = document.createElement('div');
+    titleLabel.className = 'cz2-label';
+    titleLabel.textContent = 'Title';
+    modal.appendChild(titleLabel);
+    const titleInput = document.createElement('input');
+    titleInput.type = 'text';
+    titleInput.placeholder = 'Sunday roast at Mum\'s';
+    modal.appendChild(titleInput);
+
+    const whenLabel = document.createElement('div');
+    whenLabel.className = 'cz2-label';
+    whenLabel.textContent = 'When';
+    modal.appendChild(whenLabel);
+    const whenInput = document.createElement('input');
+    whenInput.type = 'datetime-local';
+    whenInput.style.cssText = 'width:100%; padding:10px 14px; background:var(--cream); border:1px solid var(--line); border-radius:12px; font-family:inherit; font-size:14px; color:var(--ink); margin-bottom:10px;';
+    modal.appendChild(whenInput);
+
+    const locLabel = document.createElement('div');
+    locLabel.className = 'cz2-label';
+    locLabel.textContent = 'Location (optional)';
+    modal.appendChild(locLabel);
+    const locInput = document.createElement('input');
+    locInput.type = 'text';
+    locInput.placeholder = 'Where is it happening?';
+    modal.appendChild(locInput);
+
+    const descLabel = document.createElement('div');
+    descLabel.className = 'cz2-label';
+    descLabel.textContent = 'Description (optional)';
+    modal.appendChild(descLabel);
+    const descField = document.createElement('div');
+    descField.className = 'cz2-field';
+    const descInput = document.createElement('textarea');
+    descInput.rows = 3;
+    descField.appendChild(descInput);
+    modal.appendChild(descField);
+
+    const actions = document.createElement('div');
+    actions.className = 'cz2-actions';
+    const cancelBtn = cz2Button('Cancel', false);
+    cancelBtn.addEventListener('click', closePicker);
+    const saveBtn = cz2Button('Create', true);
+    saveBtn.addEventListener('click', async () => {
+      const eventTitle = titleInput.value.trim();
+      if (!eventTitle || !whenInput.value) {
+        await CookzerModal.alert('Please give the event a title and a date/time.');
+        return;
+      }
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Creating…';
+      const { error } = await sb.from('group_events').insert({
+        group_id: groupId,
+        title: eventTitle,
+        event_at: new Date(whenInput.value).toISOString(),
+        location: locInput.value.trim() || null,
+        description: descInput.value.trim() || null,
+        created_by: currentUser.id,
+      });
+      if (error) {
+        await CookzerModal.alert('Could not create event: ' + error.message);
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Create';
+        return;
+      }
+      closePicker();
+      await loadEvents();
+    });
+    actions.appendChild(cancelBtn);
+    actions.appendChild(saveBtn);
+    modal.appendChild(actions);
+
+    document.getElementById('pickerOverlay').hidden = false;
+    titleInput.focus();
+  }
+
+  async function setRsvp(eventId, status) {
+    const { error } = await sb.from('group_event_rsvps').upsert({ event_id: eventId, user_id: currentUser.id, status });
+    if (error) { await CookzerModal.alert('Could not update RSVP: ' + error.message); return; }
+    await loadEvents();
+  }
+
+  async function deleteEvent(eventId) {
+    if (!(await CookzerModal.confirm('Delete this event? This can\'t be undone.', { confirmLabel: 'Delete', danger: true }))) return;
+    const { error } = await sb.from('group_events').delete().eq('id', eventId);
+    if (error) { await CookzerModal.alert('Could not delete: ' + error.message); return; }
+    await loadEvents();
+  }
+
+  function eventCard(ev, myRsvp, counts) {
+    const card = document.createElement('div');
+    card.className = 'event-card';
+
+    const badge = document.createElement('div');
+    badge.className = 'event-date-badge';
+    const d = new Date(ev.event_at);
+    const month = document.createElement('div');
+    month.className = 'month';
+    month.textContent = d.toLocaleDateString(undefined, { month: 'short' });
+    const day = document.createElement('div');
+    day.className = 'day';
+    day.textContent = d.getDate();
+    badge.appendChild(month);
+    badge.appendChild(day);
+    card.appendChild(badge);
+
+    const body = document.createElement('div');
+    body.className = 'event-body';
+
+    const titleRow = document.createElement('div');
+    titleRow.className = 'event-title-row';
+    const title = document.createElement('div');
+    title.className = 'event-title';
+    title.textContent = ev.title;
+    titleRow.appendChild(title);
+
+    if (currentUser && (ev.created_by === currentUser.id || canManageGroup)) {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'event-delete-btn';
+      delBtn.type = 'button';
+      delBtn.title = 'Delete event';
+      delBtn.textContent = '🗑';
+      delBtn.addEventListener('click', () => deleteEvent(ev.id));
+      titleRow.appendChild(delBtn);
+    }
+    body.appendChild(titleRow);
+
+    const when = document.createElement('div');
+    when.className = 'event-when';
+    when.textContent = formatEventWhen(ev.event_at);
+    body.appendChild(when);
+
+    if (ev.location) {
+      const loc = document.createElement('div');
+      loc.className = 'event-location';
+      loc.textContent = '📍 ' + ev.location;
+      body.appendChild(loc);
+    }
+
+    if (ev.description) {
+      const desc = document.createElement('div');
+      desc.className = 'event-desc';
+      desc.textContent = ev.description;
+      body.appendChild(desc);
+    }
+
+    const rsvpRow = document.createElement('div');
+    rsvpRow.className = 'rsvp-row';
+    [['going', '✅ Going'], ['maybe', '🤔 Maybe'], ['no', '❌ Can\'t go']].forEach(([status, label]) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'rsvp-btn' + (myRsvp === status ? ' selected ' + status : '');
+      btn.textContent = label + ' (' + (counts[status] || 0) + ')';
+      btn.addEventListener('click', () => setRsvp(ev.id, status));
+      rsvpRow.appendChild(btn);
+    });
+    body.appendChild(rsvpRow);
+
+    card.appendChild(body);
+    return card;
+  }
+
+  async function loadEvents() {
+    const { data: events } = await sb
+      .from('group_events')
+      .select('id, title, description, event_at, location, created_by')
+      .eq('group_id', groupId)
+      .order('event_at', { ascending: true });
+
+    const eventIds = (events || []).map((e) => e.id);
+    let rsvps = [];
+    if (eventIds.length) {
+      const { data } = await sb.from('group_event_rsvps').select('event_id, user_id, status').in('event_id', eventIds);
+      rsvps = data || [];
+    }
+
+    const listEl = document.getElementById('eventsList');
+    listEl.innerHTML = '';
+    document.getElementById('eventsEmpty').hidden = !!(events && events.length);
+
+    (events || []).forEach((ev) => {
+      const evRsvps = rsvps.filter((r) => r.event_id === ev.id);
+      const counts = { going: 0, maybe: 0, no: 0 };
+      evRsvps.forEach((r) => { counts[r.status] = (counts[r.status] || 0) + 1; });
+      const mine = evRsvps.find((r) => r.user_id === currentUser.id);
+      listEl.appendChild(eventCard(ev, mine ? mine.status : null, counts));
+    });
+  }
+
+  document.getElementById('newEventBtn').addEventListener('click', openNewEventModal);
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    if (!groupId) {
+      document.getElementById('pageTitle').textContent = 'No group specified';
+      return;
+    }
+
+    const { data: group } = await sb.from('groups').select('name, created_by').eq('id', groupId).single();
+    const { data: myRow } = await sb.from('group_members').select('role').eq('group_id', groupId).eq('user_id', user.id).maybeSingle();
+    isMember = !!myRow;
+    canManageGroup = !!group && (group.created_by === user.id || (myRow && myRow.role === 'admin'));
+
+    if (group) document.getElementById('pageTitle').textContent = group.name + ' — Events';
+    document.getElementById('newEventBtn').hidden = !isMember;
+
+    if (!isMember) {
+      document.getElementById('eventsEmpty').hidden = false;
+      document.getElementById('eventsEmpty').textContent = 'Join this group to see and RSVP to its events.';
+      return;
+    }
+
+    await loadEvents();
+  })();
+</script>
+</body>
+</html>

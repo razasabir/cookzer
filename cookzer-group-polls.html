@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#2E8F5C">
+  <title>Group Polls — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="notifications-shared.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="push-notifications.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="friends-widget.js"></script>
+  <script src="cookzer-modal.js"></script>
+  <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .brand-header {
+      font-size: 20px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+    }
+
+  .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
+  .main {
+      flex: 1;
+      margin-top: 60px;
+      overflow-y: auto;
+    }
+
+  .polls-content {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+  .polls-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+  .polls-back-link {
+      font-size: 13px;
+      color: var(--ink-soft);
+      text-decoration: none;
+    }
+
+  .polls-title {
+      font-family: 'Fraunces', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--olive-dark);
+      margin-top: 4px;
+    }
+
+  .new-poll-btn {
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: none;
+      background: var(--olive);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+  .poll-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+  .poll-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+  .poll-question { font-size: 16px; font-weight: 700; color: var(--ink); }
+  .poll-meta { font-size: 12px; color: var(--ink-soft); margin-top: 2px; margin-bottom: 14px; }
+
+  .poll-delete-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      color: var(--ink-soft);
+      flex-shrink: 0;
+    }
+
+  .poll-option-row {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      overflow: hidden;
+      background: var(--cream);
+    }
+
+  .poll-option-fill {
+      position: absolute;
+      inset: 0;
+      background: var(--plus-tint);
+      z-index: 0;
+      transition: width 0.3s;
+    }
+
+  .poll-option-row.selected { border-color: var(--olive); }
+  .poll-option-row.selected .poll-option-fill { background: rgba(46, 143, 92, 0.15); }
+
+  .poll-option-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+  .poll-option-pct { font-weight: 600; color: var(--ink-soft); }
+
+  .empty-note {
+      text-align: center;
+      color: var(--ink-soft);
+      font-size: 14px;
+      padding: 40px 20px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
+
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-groups.html" style="text-decoration: none;"><div class="sidebar-item icon groups active">Groups</div></a>
+  <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants">Restaurants</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+  <a href="cookzer-convert.html" style="text-decoration: none;"><div class="sidebar-item icon convert">Convert</div></a>
+  <a href="cookzer-feed.html?filter=tips" style="text-decoration: none;"><div class="sidebar-item icon tips">Tips &amp; Tricks</div></a>
+
+<div class="sidebar-plus">
+  <div class="sidebar-plus-label">Cookzer+</div>
+  <a href="cookzer-pantry.html" class="sidebar-plus-item pantry">Cooking Ideas</a>
+  <a href="cookzer-pantry.html?tab=leftovers" class="sidebar-plus-item leftovers">Leftover Help</a>
+  <a href="cookzer-health.html" class="sidebar-plus-item health">Health & Nutritions</a>
+</div>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Header -->
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn" id="notifBellBtn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
+    <a href="cookzer-settings.html" style="text-decoration:none;"><button class="icon-btn" title="Settings" type="button">⚙️</button></a>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+  <div class="polls-content">
+    <div class="polls-top-row">
+      <div>
+        <a class="polls-back-link" id="backToGroupLink" href="cookzer-groups.html">&larr; Back to group</a>
+        <div class="polls-title" id="pageTitle">Polls</div>
+      </div>
+      <button class="new-poll-btn" id="newPollBtn" type="button" hidden>+ New poll</button>
+    </div>
+
+    <div id="pollsList"></div>
+    <div class="empty-note" id="pollsEmpty" hidden>No polls yet. Ask the group to settle something — pizza or tacos Friday?</div>
+  </div>
+</div>
+
+<div class="cz2-overlay" id="pickerOverlay" hidden>
+  <div class="cz2-modal" id="pickerModal"></div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  const params = new URLSearchParams(location.search);
+  const groupId = params.get('id');
+  let currentUser = null;
+  let isMember = false;
+  let canManageGroup = false;
+
+  document.getElementById('backToGroupLink').href = 'cookzer-group.html?id=' + groupId;
+
+  function closePicker() {
+    document.getElementById('pickerOverlay').hidden = true;
+    document.getElementById('pickerModal').innerHTML = '';
+  }
+  document.getElementById('pickerOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'pickerOverlay') closePicker();
+  });
+
+  function cz2Button(label, primary) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = label;
+    btn.style.cssText = primary
+      ? 'padding:10px 20px; border-radius:12px; border:none; background:var(--olive); color:#fff; font-weight:600; font-size:14px; cursor:pointer;'
+      : 'padding:10px 20px; border-radius:12px; border:1px solid var(--line); background:var(--cream); color:var(--ink); font-weight:600; font-size:14px; cursor:pointer;';
+    return btn;
+  }
+
+  function openNewPollModal() {
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+
+    const title = document.createElement('h3');
+    title.textContent = 'New poll';
+    modal.appendChild(title);
+
+    const qLabel = document.createElement('div');
+    qLabel.className = 'cz2-label';
+    qLabel.textContent = 'Question';
+    modal.appendChild(qLabel);
+    const qInput = document.createElement('input');
+    qInput.type = 'text';
+    qInput.placeholder = 'Pizza or tacos Friday?';
+    modal.appendChild(qInput);
+
+    const optLabel = document.createElement('div');
+    optLabel.className = 'cz2-label';
+    optLabel.textContent = 'Options (2–5)';
+    modal.appendChild(optLabel);
+
+    const optionsWrap = document.createElement('div');
+    const optionInputs = [];
+    function addOptionInput(value) {
+      if (optionInputs.length >= 5) return;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = value || '';
+      input.placeholder = 'Option ' + (optionInputs.length + 1);
+      optionsWrap.appendChild(input);
+      optionInputs.push(input);
+    }
+    addOptionInput();
+    addOptionInput();
+    modal.appendChild(optionsWrap);
+
+    const addOptionBtn = cz2Button('+ Add option', false);
+    addOptionBtn.style.cssText += 'padding:6px 14px; font-size:12px; margin-bottom:14px;';
+    addOptionBtn.addEventListener('click', () => addOptionInput());
+    modal.appendChild(addOptionBtn);
+
+    const actions = document.createElement('div');
+    actions.className = 'cz2-actions';
+    const cancelBtn = cz2Button('Cancel', false);
+    cancelBtn.addEventListener('click', closePicker);
+    const saveBtn = cz2Button('Create', true);
+    saveBtn.addEventListener('click', async () => {
+      const question = qInput.value.trim();
+      const options = optionInputs.map((i) => i.value.trim()).filter(Boolean);
+      if (!question || options.length < 2) {
+        await CookzerModal.alert('Please add a question and at least 2 options.');
+        return;
+      }
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Creating…';
+
+      const { data: poll, error } = await sb.from('group_polls').insert({ group_id: groupId, question, created_by: currentUser.id }).select().single();
+      if (error) {
+        await CookzerModal.alert('Could not create poll: ' + error.message);
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Create';
+        return;
+      }
+      const { error: optError } = await sb.from('group_poll_options').insert(options.map((option_text, position) => ({ poll_id: poll.id, option_text, position })));
+      if (optError) {
+        await CookzerModal.alert('Could not save options: ' + optError.message);
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Create';
+        return;
+      }
+      closePicker();
+      await loadPolls();
+    });
+    actions.appendChild(cancelBtn);
+    actions.appendChild(saveBtn);
+    modal.appendChild(actions);
+
+    document.getElementById('pickerOverlay').hidden = false;
+    qInput.focus();
+  }
+
+  async function castVote(pollId, optionId) {
+    const { error } = await sb.from('group_poll_votes').upsert({ poll_id: pollId, option_id: optionId, user_id: currentUser.id });
+    if (error) { await CookzerModal.alert('Could not vote: ' + error.message); return; }
+    await loadPolls();
+  }
+
+  async function deletePoll(pollId) {
+    if (!(await CookzerModal.confirm('Delete this poll? This can\'t be undone.', { confirmLabel: 'Delete', danger: true }))) return;
+    const { error } = await sb.from('group_polls').delete().eq('id', pollId);
+    if (error) { await CookzerModal.alert('Could not delete: ' + error.message); return; }
+    await loadPolls();
+  }
+
+  function pollCard(poll, options, votes) {
+    const card = document.createElement('div');
+    card.className = 'poll-card';
+
+    const titleRow = document.createElement('div');
+    titleRow.className = 'poll-title-row';
+    const q = document.createElement('div');
+    q.className = 'poll-question';
+    q.textContent = poll.question;
+    titleRow.appendChild(q);
+
+    if (currentUser && (poll.created_by === currentUser.id || canManageGroup)) {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'poll-delete-btn';
+      delBtn.type = 'button';
+      delBtn.title = 'Delete poll';
+      delBtn.textContent = '🗑';
+      delBtn.addEventListener('click', () => deletePoll(poll.id));
+      titleRow.appendChild(delBtn);
+    }
+    card.appendChild(titleRow);
+
+    const totalVotes = votes.length;
+    const myVote = votes.find((v) => v.user_id === currentUser.id);
+
+    const meta = document.createElement('div');
+    meta.className = 'poll-meta';
+    meta.textContent = totalVotes + (totalVotes === 1 ? ' vote' : ' votes');
+    card.appendChild(meta);
+
+    options.forEach((opt) => {
+      const optVotes = votes.filter((v) => v.option_id === opt.id).length;
+      const pct = totalVotes ? Math.round((optVotes / totalVotes) * 100) : 0;
+
+      const row = document.createElement('div');
+      row.className = 'poll-option-row' + (myVote && myVote.option_id === opt.id ? ' selected' : '');
+      const fill = document.createElement('div');
+      fill.className = 'poll-option-fill';
+      fill.style.width = pct + '%';
+      const content = document.createElement('div');
+      content.className = 'poll-option-content';
+      const label = document.createElement('span');
+      label.textContent = opt.option_text;
+      const pctEl = document.createElement('span');
+      pctEl.className = 'poll-option-pct';
+      pctEl.textContent = pct + '%';
+      content.appendChild(label);
+      content.appendChild(pctEl);
+      row.appendChild(fill);
+      row.appendChild(content);
+      row.addEventListener('click', () => castVote(poll.id, opt.id));
+      card.appendChild(row);
+    });
+
+    return card;
+  }
+
+  async function loadPolls() {
+    const { data: polls } = await sb
+      .from('group_polls')
+      .select('id, question, created_by, created_at')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: false });
+
+    const pollIds = (polls || []).map((p) => p.id);
+    let options = [];
+    let votes = [];
+    if (pollIds.length) {
+      const [{ data: optData }, { data: voteData }] = await Promise.all([
+        sb.from('group_poll_options').select('id, poll_id, option_text, position').in('poll_id', pollIds).order('position', { ascending: true }),
+        sb.from('group_poll_votes').select('poll_id, option_id, user_id').in('poll_id', pollIds),
+      ]);
+      options = optData || [];
+      votes = voteData || [];
+    }
+
+    const listEl = document.getElementById('pollsList');
+    listEl.innerHTML = '';
+    document.getElementById('pollsEmpty').hidden = !!(polls && polls.length);
+
+    (polls || []).forEach((poll) => {
+      const pollOptions = options.filter((o) => o.poll_id === poll.id);
+      const pollVotes = votes.filter((v) => v.poll_id === poll.id);
+      listEl.appendChild(pollCard(poll, pollOptions, pollVotes));
+    });
+  }
+
+  document.getElementById('newPollBtn').addEventListener('click', openNewPollModal);
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    if (!groupId) {
+      document.getElementById('pageTitle').textContent = 'No group specified';
+      return;
+    }
+
+    const { data: group } = await sb.from('groups').select('name, created_by').eq('id', groupId).single();
+    const { data: myRow } = await sb.from('group_members').select('role').eq('group_id', groupId).eq('user_id', user.id).maybeSingle();
+    isMember = !!myRow;
+    canManageGroup = !!group && (group.created_by === user.id || (myRow && myRow.role === 'admin'));
+
+    if (group) document.getElementById('pageTitle').textContent = group.name + ' — Polls';
+    document.getElementById('newPollBtn').hidden = !isMember;
+
+    if (!isMember) {
+      document.getElementById('pollsEmpty').hidden = false;
+      document.getElementById('pollsEmpty').textContent = 'Join this group to see and vote in its polls.';
+      return;
+    }
+
+    await loadPolls();
+  })();
+</script>
+</body>
+</html>

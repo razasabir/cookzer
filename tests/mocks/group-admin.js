@@ -1,9 +1,13 @@
 window.__CALLS__ = [];
 window.__STATE__ = {
-  group: { id: 'g1', name: 'Weeknight Cooks', description: 'For quick meals', cover_gradient: null, cover_photo_path: null, created_by: 'me-1', is_private: false, invite_code: null },
+  group: { id: 'g1', name: 'Weeknight Cooks', description: 'For quick meals', cover_gradient: null, cover_photo_path: null, created_by: 'me-1', is_private: false, invite_code: null, rules: null },
   members: [
-    { user_id: 'me-1', role: 'member', profiles: { display_name: 'Me', initials: 'ME' } },
-    { user_id: 'bob-1', role: 'member', profiles: { display_name: 'Bob Ortiz', initials: 'BO' } },
+    { user_id: 'me-1', role: 'member', muted: false, profiles: { display_name: 'Me', initials: 'ME' } },
+    { user_id: 'bob-1', role: 'member', muted: false, profiles: { display_name: 'Bob Ortiz', initials: 'BO' } },
+  ],
+  posts: [
+    { id: 'post-1', author_id: 'me-1', caption: 'First post', photo_path: null, created_at: '2024-01-01T10:00:00Z', pinned_at: null, profiles: { display_name: 'Me', initials: 'ME' } },
+    { id: 'post-2', author_id: 'bob-1', caption: 'Second post', photo_path: null, created_at: '2024-01-02T10:00:00Z', pinned_at: null, profiles: { display_name: 'Bob Ortiz', initials: 'BO' } },
   ],
 };
 
@@ -15,6 +19,7 @@ function chain(table) {
   const builder = {
     select() { return builder; },
     eq(col, val) { filters[col] = val; return builder; },
+    in() { return builder; },
     ilike(col, pattern) { ilikeQuery = String(pattern).replace(/%/g, '').toLowerCase(); return builder; },
     order() { return builder; },
     limit() { return builder; },
@@ -25,14 +30,14 @@ function chain(table) {
     maybeSingle() {
       if (table === 'group_members') {
         const found = window.__STATE__.members.find((m) => m.user_id === filters.user_id);
-        return Promise.resolve({ data: found ? { user_id: found.user_id } : null, error: null });
+        return Promise.resolve({ data: found || null, error: null });
       }
       return Promise.resolve({ data: null, error: null });
     },
     then(resolve) {
       let result = [];
       if (table === 'group_members') result = window.__STATE__.members;
-      else if (table === 'posts') result = [];
+      else if (table === 'posts') result = window.__STATE__.posts;
       else if (table === 'profiles' && ilikeQuery) {
         result = PROFILE_DIRECTORY.filter((p) => p.display_name.toLowerCase().includes(ilikeQuery));
       }
@@ -71,6 +76,9 @@ function chain(table) {
       } else if (table === 'group_members') {
         const m = window.__STATE__.members.find((mm) => mm.user_id === filters.user_id);
         if (m) Object.assign(m, builder._updatePayload);
+      } else if (table === 'posts') {
+        const p = window.__STATE__.posts.find((pp) => pp.id === filters.id);
+        if (p) Object.assign(p, builder._updatePayload);
       }
       return Promise.resolve({ data: null, error: null }).then(resolve);
     }
