@@ -24,6 +24,7 @@
   <script src="photo-lightbox.js"></script>
   <script src="pantry-match.js"></script>
   <script src="friends-widget.js"></script>
+  <script src="people-you-may-know.js"></script>
   <script src="shortcuts.js"></script>
   <script src="countdown.js"></script>
   <script src="confetti.js"></script>
@@ -1092,6 +1093,12 @@
       <div class="challenge-desc" id="challengeDesc"></div>
       <button class="challenge-btn" id="joinChallengeBtn" type="button">Join challenge</button>
     </div>
+
+    <div class="widget-title" id="birthdaysTitle" hidden>🎂 Upcoming birthdays</div>
+    <div class="top-contributors" id="birthdaysList"></div>
+
+    <div class="widget-title" id="pymkWidgetTitle" hidden>People you may know</div>
+    <div class="top-contributors" id="pymkWidgetList"></div>
 
     <div class="widget-title">Leaderboard</div>
     <div class="leaderboard" id="leaderboardList">
@@ -2363,6 +2370,74 @@
     });
   }
 
+  // Upcoming birthdays among the people you follow — next 30 days,
+  // soonest first. Only month/day are stored (see migration 033), so
+  // "days away" wraps the month/day pair around the calendar year
+  // rather than comparing real dates.
+  async function loadBirthdays() {
+    const { data: following } = await sb.from('follows').select('followee_id').eq('follower_id', currentUser.id);
+    const ids = (following || []).map((f) => f.followee_id);
+    if (ids.length === 0) return;
+
+    const { data: people } = await sb
+      .from('profiles')
+      .select('id, display_name, initials, birthday_month, birthday_day')
+      .in('id', ids)
+      .not('birthday_month', 'is', null)
+      .not('birthday_day', 'is', null);
+
+    if (!people || people.length === 0) return;
+
+    const today = new Date();
+    const todayMD = today.getMonth() * 31 + today.getDate();
+    const withDistance = people.map((p) => {
+      const md = (p.birthday_month - 1) * 31 + p.birthday_day;
+      let days = md - todayMD;
+      if (days < 0) days += 372; // wrap to next year (31*12)
+      return Object.assign({}, p, { days });
+    }).filter((p) => p.days <= 30).sort((a, b) => a.days - b.days).slice(0, 3);
+
+    if (withDistance.length === 0) return;
+
+    const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const listEl = document.getElementById('birthdaysList');
+    listEl.innerHTML = '';
+    withDistance.forEach((p) => {
+      const item = document.createElement('a');
+      item.className = 'contributor-item';
+      item.href = 'cookzer-profile.html?id=' + p.id;
+      item.style.textDecoration = 'none';
+      item.style.color = 'inherit';
+      item.innerHTML = '<div class="contributor-avatar"></div><div class="contributor-name"></div><div class="contributor-stat"></div>';
+      item.querySelector('.contributor-avatar').textContent = p.initials || '??';
+      item.querySelector('.contributor-name').textContent = p.display_name || 'Someone';
+      item.querySelector('.contributor-stat').textContent = p.days === 0 ? 'Today!' : MONTH_NAMES[p.birthday_month - 1] + ' ' + p.birthday_day;
+      listEl.appendChild(item);
+    });
+    document.getElementById('birthdaysTitle').hidden = false;
+  }
+
+  async function loadPYMKWidget() {
+    if (!window.CookzerPYMK) return;
+    const suggestions = await CookzerPYMK.computeSuggestions(sb, currentUser.id, { limit: 3 });
+    if (suggestions.length === 0) return;
+
+    const listEl = document.getElementById('pymkWidgetList');
+    listEl.innerHTML = '';
+    suggestions.forEach((p) => {
+      const item = document.createElement('a');
+      item.className = 'contributor-item';
+      item.href = 'cookzer-friends.html';
+      item.style.textDecoration = 'none';
+      item.style.color = 'inherit';
+      item.innerHTML = '<div class="contributor-avatar"></div><div class="contributor-name"></div>';
+      item.querySelector('.contributor-avatar').textContent = p.initials || '??';
+      item.querySelector('.contributor-name').textContent = p.display_name || 'Someone';
+      listEl.appendChild(item);
+    });
+    document.getElementById('pymkWidgetTitle').hidden = false;
+  }
+
   (async function init() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
@@ -2377,6 +2452,8 @@
     await loadTopRecipes();
     await loadTrendingIngredients();
     await loadTopContributors();
+    await loadBirthdays();
+    await loadPYMKWidget();
     showWelcomeModalIfFirstVisit();
   })();
 

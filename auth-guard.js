@@ -24,6 +24,32 @@
     .eq('blocker_id', session.user.id)
     .then(({ data }) => new Set((data || []).map((b) => b.blocked_id)));
 
+  // Invite-link referrals: cookzer-auth.html stashes `?ref=<uid>` from an
+  // invite link into localStorage before sign-in/sign-up. Once there's a
+  // real session, attribute it — once — by setting profiles.referred_by
+  // (only if still unset, so re-visiting an old invite link never
+  // overwrites an existing attribution) and auto-following the referrer
+  // so their content shows up right away. This runs post-login rather
+  // than in the signup trigger so it covers Google/Facebook OAuth the
+  // same way as email/password signup.
+  async function captureReferral(userId) {
+    const refId = localStorage.getItem('cz_ref');
+    if (!refId || refId === userId) {
+      localStorage.removeItem('cz_ref');
+      return;
+    }
+    const { data: updated } = await sb
+      .from('profiles')
+      .update({ referred_by: refId })
+      .eq('id', userId)
+      .is('referred_by', null)
+      .select('id');
+    if (updated && updated.length) {
+      await sb.from('follows').insert({ follower_id: userId, followee_id: refId });
+    }
+    localStorage.removeItem('cz_ref');
+  }
+
   function wireAvatar(person) {
     document.querySelectorAll('.avatar').forEach((el) => {
       if (person.avatar_url) {
@@ -149,6 +175,8 @@
     sidebar.appendChild(widget);
     await window.CookzerFriendsWidget.render(sb, userId, widget);
   }
+
+  captureReferral(session.user.id);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
