@@ -413,9 +413,20 @@
     return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
   }
 
+  // Two different kinds of tag live on a saved recipe: the ones the
+  // saver typed themselves (personal organization, e.g. "try this
+  // weekend") and the ones the recipe's own author typed when creating
+  // it (recipes.tags — the same tags the feed's filter chips read).
+  // Both are worth filtering "My Recipes" by, so they share one chip row.
+  function recipeTagsOf(saved) {
+    const own = saved.tags || [];
+    const authored = (saved.recipes && saved.recipes.tags) || [];
+    return own.concat(authored);
+  }
+
   function renderHashtags() {
     const tagSet = new Set();
-    allSaved.forEach((s) => (s.tags || []).forEach((t) => tagSet.add(t)));
+    allSaved.forEach((s) => recipeTagsOf(s).forEach((t) => tagSet.add(t)));
     const tags = Array.from(tagSet).sort();
 
     const section = document.getElementById('hashtagsSection');
@@ -444,7 +455,7 @@
   async function loadSavedRecipes() {
     const { data: saved, error } = await sb
       .from('saved_recipes')
-      .select('recipe_id, tags, note, recipes(id, title, hero_photo_path)')
+      .select('recipe_id, tags, note, recipes(id, title, hero_photo_path, tags)')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false });
 
@@ -455,7 +466,7 @@
   }
 
   function renderSavedList() {
-    const filtered = activeTag ? allSaved.filter((s) => (s.tags || []).includes(activeTag)) : allSaved;
+    const filtered = activeTag ? allSaved.filter((s) => recipeTagsOf(s).includes(activeTag)) : allSaved;
 
     const listEl = document.getElementById('savedRecipesList');
     listEl.innerHTML = '';
