@@ -46,6 +46,13 @@ test.describe('Meal planner — per-person suggestion columns', () => {
     expect(inserted.suggested_by_family_profile_id).toBe('fam-1');
     expect(inserted.suggested_by_user_id).toBeUndefined();
     await expect(page.locator('#pickerOverlay')).toBeHidden();
+
+    // The column itself must reflect the save — not just the insert
+    // call — otherwise a saved suggestion looks like nothing happened.
+    const emmaCol = tuesday.locator('.planner-person-col', { hasText: 'Emma' });
+    await expect(emmaCol.locator('.planner-person-suggestion')).toHaveText('Pizza night');
+    await expect(emmaCol.locator('.planner-person-use-btn')).toBeVisible();
+    await expect(emmaCol.locator('.planner-person-add-btn')).toHaveCount(0);
   });
 
   test('the ghost column links to Settings instead of opening the suggestion picker', async ({ page }) => {
