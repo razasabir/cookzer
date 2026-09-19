@@ -1,5 +1,6 @@
 window.__INSERTED_FAMILY_PROFILES__ = [];
 window.__DELETED_FAMILY_PROFILE_IDS__ = [];
+window.__PROFILE_UPDATES__ = [];
 
 let profiles = [{ id: 'fam-1', name: 'Emma', avatar_emoji: '👧' }];
 
@@ -8,7 +9,10 @@ function chain(table) {
     select() { return builder; },
     eq(col, val) { builder._eqId = val; return builder; },
     order() { return builder; },
-    maybeSingle() { return Promise.resolve({ data: null, error: null }); },
+    maybeSingle() {
+      if (table === 'profiles') return Promise.resolve({ data: { display_name: 'Test Cook', household_size: 4 }, error: null });
+      return Promise.resolve({ data: null, error: null });
+    },
     single() { return Promise.resolve({ data: null, error: null }); },
     then(resolve) {
       let result = [];
@@ -22,6 +26,10 @@ function chain(table) {
         profiles = profiles.concat([{ id: 'fam-2', name: payload.name, avatar_emoji: payload.avatar_emoji }]);
       }
       return Promise.resolve({ data: null, error: null });
+    },
+    update(payload) {
+      if (table === 'profiles') window.__PROFILE_UPDATES__.push(payload);
+      return { eq: () => Promise.resolve({ data: null, error: null }) };
     },
     delete() {
       return {

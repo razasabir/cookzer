@@ -67,10 +67,14 @@ test.describe('Kid Mode — locked-down device', () => {
 
   test('suggesting a meal auto-attributes to the locked family profile with no picker shown', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js', KID_MODE_INIT);
-    await page.selectOption('#shareGroupSelect', 'group-1');
-    await page.locator('.suggestion-slot-empty').first().click();
+    // Kid Mode collapses the planner to a single column — the locked
+    // profile's own. Monday already has a seeded suggestion for it, so
+    // use Tuesday (open) to click "+ Add Meal".
+    const tuesday = page.locator('.planner-day-card').nth(1);
+    await expect(tuesday.locator('.planner-person-col')).toHaveCount(1);
+    await tuesday.locator('.planner-person-add-btn').click();
 
-    await expect(page.locator('#pickerModal h3')).toContainText('Suggest a meal as');
+    await expect(page.locator('#pickerModal h3')).toContainText('Suggest a meal for');
     await expect(page.locator('#pickerModal h3')).toContainText('Emma');
     await expect(page.locator('.cz2-chip')).toHaveCount(0);
 

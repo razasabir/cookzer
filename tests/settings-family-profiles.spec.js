@@ -39,3 +39,36 @@ test.describe('Settings — Family Profiles', () => {
     await expect(page.locator('.family-profile-row')).toHaveCount(0);
   });
 });
+
+test.describe('Settings — how many people you cook for', () => {
+  test('loads the saved household size', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-settings.html', 'settings-family-profiles.js');
+    await expect(page.locator('#householdSizeInput')).toHaveValue('4');
+  });
+
+  test('saving a new value updates the profile and confirms the new column count', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-settings.html', 'settings-family-profiles.js');
+    await page.fill('#householdSizeInput', '3');
+    await page.click('#saveHouseholdSizeBtn');
+
+    await expect.poll(() => page.evaluate(() => window.__PROFILE_UPDATES__.length)).toBe(1);
+    const updated = await page.evaluate(() => window.__PROFILE_UPDATES__[0]);
+    expect(updated.household_size).toBe(3);
+    await expect(page.locator('#householdSizeStatus')).toContainText('3 columns');
+  });
+
+  test('rejects an out-of-range value without saving', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-settings.html', 'settings-family-profiles.js');
+    await page.fill('#householdSizeInput', '20');
+    await page.click('#saveHouseholdSizeBtn');
+    await expect(page.locator('#householdSizeStatus')).toContainText('between 1 and 12');
+    expect(await page.evaluate(() => window.__PROFILE_UPDATES__.length)).toBe(0);
+  });
+
+  test('the hint button explains what the columns are and where to change them', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-settings.html', 'settings-family-profiles.js');
+    await page.click('#householdSizeHint');
+    await expect(page.locator('.cz-modal-message')).toContainText('Meal Planner');
+    await page.locator('.cz-modal-btn').click();
+  });
+});

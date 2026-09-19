@@ -107,6 +107,26 @@
 
   .settings-status { font-size: 12.5px; color: var(--ink-soft); margin-top: 8px; }
 
+  .hint-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: var(--cream);
+      color: var(--ink-soft);
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      margin-left: 4px;
+      padding: 0;
+      vertical-align: middle;
+    }
+  .hint-btn:hover { border-color: var(--olive); color: var(--olive-dark); }
+
   .toggle-row {
       display: flex;
       justify-content: space-between;
@@ -290,6 +310,18 @@
     <div class="settings-section">
       <h2>Family Profiles</h2>
       <div class="section-dek">Named profiles for household members who don't want their own login — a kid can pick their own name on a shared device to suggest a meal, without a real Cookzer account. Visible to anyone in a group you share a meal plan with.</div>
+
+      <div class="field" style="max-width:320px;">
+        <label>How many people do you usually cook for?
+          <button type="button" id="householdSizeHint" class="hint-btn" title="What's this?" aria-label="What's this?">?</button>
+        </label>
+        <div class="field-row">
+          <input type="number" id="householdSizeInput" min="1" max="12" value="4">
+          <button class="settings-btn secondary" id="saveHouseholdSizeBtn" type="button">Save</button>
+        </div>
+      </div>
+      <div class="settings-status" id="householdSizeStatus"></div>
+
       <div id="familyProfilesList"></div>
       <div class="field-row" style="margin-top:10px;">
         <div style="display:flex; gap:4px;" id="familyEmojiPicker"></div>
@@ -521,6 +553,18 @@
     await loadFamilyProfiles();
   });
 
+  document.getElementById('householdSizeHint').addEventListener('click', async () => {
+    await CookzerModal.alert('This sets how many columns show on your Meal Planner — one per person you cook for. Give each one a name under Family Profiles below so their column shows who they are; any columns beyond your named profiles show as "+ Add a family member" until you do.');
+  });
+
+  document.getElementById('saveHouseholdSizeBtn').addEventListener('click', async () => {
+    const status = document.getElementById('householdSizeStatus');
+    const val = parseInt(document.getElementById('householdSizeInput').value, 10);
+    if (!Number.isInteger(val) || val < 1 || val > 12) { status.textContent = 'Enter a number between 1 and 12.'; return; }
+    const { error } = await sb.from('profiles').update({ household_size: val }).eq('id', currentUser.id);
+    status.textContent = error ? 'Could not save: ' + error.message : 'Saved — your Meal Planner will show ' + val + ' column' + (val === 1 ? '' : 's') + '.';
+  });
+
   document.getElementById('saveNameBtn').addEventListener('click', async () => {
     const name = document.getElementById('displayNameInput').value.trim();
     const status = document.getElementById('accountStatus');
@@ -624,8 +668,11 @@
 
     document.getElementById('emailInput').value = user.email || '';
 
-    const { data: profile } = await sb.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
-    if (profile) document.getElementById('displayNameInput').value = profile.display_name || '';
+    const { data: profile } = await sb.from('profiles').select('display_name, household_size').eq('id', user.id).maybeSingle();
+    if (profile) {
+      document.getElementById('displayNameInput').value = profile.display_name || '';
+      document.getElementById('householdSizeInput').value = profile.household_size || 4;
+    }
 
     await loadFamilyProfiles();
 

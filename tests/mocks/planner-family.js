@@ -26,7 +26,12 @@ function chain(table) {
     limit() { return builder; },
     not() { return builder; },
     single() { return Promise.resolve({ data: null, error: null }); },
-    maybeSingle() { return Promise.resolve({ data: null, error: null }); },
+    // household_size: 3 with 1 named Family Profile (Emma) means the
+    // planner shows You + Emma + one "ghost" placeholder column.
+    maybeSingle() {
+      if (table === 'profiles') return Promise.resolve({ data: { household_size: 3 }, error: null });
+      return Promise.resolve({ data: null, error: null });
+    },
     then(resolve) {
       let result = [];
       if (table === 'group_members') {
