@@ -669,14 +669,23 @@
       const dish = dishInput.value.trim();
       if (!dish) return;
       closePicker();
-      const { error } = await sb.from('meal_suggestions').insert({
-        owner_id: currentUser.id,
-        suggestion_date: date,
-        dish_text: dish,
-        ...suggesterFields,
-      });
-      if (error) { await CookzerModal.alert('Could not add suggestion: ' + error.message); return; }
-      await loadSuggestions();
+      // Render straight off what the insert itself hands back, rather
+      // than a separate re-fetch afterward — a second round trip can
+      // miss a write it should see (browser/CDN caching, replica lag),
+      // which looks exactly like "nothing got saved" even though it did.
+      const { data, error } = await sb
+        .from('meal_suggestions')
+        .insert({
+          owner_id: currentUser.id,
+          suggestion_date: date,
+          dish_text: dish,
+          ...suggesterFields,
+        })
+        .select('id, suggestion_date, dish_text, recipe_id, suggested_by_user_id, suggested_by_family_profile_id, profiles(display_name), family_profiles(name, avatar_emoji)')
+        .single();
+      if (error || !data) { await CookzerModal.alert('Could not add suggestion: ' + (error ? error.message : 'the save didn\'t go through — please try again.')); return; }
+      if (!suggestionsByDate[date]) suggestionsByDate[date] = [];
+      suggestionsByDate[date].push(data);
       renderWeek(weekDates());
     };
     submitBtn.addEventListener('click', submit);

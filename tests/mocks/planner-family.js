@@ -14,6 +14,15 @@ const RECIPES = [
 // for first, tagged onto that same date so "Use this" inserts onto a
 // day the test can then find in the rendered grid.
 let seededDate = null;
+let suggestions = null; // lazily seeded once seededDate is known
+
+function suggestionDisplay(s) {
+  if (s.suggested_by_family_profile_id) {
+    const f = FAMILY_PROFILES.find((p) => p.id === s.suggested_by_family_profile_id);
+    return { ...s, profiles: null, family_profiles: f ? { name: f.name, avatar_emoji: f.avatar_emoji } : null };
+  }
+  return { ...s, profiles: { display_name: 'Test Cook' }, family_profiles: null };
+}
 
 function chain(table) {
   let inArgs = null;
@@ -39,17 +48,19 @@ function chain(table) {
       } else if (table === 'meal_plan_entries') {
         result = [];
       } else if (table === 'meal_suggestions') {
-        if (inArgs && inArgs[0] === 'suggestion_date' && !seededDate) seededDate = inArgs[1][0];
-        result = [{
-          id: 'sugg-1',
-          suggestion_date: seededDate,
-          dish_text: 'Tacos',
-          recipe_id: null,
-          suggested_by_user_id: null,
-          suggested_by_family_profile_id: 'fam-1',
-          profiles: null,
-          family_profiles: { name: 'Emma', avatar_emoji: '👧' },
-        }];
+        if (inArgs && inArgs[0] === 'suggestion_date' && !seededDate) {
+          seededDate = inArgs[1][0];
+          suggestions = [{
+            id: 'sugg-1',
+            suggestion_date: seededDate,
+            dish_text: 'Tacos',
+            recipe_id: null,
+            suggested_by_user_id: null,
+            suggested_by_family_profile_id: 'fam-1',
+          }];
+        }
+        const dates = (inArgs && inArgs[0] === 'suggestion_date') ? inArgs[1] : null;
+        result = (suggestions || []).filter((s) => !dates || dates.includes(s.suggestion_date)).map(suggestionDisplay);
       } else if (table === 'family_profiles') {
         result = FAMILY_PROFILES;
       } else if (table === 'recipes') {
@@ -60,7 +71,14 @@ function chain(table) {
     delete() { return Promise.resolve({ data: null, error: null }); },
     update() { return Promise.resolve({ data: null, error: null }); },
     insert(payload) {
-      if (table === 'meal_suggestions') window.__INSERTED_SUGGESTIONS__.push(payload);
+      if (table === 'meal_suggestions') {
+        window.__INSERTED_SUGGESTIONS__.push(payload);
+        const row = { id: 'sugg-' + ((suggestions || []).length + 1), ...payload };
+        suggestions = (suggestions || []).concat([row]);
+        return {
+          select() { return { single: () => Promise.resolve({ data: suggestionDisplay(row), error: null }) }; },
+        };
+      }
       if (table === 'meal_plan_entries') window.__INSERTED_ENTRIES__.push(payload);
       return {
         select() { return { single: () => Promise.resolve({ data: { id: 'new-1' }, error: null }) }; },
