@@ -24,9 +24,16 @@ module.exports = defineConfig({
   // was causing runs to start fine, then increasingly time out under
   // resource pressure as more workers/contexts piled up, cascading into
   // dozens of unrelated failures over a 15-26 minute run — a suite that
-  // finishes in well under a minute locally. Capping workers keeps
-  // concurrency within what the runner can actually sustain.
-  workers: process.env.CI ? 2 : undefined,
+  // finishes in well under a minute locally. A cap of 2 workers plus
+  // --disable-dev-shm-usage (below) didn't change the failure count at
+  // all — exactly the same number of tests passed before the cascade
+  // started, both with and without those changes, across runs where the
+  // suite itself had grown in between. That determinism (not the random
+  // spread you'd expect from ordinary flakiness) points at a hard
+  // resource ceiling — most likely cumulative memory across concurrent
+  // browser contexts — rather than plain CPU contention, so the next
+  // lever is removing the concurrency entirely rather than tuning it.
+  workers: process.env.CI ? 1 : undefined,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: 'list',
