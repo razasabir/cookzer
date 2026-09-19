@@ -120,6 +120,25 @@ test.describe('Convert page — pan quick picker', () => {
 });
 
 test.describe('Convert page — custom pan calculator', () => {
+  // Picker icon order matches PAN_SIZES: 0 square, 1 round, 2 rectangle,
+  // 3 springform, 4 muffin, 5 bundt, 6 loaf (see the pan quick picker
+  // tests above, which already rely on this same order for the bundt icon).
+  const ICON = { square: 0, round: 1, rectangle: 2, springform: 3, muffin: 4, bundt: 5, loaf: 6 };
+
+  test('picking a shape has no separate dropdown — tapping a picker icon drives both the reference list and the calculator', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
+    await page.click('.convert-tab[data-tab="pans"]');
+    await expect(page.locator('#customPanShape')).toHaveCount(0); // the old dropdown is gone
+
+    // Round is the calculator's default shape before anything is tapped.
+    await expect(page.locator('#customPanShapeLabel')).toHaveText('Round');
+
+    await page.locator('.pan-picker-btn').nth(ICON.bundt).click();
+    await expect(page.locator('#customPanShapeLabel')).toHaveText('Bundt / Tube');
+    // The same tap also filtered the reference list above, same as before.
+    await expect(page.locator('.pan-size-card:visible')).toHaveCount(1);
+  });
+
   test('each shape shows the right dimension fields, depth always included', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
     await page.click('.convert-tab[data-tab="pans"]');
@@ -127,14 +146,17 @@ test.describe('Convert page — custom pan calculator', () => {
     // Round is the default shape.
     await expect(page.locator('#customPanDims label')).toHaveText(['Diameter (in)', 'Depth (in)']);
 
-    await page.selectOption('#customPanShape', 'bundt');
+    await page.locator('.pan-picker-btn').nth(ICON.bundt).click();
     await expect(page.locator('#customPanDims label')).toHaveText(['Outer diameter (in)', 'Center tube diameter (in)', 'Depth (in)']);
 
-    await page.selectOption('#customPanShape', 'muffin');
+    await page.locator('.pan-picker-btn').nth(ICON.muffin).click();
     await expect(page.locator('#customPanDims label')).toHaveText(['Cavity diameter (in)', 'Cavity depth (in)', 'Number of cavities']);
 
-    await page.selectOption('#customPanShape', 'rectangle');
+    await page.locator('.pan-picker-btn').nth(ICON.rectangle).click();
     await expect(page.locator('#customPanDims label')).toHaveText(['Length (in)', 'Width (in)', 'Depth (in)']);
+
+    await page.locator('.pan-picker-btn').nth(ICON.springform).click();
+    await expect(page.locator('#customPanDims label')).toHaveText(['Diameter (in)', 'Depth (in)']);
   });
 
   test('leaving a dimension blank (including depth) shows the incomplete state, not a wrong number', async ({ page }) => {
@@ -160,7 +182,7 @@ test.describe('Convert page — custom pan calculator', () => {
   test('a bundt pan\'s volume accounts for the center tube, not just the outer diameter', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
     await page.click('.convert-tab[data-tab="pans"]');
-    await page.selectOption('#customPanShape', 'bundt');
+    await page.locator('.pan-picker-btn').nth(ICON.bundt).click();
     await page.fill('#customPan_outerDiameter', '10');
     await page.fill('#customPan_innerDiameter', '3');
     await page.fill('#customPan_depth', '4');
@@ -170,7 +192,7 @@ test.describe('Convert page — custom pan calculator', () => {
   test('muffin/cupcake shows both per-cavity and total volume', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-convert.html', 'convert-page.js');
     await page.click('.convert-tab[data-tab="pans"]');
-    await page.selectOption('#customPanShape', 'muffin');
+    await page.locator('.pan-picker-btn').nth(ICON.muffin).click();
     await page.fill('#customPan_cavityDiameter', '2.5');
     await page.fill('#customPan_depth', '1.25');
     await page.fill('#customPan_count', '12');

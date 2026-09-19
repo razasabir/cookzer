@@ -134,6 +134,10 @@
        silhouette so it reads at a glance instead of requiring the
        dimensions to be parsed as text first. */
     .pan-size-dek { font-size: 12.5px; color: var(--ink-soft); margin: -4px 0 14px; }
+    .custom-pan-shape-label {
+      font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--olive-dark); margin-bottom: 14px;
+    }
     .pan-size-list { display: flex; flex-direction: column; gap: 10px; }
     .pan-size-card {
       display: flex;
@@ -470,21 +474,9 @@
       <div class="pan-size-list" id="panSizeList"></div>
 
       <div class="convert-common-title">Calculate a custom pan</div>
-      <div class="pan-size-dek">Got a pan that isn't listed? Enter its shape and dimensions — depth included — to get its volume and the closest standard pan to substitute.</div>
+      <div class="pan-size-dek">Got a pan that isn't listed? Tap its shape above, then enter its dimensions — depth included — to get its volume and the closest standard pan to substitute.</div>
       <div class="convert-card">
-        <div class="convert-row">
-          <div class="convert-field">
-            <label for="customPanShape">Shape</label>
-            <select id="customPanShape">
-              <option value="round">Round</option>
-              <option value="square">Square</option>
-              <option value="rectangle">Rectangular</option>
-              <option value="loaf">Loaf</option>
-              <option value="bundt">Bundt / Tube</option>
-              <option value="muffin">Muffin / Cupcake</option>
-            </select>
-          </div>
-        </div>
+        <div class="custom-pan-shape-label" id="customPanShapeLabel"></div>
         <div class="convert-row" id="customPanDims"></div>
         <div class="convert-result" id="customPanResult">
           <div class="convert-result-value" id="customPanResultValue">—</div>
@@ -867,6 +859,13 @@
   const panPickerReset = document.getElementById('panPickerReset');
   const panCardEls = [];
 
+  // The custom pan calculator's shape comes from tapping one of these
+  // same icons rather than a second, redundant shape picker of its own
+  // (a dropdown duplicating pictures already right above it) — one tap
+  // both filters the reference list to that shape and switches the
+  // calculator to it.
+  let customPanShapeKey = 'round';
+
   function resetPanFilter() {
     document.querySelectorAll('.pan-picker-btn').forEach((b) => b.classList.remove('active'));
     panCardEls.forEach((c) => { c.hidden = false; });
@@ -905,6 +904,9 @@
       pickerBtn.classList.add('active');
       panCardEls.forEach((c) => { c.hidden = c.dataset.icon !== pan.icon; });
       panPickerReset.classList.add('visible');
+
+      customPanShapeKey = pan.icon;
+      renderCustomPanFields();
     });
     panPickerStrip.appendChild(pickerBtn);
   });
@@ -943,6 +945,18 @@
       fields: [{ key: 'cavityDiameter', label: 'Cavity diameter (in)' }, { key: 'depth', label: 'Cavity depth (in)' }, { key: 'count', label: 'Number of cavities' }],
       volume: (v) => Math.PI * Math.pow(v.cavityDiameter / 2, 2) * v.depth * (v.count || 1),
     },
+    // A springform pan is round — same math as "round" above, just its
+    // own icon in the picker strip since that's a real difference for
+    // finding the right pan, not for computing its volume.
+    springform: {
+      fields: [{ key: 'diameter', label: 'Diameter (in)' }, { key: 'depth', label: 'Depth (in)' }],
+      volume: (v) => Math.PI * Math.pow(v.diameter / 2, 2) * v.depth,
+    },
+  };
+
+  const SHAPE_LABEL = {
+    round: 'Round', square: 'Square', rectangle: 'Rectangular', loaf: 'Loaf',
+    bundt: 'Bundt / Tube', muffin: 'Muffin / Cupcake', springform: 'Springform',
   };
 
   // Rounds to the nearest quarter cup — nobody's measuring batter to
@@ -962,7 +976,8 @@
   }
 
   function renderCustomPanFields() {
-    const shape = document.getElementById('customPanShape').value;
+    const shape = customPanShapeKey;
+    document.getElementById('customPanShapeLabel').textContent = SHAPE_LABEL[shape];
     const wrap = document.getElementById('customPanDims');
     wrap.innerHTML = '';
     CUSTOM_PAN_SHAPES[shape].fields.forEach((f) => {
@@ -985,7 +1000,7 @@
   }
 
   function computeCustomPan() {
-    const shape = document.getElementById('customPanShape').value;
+    const shape = customPanShapeKey;
     const def = CUSTOM_PAN_SHAPES[shape];
     const valueEl = document.getElementById('customPanResultValue');
     const noteEl = document.getElementById('customPanResultNote');
@@ -1031,7 +1046,6 @@
     noteEl.textContent = closest ? 'Closest standard pan: ' + closest.name + ' (' + closest.volume + ').' : '';
   }
 
-  document.getElementById('customPanShape').addEventListener('change', renderCustomPanFields);
   renderCustomPanFields();
 
   // ----- Oven temperatures -----
