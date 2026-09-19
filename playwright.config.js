@@ -40,7 +40,18 @@ module.exports = defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'], launchOptions: { executablePath } },
+      use: {
+        ...devices['Desktop Chrome'],
+        // The worker cap above didn't change the failure count at all
+        // (identical "62 passed" both with and without it) — that rules
+        // out worker-count contention as the cause. --disable-dev-shm-usage
+        // is the standard fix for the next most common CI-only Chromium
+        // failure mode: the runner's /dev/shm is too small for Chrome's
+        // default shared-memory usage, so it degrades (and eventually
+        // hangs new pages/contexts until they time out) well before any
+        // OS-visible crash or error message shows up in the job log.
+        launchOptions: { executablePath, args: ['--disable-dev-shm-usage'] },
+      },
     },
   ],
 });
