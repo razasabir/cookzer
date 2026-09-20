@@ -133,6 +133,10 @@ test.describe('Feed — action buttons', () => {
   test('Share opens an in-app popup with the link, not the OS share sheet', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
     await page.locator('#post-post-plain .action-btn[title="Share"]').click();
+    // Share now opens a Reshare/Group/External picker first, not the
+    // share-link popup directly — "Share externally" is the option that
+    // reaches the same in-app link popup as before.
+    await page.locator('.cz2-row', { hasText: 'Share externally' }).click();
     await expect(page.locator('.cz-share-link-row input')).toHaveValue(/post=post-plain/);
 
     await page.locator('.cz-share-copy-btn').click();

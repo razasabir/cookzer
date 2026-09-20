@@ -18,6 +18,7 @@
   <script src="auth-guard.js"></script>
   <script src="friends-widget.js"></script>
   <script src="cookzer-modal.js"></script>
+  <script src="share-save-menu.js"></script>
   <script src="photo-filters.js"></script>
   <script src="photo-cropper.js"></script>
   <script src="theme.js"></script>
@@ -759,6 +760,7 @@
 
   let currentUser = null;
   let recipe = null;
+  let recipeHeroUrl = null;
   let selectedStar = 0;
   let originalServings = null;
   let currentServings = null;
@@ -912,10 +914,15 @@
     rescaleIngredients();
   });
 
-  document.getElementById('shareBtn').addEventListener('click', async () => {
+  document.getElementById('shareBtn').addEventListener('click', () => {
     const url = location.origin + location.pathname + '?id=' + recipeId;
     const title = document.getElementById('rTitle').textContent || 'A recipe on Cookzer';
-    await CookzerModal.share({ title, url });
+    CookzerShareMenu.open({
+      sb,
+      currentUserId: currentUser.id,
+      postFields: { recipe_id: recipeId },
+      externalShare: { title, url },
+    });
   });
 
   document.getElementById('printBtn').addEventListener('click', () => {
@@ -1116,6 +1123,7 @@
 
     if (recipe.hero_photo_path) {
       const heroUrl = publicUrl('recipe-photos', recipe.hero_photo_path);
+      recipeHeroUrl = heroUrl;
       const heroEl = document.getElementById('rHero');
       heroEl.style.backgroundImage = "url('" + heroUrl + "')";
       heroEl.style.cursor = 'zoom-in';
@@ -1221,7 +1229,7 @@
   // Picking a folder to save into is picking one of several options, so
   // it gets a real clickable list (the established .cz2-* picker
   // pattern) instead of a "type the folder's number" text prompt.
-  document.getElementById('saveBtn').addEventListener('click', async () => {
+  async function openCookbookFolderPicker() {
     const { data: folders } = await sb.from('cookbook_folders').select('id, name, emoji').eq('user_id', currentUser.id).order('created_at');
 
     if (!folders || folders.length === 0) {
@@ -1260,6 +1268,19 @@
     modal.appendChild(list);
 
     document.getElementById('pickerOverlay').hidden = false;
+  }
+
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    CookzerSaveMenu.open({
+      sb,
+      currentUserId: currentUser.id,
+      recipeId,
+      imageUrl: recipeHeroUrl,
+      deviceFilename: (document.getElementById('rTitle').textContent || 'cookzer-recipe').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.jpg',
+      saveAsRecipeLabel: 'Save as a Recipe',
+      onSaveAsRecipe: openCookbookFolderPicker,
+      onSaveToMealPlanner: openAddToPlannerPicker,
+    });
   });
 
   async function refreshHeartStatus() {
@@ -1312,7 +1333,7 @@
     });
   }
 
-  document.getElementById('addToPlannerBtn').addEventListener('click', async () => {
+  async function openAddToPlannerPicker() {
     const week = plannerWeekDates();
     const { data: existing } = await sb
       .from('meal_plan_entries')
@@ -1362,7 +1383,9 @@
     modal.appendChild(list);
 
     document.getElementById('pickerOverlay').hidden = false;
-  });
+  }
+
+  document.getElementById('addToPlannerBtn').addEventListener('click', openAddToPlannerPicker);
 
   // Comments on a recipe — same table, shape, and moderation rules as a
   // post's comments (the recipe's own author can delete anyone's

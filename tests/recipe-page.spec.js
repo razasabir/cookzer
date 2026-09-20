@@ -54,10 +54,13 @@ test.describe('Recipe page — save to cookbook', () => {
     await load(page);
     await page.locator('#saveBtn').click();
     await expect(page.locator('.cz-modal-overlay')).toHaveCount(0);
+    // Save now opens a Save-as-Recipe/Meal-Planner/Device picker first —
+    // "Save as a Recipe" is the option that reaches the folder picker.
+    await page.locator('.cz2-row', { hasText: 'Save as a Recipe' }).click();
     await expect(page.locator('#pickerOverlay')).toBeVisible();
-    await expect(page.locator('.cz2-row')).toHaveCount(2);
-    await expect(page.locator('.cz2-row').nth(0)).toContainText('No folder');
-    await expect(page.locator('.cz2-row').nth(1)).toContainText('Weeknights');
+    await expect(page.locator('#pickerOverlay .cz2-row')).toHaveCount(2);
+    await expect(page.locator('#pickerOverlay .cz2-row').nth(0)).toContainText('No folder');
+    await expect(page.locator('#pickerOverlay .cz2-row').nth(1)).toContainText('Weeknights');
 
     await page.locator('.cz2-row', { hasText: 'Weeknights' }).click();
     await expect(page.locator('#pickerOverlay')).toBeHidden();
@@ -96,6 +99,45 @@ test.describe('Recipe page — comments', () => {
     expect(inserted.author_id).toBe('me-1');
     expect(inserted.text).toBe('Great recipe!');
     await expect(box.locator('.comment-row')).toHaveCount(3);
+  });
+});
+
+test.describe('Recipe page — Share popup', () => {
+  test('clicking Share opens the Reshare/Group/External picker, not the share dialog directly', async ({ page }) => {
+    await load(page);
+    await page.locator('#shareBtn').click();
+    await expect(page.locator('.cz2-modal h3')).toHaveText('Share');
+    await expect(page.locator('.cz2-row')).toHaveCount(3);
+  });
+
+  test('Reshare to your feed posts a share referencing this recipe', async ({ page }) => {
+    await load(page);
+    await page.locator('#shareBtn').click();
+    await page.locator('.cz2-row', { hasText: 'Reshare to your feed' }).click();
+    await page.locator('.cz-modal-btn.cz-primary').click();
+
+    const inserted = await page.evaluate(() => window.__INSERTED_POSTS__);
+    expect(inserted).toHaveLength(1);
+    expect(inserted[0]).toMatchObject({ kind: 'share', author_id: 'me-1', recipe_id: 'r1' });
+  });
+
+  test('Share externally reaches the existing in-app share-link popup', async ({ page }) => {
+    await load(page);
+    await page.locator('#shareBtn').click();
+    await page.locator('.cz2-row', { hasText: 'Share externally' }).click();
+    await expect(page.locator('.cz-share-link-row input')).toHaveValue(/id=r1/);
+  });
+});
+
+test.describe('Recipe page — Save popup reuses the existing Meal Planner picker', () => {
+  test('Save > Save to Meal Planner opens the exact same conflict-aware day picker as the dedicated button', async ({ page }) => {
+    await load(page);
+    await page.locator('#saveBtn').click();
+    await page.locator('.cz2-row', { hasText: 'Save to Meal Planner' }).click();
+
+    await expect(page.locator('#pickerOverlay')).toBeVisible();
+    await expect(page.locator('#pickerModal h3')).toHaveText('Add "Spaghetti Carbonara" to which day?');
+    await expect(page.locator('.cz2-row')).toHaveCount(7);
   });
 });
 

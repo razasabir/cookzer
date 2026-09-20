@@ -2,6 +2,7 @@ window.__DELETED_COMMENT_IDS__ = [];
 window.__INSERTED_COMMENTS__ = [];
 window.__SAVED_UPSERTS__ = [];
 window.__INSERTED_PLANNER_ENTRIES__ = [];
+window.__INSERTED_POSTS__ = [];
 
 const RECIPE = {
   id: 'r1',
@@ -123,6 +124,8 @@ function chain(table) {
         hearts = hearts.concat([payload]);
       } else if (table === 'meal_plan_entries') {
         window.__INSERTED_PLANNER_ENTRIES__.push(payload);
+      } else if (table === 'posts') {
+        window.__INSERTED_POSTS__.push(payload);
       }
       return Promise.resolve({ data: null, error: null });
     },

@@ -20,6 +20,7 @@
   <script src="bunny-config.js"></script>
   <script src="auth-guard.js"></script>
   <script src="cookzer-modal.js"></script>
+  <script src="share-save-menu.js"></script>
   <script src="photo-filters.js"></script>
   <script src="photo-cropper.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
@@ -543,6 +544,55 @@
       background-size: cover;
       background-position: center;
     }
+
+  .shared-embed {
+      margin: 10px 0;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      font-size: 13px;
+      color: var(--ink-soft);
+    }
+
+  .shared-embed-link { display: block; text-decoration: none; color: inherit; }
+
+  .shared-embed-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+  .shared-embed-profile { padding: 12px 14px; }
+  .shared-embed-profile .shared-embed-avatar { width: 40px; height: 40px; }
+
+  .shared-embed-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+  .shared-embed-photo {
+      width: 100%;
+      height: 180px;
+      background: linear-gradient(135deg, #F3EEE3, #E5D9C8);
+      background-size: cover;
+      background-position: center;
+    }
+
+  .shared-embed-caption { padding: 8px 12px 12px; color: var(--ink); }
 
   .card-video {
       width: 100%;
@@ -1343,6 +1393,79 @@
     }
   }
 
+  // A reshared post carries a reference (to another post, or to a
+  // profile) rather than its own content, so the embedded preview is
+  // fetched separately once the card itself is already on screen.
+  async function loadSharedEmbed(post, container) {
+    if (post.shared_post_id) {
+      const { data: original } = await sb
+        .from('posts')
+        .select('id, caption, photo_path, profiles!posts_author_id_fkey(display_name, initials, avatar_url)')
+        .eq('id', post.shared_post_id)
+        .maybeSingle();
+      container.innerHTML = '';
+      if (!original) {
+        container.textContent = 'This post is no longer available.';
+        return;
+      }
+      const link = document.createElement('a');
+      link.className = 'shared-embed-link';
+      link.href = 'cookzer-feed.html?post=' + original.id;
+
+      const header = document.createElement('div');
+      header.className = 'shared-embed-header';
+      const avatar = document.createElement('div');
+      avatar.className = 'shared-embed-avatar';
+      setAvatarEl(avatar, original.profiles);
+      const name = document.createElement('span');
+      name.textContent = original.profiles ? original.profiles.display_name : 'Someone';
+      header.appendChild(avatar);
+      header.appendChild(name);
+      link.appendChild(header);
+
+      if (original.photo_path) {
+        const photo = document.createElement('div');
+        photo.className = 'shared-embed-photo';
+        photo.style.backgroundImage = "url('" + publicUrl('post-photos', original.photo_path) + "')";
+        link.appendChild(photo);
+      }
+      if (original.caption) {
+        const caption = document.createElement('div');
+        caption.className = 'shared-embed-caption';
+        caption.textContent = original.caption;
+        link.appendChild(caption);
+      }
+      container.appendChild(link);
+    } else if (post.shared_profile_id) {
+      const { data: profile } = await sb
+        .from('profiles')
+        .select('id, display_name, initials, avatar_url')
+        .eq('id', post.shared_profile_id)
+        .maybeSingle();
+      container.innerHTML = '';
+      if (!profile) {
+        container.textContent = 'This profile is no longer available.';
+        return;
+      }
+      const link = document.createElement('a');
+      link.className = 'shared-embed-link shared-embed-profile';
+      link.href = 'cookzer-profile.html?id=' + profile.id;
+      link.style.display = 'flex';
+      link.style.alignItems = 'center';
+      link.style.gap = '10px';
+      const avatar = document.createElement('div');
+      avatar.className = 'shared-embed-avatar';
+      setAvatarEl(avatar, profile);
+      const name = document.createElement('span');
+      name.style.fontWeight = '600';
+      name.style.color = 'var(--ink)';
+      name.textContent = profile.display_name;
+      link.appendChild(avatar);
+      link.appendChild(name);
+      container.appendChild(link);
+    }
+  }
+
   // @mention autocomplete — a real clickable list of the people you
   // follow (this app's own definition of "friends"), not a numbered
   // prompt. Attaches to any text input sitting inside a
@@ -1959,7 +2082,7 @@
     const name = document.createElement('div');
     name.className = 'card-name';
     name.textContent = (post.profiles ? post.profiles.display_name : 'Someone') +
-      (post.kind === 'cook_in' ? ' cooked this' : post.kind === 'remake' ? ' remade this' : post.kind === 'tip' ? ' shared a tip' : '');
+      (post.kind === 'cook_in' ? ' cooked this' : post.kind === 'remake' ? ' remade this' : post.kind === 'tip' ? ' shared a tip' : post.kind === 'share' ? ' shared this' : '');
     const time = document.createElement('div');
     time.className = 'card-time';
     time.textContent = timeAgo(post.created_at) + (post.restaurant_name ? ' · 📍 ' + post.restaurant_name : '');
@@ -2050,6 +2173,14 @@
       moodBadge.className = 'mood-badge';
       moodBadge.textContent = MOOD_EMOJI[post.mood] ? MOOD_EMOJI[post.mood] + ' ' + post.mood : post.mood;
       content.appendChild(moodBadge);
+    }
+
+    if (post.shared_post_id || post.shared_profile_id) {
+      const embed = document.createElement('div');
+      embed.className = 'shared-embed';
+      embed.textContent = 'Loading…';
+      content.appendChild(embed);
+      loadSharedEmbed(post, embed);
     }
 
     // Filled in by refreshAllPostStats() once it knows which posts are
@@ -2155,7 +2286,14 @@
       bookmarkBtn.id = 'bookmarkBtn-' + post.id;
       bookmarkBtn.title = 'Save';
       bookmarkBtn.textContent = '🔖';
-      bookmarkBtn.addEventListener('click', () => toggleBookmark(post.id));
+      bookmarkBtn.addEventListener('click', () => CookzerSaveMenu.open({
+        sb,
+        currentUserId: currentUser.id,
+        recipeId: post.recipe_id,
+        imageUrl: cardImageUrl,
+        deviceFilename: 'cookzer-photo.jpg',
+        onSaveAsRecipe: () => toggleBookmark(post.id),
+      }));
       actions.appendChild(bookmarkBtn);
     }
     content.appendChild(actions);
@@ -2207,9 +2345,15 @@
     else await CookzerModal.alert('Thanks — this post has been reported for review.');
   }
 
-  async function sharePost(postId) {
+  function sharePost(postId) {
     const url = location.origin + location.pathname.replace(/[^/]*$/, '') + 'cookzer-feed.html?post=' + postId;
-    await CookzerModal.share({ title: 'Cookzer', url });
+    CookzerShareMenu.open({
+      sb,
+      currentUserId: currentUser.id,
+      postFields: { shared_post_id: postId },
+      externalShare: { title: 'Cookzer', url },
+      onShared: loadFeed,
+    });
   }
 
   async function deletePost(postId, cardEl) {
@@ -2504,7 +2648,7 @@
 
     let postsQuery = sb
       .from('posts')
-      .select('id, author_id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles!posts_author_id_fkey(display_name, initials, avatar_url), recipes!posts_recipe_id_fkey(title, hero_photo_path)')
+      .select('id, author_id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, shared_post_id, shared_profile_id, created_at, profiles!posts_author_id_fkey(display_name, initials, avatar_url), recipes!posts_recipe_id_fkey(title, hero_photo_path)')
       .order('created_at', { ascending: false })
       .range(feedOffset, feedOffset + FEED_PAGE_SIZE - 1);
 
@@ -2528,7 +2672,7 @@
       const tag = currentFeedFilter.slice(TAG_FILTER_PREFIX.length).replace(/"/g, '');
       ({ data: rawPosts, error } = await sb
         .from('posts')
-        .select('id, author_id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, created_at, profiles!posts_author_id_fkey(display_name, initials, avatar_url), recipes!posts_recipe_id_fkey!inner(title, hero_photo_path)')
+        .select('id, author_id, kind, recipe_id, caption, photo_path, video_uid, mood, restaurant_name, shared_post_id, shared_profile_id, created_at, profiles!posts_author_id_fkey(display_name, initials, avatar_url), recipes!posts_recipe_id_fkey!inner(title, hero_photo_path)')
         .order('created_at', { ascending: false })
         .range(feedOffset, feedOffset + FEED_PAGE_SIZE - 1)
         .filter('recipes.tags', 'cs', '{"' + tag + '"}'));
