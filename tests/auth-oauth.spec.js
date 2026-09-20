@@ -32,4 +32,9 @@ test.describe('OAuth sign-in buttons', () => {
     await expect(page.locator('#message')).toContainText('provider is not enabled');
     await expect(page.locator('#googleAuthBtn')).toBeEnabled();
   });
+
+  test('the Cookzer logo links back to the marketing home page', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-auth.html', 'auth-oauth.js');
+    await expect(page.locator('.brand')).toHaveAttribute('href', 'index.html');
+  });
 });

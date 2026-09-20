@@ -40,12 +40,14 @@
     }
 
   .brand {
+      display: block;
       text-align: center;
       font-family: 'Fredoka', sans-serif;
       font-weight: 600;
       font-size: 28px;
       color: var(--olive-dark);
       margin-bottom: 6px;
+      text-decoration: none;
     }
 
   .brand span { color: var(--brick); }
@@ -193,7 +195,7 @@
     <div style="display:flex; justify-content:flex-end; margin-bottom:-8px;">
       <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button" style="width:32px;height:32px;font-size:15px;">🌙</button>
     </div>
-    <div class="brand">Cook<span>zer</span></div>
+    <a class="brand" href="index.html">Cook<span>zer</span></a>
     <div class="tagline">A social network for people who cook.</div>
 
     <div class="oauth-buttons">
