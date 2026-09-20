@@ -55,6 +55,32 @@ test.describe('Meal planner — per-person suggestion columns', () => {
     await expect(emmaCol.locator('.planner-person-add-btn')).toHaveCount(0);
   });
 
+  test('an existing suggestion can be edited in place instead of only used or left as-is', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
+    const monday = page.locator('.planner-day-card').first();
+    const emmaCol = monday.locator('.planner-person-col', { hasText: 'Emma' });
+
+    await emmaCol.locator('.planner-person-edit-btn').click();
+
+    await expect(page.locator('#pickerModal h3')).toContainText('Edit suggestion for');
+    await expect(page.locator('#pickerModal h3')).toContainText('Emma');
+    const input = page.locator('#pickerModal input[type="text"]');
+    await expect(input).toHaveValue('Tacos');
+
+    await input.fill('Fajitas');
+    await page.locator('#pickerModal button', { hasText: 'Save' }).click();
+
+    await expect.poll(() => page.evaluate(() => window.__UPDATED_SUGGESTIONS__.length)).toBe(1);
+    const updated = await page.evaluate(() => window.__UPDATED_SUGGESTIONS__[0]);
+    expect(updated.id).toBe('sugg-1');
+    expect(updated.payload.dish_text).toBe('Fajitas');
+
+    // No duplicate insert — this replaced the existing suggestion in place.
+    expect(await page.evaluate(() => window.__INSERTED_SUGGESTIONS__.length)).toBe(0);
+    await expect(emmaCol.locator('.planner-person-suggestion')).toHaveText('Fajitas');
+    await expect(page.locator('#pickerOverlay')).toBeHidden();
+  });
+
   test('the ghost column links to Settings instead of opening the suggestion picker', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
     const monday = page.locator('.planner-day-card').first();
