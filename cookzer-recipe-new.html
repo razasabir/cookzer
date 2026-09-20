@@ -405,9 +405,6 @@
       // horizontal scroll) on a narrow/mobile viewport, same as there.
       modal.style.maxWidth = '860px';
 
-      const heading = document.createElement('h3');
-      heading.textContent = 'Choose a filter';
-
       const previewWrap = document.createElement('div');
       previewWrap.style.cssText = 'display:flex; justify-content:center; margin-bottom:10px;';
       const preview = document.createElement('img');
@@ -432,7 +429,6 @@
       actions.appendChild(cancelBtn);
       actions.appendChild(useBtn);
 
-      modal.appendChild(heading);
       modal.appendChild(previewWrap);
       modal.appendChild(suggestion);
       modal.appendChild(swatchRow);

@@ -15,20 +15,23 @@
 (function () {
   const FILTERS = [
     { key: 'original', label: 'Original', css: 'none' },
+    // Food-photography-specific presets lead the row — each targets a
+    // look common to a particular kind of dish (produce/bowls, plated
+    // fine dining, baked goods, grilled/roasted) — since they're the
+    // ones actually tuned for this app's subject and the ones people
+    // should see and reach for first, ahead of the generic Instagram-
+    // style set below.
+    { key: 'golden-hour', label: 'Golden Hour', css: 'sepia(0.15) saturate(1.4) brightness(1.12) contrast(1.05)' },
+    { key: 'fresh', label: 'Fresh', css: 'brightness(1.1) saturate(1.05) contrast(0.95)' },
+    { key: 'crisp', label: 'Crisp', css: 'contrast(1.2) saturate(1.15) brightness(1.02) hue-rotate(2deg)' },
+    { key: 'bakery', label: 'Bakery', css: 'contrast(0.85) brightness(1.08) saturate(0.85) sepia(0.1)' },
+    { key: 'char', label: 'Char', css: 'contrast(1.3) brightness(0.9) saturate(0.9) sepia(0.1)' },
     { key: 'vivid', label: 'Vivid', css: 'saturate(1.6) contrast(1.15)' },
     { key: 'warm', label: 'Warm', css: 'sepia(0.25) saturate(1.3) brightness(1.05)' },
     { key: 'cool', label: 'Cool', css: 'hue-rotate(-8deg) saturate(1.1) brightness(1.03) contrast(1.05)' },
     { key: 'bw', label: 'B&W', css: 'grayscale(1) contrast(1.1)' },
     { key: 'vintage', label: 'Vintage', css: 'sepia(0.4) contrast(0.9) brightness(0.95) saturate(0.75)' },
     { key: 'moody', label: 'Moody', css: 'contrast(1.25) brightness(0.85) saturate(0.85)' },
-    // Food-photography-specific presets, added alongside the general set
-    // above — each targets a look common to a particular kind of dish
-    // (produce/bowls, plated fine dining, baked goods, grilled/roasted).
-    { key: 'golden-hour', label: 'Golden Hour', css: 'sepia(0.15) saturate(1.4) brightness(1.12) contrast(1.05)' },
-    { key: 'fresh', label: 'Fresh', css: 'brightness(1.1) saturate(1.05) contrast(0.95)' },
-    { key: 'crisp', label: 'Crisp', css: 'contrast(1.2) saturate(1.15) brightness(1.02) hue-rotate(2deg)' },
-    { key: 'bakery', label: 'Bakery', css: 'contrast(0.85) brightness(1.08) saturate(0.85) sepia(0.1)' },
-    { key: 'char', label: 'Char', css: 'contrast(1.3) brightness(0.9) saturate(0.9) sepia(0.1)' },
   ];
   const FILTER_CSS = Object.fromEntries(FILTERS.map((f) => [f.key, f.css]));
 
@@ -149,12 +152,27 @@
     const style = document.createElement('style');
     style.id = 'photo-filters-style';
     style.textContent = `
+      .pf-swatch-heading {
+        font-size: 11px; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 700;
+        color: var(--ink, #26251f); background: var(--card-bg, #fff); display: inline-block;
+        padding: 3px 8px; border-radius: 6px; margin: 2px 2px 8px;
+      }
       .pf-swatch-row { display: flex; gap: 10px; overflow-x: auto; padding: 8px 2px; }
-      .pf-swatch { flex-shrink: 0; text-align: center; cursor: pointer; background: none; border: none; padding: 0; font: inherit; }
+      .pf-swatch { position: relative; flex-shrink: 0; text-align: center; cursor: pointer; background: none; border: none; padding: 0; font: inherit; }
       .pf-swatch img { width: 52px; height: 52px; object-fit: cover; border-radius: 10px; border: 2px solid transparent; display: block; }
       .pf-swatch.active img { border-color: var(--forest, #2f6b3a); }
-      .pf-swatch-label { font-size: 10px; color: var(--ink-soft, #6b6255); margin-top: 3px; }
-      .pf-swatch.active .pf-swatch-label { color: var(--forest, #2f6b3a); font-weight: 600; }
+      /* An opaque pill overlaid on the thumbnail itself, not text sitting
+         directly on whatever's behind the swatch row (a green gradient
+         composer, a dark card, a photo of unknown brightness) — using the
+         app's own card/ink pair guarantees the name stays legible no
+         matter where this row is dropped in. */
+      .pf-swatch-label {
+        position: absolute; left: 3px; right: 3px; bottom: 3px;
+        font-size: 9px; font-weight: 600; line-height: 1.3;
+        color: var(--ink, #26251f); background: var(--card-bg, #fff);
+        border-radius: 5px; padding: 2px 0;
+      }
+      .pf-swatch.active .pf-swatch-label { color: #fff; background: var(--forest, #2f6b3a); }
       .pf-vignette-toggle {
         flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
         width: 52px; height: 52px; border-radius: 10px; border: 2px solid var(--line, #e4ded2);
@@ -164,7 +182,10 @@
       .pf-vignette-icon { font-size: 18px; line-height: 1; }
       .pf-vignette-label { font-size: 10px; color: var(--ink-soft, #6b6255); }
       .pf-vignette-toggle.active .pf-vignette-label { color: var(--forest, #2f6b3a); font-weight: 600; }
-      .pf-suggestion { font-size: 12px; color: var(--ink-soft, #6b6255); margin: 2px 2px 8px; }
+      .pf-suggestion {
+        font-size: 12px; color: var(--ink, #26251f); background: var(--card-bg, #fff);
+        display: inline-block; padding: 5px 10px; border-radius: 8px; margin: 2px 2px 8px;
+      }
       .pf-suggestion strong { color: var(--forest, #2f6b3a); }
     `;
     document.head.appendChild(style);
@@ -205,7 +226,16 @@
   function renderSwatches(containerEl, previewImgSrc, activeKey, onSelect, vignetteOn, onVignetteToggle) {
     injectStyle();
     containerEl.innerHTML = '';
-    containerEl.className = (containerEl.className ? containerEl.className + ' ' : '') + 'pf-swatch-row';
+
+    const heading = document.createElement('div');
+    heading.className = 'pf-swatch-heading';
+    heading.textContent = 'Food Photography Effects';
+    containerEl.appendChild(heading);
+
+    const row = document.createElement('div');
+    row.className = 'pf-swatch-row';
+    containerEl.appendChild(row);
+
     FILTERS.forEach((f) => {
       const swatch = document.createElement('button');
       swatch.type = 'button';
@@ -222,7 +252,7 @@
       swatch.appendChild(img);
       swatch.appendChild(label);
       swatch.addEventListener('click', () => onSelect(f));
-      containerEl.appendChild(swatch);
+      row.appendChild(swatch);
     });
 
     if (onVignetteToggle) {
@@ -241,7 +271,7 @@
       toggle.appendChild(icon);
       toggle.appendChild(label);
       toggle.addEventListener('click', () => onVignetteToggle(!vignetteOn));
-      containerEl.appendChild(toggle);
+      row.appendChild(toggle);
     }
   }
 
