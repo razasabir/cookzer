@@ -17,6 +17,7 @@
   <script src="push-notifications.js"></script>
   <script src="auth-guard.js"></script>
   <script src="cookzer-modal.js"></script>
+  <script src="share-save-menu.js"></script>
   <script src="friends-widget.js"></script>
   <script src="people-you-may-know.js"></script>
   <script src="theme.js"></script>
@@ -551,8 +552,13 @@
       }
     });
 
-    document.getElementById('shareInviteLinkBtn').addEventListener('click', async () => {
-      await CookzerModal.share({ title: 'Join me on Cookzer', text: 'Come cook with me on Cookzer 🍳', url: link });
+    document.getElementById('shareInviteLinkBtn').addEventListener('click', () => {
+      CookzerShareMenu.open({
+        sb,
+        currentUserId: currentUser.id,
+        postFields: { caption: '🍳 Come cook with me on Cookzer! ' + link },
+        externalShare: { title: 'Join me on Cookzer', text: 'Come cook with me on Cookzer 🍳', url: link },
+      });
     });
 
     const { count } = await sb.from('profiles').select('*', { count: 'exact', head: true }).eq('referred_by', currentUser.id);

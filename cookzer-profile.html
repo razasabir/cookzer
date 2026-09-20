@@ -19,6 +19,7 @@
   <script src="auth-guard.js"></script>
   <script src="friends-widget.js"></script>
   <script src="cookzer-modal.js"></script>
+  <script src="share-save-menu.js"></script>
   <script src="photo-cropper.js"></script>
   <script src="theme.js"></script>
   <script src="photo-lightbox.js"></script>
@@ -1643,10 +1644,15 @@
     textarea.focus();
   }
 
-  async function shareProfile() {
+  function shareProfile() {
     const url = location.origin + location.pathname + '?id=' + viewedId;
     const name = document.getElementById('profileName') ? document.getElementById('profileName').textContent : 'a Cookzer profile';
-    await CookzerModal.share({ title: name, url });
+    CookzerShareMenu.open({
+      sb,
+      currentUserId: currentUser.id,
+      postFields: { shared_profile_id: viewedId, caption: 'Check out ' + name + '’s profile on Cookzer!' },
+      externalShare: { title: name, url },
+    });
   }
 
   async function loadStats() {
