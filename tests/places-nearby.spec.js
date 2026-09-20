@@ -108,6 +108,21 @@ test.describe('places-nearby serverless handler', () => {
     expect(placesCall.opts.headers['X-Goog-Api-Key']).toBe('test-maps-key');
     const sentBody = JSON.parse(placesCall.opts.body);
     expect(sentBody.locationRestriction.circle.center).toEqual({ latitude: 30.27, longitude: -97.74 });
+    expect(sentBody.locationRestriction.circle.radius).toBe(1000); // default when the client sends no radiusMeters
+  });
+
+  test('clamps an out-of-range radiusMeters to the 50-2000 bounds', async () => {
+    let sentBody = null;
+    global.fetch = async (url, opts) => {
+      if (typeof url === 'string' && url.indexOf('supabase.co') !== -1) return { ok: true, json: async () => ({}) };
+      sentBody = JSON.parse(opts.body);
+      return { ok: true, json: async () => ({ places: [] }) };
+    };
+    const handler = loadHandler();
+    const req = { method: 'POST', headers: { authorization: 'Bearer good-token' }, body: { lat: 1, lng: 2, radiusMeters: 50000 } };
+    const res = fakeRes();
+    await handler(req, res);
+    expect(sentBody.locationRestriction.circle.radius).toBe(2000);
   });
 
   test('returns 502 with detail when Google Places rejects the request', async () => {

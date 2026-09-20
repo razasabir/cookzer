@@ -74,7 +74,7 @@ module.exports = async function handler(req, res) {
         locationRestriction: {
           circle: {
             center: { latitude: lat, longitude: lng },
-            radius: Math.min(Math.max(radiusMeters || 200, 50), 500),
+            radius: Math.min(Math.max(radiusMeters || 1000, 50), 2000),
           },
         },
       }),

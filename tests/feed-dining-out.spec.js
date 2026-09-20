@@ -9,7 +9,7 @@ test.describe('Feed — Dining Out via Google Places', () => {
 
     const bodies = await page.evaluate(() => window.__PLACES_FETCH_BODIES__);
     expect(bodies).toHaveLength(1);
-    expect(bodies[0]).toMatchObject({ lat: 30.27, lng: -97.74 });
+    expect(bodies[0]).toMatchObject({ lat: 30.27, lng: -97.74, radiusMeters: 1000 });
   });
 
   test('the nearby list shows distance and Google rating, not just a name', async ({ page }) => {
