@@ -67,5 +67,16 @@
       .is('read_at', null);
   }
 
-  window.CookzerNotifications = { loadPrefs, fetchItems, getUnreadCount, markAllRead };
+  // Marks a single notification read — lets someone clear one item with
+  // its own "mark as read" control instead of having to open (navigate
+  // into) it, or wait for the bulk markAllRead above.
+  async function markRead(userId, notificationId) {
+    await sb
+      .from('notifications')
+      .update({ read_at: new Date().toISOString() })
+      .eq('id', notificationId)
+      .eq('recipient_id', userId);
+  }
+
+  window.CookzerNotifications = { loadPrefs, fetchItems, getUnreadCount, markAllRead, markRead };
 })();
