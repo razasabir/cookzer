@@ -1708,7 +1708,11 @@
 
   document.getElementById('composerPostBtn').addEventListener('click', createPost);
 
-  // ----- Restaurant check-in (OpenStreetMap Overpass API — free, no key) -----
+  // ----- Restaurant check-in (Google Places API via /api/places-nearby) -----
+  // selectedRestaurant is either null, a full place object picked from the
+  // nearby list ({ name, googlePlaceId, address, lat, lng, rating }), or a
+  // bare { name } typed manually (no stable id to link/dedupe against, so
+  // it stays a plain restaurant_name string on the post like before).
   let selectedRestaurant = null;
 
   function haversineMeters(lat1, lon1, lat2, lon2) {
@@ -1746,18 +1750,18 @@
     useBtn.textContent = 'Use this';
     useBtn.addEventListener('click', () => {
       if (!input.value.trim()) return;
-      applyRestaurantSelection(input.value.trim());
+      applyRestaurantSelection({ name: input.value.trim() });
     });
     row.appendChild(input);
     row.appendChild(useBtn);
     body.appendChild(row);
   }
 
-  function applyRestaurantSelection(name) {
-    selectedRestaurant = name;
+  function applyRestaurantSelection(place) {
+    selectedRestaurant = place;
     document.getElementById('restaurantPanel').hidden = true;
     document.getElementById('restaurantTag').hidden = false;
-    document.getElementById('restaurantTagName').textContent = name;
+    document.getElementById('restaurantTagName').textContent = place.name;
   }
 
   document.getElementById('restaurantTagRemove').addEventListener('click', () => {
@@ -1778,22 +1782,19 @@
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        const query = '[out:json][timeout:10];(node["amenity"~"restaurant|cafe|fast_food|bar|pub"](around:200,' +
-          latitude + ',' + longitude + '););out center 15;';
 
-        let results = [];
+        let places = [];
         try {
-          const res = await fetch('https://overpass-api.de/api/interpreter', {
+          const { data: { session } } = await sb.auth.getSession();
+          const resp = await fetch('/api/places-nearby', {
             method: 'POST',
-            body: 'data=' + encodeURIComponent(query),
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+            body: JSON.stringify({ lat: latitude, lng: longitude, radiusMeters: 200 }),
           });
-          const json = await res.json();
-          results = (json.elements || [])
-            .filter((el) => el.tags && el.tags.name)
-            .map((el) => ({
-              name: el.tags.name,
-              distance: haversineMeters(latitude, longitude, el.lat, el.lon),
-            }))
+          const json = await resp.json();
+          if (!resp.ok) throw new Error(json.error || 'Places lookup failed');
+          places = json.places
+            .map((p) => Object.assign({}, p, { distance: haversineMeters(latitude, longitude, p.lat, p.lng) }))
             .sort((a, b) => a.distance - b.distance)
             .slice(0, 5);
         } catch (e) {
@@ -1801,7 +1802,7 @@
           return;
         }
 
-        if (results.length === 0) {
+        if (places.length === 0) {
           showManualRestaurantEntry('No named places found nearby — type the name instead.');
           return;
         }
@@ -1813,15 +1814,15 @@
         label.style.color = 'var(--ink-soft)';
         label.textContent = 'You might be at:';
         body.appendChild(label);
-        results.forEach((r) => {
+        places.forEach((p) => {
           const btn = document.createElement('div');
           btn.style.padding = '6px 8px';
           btn.style.cursor = 'pointer';
           btn.style.borderRadius = '8px';
-          btn.textContent = r.name + ' (' + Math.round(r.distance) + 'm)';
+          btn.textContent = p.name + ' (' + Math.round(p.distance) + 'm)' + (p.rating ? ' · ' + p.rating.toFixed(1) + '★' : '');
           btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--card-bg)'; });
           btn.addEventListener('mouseleave', () => { btn.style.background = ''; });
-          btn.addEventListener('click', () => applyRestaurantSelection(r.name));
+          btn.addEventListener('click', () => applyRestaurantSelection(p));
           body.appendChild(btn);
         });
         const noneBtn = document.createElement('div');
@@ -1839,6 +1840,41 @@
     );
   });
 
+  // A Google-sourced selection gets its own stable restaurants row (create
+  // once, reuse forever via google_place_id) so its tag_count can actually
+  // add up across everyone who tags it — a manually-typed name has no
+  // stable id to dedupe against, so it stays a plain restaurant_name
+  // string with no linked row, same as before this change.
+  async function resolveRestaurantId(place) {
+    if (!place || !place.googlePlaceId) return null;
+
+    const { data: existing } = await sb
+      .from('restaurants')
+      .select('id')
+      .eq('google_place_id', place.googlePlaceId)
+      .maybeSingle();
+    if (existing) return existing.id;
+
+    const { data: created, error } = await sb
+      .from('restaurants')
+      .upsert(
+        {
+          name: place.name,
+          google_place_id: place.googlePlaceId,
+          address: place.address || null,
+          lat: place.lat || null,
+          lng: place.lng || null,
+          google_rating: place.rating || null,
+          created_by: currentUser.id,
+        },
+        { onConflict: 'google_place_id' }
+      )
+      .select('id')
+      .single();
+    if (error) return null;
+    return created.id;
+  }
+
   async function createPost() {
     const captionInput = document.getElementById('postCaption');
     let caption = captionInput.value.trim();
@@ -1855,10 +1891,20 @@
     }
 
     const isTip = document.getElementById('composerTipBtn').classList.contains('active-tip-tag');
+    const restaurantId = await resolveRestaurantId(selectedRestaurant);
 
     const { data: inserted, error } = await sb
       .from('posts')
-      .insert({ author_id: currentUser.id, kind: isTip ? 'tip' : 'post', caption: caption || null, photo_path: photoPath, video_uid: pendingVideoUid, mood: selectedMood, restaurant_name: selectedRestaurant })
+      .insert({
+        author_id: currentUser.id,
+        kind: isTip ? 'tip' : 'post',
+        caption: caption || null,
+        photo_path: photoPath,
+        video_uid: pendingVideoUid,
+        mood: selectedMood,
+        restaurant_name: selectedRestaurant ? selectedRestaurant.name : null,
+        restaurant_id: restaurantId,
+      })
       .select('id')
       .single();
 
