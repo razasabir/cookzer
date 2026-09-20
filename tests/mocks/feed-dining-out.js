@@ -7,7 +7,8 @@ const POSTS = [];
 
 // Geolocation isn't reliably mockable for a file:// page via Playwright's
 // context permissions API, so it's stubbed directly here instead.
-window.__GEO_MODE__ = 'success'; // 'success' | 'denied' | 'unsupported'
+window.__GEO_MODE__ = 'success'; // 'success' | 'denied' | 'unavailable' | 'timeout' | 'unsupported'
+const GEO_ERROR_CODES = { denied: 1, unavailable: 2, timeout: 3 };
 if (window.__GEO_MODE__ !== 'unsupported') {
   Object.defineProperty(navigator, 'geolocation', {
     configurable: true,
@@ -16,7 +17,7 @@ if (window.__GEO_MODE__ !== 'unsupported') {
         if (window.__GEO_MODE__ === 'success') {
           success({ coords: { latitude: 30.27, longitude: -97.74 } });
         } else {
-          error({ code: 1, message: 'denied' });
+          error({ code: GEO_ERROR_CODES[window.__GEO_MODE__] || 1, message: window.__GEO_MODE__ });
         }
       },
     },

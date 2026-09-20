@@ -1962,8 +1962,17 @@
         noneBtn.addEventListener('click', () => showManualRestaurantEntry());
         body.appendChild(noneBtn);
       },
-      () => {
-        showManualRestaurantEntry('Location permission denied — type the name instead.');
+      (error) => {
+        // The browser's geolocation error only ever had one message shown
+        // for it before, regardless of cause — misleading when the real
+        // reason was a timeout or the device/OS being unable to get a fix
+        // at all, not the user actually denying the permission.
+        const GEO_ERROR_MESSAGES = {
+          1: 'Location permission denied — allow location for this app in your device/browser settings, or type the name instead.',
+          2: "Couldn't get your location — type the name instead.",
+          3: 'Location took too long to respond — type the name instead.',
+        };
+        showManualRestaurantEntry((error && GEO_ERROR_MESSAGES[error.code]) || 'Could not get your location — type the name instead.');
       },
       { timeout: 8000 }
     );

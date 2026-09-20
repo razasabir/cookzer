@@ -74,4 +74,20 @@ test.describe('Feed — Dining Out via Google Places', () => {
     expect(post.restaurant_id).toBeNull();
     expect(await page.evaluate(() => window.__RESTAURANT_UPSERTS__.length)).toBe(0);
   });
+
+  test('when location is unavailable (not denied), the fallback message says so instead of blaming a denied permission', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-dining-out.js', "window.__GEO_MODE__ = 'unavailable';");
+    await page.click('#composerRestaurantBtn');
+    const body = page.locator('#restaurantPanelBody');
+    await expect(body).toContainText("Couldn't get your location");
+    await expect(body).not.toContainText('permission denied');
+  });
+
+  test('when the location request times out, the fallback message says so instead of blaming a denied permission', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-dining-out.js', "window.__GEO_MODE__ = 'timeout';");
+    await page.click('#composerRestaurantBtn');
+    const body = page.locator('#restaurantPanelBody');
+    await expect(body).toContainText('took too long to respond');
+    await expect(body).not.toContainText('permission denied');
+  });
 });
