@@ -120,10 +120,38 @@
     }
 
   .day-label {
+      display: flex;
+      flex-direction: column;
+      min-width: 58px;
+    }
+
+  .day-label-name {
       font-weight: 600;
       color: var(--brick);
-      min-width: 50px;
       font-size: 14px;
+    }
+
+  .day-label-date {
+      font-weight: 500;
+      color: var(--ink-soft);
+      font-size: 11px;
+    }
+
+  .jump-to-date-btn {
+      background: none;
+      border: none;
+      color: var(--olive);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+  .jump-to-date-btn:hover {
+      background: var(--cream);
+      text-decoration: underline;
     }
 
   .meal-slot {
@@ -498,9 +526,12 @@
   <div class="planner-content">
     <div class="planner-week-nav">
       <button type="button" id="prevWeekBtn" class="week-nav-btn" aria-label="Previous week">◀</button>
-      <h1 class="page-title" id="plannerWeekTitle">This week's plan
-        <button type="button" id="plannerColumnsHint" class="hint-btn" title="What are these columns?" aria-label="What are these columns?">?</button>
-      </h1>
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <h1 class="page-title" id="plannerWeekTitle">This week's plan
+          <button type="button" id="plannerColumnsHint" class="hint-btn" title="What are these columns?" aria-label="What are these columns?">?</button>
+        </h1>
+        <button type="button" id="jumpToDateBtn" class="jump-to-date-btn">📅 Jump to a date</button>
+      </div>
       <button type="button" id="nextWeekBtn" class="week-nav-btn" aria-label="Next week">▶</button>
     </div>
 
@@ -605,6 +636,8 @@
     updateWeekNav();
     await loadWeek();
   });
+
+  document.getElementById('jumpToDateBtn').addEventListener('click', () => openDatePicker());
 
   let entriesByDate = {};
   let suggestionsByDate = {};
@@ -732,6 +765,144 @@
     if (primary) btn.style.cssText = 'background:var(--olive); color:#fff; border-color:var(--olive);';
     btn.textContent = label;
     return btn;
+  }
+
+  // "Jump to a date" — a real branded month calendar in the cz2 picker,
+  // rather than a native <input type="date"> popup (which can't be
+  // styled and carries its own OS chrome), so getting from "today" to a
+  // week ~3 months out doesn't mean clicking ◀/▶ dozens of times.
+  let calendarViewMonth = null;
+
+  function openDatePicker() {
+    calendarViewMonth = mondayOfWeek(weekOffset);
+    renderDatePicker();
+    document.getElementById('pickerOverlay').hidden = false;
+  }
+
+  function renderDatePicker() {
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+
+    const title = document.createElement('h3');
+    title.textContent = 'Jump to a date';
+    modal.appendChild(title);
+
+    const minMonday = mondayOfWeek(-MAX_WEEK_OFFSET);
+    const maxMonday = mondayOfWeek(MAX_WEEK_OFFSET);
+    const thisMonday = mondayOfWeek(0);
+    const activeMonday = mondayOfWeek(weekOffset);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayIso = today.toISOString().slice(0, 10);
+
+    const nav = document.createElement('div');
+    nav.className = 'cz2-cal-nav';
+    const prevMonthBtn = document.createElement('button');
+    prevMonthBtn.type = 'button';
+    prevMonthBtn.className = 'cz2-cal-month-btn';
+    prevMonthBtn.textContent = '◀';
+    prevMonthBtn.setAttribute('aria-label', 'Previous month');
+    const monthLabel = document.createElement('div');
+    monthLabel.className = 'cz2-cal-month-label';
+    monthLabel.textContent = calendarViewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const nextMonthBtn = document.createElement('button');
+    nextMonthBtn.type = 'button';
+    nextMonthBtn.className = 'cz2-cal-month-btn';
+    nextMonthBtn.textContent = '▶';
+    nextMonthBtn.setAttribute('aria-label', 'Next month');
+
+    const prevMonthLastDay = new Date(calendarViewMonth.getFullYear(), calendarViewMonth.getMonth(), 0);
+    prevMonthBtn.disabled = prevMonthLastDay < minMonday;
+    const nextMonthFirstDay = new Date(calendarViewMonth.getFullYear(), calendarViewMonth.getMonth() + 1, 1);
+    nextMonthBtn.disabled = nextMonthFirstDay > maxMonday;
+
+    prevMonthBtn.addEventListener('click', () => {
+      calendarViewMonth = new Date(calendarViewMonth.getFullYear(), calendarViewMonth.getMonth() - 1, 1);
+      renderDatePicker();
+    });
+    nextMonthBtn.addEventListener('click', () => {
+      calendarViewMonth = new Date(calendarViewMonth.getFullYear(), calendarViewMonth.getMonth() + 1, 1);
+      renderDatePicker();
+    });
+
+    nav.appendChild(prevMonthBtn);
+    nav.appendChild(monthLabel);
+    nav.appendChild(nextMonthBtn);
+    modal.appendChild(nav);
+
+    const weekdayRow = document.createElement('div');
+    weekdayRow.className = 'cz2-cal-weekday-row';
+    DAY_LABELS.forEach((d) => {
+      const cell = document.createElement('div');
+      cell.className = 'cz2-cal-weekday';
+      cell.textContent = d.slice(0, 2);
+      weekdayRow.appendChild(cell);
+    });
+    modal.appendChild(weekdayRow);
+
+    const firstOfMonth = new Date(calendarViewMonth.getFullYear(), calendarViewMonth.getMonth(), 1);
+    const firstOfMonthDay = firstOfMonth.getDay();
+    const gridStart = new Date(firstOfMonth);
+    gridStart.setDate(firstOfMonth.getDate() + (firstOfMonthDay === 0 ? -6 : 1 - firstOfMonthDay));
+
+    const lastOfMonth = new Date(calendarViewMonth.getFullYear(), calendarViewMonth.getMonth() + 1, 0);
+    const lastOfMonthDay = lastOfMonth.getDay();
+    const gridEnd = new Date(lastOfMonth);
+    gridEnd.setDate(lastOfMonth.getDate() + (lastOfMonthDay === 0 ? 0 : 7 - lastOfMonthDay));
+
+    const totalWeeks = Math.round((gridEnd - gridStart) / (7 * 86400000)) + 1;
+
+    const gridWrap = document.createElement('div');
+    gridWrap.className = 'cz2-cal-grid';
+
+    for (let w = 0; w < totalWeeks; w++) {
+      const weekMonday = new Date(gridStart);
+      weekMonday.setDate(gridStart.getDate() + w * 7);
+      const weekRow = document.createElement('div');
+      weekRow.className = 'cz2-cal-week-row';
+      if (weekMonday.toISOString().slice(0, 10) === activeMonday.toISOString().slice(0, 10)) {
+        weekRow.classList.add('current-week');
+      }
+      const weekOffsetForRow = Math.round((weekMonday - thisMonday) / (7 * 86400000));
+      const rowOutOfRange = weekOffsetForRow < -MAX_WEEK_OFFSET || weekOffsetForRow > MAX_WEEK_OFFSET;
+
+      for (let d = 0; d < 7; d++) {
+        const cellDate = new Date(weekMonday);
+        cellDate.setDate(weekMonday.getDate() + d);
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'cz2-cal-cell';
+        cell.textContent = cellDate.getDate();
+        if (cellDate.getMonth() !== calendarViewMonth.getMonth()) cell.classList.add('other-month');
+        if (cellDate.toISOString().slice(0, 10) === todayIso) cell.classList.add('today');
+        if (rowOutOfRange) {
+          cell.disabled = true;
+        } else {
+          cell.addEventListener('click', () => {
+            weekOffset = weekOffsetForRow;
+            updateWeekNav();
+            loadWeek();
+            closePicker();
+          });
+        }
+        weekRow.appendChild(cell);
+      }
+      gridWrap.appendChild(weekRow);
+    }
+    modal.appendChild(gridWrap);
+
+    const legend = document.createElement('div');
+    legend.className = 'cz2-cal-legend';
+    legend.innerHTML = '<span><span class="cz2-cal-legend-dot" style="background:rgba(46,143,92,0.5);"></span>Week shown</span>'
+      + '<span><span class="cz2-cal-legend-dot" style="background:var(--mustard);"></span>Today</span>';
+    modal.appendChild(legend);
+
+    const actions = document.createElement('div');
+    actions.className = 'cz2-actions';
+    const closeBtn = cz2Button('Close', false);
+    closeBtn.addEventListener('click', closePicker);
+    actions.appendChild(closeBtn);
+    modal.appendChild(actions);
   }
 
   // Which person this suggestion is for is already known — it's whichever
@@ -994,7 +1165,14 @@
 
       const label = document.createElement('div');
       label.className = 'day-label';
-      label.textContent = DAY_LABELS[i];
+      const dayName = document.createElement('span');
+      dayName.className = 'day-label-name';
+      dayName.textContent = DAY_LABELS[i];
+      const dayDate = document.createElement('span');
+      dayDate.className = 'day-label-date';
+      dayDate.textContent = new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      label.appendChild(dayName);
+      label.appendChild(dayDate);
       header.appendChild(label);
 
       const slot = document.createElement('div');

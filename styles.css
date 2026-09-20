@@ -634,6 +634,120 @@ body {
   border: 1px solid var(--line);
 }
 
+/* Month calendar inside the cz2 picker (currently just the planner's
+   "Jump to a date") — a real in-app grid rather than a native
+   <input type="date"> popup, so it can be branded and stay consistent
+   with the rest of the cz2-* picker family. The row for whichever week
+   is currently on screen gets a solid olive band so "which week am I
+   looking at" reads at a glance against the neutral month grid. */
+.cz2-cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.cz2-cal-month-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--cream);
+  color: var(--olive-dark);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cz2-cal-month-btn:hover:not(:disabled) { border-color: var(--olive); background: var(--plus-hover, var(--cream)); }
+.cz2-cal-month-btn:disabled { opacity: 0.35; cursor: default; }
+
+.cz2-cal-month-label {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--olive-dark);
+  text-align: center;
+}
+
+.cz2-cal-weekday-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 6px;
+}
+
+.cz2-cal-weekday {
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--ink-soft);
+}
+
+.cz2-cal-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.cz2-cal-week-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-radius: 999px;
+  transition: background 0.15s;
+}
+
+.cz2-cal-week-row.current-week {
+  background: rgba(46, 143, 92, 0.16);
+}
+
+.cz2-cal-cell {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.cz2-cal-cell:hover:not(:disabled) { background: var(--olive); color: #fff; }
+.cz2-cal-cell.other-month { color: var(--ink-soft); opacity: 0.4; }
+.cz2-cal-cell:disabled { opacity: 0.25; cursor: default; }
+
+.cz2-cal-cell.today {
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1.5px var(--mustard);
+}
+
+.cz2-cal-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+.cz2-cal-legend-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
 /* Profile hover card (profile-hover-card.js) — a quick peek shown when
    hovering any link to a Cookzer profile: avatar, bio/location, and a
    few stats, without navigating away. One shared element, repositioned

@@ -181,4 +181,80 @@ test.describe('Meal planner — week navigation', () => {
     // hardcoded "last week" that only makes sense on the default view.
     await expect(page.locator('#copyLastWeekBtn')).toBeVisible();
   });
+
+  test('each day card shows a real date alongside the day name', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
+    const dateLabels = page.locator('.day-label-date');
+    await expect(dateLabels).toHaveCount(7);
+    // Whatever today's real date is, every card's date label is non-empty
+    // and looks like "Mon D" — not asserting exact dates since the test
+    // runs on the real clock, same approach as the seeded-suggestion date.
+    for (const text of await dateLabels.allTextContents()) {
+      expect(text.trim()).toMatch(/^[A-Z][a-z]{2} \d{1,2}$/);
+    }
+  });
+});
+
+test.describe('Meal planner — Jump to a date calendar', () => {
+  test('opens a real branded calendar, not a native date input', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
+    await expect(page.locator('input[type="date"]')).toHaveCount(0);
+    await page.click('#jumpToDateBtn');
+    await expect(page.locator('#pickerModal h3')).toContainText('Jump to a date');
+    await expect(page.locator('.cz2-cal-grid')).toBeVisible();
+    await expect(page.locator('.cz2-cal-weekday')).toHaveCount(7);
+  });
+
+  test('the row for the week currently on screen is banded, and today is marked', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
+    await page.click('#jumpToDateBtn');
+    await expect(page.locator('.cz2-cal-week-row.current-week')).toHaveCount(1);
+    await expect(page.locator('.cz2-cal-cell.today')).toHaveCount(1);
+    // Today's cell is inside the banded current-week row.
+    await expect(page.locator('.cz2-cal-week-row.current-week .cz2-cal-cell.today')).toHaveCount(1);
+  });
+
+  test('clicking a day jumps the planner straight to that week and closes the picker', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
+    await page.click('#nextWeekBtn'); // move off "This week's plan" so a jump-back is visible
+    await page.click('#jumpToDateBtn');
+    await page.click('.cz2-cal-cell.today');
+    await expect(page.locator('#pickerOverlay')).toBeHidden();
+    await expect(page.locator('#plannerWeekTitle')).toContainText("This week's plan");
+  });
+
+  test('month navigation is disabled once neither adjacent month has a day within the ~3-month range', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
+    await page.click('#jumpToDateBtn');
+    await expect(page.locator('.cz2-cal-month-btn[aria-label="Previous month"]')).toBeEnabled();
+    await expect(page.locator('.cz2-cal-month-btn[aria-label="Next month"]')).toBeEnabled();
+
+    // How many months out the boundary sits depends on where "today"
+    // falls within its own month, so step forward/back until each arrow
+    // disables itself rather than assuming a fixed click count.
+    const nextBtn = page.locator('.cz2-cal-month-btn[aria-label="Next month"]');
+    for (let i = 0; i < 20 && !(await nextBtn.isDisabled()); i++) await nextBtn.click();
+    await expect(nextBtn).toBeDisabled();
+
+    const prevBtn = page.locator('.cz2-cal-month-btn[aria-label="Previous month"]');
+    for (let i = 0; i < 20 && !(await prevBtn.isDisabled()); i++) await prevBtn.click();
+    await expect(prevBtn).toBeDisabled();
+  });
+
+  test('a day outside the browsable range is greyed out and not clickable', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
+    await page.click('#jumpToDateBtn');
+    const nextBtn = page.locator('.cz2-cal-month-btn[aria-label="Next month"]');
+    for (let i = 0; i < 20 && !(await nextBtn.isDisabled()); i++) await nextBtn.click();
+    const disabledCells = page.locator('.cz2-cal-cell:disabled');
+    await expect(disabledCells.first()).toBeVisible();
+  });
+
+  test('Close dismisses the calendar without changing the viewed week', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
+    await page.click('#jumpToDateBtn');
+    await page.locator('.cz2-actions button', { hasText: 'Close' }).click();
+    await expect(page.locator('#pickerOverlay')).toBeHidden();
+    await expect(page.locator('#plannerWeekTitle')).toContainText("This week's plan");
+  });
 });
