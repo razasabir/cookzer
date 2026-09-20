@@ -122,4 +122,19 @@ test.describe('places-nearby serverless handler', () => {
     expect(res.statusCode).toBe(502);
     expect(res.body.detail).toBe('quota exceeded');
   });
+
+  // Nothing in the handler used to be wrapped in try/catch, so an
+  // unexpected failure (a network error reaching Supabase or Google, here
+  // simulated as fetch itself throwing) fell through as an unhandled
+  // rejection — Vercel would return a raw response with no JSON body,
+  // which the client's resp.json() would then also fail to parse.
+  test('returns a clean 500 instead of an unhandled rejection when fetch itself throws', async () => {
+    global.fetch = async () => { throw new TypeError('Failed to fetch'); };
+    const handler = loadHandler();
+    const req = { method: 'POST', headers: { authorization: 'Bearer good-token' }, body: { lat: 1, lng: 2 } };
+    const res = fakeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe('Unexpected server error looking up nearby places.');
+  });
 });
