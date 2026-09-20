@@ -12,12 +12,21 @@
 -- the backfill below gives each one its own household (itself as sole
 -- member), so nothing changes until someone actually adds a co-admin.
 -- Run after 045.
+--
+-- Every statement below is written to be safely re-run (IF [NOT]
+-- EXISTS guards throughout, same convention as 043's fix) — a first
+-- attempt at this file failed partway through (households' own RLS
+-- policies referenced household_members before that table existed yet,
+-- a plain ordering bug), which left households created but empty and
+-- would otherwise block every retry.
 
 -- ============================================================
--- 1. households + household_members
+-- 1. households + household_members — both tables fully created
+--    before either one's policies, since households' policies need
+--    to reference household_members.
 -- ============================================================
 
-create table public.households (
+create table if not exists public.households (
   id uuid primary key default gen_random_uuid(),
   name text,
   household_size integer not null default 4 check (household_size between 1 and 12),
@@ -27,32 +36,36 @@ create table public.households (
 
 alter table public.households enable row level security;
 
-create policy "Household members can view their household"
-  on public.households for select
-  using (id in (select household_id from public.household_members where user_id = auth.uid()));
-
-create policy "Household members can update household settings"
-  on public.households for update
-  using (id in (select household_id from public.household_members where user_id = auth.uid()))
-  with check (id in (select household_id from public.household_members where user_id = auth.uid()));
-
 -- One row per user (not a composite key) — a person belongs to exactly
 -- one household at a time, so "my household" is always a single lookup
 -- by primary key, and joining a new one (via the RPC below) is a plain
 -- upsert rather than a multi-row cleanup.
-create table public.household_members (
+create table if not exists public.household_members (
   user_id uuid primary key references public.profiles(id) on delete cascade,
   household_id uuid not null references public.households(id) on delete cascade,
   joined_at timestamptz not null default now()
 );
 
 alter table public.household_members enable row level security;
-create index household_members_household_idx on public.household_members(household_id);
+create index if not exists household_members_household_idx on public.household_members(household_id);
 
+drop policy if exists "Household members can view their household" on public.households;
+create policy "Household members can view their household"
+  on public.households for select
+  using (id in (select household_id from public.household_members where user_id = auth.uid()));
+
+drop policy if exists "Household members can update household settings" on public.households;
+create policy "Household members can update household settings"
+  on public.households for update
+  using (id in (select household_id from public.household_members where user_id = auth.uid()))
+  with check (id in (select household_id from public.household_members where user_id = auth.uid()));
+
+drop policy if exists "Household members can see their household's other members" on public.household_members;
 create policy "Household members can see their household's other members"
   on public.household_members for select
   using (household_id in (select hm.household_id from public.household_members hm where hm.user_id = auth.uid()));
 
+drop policy if exists "Household members can remove a member (leave, or remove a co-admin)" on public.household_members;
 create policy "Household members can remove a member (leave, or remove a co-admin)"
   on public.household_members for delete
   using (household_id in (select hm.household_id from public.household_members hm where hm.user_id = auth.uid()));
@@ -132,9 +145,10 @@ $$;
 --    permission boundary (owner_id stays, now just "who added this").
 -- ============================================================
 
-alter table public.family_profiles add column household_id uuid references public.households(id) on delete cascade;
+alter table public.family_profiles add column if not exists household_id uuid references public.households(id) on delete cascade;
 
-drop policy "Owner manages their own family profiles" on public.family_profiles;
+drop policy if exists "Owner manages their own family profiles" on public.family_profiles;
+drop policy if exists "Household members manage their household's family profiles" on public.family_profiles;
 create policy "Household members manage their household's family profiles"
   on public.family_profiles for all
   using (household_id in (select household_id from public.household_members where user_id = auth.uid()))
@@ -147,9 +161,10 @@ drop index if exists family_profiles_owner_linked_user_uidx;
 --    household plan (user_id stays, now just "who added this row").
 -- ============================================================
 
-alter table public.meal_plan_entries add column household_id uuid references public.households(id) on delete cascade;
+alter table public.meal_plan_entries add column if not exists household_id uuid references public.households(id) on delete cascade;
 
-drop policy "Users manage their own meal plan entries" on public.meal_plan_entries;
+drop policy if exists "Users manage their own meal plan entries" on public.meal_plan_entries;
+drop policy if exists "Household members manage their household's meal plan" on public.meal_plan_entries;
 create policy "Household members manage their household's meal plan"
   on public.meal_plan_entries for all
   using (household_id in (select household_id from public.household_members where user_id = auth.uid()))
@@ -161,12 +176,14 @@ create policy "Household members manage their household's meal plan"
 --    untouched.
 -- ============================================================
 
-alter table public.meal_suggestions add column household_id uuid references public.households(id) on delete cascade;
+alter table public.meal_suggestions add column if not exists household_id uuid references public.households(id) on delete cascade;
 
-alter table public.meal_suggestions drop constraint meal_suggestions_owner_or_group;
+alter table public.meal_suggestions drop constraint if exists meal_suggestions_owner_or_group;
+alter table public.meal_suggestions drop constraint if exists meal_suggestions_household_or_group;
 alter table public.meal_suggestions add constraint meal_suggestions_household_or_group check (household_id is not null or group_id is not null);
 
-drop policy "View your own plan's suggestions or your group's" on public.meal_suggestions;
+drop policy if exists "View your own plan's suggestions or your group's" on public.meal_suggestions;
+drop policy if exists "View your household's suggestions or your group's" on public.meal_suggestions;
 create policy "View your household's suggestions or your group's"
   on public.meal_suggestions for select
   using (
@@ -174,7 +191,8 @@ create policy "View your household's suggestions or your group's"
     or (group_id is not null and exists (select 1 from public.group_members gm where gm.group_id = meal_suggestions.group_id and gm.user_id = auth.uid()))
   );
 
-drop policy "Add a suggestion to your own plan, or your group's, as yourself or your family profile" on public.meal_suggestions;
+drop policy if exists "Add a suggestion to your own plan, or your group's, as yourself or your family profile" on public.meal_suggestions;
+drop policy if exists "Add a suggestion to your household's plan, or your group's, as yourself or a family profile" on public.meal_suggestions;
 create policy "Add a suggestion to your household's plan, or your group's, as yourself or a family profile"
   on public.meal_suggestions for insert
   with check (
@@ -191,7 +209,8 @@ create policy "Add a suggestion to your household's plan, or your group's, as yo
     )
   );
 
-drop policy "Suggester (or their family profile's owner) can delete it" on public.meal_suggestions;
+drop policy if exists "Suggester (or their family profile's owner) can delete it" on public.meal_suggestions;
+drop policy if exists "Suggester (or their household) can delete it" on public.meal_suggestions;
 create policy "Suggester (or their household) can delete it"
   on public.meal_suggestions for delete
   using (
@@ -202,7 +221,8 @@ create policy "Suggester (or their household) can delete it"
     )
   );
 
-drop policy "Suggester (or their family profile's owner) can update it" on public.meal_suggestions;
+drop policy if exists "Suggester (or their family profile's owner) can update it" on public.meal_suggestions;
+drop policy if exists "Suggester (or their household) can update it" on public.meal_suggestions;
 create policy "Suggester (or their household) can update it"
   on public.meal_suggestions for update
   using (
@@ -223,7 +243,10 @@ create policy "Suggester (or their household) can update it"
 -- ============================================================
 -- 6. Backfill: one household per existing planner-using account (itself
 --    as sole member), so nothing breaks for anyone who hasn't added a
---    co-admin yet.
+--    co-admin yet. "on conflict do nothing" on the membership insert
+--    makes this safe to re-run — a user who already has a household
+--    (from an earlier run, or from already using get_or_create_my_household)
+--    is simply left alone.
 -- ============================================================
 
 with planner_users as (
@@ -233,41 +256,51 @@ with planner_users as (
   union
   select distinct owner_id as user_id from public.meal_suggestions where owner_id is not null
 ),
+users_needing_household as (
+  select pu.user_id from planner_users pu
+  where not exists (select 1 from public.household_members hm where hm.user_id = pu.user_id)
+),
 new_households as (
   insert into public.households (created_by, household_size)
-  select pu.user_id, coalesce(p.household_size, 4)
-  from planner_users pu
-  join public.profiles p on p.id = pu.user_id
+  select u.user_id, coalesce(p.household_size, 4)
+  from users_needing_household u
+  join public.profiles p on p.id = u.user_id
   returning id, created_by
 )
 insert into public.household_members (household_id, user_id)
-select id, created_by from new_households;
+select id, created_by from new_households
+on conflict (user_id) do nothing;
 
 update public.family_profiles fp
 set household_id = hm.household_id
 from public.household_members hm
-where hm.user_id = fp.owner_id;
+where hm.user_id = fp.owner_id
+and fp.household_id is distinct from hm.household_id;
 
 update public.meal_plan_entries mpe
 set household_id = hm.household_id
 from public.household_members hm
-where hm.user_id = mpe.user_id;
+where hm.user_id = mpe.user_id
+and mpe.household_id is distinct from hm.household_id;
 
 update public.meal_suggestions ms
 set household_id = hm.household_id
 from public.household_members hm
 where hm.user_id = ms.owner_id
-and ms.owner_id is not null;
+and ms.owner_id is not null
+and ms.household_id is distinct from hm.household_id;
 
 -- owner_id on family_profiles was already not null, so every row above
 -- is guaranteed a household_id now. meal_plan_entries.user_id and
 -- meal_suggestions.owner_id are both nullable, so household_id stays
 -- nullable on those two rather than risk a failed constraint on a
 -- stray row — RLS and the application already require it going forward.
+-- (Postgres treats SET NOT NULL on an already-NOT-NULL column as a
+-- no-op, so this line alone is already safe to re-run.)
 alter table public.family_profiles alter column household_id set not null;
 
-create unique index family_profiles_household_linked_user_uidx
+create unique index if not exists family_profiles_household_linked_user_uidx
   on public.family_profiles(household_id, linked_user_id)
   where linked_user_id is not null;
 
-create index meal_plan_household_date_idx on public.meal_plan_entries(household_id, plan_date);
+create index if not exists meal_plan_household_date_idx on public.meal_plan_entries(household_id, plan_date);
