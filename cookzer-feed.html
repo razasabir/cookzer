@@ -580,12 +580,41 @@
       font-family: 'Fraunces', serif;
     }
 
-  .card-description {
-      font-size: 13px;
-      color: var(--ink-soft);
-      line-height: 1.5;
+  .card-caption-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
       margin-bottom: 12px;
     }
+
+  .card-description {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+
+  .card-inline-stats {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--ink-soft);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+  .card-inline-comments-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+    }
+
+  .card-inline-comments-btn:hover { color: var(--olive-dark); }
 
   .mood-badge {
       display: inline-block;
@@ -614,21 +643,51 @@
       font-weight: 500;
     }
 
-  .card-stats {
+  .card-comment-input-row {
       display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: var(--ink-soft);
-      padding: 12px 0;
-      border-top: 1px solid var(--line);
-      border-bottom: 1px solid var(--line);
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
     }
+
+  .card-comment-input {
+      flex: 1;
+      min-width: 0;
+      padding: 9px 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--ink);
+      background: var(--cream);
+    }
+
+  .card-comment-input::placeholder { color: var(--ink-soft); }
+
+  .card-comment-send-btn {
+      flex-shrink: 0;
+      padding: 9px 16px;
+      border: none;
+      border-radius: 18px;
+      background: var(--olive);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+  .card-comment-send-btn:hover { background: var(--olive-dark); }
 
   .card-actions {
       display: flex;
-      gap: 0;
-      padding: 8px 0;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 0 0;
     }
+
+  .card-actions .action-btn { flex: none; padding: 6px; }
 
   .action-btn {
       flex: 1;
@@ -654,6 +713,10 @@
   .share-action-btn { color: var(--brick); }
   .share-action-btn:hover { background: var(--cream); color: var(--brick); }
   .share-action-btn svg { display: block; }
+
+  .download-action-btn { color: var(--olive); }
+  .download-action-btn:hover { background: var(--cream); color: var(--olive); }
+  .download-action-btn svg { display: block; }
 
   /* Heart/Comment/Share carry no label anymore — just an icon — so each
      one reads at a size that actually registers next to the others,
@@ -1239,6 +1302,12 @@
   // line-art leftover.
   const SHARE_ICON_SVG = '<svg viewBox="0 0 24 24" width="23" height="23">'
     + '<path d="M12 2 L7 8.5 H9.5 V15 H14.5 V8.5 H17 Z" fill="currentColor"/>'
+    + '<path d="M6 13 V18 C6 19.1 6.9 20 8 20 H16 C17.1 20 18 19.1 18 18 V13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>'
+    + '</svg>';
+  // Same arrow-plus-tray construction as SHARE_ICON_SVG, mirrored: the
+  // arrowhead points down into the tray instead of up out of it.
+  const DOWNLOAD_ICON_SVG = '<svg viewBox="0 0 24 24" width="23" height="23">'
+    + '<path d="M9.5 2 H14.5 V8.5 H17 L12 15 L7 8.5 H9.5 Z" fill="currentColor"/>'
     + '<path d="M6 13 V18 C6 19.1 6.9 20 8 20 H16 C17.1 20 18 19.1 18 18 V13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>'
     + '</svg>';
   const MAX_VIDEO_SECONDS = 90;
@@ -1877,6 +1946,10 @@
 
     card.appendChild(header);
 
+    // Hoisted to card scope (not just the else-branch below) so the
+    // download action further down can tell whether this post has an
+    // actual photo to offer, video posts and photo-less text posts don't.
+    let cardImageUrl = null;
     if (post.video_uid) {
       const iframe = document.createElement('iframe');
       iframe.className = 'card-video';
@@ -1886,7 +1959,7 @@
       iframe.allowFullscreen = true;
       card.appendChild(iframe);
     } else {
-      const cardImageUrl = post.photo_path
+      cardImageUrl = post.photo_path
         ? publicUrl('post-photos', post.photo_path)
         : (post.recipes && post.recipes.hero_photo_path ? publicUrl('recipe-photos', post.recipes.hero_photo_path) : null);
       if (cardImageUrl) {
@@ -1943,25 +2016,63 @@
     challengeBadge.hidden = true;
     content.appendChild(challengeBadge);
 
+    // Caption on the left, hearts/comments counts on the right of the
+    // same line — blank on either side when there's nothing to show
+    // (no caption, or a fresh post with zero hearts/comments) rather
+    // than an empty "0 hearts" row.
+    const captionRow = document.createElement('div');
+    captionRow.className = 'card-caption-row';
     if (post.caption) {
       const desc = document.createElement('div');
       desc.className = 'card-description';
       desc.textContent = post.caption;
-      content.appendChild(desc);
+      captionRow.appendChild(desc);
     }
+    const inlineStats = document.createElement('div');
+    inlineStats.className = 'card-inline-stats';
+    const inlineHearts = document.createElement('span');
+    inlineHearts.id = 'inlineHearts-' + post.id;
+    const inlineComments = document.createElement('button');
+    inlineComments.type = 'button';
+    inlineComments.className = 'card-inline-comments-btn';
+    inlineComments.id = 'inlineComments-' + post.id;
+    inlineComments.hidden = true;
+    inlineComments.addEventListener('click', () => toggleCommentsList(post.id, post.author_id));
+    inlineStats.appendChild(inlineHearts);
+    inlineStats.appendChild(inlineComments);
+    captionRow.appendChild(inlineStats);
+    content.appendChild(captionRow);
 
-    const stats = document.createElement('div');
-    stats.className = 'card-stats';
-    const heartStat = document.createElement('div');
-    heartStat.id = 'heartCount-' + post.id;
-    heartStat.textContent = '❤️ 0 hearts';
-    const commentStat = document.createElement('div');
-    commentStat.id = 'commentCount-' + post.id;
-    commentStat.textContent = '💬 0 comments';
-    stats.appendChild(heartStat);
-    stats.appendChild(commentStat);
-    content.appendChild(stats);
+    // Existing comments stay collapsed (revealed via the inline "💬 N"
+    // count above, or by posting a new one) rather than always rendered.
+    const commentsList = document.createElement('div');
+    commentsList.id = 'commentBox-' + post.id;
+    commentsList.hidden = true;
+    commentsList.style.marginTop = '8px';
+    content.appendChild(commentsList);
 
+    const commentInputRow = document.createElement('div');
+    commentInputRow.className = 'card-comment-input-row mention-anchor';
+    const commentInput = document.createElement('input');
+    commentInput.type = 'text';
+    commentInput.className = 'card-comment-input';
+    commentInput.placeholder = 'Comment';
+    commentInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitComment(post.id, commentInput, commentsList, post.author_id);
+    });
+    attachMentionAutocomplete(commentInput);
+    const sendBtn = document.createElement('button');
+    sendBtn.type = 'button';
+    sendBtn.className = 'card-comment-send-btn';
+    sendBtn.textContent = 'Send';
+    sendBtn.addEventListener('click', () => submitComment(post.id, commentInput, commentsList, post.author_id));
+    commentInputRow.appendChild(commentInput);
+    commentInputRow.appendChild(sendBtn);
+    content.appendChild(commentInputRow);
+
+    // Every action here is icon-only (no "0 hearts"/"0 comments" counts,
+    // no text labels like "Save") and lives in one right-aligned row —
+    // see CLAUDE.md-adjacent design pass: matches the reference card.
     const actions = document.createElement('div');
     actions.className = 'card-actions';
     const heartBtn = document.createElement('button');
@@ -1970,43 +2081,58 @@
     heartBtn.title = 'Heart';
     heartBtn.textContent = '❤️';
     heartBtn.addEventListener('click', () => toggleHeart(post.id));
-    const commentBtn = document.createElement('button');
-    commentBtn.className = 'action-btn action-btn-icon-only';
-    commentBtn.title = 'Comment';
-    commentBtn.textContent = '💬';
-    commentBtn.addEventListener('click', () => toggleCommentBox(post.id, post.author_id));
     const shareBtn = document.createElement('button');
     shareBtn.className = 'action-btn share-action-btn';
     shareBtn.title = 'Share';
     // An SVG icon, not an emoji or a plain text glyph — a color emoji is a
     // fixed-color image CSS can't tint, and a lone Unicode arrow character
-    // reads as too thin/faint next to the bold ❤️/💬 emoji beside it.
+    // reads as too thin/faint next to the bold ❤️ emoji beside it.
     // stroke="currentColor" picks up .share-action-btn's brand-orange color.
     shareBtn.innerHTML = SHARE_ICON_SVG;
     shareBtn.addEventListener('click', () => sharePost(post.id));
     actions.appendChild(heartBtn);
-    actions.appendChild(commentBtn);
     actions.appendChild(shareBtn);
+    // Nothing to download for a video post or a photo-less text/tip post.
+    if (cardImageUrl) {
+      const downloadBtn = document.createElement('button');
+      downloadBtn.className = 'action-btn download-action-btn';
+      downloadBtn.title = 'Download photo';
+      downloadBtn.innerHTML = DOWNLOAD_ICON_SVG;
+      downloadBtn.addEventListener('click', () => downloadPostImage(cardImageUrl));
+      actions.appendChild(downloadBtn);
+    }
     // Save is a recipe-specific action — a plain post/tip/dining-out/
     // challenge share has nothing to save for later the way a recipe does.
     if (post.recipes) {
       const bookmarkBtn = document.createElement('button');
-      bookmarkBtn.className = 'action-btn';
+      bookmarkBtn.className = 'action-btn action-btn-icon-only';
       bookmarkBtn.id = 'bookmarkBtn-' + post.id;
-      bookmarkBtn.textContent = '🔖 Save';
+      bookmarkBtn.title = 'Save';
+      bookmarkBtn.textContent = '🔖';
       bookmarkBtn.addEventListener('click', () => toggleBookmark(post.id));
       actions.appendChild(bookmarkBtn);
     }
     content.appendChild(actions);
 
-    const commentBox = document.createElement('div');
-    commentBox.id = 'commentBox-' + post.id;
-    commentBox.hidden = true;
-    commentBox.style.marginTop = '10px';
-    content.appendChild(commentBox);
-
     card.appendChild(content);
     return card;
+  }
+
+  async function downloadPostImage(imageUrl) {
+    try {
+      const res = await fetch(imageUrl);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = 'cookzer-photo.jpg';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      await CookzerModal.alert('Could not download this photo.');
+    }
   }
 
   function openPostLightbox(post, imageUrl) {
@@ -2076,19 +2202,34 @@
       .eq('user_id', currentUser.id)
       .maybeSingle();
 
-    const heartEl = document.getElementById('heartCount-' + postId);
-    const commentEl = document.getElementById('commentCount-' + postId);
     const heartBtn = document.getElementById('heartBtn-' + postId);
     const bookmarkBtn = document.getElementById('bookmarkBtn-' + postId);
-    if (heartEl) heartEl.textContent = '❤️ ' + (heartCount || 0) + ' hearts';
-    if (commentEl) commentEl.textContent = '💬 ' + (commentCount || 0) + ' comments';
+    updateInlineStats(postId, heartCount || 0, commentCount || 0);
     if (heartBtn) {
       heartBtn.title = mine ? 'Hearted' : 'Heart';
       heartBtn.style.color = mine ? 'var(--brick)' : '';
     }
     if (bookmarkBtn) {
-      bookmarkBtn.textContent = bookmarked ? '🔖 Saved' : '🔖 Save';
+      bookmarkBtn.title = bookmarked ? 'Saved' : 'Save';
       bookmarkBtn.style.color = bookmarked ? 'var(--olive)' : '';
+    }
+  }
+
+  // In line with the caption: a heart count and a comment count, each
+  // shown only once it's actually above zero — a fresh post with
+  // neither shows nothing rather than "0 hearts". The comment count
+  // doubles as the control that reveals the full comment list, so it
+  // stays a button rather than plain text.
+  function updateInlineStats(postId, heartCount, commentCount) {
+    const heartsEl = document.getElementById('inlineHearts-' + postId);
+    if (heartsEl) heartsEl.textContent = heartCount > 0 ? '❤️ ' + heartCount : '';
+    const commentsBtn = document.getElementById('inlineComments-' + postId);
+    if (!commentsBtn) return;
+    if (commentCount > 0) {
+      commentsBtn.hidden = false;
+      commentsBtn.textContent = '💬 ' + commentCount;
+    } else {
+      commentsBtn.hidden = true;
     }
   }
 
@@ -2124,7 +2265,7 @@
     await refreshPostStats(postId);
   }
 
-  async function toggleCommentBox(postId, postAuthorId) {
+  async function toggleCommentsList(postId, postAuthorId) {
     const box = document.getElementById('commentBox-' + postId);
     if (!box.hidden) {
       box.hidden = true;
@@ -2141,6 +2282,7 @@
   // delete button here" — the RLS policies are the actual enforcement.
   async function renderComments(postId, box, postAuthorId) {
     box.innerHTML = '';
+    box.hidden = false;
     const { data: comments } = await sb
       .from('comments')
       .select('id, author_id, text, created_at, profiles(display_name, initials)')
@@ -2178,34 +2320,6 @@
 
       box.appendChild(row);
     });
-
-    const inputRow = document.createElement('div');
-    inputRow.style.display = 'flex';
-    inputRow.style.gap = '8px';
-    inputRow.style.marginTop = '8px';
-    const inputWrap = document.createElement('div');
-    inputWrap.className = 'mention-anchor';
-    inputWrap.style.flex = '1';
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = 'Write a comment...';
-    input.style.width = '100%';
-    input.style.padding = '8px 12px';
-    input.style.border = '1px solid var(--line)';
-    input.style.borderRadius = '16px';
-    input.style.fontFamily = 'inherit';
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') submitComment(postId, input, box, postAuthorId);
-    });
-    inputWrap.appendChild(input);
-    attachMentionAutocomplete(input);
-    const sendBtn = document.createElement('button');
-    sendBtn.className = 'action-btn';
-    sendBtn.textContent = 'Send';
-    sendBtn.addEventListener('click', () => submitComment(postId, input, box, postAuthorId));
-    inputRow.appendChild(inputWrap);
-    inputRow.appendChild(sendBtn);
-    box.appendChild(inputRow);
   }
 
   async function deleteComment(commentId, postId, box, postAuthorId) {
@@ -2438,11 +2552,8 @@
     });
 
     postIds.forEach((postId) => {
-      const heartEl = document.getElementById('heartCount-' + postId);
-      const commentEl = document.getElementById('commentCount-' + postId);
       const heartBtn = document.getElementById('heartBtn-' + postId);
-      if (heartEl) heartEl.textContent = '❤️ ' + (heartCounts[postId] || 0) + ' hearts';
-      if (commentEl) commentEl.textContent = '💬 ' + (commentCounts[postId] || 0) + ' comments';
+      updateInlineStats(postId, heartCounts[postId] || 0, commentCounts[postId] || 0);
       if (heartBtn) {
         const mine = myHearts.has(postId);
         heartBtn.title = mine ? 'Hearted' : 'Heart';
