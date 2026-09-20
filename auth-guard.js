@@ -199,24 +199,156 @@ function applyKidModeRestrictions(kidMode) {
     localStorage.removeItem('cz_ref');
   }
 
-  function wireAvatar(person) {
+  function applyAvatarLook(el, person) {
+    if (person.avatar_url) {
+      el.style.backgroundImage = "url('" + person.avatar_url + "')";
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+      el.textContent = '';
+    } else {
+      el.textContent = person.initials;
+    }
+    el.title = person.display_name;
+    el.style.cursor = 'pointer';
+  }
+
+  async function signOut() {
+    if (await CookzerModal.confirm('Sign out of Cookzer?')) {
+      await sb.auth.signOut();
+      window.location.href = 'cookzer-auth.html';
+    }
+  }
+
+  // Kid Mode keeps the avatar to just sign-out — a full menu would offer
+  // Profile/Settings links that route straight around the nav lock
+  // applyKidModeRestrictions puts in place (only the Planner stays reachable).
+  function wireAvatarBasic(person) {
     document.querySelectorAll('.avatar').forEach((el) => {
-      if (person.avatar_url) {
-        el.style.backgroundImage = "url('" + person.avatar_url + "')";
-        el.style.backgroundSize = 'cover';
-        el.style.backgroundPosition = 'center';
-        el.textContent = '';
-      } else {
-        el.textContent = person.initials;
+      applyAvatarLook(el, person);
+      el.addEventListener('click', signOut);
+    });
+  }
+
+  function injectAvatarMenuStyle() {
+    if (document.getElementById('avatar-menu-style')) return;
+    const style = document.createElement('style');
+    style.id = 'avatar-menu-style';
+    style.textContent = `
+      .avatar-menu-panel {
+        display: none; position: absolute; top: 52px; right: 16px; width: 250px;
+        background: var(--card-bg); border: 1px solid var(--line); border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.14); z-index: 150; overflow: hidden;
       }
-      el.title = person.display_name;
-      el.style.cursor = 'pointer';
-      el.addEventListener('click', async () => {
-        if (confirm('Sign out of Cookzer?')) {
-          await sb.auth.signOut();
-          window.location.href = 'cookzer-auth.html';
-        }
+      .avatar-menu-header { padding: 14px; border-bottom: 1px solid var(--line); }
+      .avatar-menu-name { font-weight: 600; font-size: 14px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .avatar-menu-email { font-size: 12px; color: var(--ink-soft); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .avatar-menu-row {
+        display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 14px;
+        font-size: 13.5px; color: var(--ink); text-decoration: none; background: none; border: none;
+        cursor: pointer; font-family: inherit; text-align: left;
+      }
+      .avatar-menu-row:hover { background: var(--cream); }
+      .avatar-menu-icon { font-size: 16px; flex-shrink: 0; width: 18px; text-align: center; }
+      .avatar-menu-ai { display: block; padding: 11px 14px; text-decoration: none; border-top: 1px solid var(--line); }
+      .avatar-menu-ai:hover { background: var(--cream); }
+      .avatar-menu-ai-title { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink); }
+      .avatar-menu-ai-usage { font-size: 11.5px; color: var(--ink-faint, var(--ink-soft)); margin-left: 26px; margin-top: 2px; }
+      .avatar-menu-signout { color: var(--brick); border-top: 1px solid var(--line); }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // The full account menu — profile/settings/AI usage/sign out — shown
+  // for a real (non-Kid-Mode) session.
+  function wireAvatarMenu(person, userId) {
+    const avatarEls = document.querySelectorAll('.avatar');
+    if (!avatarEls.length) return;
+    avatarEls.forEach((el) => applyAvatarLook(el, person));
+    injectAvatarMenuStyle();
+
+    const panel = document.createElement('div');
+    panel.className = 'avatar-menu-panel';
+    panel.id = 'avatarMenuPanel';
+
+    const header = document.createElement('div');
+    header.className = 'avatar-menu-header';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'avatar-menu-name';
+    nameEl.textContent = person.display_name;
+    header.appendChild(nameEl);
+    if (person.email) {
+      const emailEl = document.createElement('div');
+      emailEl.className = 'avatar-menu-email';
+      emailEl.textContent = person.email;
+      header.appendChild(emailEl);
+    }
+    panel.appendChild(header);
+
+    function menuLink(icon, label, href) {
+      const row = document.createElement('a');
+      row.className = 'avatar-menu-row';
+      row.href = href;
+      row.innerHTML = '<span class="avatar-menu-icon">' + icon + '</span><span>' + label + '</span>';
+      panel.appendChild(row);
+      return row;
+    }
+
+    menuLink('👤', 'Profile', 'cookzer-profile.html');
+    menuLink('⚙️', 'Settings', 'cookzer-settings.html');
+
+    // Cookzer+ AI usage — the same monthly cap/count ai-assistant-chat.js
+    // enforces (500 messages/month across Cooking Ideas, Leftover Help,
+    // and Health & Nutrition combined), surfaced here so it's visible
+    // without having to open one of those features first.
+    const aiRow = document.createElement('a');
+    aiRow.className = 'avatar-menu-ai';
+    aiRow.href = 'cookzer-pantry.html';
+    aiRow.innerHTML = '<div class="avatar-menu-ai-title"><span class="avatar-menu-icon">✨</span><span>Cookzer+ AI</span></div>'
+      + '<div class="avatar-menu-ai-usage" id="avatarMenuAiUsage">Loading usage…</div>';
+    panel.appendChild(aiRow);
+
+    const signOutRow = menuLink('🚪', 'Log Out', '#');
+    signOutRow.classList.add('avatar-menu-signout');
+    signOutRow.addEventListener('click', (e) => {
+      e.preventDefault();
+      panel.style.display = 'none';
+      signOut();
+    });
+
+    document.body.appendChild(panel);
+
+    const AI_MESSAGE_LIMIT = 500;
+    async function loadAiUsage() {
+      const usageEl = document.getElementById('avatarMenuAiUsage');
+      if (!usageEl) return;
+      try {
+        const now = new Date();
+        const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+        const { count } = await sb
+          .from('ai_assistant_messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('role', 'user')
+          .gte('created_at', monthStart);
+        usageEl.textContent = (count || 0) + ' / ' + AI_MESSAGE_LIMIT + ' AI messages this month';
+      } catch (e) {
+        usageEl.textContent = 'AI usage unavailable right now';
+      }
+    }
+
+    avatarEls.forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = panel.style.display === 'block';
+        panel.style.display = isOpen ? 'none' : 'block';
+        if (!isOpen) loadAiUsage();
       });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (panel.style.display === 'block' && !panel.contains(e.target) && !Array.from(avatarEls).includes(e.target)) {
+        panel.style.display = 'none';
+      }
     });
   }
 
@@ -226,11 +358,15 @@ function applyKidModeRestrictions(kidMode) {
     .eq('id', session.user.id)
     .single();
 
-  const person = profile || {
-    display_name: session.user.email,
-    initials: (session.user.email || '??').slice(0, 2).toUpperCase(),
-    avatar_url: null,
-  };
+  const person = Object.assign(
+    {},
+    profile || {
+      display_name: session.user.email,
+      initials: (session.user.email || '??').slice(0, 2).toUpperCase(),
+      avatar_url: null,
+    },
+    { email: session.user.email }
+  );
 
   function timeAgo(iso) {
     const diffMs = Date.now() - new Date(iso).getTime();
@@ -328,10 +464,11 @@ function applyKidModeRestrictions(kidMode) {
   captureReferral(session.user.id);
 
   function wireForKidModeOrFull() {
-    wireAvatar(person);
     if (kidMode && kidMode.enabled) {
+      wireAvatarBasic(person);
       applyKidModeRestrictions(kidMode);
     } else {
+      wireAvatarMenu(person, session.user.id);
       wireNotificationBell(session.user.id);
       wireFriendsWidget(session.user.id);
     }
