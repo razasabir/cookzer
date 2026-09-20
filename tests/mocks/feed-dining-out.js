@@ -30,10 +30,17 @@ let RESTAURANTS = [
   { id: 'rest-existing', name: 'Casa Elote', google_place_id: 'gp-casa-elote' },
 ];
 
+window.__PLACES_FETCH_MODE__ = 'success'; // 'success' | 'server-error'
 const REAL_FETCH = window.fetch.bind(window);
 window.fetch = (url, opts) => {
   if (typeof url === 'string' && url.indexOf('/api/places-nearby') !== -1) {
     window.__PLACES_FETCH_BODIES__.push(JSON.parse(opts.body));
+    if (window.__PLACES_FETCH_MODE__ === 'server-error') {
+      return Promise.resolve({
+        ok: false,
+        json: () => Promise.resolve({ error: 'Google Maps lookup is not configured yet.' }),
+      });
+    }
     return Promise.resolve({
       ok: true,
       json: () => Promise.resolve({

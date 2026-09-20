@@ -1927,7 +1927,13 @@
             .sort((a, b) => a.distance - b.distance)
             .slice(0, 5);
         } catch (e) {
-          showManualRestaurantEntry("Couldn't reach the places lookup right now — type the name instead.");
+          // Surface the real reason (the backend already crafts a safe,
+          // specific message for each failure — missing API key,
+          // expired session, Google rejecting the request) instead of
+          // hiding it all behind one generic "couldn't reach" message
+          // that gives no clue what's actually wrong.
+          const reason = (e && e.message) || 'Places lookup failed';
+          showManualRestaurantEntry(reason + ' — type the name instead.');
           return;
         }
 
