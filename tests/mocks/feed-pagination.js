@@ -41,7 +41,7 @@ function chain(table) {
       } else if (table === 'comments') {
         result = inArgs ? window.__COMMENTS__.filter((c) => inArgs.includes(c.post_id)) : window.__COMMENTS__;
       } else if (table === 'profiles') {
-        result = { display_name: 'Me', initials: 'ME', avatar_url: null };
+        result = [{ id: 'me-1', display_name: 'Me', initials: 'ME', avatar_url: null }];
       } else {
         result = [];
       }

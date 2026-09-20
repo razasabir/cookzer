@@ -625,6 +625,31 @@
       transition: width 0.2s;
     }
 
+  /* Remove/cancel button overlaid on the composer's chosen photo or
+     video — including mid-upload, since a video upload had no way to
+     stop before this: aborting had to mean cancelling the whole post. */
+    .composer-media-preview-wrap { position: relative; }
+
+    .composer-media-remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0, 0, 0, 0.55);
+      color: #fff;
+      font-size: 15px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+  .composer-media-remove-btn:hover { background: var(--brick); }
+
   .card-content {
       padding: 16px;
     }
@@ -651,6 +676,14 @@
       color: var(--ink-soft);
       line-height: 1.5;
     }
+
+  .mention-link {
+      color: var(--olive-dark);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+  .mention-link:hover { text-decoration: underline; }
 
   .card-inline-stats {
       display: flex;
@@ -1225,10 +1258,13 @@
           <input type="text" id="postCaption" placeholder="Share what you cooked today..." maxlength="500">
         </div>
       </div>
-      <img id="composerPhotoPreview" hidden style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:10px;">
+      <div class="composer-media-preview-wrap">
+        <img id="composerPhotoPreview" hidden style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:10px;">
+        <video id="composerVideoPreview" hidden muted controls style="width:100%;max-height:220px;border-radius:12px;margin-top:10px;"></video>
+        <button type="button" id="composerMediaRemoveBtn" class="composer-media-remove-btn" hidden aria-label="Remove this photo or video" title="Remove">✕</button>
+      </div>
       <div id="composerFilterSuggestion" hidden></div>
       <div id="composerFilterRow" hidden></div>
-      <video id="composerVideoPreview" hidden muted controls style="width:100%;max-height:220px;border-radius:12px;margin-top:10px;"></video>
       <input type="file" id="composerMediaInput" accept="image/*,video/*" hidden>
       <div id="videoUploadStatus" hidden style="margin-top:6px; font-size:12px; color:var(--ink-soft);">
         <span id="videoUploadStatusText">Uploading…</span>
@@ -1350,6 +1386,7 @@
   let pendingFilterUserPicked = false;
   let pendingVideoUid = null;
   let videoUploadInProgress = false;
+  let activeTusUpload = null;
 
   // The "export" share icon (a solid upward arrow rising out of an open
   // tray) — the glyph iOS standardized as Share and most apps now use for
@@ -1405,6 +1442,7 @@
   // profile) rather than its own content, so the embedded preview is
   // fetched separately once the card itself is already on screen.
   async function loadSharedEmbed(post, container) {
+    await ensureMentionProfilesLoaded();
     if (post.shared_post_id) {
       const { data: original } = await sb
         .from('posts')
@@ -1440,7 +1478,7 @@
       if (original.caption) {
         const caption = document.createElement('div');
         caption.className = 'shared-embed-caption';
-        caption.textContent = original.caption;
+        appendTextWithMentions(caption, original.caption);
         link.appendChild(caption);
       }
       container.appendChild(link);
@@ -1471,6 +1509,68 @@
       link.appendChild(avatar);
       link.appendChild(name);
       container.appendChild(link);
+    }
+  }
+
+  // Mentions in a rendered caption/comment ("@Full Name", inserted by
+  // the autocomplete below) render as a link to that person's profile
+  // — matched against every real display_name (not just the viewer's
+  // own friends, so a tag reads correctly for any post's viewer, not
+  // just people the author and the viewer both follow). Loaded once
+  // per page load and cached, since it's the same lookup for every
+  // card/comment rendered afterward.
+  let mentionProfilesCache = null; // Map<display_name, user_id>
+  async function ensureMentionProfilesLoaded() {
+    if (!mentionProfilesCache) {
+      const { data } = await sb.from('profiles').select('id, display_name');
+      mentionProfilesCache = new Map();
+      (data || []).forEach((p) => { if (p.display_name) mentionProfilesCache.set(p.display_name, p.id); });
+    }
+    return mentionProfilesCache;
+  }
+
+  // Appends `text` to `container` as plain text, except any "@Full
+  // Name" substring matching a real display_name — longest match
+  // first, so "@Jordan Lee" links as one mention instead of stopping
+  // at "@Jordan" — which becomes a link to that person's profile.
+  function appendTextWithMentions(container, text) {
+    if (!text) return;
+    let i = 0;
+    while (i < text.length) {
+      const at = text.indexOf('@', i);
+      if (at === -1) {
+        container.appendChild(document.createTextNode(text.slice(i)));
+        return;
+      }
+      if (at > i) container.appendChild(document.createTextNode(text.slice(i, at)));
+
+      const rest = text.slice(at + 1);
+      const wordsMatch = rest.match(/^[^\s@][\w'-]*(?:[ \t][^\s@][\w'-]*){0,3}/);
+      let matchedName = null;
+      let matchedId = null;
+      if (wordsMatch && mentionProfilesCache) {
+        const words = wordsMatch[0].split(/\s+/);
+        for (let n = words.length; n >= 1; n--) {
+          const candidate = words.slice(0, n).join(' ');
+          if (mentionProfilesCache.has(candidate)) {
+            matchedName = candidate;
+            matchedId = mentionProfilesCache.get(candidate);
+            break;
+          }
+        }
+      }
+
+      if (matchedName) {
+        const a = document.createElement('a');
+        a.className = 'mention-link';
+        a.href = 'cookzer-profile.html?id=' + matchedId;
+        a.textContent = '@' + matchedName;
+        container.appendChild(a);
+        i = at + 1 + matchedName.length;
+      } else {
+        container.appendChild(document.createTextNode('@'));
+        i = at + 1;
+      }
     }
   }
 
@@ -1602,6 +1702,7 @@
     preview.style.boxShadow = 'none';
     preview.hidden = false;
     document.getElementById('composerFilterSuggestion').hidden = true;
+    document.getElementById('composerMediaRemoveBtn').hidden = false;
 
     document.getElementById('composerFilterRow').hidden = false;
     renderComposerFilterRow();
@@ -1635,10 +1736,48 @@
       }
       preview.src = URL.createObjectURL(file);
       preview.hidden = false;
+      document.getElementById('composerMediaRemoveBtn').hidden = false;
       startVideoUpload(file);
     };
     probe.src = URL.createObjectURL(file);
   }
+
+  // Removes whatever photo/video is currently selected — including
+  // mid-upload, aborting the in-flight tus upload (and deleting its
+  // partial remote copy) instead of leaving the only way to switch
+  // photos being to cancel the whole post and start over.
+  function resetComposerMedia() {
+    if (activeTusUpload) {
+      activeTusUpload.abort(true);
+      activeTusUpload = null;
+    }
+    pendingPhotoFile = null;
+    pendingPhotoFilter = 'original';
+    pendingVignette = false;
+    pendingFilterUserPicked = false;
+    pendingVideoUid = null;
+    videoUploadInProgress = false;
+
+    const photoPreview = document.getElementById('composerPhotoPreview');
+    if (photoPreview.src) URL.revokeObjectURL(photoPreview.src);
+    photoPreview.hidden = true;
+    photoPreview.removeAttribute('src');
+    photoPreview.style.filter = 'none';
+    photoPreview.style.boxShadow = 'none';
+    document.getElementById('composerFilterRow').hidden = true;
+    document.getElementById('composerFilterSuggestion').hidden = true;
+
+    const videoPreview = document.getElementById('composerVideoPreview');
+    if (videoPreview.src) URL.revokeObjectURL(videoPreview.src);
+    videoPreview.hidden = true;
+    videoPreview.removeAttribute('src');
+    document.getElementById('videoUploadStatus').hidden = true;
+
+    document.getElementById('composerMediaInput').value = '';
+    document.getElementById('composerMediaRemoveBtn').hidden = true;
+  }
+
+  document.getElementById('composerMediaRemoveBtn').addEventListener('click', resetComposerMedia);
 
   // One "Media" picker covers both photo and video (the OS file dialog
   // already lets you pick either when accept lists both types) — routes
@@ -1684,7 +1823,7 @@
       return;
     }
 
-    new tus.Upload(file, {
+    activeTusUpload = new tus.Upload(file, {
       endpoint: 'https://video.bunnycdn.com/tusupload',
       retryDelays: [0, 3000, 5000, 10000],
       headers: {
@@ -1700,6 +1839,7 @@
       onError: (err) => {
         statusText.textContent = 'Upload failed: ' + err.message;
         videoUploadInProgress = false;
+        activeTusUpload = null;
       },
       onProgress: (bytesUploaded, bytesTotal) => {
         const pct = Math.round((bytesUploaded / bytesTotal) * 100);
@@ -1709,10 +1849,12 @@
       onSuccess: () => {
         pendingVideoUid = signRes.videoId;
         videoUploadInProgress = false;
+        activeTusUpload = null;
         statusText.textContent = 'Video ready to post ✓';
         progressFill.style.width = '100%';
       },
-    }).start();
+    });
+    activeTusUpload.start();
   }
 
   function makeModifierChip(label, onRemove) {
@@ -2068,18 +2210,7 @@
     }
 
     captionInput.value = '';
-    pendingPhotoFile = null;
-    pendingPhotoFilter = 'original';
-    pendingVignette = false;
-    pendingFilterUserPicked = false;
-    pendingVideoUid = null;
-    document.getElementById('composerPhotoPreview').hidden = true;
-    document.getElementById('composerPhotoPreview').style.filter = 'none';
-    document.getElementById('composerPhotoPreview').style.boxShadow = 'none';
-    document.getElementById('composerFilterRow').hidden = true;
-    document.getElementById('composerFilterSuggestion').hidden = true;
-    document.getElementById('composerVideoPreview').hidden = true;
-    document.getElementById('videoUploadStatus').hidden = true;
+    resetComposerMedia();
     setChallengeModifier(false);
     setTipModifier(false);
     document.getElementById('restaurantTag').hidden = true;
@@ -2225,7 +2356,7 @@
     if (post.caption) {
       const desc = document.createElement('div');
       desc.className = 'card-description';
-      desc.textContent = post.caption;
+      appendTextWithMentions(desc, post.caption);
       captionRow.appendChild(desc);
     }
     const inlineStats = document.createElement('div');
@@ -2505,6 +2636,7 @@
       .select('id, author_id, text, created_at, profiles(display_name, initials)')
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
+    await ensureMentionProfilesLoaded();
 
     (comments || []).forEach((c) => {
       const row = document.createElement('div');
@@ -2522,7 +2654,7 @@
       nameLink.style.textDecoration = 'none';
       nameLink.textContent = (c.profiles ? c.profiles.display_name : 'Someone') + ': ';
       textSpan.appendChild(nameLink);
-      textSpan.appendChild(document.createTextNode(c.text));
+      appendTextWithMentions(textSpan, c.text);
       row.appendChild(textSpan);
 
       if (currentUser && (c.author_id === currentUser.id || postAuthorId === currentUser.id)) {
@@ -2711,6 +2843,7 @@
     }
 
     const blockedIds = await (window.blockedIdsReady || Promise.resolve(new Set()));
+    await ensureMentionProfilesLoaded();
 
     if (error) console.error('loadFeed failed:', error.message, error);
 

@@ -21,6 +21,7 @@ const POSTS = [
   { id: 'post-no-photo', author_id: 'user-4', kind: 'post', recipe_id: null, caption: 'Just words, no photo.', photo_path: null, video_uid: null, mood: null, restaurant_name: null, shared_post_id: null, shared_profile_id: null, created_at: new Date().toISOString(), profiles: { display_name: 'Cook D', initials: 'CD', avatar_url: null }, recipes: null },
   { id: 'post-reshare', author_id: 'user-5', kind: 'share', recipe_id: null, caption: null, photo_path: null, video_uid: null, mood: null, restaurant_name: null, shared_post_id: 'post-plain', shared_profile_id: null, created_at: new Date().toISOString(), profiles: { display_name: 'Cook E', initials: 'CE', avatar_url: null }, recipes: null },
   { id: 'post-profile-share', author_id: 'user-5', kind: 'share', recipe_id: null, caption: 'Check out Cook B’s profile!', photo_path: null, video_uid: null, mood: null, restaurant_name: null, shared_post_id: null, shared_profile_id: 'user-2', created_at: new Date().toISOString(), profiles: { display_name: 'Cook E', initials: 'CE', avatar_url: null }, recipes: null },
+  { id: 'post-mention', author_id: 'user-4', kind: 'post', recipe_id: null, caption: 'Thanks @Cook B for the tip! Also @Not A Real Person said hi.', photo_path: null, video_uid: null, mood: null, restaurant_name: null, shared_post_id: null, shared_profile_id: null, created_at: new Date().toISOString(), profiles: { display_name: 'Cook D', initials: 'CD', avatar_url: null }, recipes: null },
 ];
 
 const FRIENDS = [
@@ -80,7 +81,7 @@ function chain(table) {
       else if (table === 'comments') result = postIdFilter ? COMMENTS.filter((c) => c.post_id === postIdFilter[1]) : COMMENTS;
       else if (table === 'post_bookmarks' || table === 'challenge_entries' || table === 'meal_plan_entries') result = [];
       else if (table === 'group_members') result = GROUP_MEMBERSHIPS;
-      else if (table === 'profiles') result = ME;
+      else if (table === 'profiles') result = PROFILES;
       return Promise.resolve({ data: result, error: null }).then(resolve);
     },
     delete() { return { eq() { return Promise.resolve({ data: null, error: null }); } }; },

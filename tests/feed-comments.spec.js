@@ -85,4 +85,17 @@ test.describe('Feed comments — deleting', () => {
     await expect.poll(() => page.evaluate(() => window.__INSERTED_COMMENTS__.length)).toBe(1);
     expect(await page.evaluate(() => window.__INSERTED_COMMENTS__[0].text)).toBe('Via the button');
   });
+
+  test('a mention in a comment links to the tagged person\'s profile', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-comments.js');
+    const mineCard = page.locator('.feed-card', { hasText: 'My own post.' });
+    await mineCard.locator('.card-inline-comments-btn').click();
+
+    const row = page.locator('.comment-row[data-comment-id="c-other-on-mine"]');
+    const mentionLink = row.locator('.mention-link');
+    await expect(mentionLink).toHaveCount(1);
+    await expect(mentionLink).toHaveText('@Cook B');
+    await expect(mentionLink).toHaveAttribute('href', 'cookzer-profile.html?id=user-2');
+    await expect(row).toContainText("someone else's comment on my post.");
+  });
 });
