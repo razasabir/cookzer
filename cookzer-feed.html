@@ -14,6 +14,7 @@
   <script src="supabase-config.js"></script>
   <script src="notifications-shared.js"></script>
   <script src="profile-hover-card.js"></script>
+  <script src="challenges-shared.js"></script>
   <script src="firebase-config.js"></script>
   <script src="push-notifications.js"></script>
   <script src="bunny-config.js"></script>
@@ -366,6 +367,48 @@
       padding: 3px 8px;
       margin-bottom: 6px;
     }
+
+  .challenge-entry-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--olive-dark);
+      background: rgba(244, 185, 66, 0.28);
+      border-radius: 8px;
+      padding: 3px 8px;
+      margin-bottom: 6px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+  .challenge-winner-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: linear-gradient(135deg, var(--mustard), var(--brick));
+      color: #fff;
+      border-radius: 16px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      text-decoration: none;
+    }
+
+  .challenge-winner-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+  .challenge-winner-text { font-size: 13px; line-height: 1.4; }
+  .challenge-winner-text b { font-size: 14px; }
 
   .card-header {
       display: flex;
@@ -1100,6 +1143,10 @@
       <button class="feed-filter-chip" data-filter="tips" type="button">💡 Tips</button>
     </div>
 
+    <!-- Last finalized challenge winner — a visible "prize" the way a
+         leaderboard entry buried on the Challenges page never is. -->
+    <a class="challenge-winner-banner" id="challengeWinnerBanner" href="cookzer-challenges.html" hidden></a>
+
     <!-- Feed cards rendered by JS -->
     <div id="feedList"></div>
     <div id="feedEmpty" class="card-description" style="text-align:center; padding: 24px;" hidden>No posts yet — be the first to share what you cooked today.</div>
@@ -1108,13 +1155,16 @@
 
   <!-- Right sidebar -->
   <div class="right-sidebar">
-    <div class="widget-title">This week's challenge</div>
-    <div class="challenge-banner" id="challengeBanner">
-      <div class="challenge-badge">Weekly Challenge</div>
+    <div class="widget-title">Challenges</div>
+    <div class="challenge-banner" id="challengeBanner" hidden>
+      <div class="challenge-badge" id="challengeBadge">Weekly Challenge</div>
       <div class="challenge-title" id="challengeTitle">Loading…</div>
       <div class="challenge-desc" id="challengeDesc"></div>
       <button class="challenge-btn" id="joinChallengeBtn" type="button">Join challenge</button>
     </div>
+    <div id="moreChallengesRow" style="font-size:11.5px; color:var(--ink-soft); margin:-12px 0 8px;"></div>
+    <a href="cookzer-challenges.html" style="display:block; margin: 0 0 20px; font-size:12px; color:var(--olive-dark); font-weight:600; text-decoration:none;" id="seeAllChallengesLink" hidden>See all challenges →</a>
+    <div id="noChallengeNote" style="margin: -12px 0 20px; font-size:12.5px;" hidden>No active challenge right now — <a href="cookzer-challenges.html" style="color:var(--olive-dark); font-weight:600;">start one →</a></div>
 
     <div class="widget-title" id="birthdaysTitle" hidden>🎂 Upcoming birthdays</div>
     <div class="top-contributors" id="birthdaysList"></div>
@@ -1483,7 +1533,8 @@
     const challengeBtn = document.getElementById('composerChallengeBtn');
     const tipBtn = document.getElementById('composerTipBtn');
     if (challengeBtn.classList.contains('active-challenge-tag')) {
-      wrap.appendChild(makeModifierChip('🏆 Challenge entry', () => setChallengeModifier(false)));
+      const label = activeChallenge ? '🏆 Enter: ' + activeChallenge.title : '🏆 Challenge entry';
+      wrap.appendChild(makeModifierChip(label, () => setChallengeModifier(false)));
     }
     if (tipBtn.classList.contains('active-tip-tag')) {
       wrap.appendChild(makeModifierChip('💡 Tip', () => setTipModifier(false)));
@@ -1881,6 +1932,16 @@
       moodBadge.textContent = MOOD_EMOJI[post.mood] ? MOOD_EMOJI[post.mood] + ' ' + post.mood : post.mood;
       content.appendChild(moodBadge);
     }
+
+    // Filled in by refreshAllPostStats() once it knows which posts are
+    // challenge entries — a post itself doesn't carry that, it's a
+    // separate challenge_entries row keyed by post_id.
+    const challengeBadge = document.createElement('a');
+    challengeBadge.className = 'challenge-entry-badge';
+    challengeBadge.id = 'challengeBadge-' + post.id;
+    challengeBadge.href = 'cookzer-challenges.html';
+    challengeBadge.hidden = true;
+    content.appendChild(challengeBadge);
 
     if (post.caption) {
       const desc = document.createElement('div');
@@ -2352,10 +2413,18 @@
   async function refreshAllPostStats(postIds) {
     if (postIds.length === 0) return;
 
-    const [{ data: hearts }, { data: comments }] = await Promise.all([
+    const [{ data: hearts }, { data: comments }, { data: challengeEntries }] = await Promise.all([
       sb.from('hearts').select('post_id, user_id').in('post_id', postIds),
       sb.from('comments').select('post_id').in('post_id', postIds),
+      sb.from('challenge_entries').select('post_id, challenges(title)').in('post_id', postIds),
     ]);
+
+    (challengeEntries || []).forEach((e) => {
+      const badge = document.getElementById('challengeBadge-' + e.post_id);
+      if (!badge || !e.challenges) return;
+      badge.textContent = '🏆 ' + e.challenges.title;
+      badge.hidden = false;
+    });
 
     const heartCounts = {};
     const myHearts = new Set();
@@ -2382,16 +2451,48 @@
     });
   }
 
+  // Isolated in its own try/catch — a hiccup here (or against an older
+  // mock in tests that predates this widget) shouldn't take the rest of
+  // init()'s unrelated widgets (top recipes, birthdays, PYMK…) down with it.
   async function loadChallenge() {
+    try {
+      await loadChallengeUnsafe();
+    } catch (e) {
+      console.error('loadChallenge failed:', e);
+    }
+  }
+
+  async function loadChallengeUnsafe() {
+    await window.CookzerChallenges.ensureWeeklyChallenge(sb, currentUser.id);
+
     const { data: challenges } = await sb
       .from('challenges')
-      .select('id, title, description, ends_at')
+      .select('id, title, description, category, ends_at, is_auto_generated')
+      .is('group_id', null)
+      .gt('ends_at', new Date().toISOString())
       .order('created_at', { ascending: false })
-      .limit(1);
+      .limit(4);
 
-    if (!challenges || challenges.length === 0) return;
+    const bannerEl = document.getElementById('challengeBanner');
+    const noneEl = document.getElementById('noChallengeNote');
+    const seeAllEl = document.getElementById('seeAllChallengesLink');
+    const moreEl = document.getElementById('moreChallengesRow');
+    moreEl.innerHTML = '';
+
+    if (!challenges || challenges.length === 0) {
+      bannerEl.hidden = true;
+      seeAllEl.hidden = true;
+      noneEl.hidden = false;
+      activeChallenge = null;
+      return;
+    }
+    noneEl.hidden = true;
+    bannerEl.hidden = false;
+    seeAllEl.hidden = false;
     activeChallenge = challenges[0];
 
+    const meta = window.CookzerChallenges.categoryMeta(activeChallenge.category);
+    document.getElementById('challengeBadge').textContent = meta ? meta.icon + ' ' + meta.label : 'Weekly Challenge';
     document.getElementById('challengeTitle').textContent = activeChallenge.title;
     const { count: entryCount } = await sb
       .from('challenge_entries')
@@ -2423,7 +2524,61 @@
       await loadChallenge();
     };
 
+    // Other running challenges get a compact line each — the full
+    // per-challenge experience (join, leaderboard) lives on the
+    // Challenges page, this is just "there's more happening".
+    challenges.slice(1).forEach((c) => {
+      const row = document.createElement('a');
+      row.href = 'cookzer-challenges.html';
+      row.style.cssText = 'display:block; text-decoration:none; color:var(--ink-soft); margin-bottom:4px;';
+      row.textContent = '+ ' + c.title;
+      moreEl.appendChild(row);
+    });
+
     await loadLeaderboard();
+  }
+
+  // Surfaces the most recently finalized challenge winner at the top of
+  // the Feed — a real, visible "prize" instead of a leaderboard entry
+  // nobody but the winner ever scrolls down to see. Own try/catch for
+  // the same reason as loadChallenge above — isolate this widget's
+  // failures from the rest of init()'s unrelated widgets.
+  async function loadChallengeWinnerBanner() {
+    try {
+      await loadChallengeWinnerBannerUnsafe();
+    } catch (e) {
+      console.error('loadChallengeWinnerBanner failed:', e);
+    }
+  }
+
+  async function loadChallengeWinnerBannerUnsafe() {
+    const { data: ended } = await sb
+      .from('challenges')
+      .select('id, title, ends_at, winner_user_id, profiles!challenges_winner_user_id_fkey(display_name, initials)')
+      .is('group_id', null)
+      .lt('ends_at', new Date().toISOString())
+      .order('ends_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const banner = document.getElementById('challengeWinnerBanner');
+    if (!ended) { banner.hidden = true; return; }
+
+    const winner = await window.CookzerChallenges.finalizeWinnerIfNeeded(sb, {
+      id: ended.id,
+      ends_at: ended.ends_at,
+      winner_user_id: ended.winner_user_id,
+      winner_profile: ended.profiles,
+    });
+    if (!winner) { banner.hidden = true; return; }
+
+    banner.hidden = false;
+    banner.innerHTML =
+      '<div class="challenge-winner-avatar"></div>' +
+      '<div class="challenge-winner-text"><b></b><br></div>';
+    banner.querySelector('.challenge-winner-avatar').textContent = winner.initials || '??';
+    banner.querySelector('b').textContent = '🏆 ' + (winner.display_name || 'Someone') + ' won "' + ended.title + '"!';
+    banner.querySelector('.challenge-winner-text').appendChild(document.createTextNode('See this week\'s challenges →'));
   }
 
   async function loadLeaderboard() {
@@ -2690,6 +2845,7 @@
     document.getElementById('feedEmpty').textContent = feedEmptyMessage(currentFeedFilter);
 
     await loadFeed();
+    await loadChallengeWinnerBanner();
     await loadTrendingFeedTags();
     await loadChallenge();
     await loadTopRecipes();

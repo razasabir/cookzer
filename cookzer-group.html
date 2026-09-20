@@ -494,6 +494,7 @@
             <button class="admin-btn" id="muteGroupBtn" type="button" hidden>🔔</button>
             <a href="cookzer-group-events.html" id="groupEventsLink" style="text-decoration:none;"><button class="admin-btn" type="button" hidden id="groupEventsBtn">📅 Events</button></a>
             <a href="cookzer-group-polls.html" id="groupPollsLink" style="text-decoration:none;"><button class="admin-btn" type="button" hidden id="groupPollsBtn">🗳️ Polls</button></a>
+            <a href="cookzer-group-challenges.html" id="groupChallengesLink" style="text-decoration:none;"><button class="admin-btn" type="button" hidden id="groupChallengesBtn">🏆 Challenges</button></a>
             <button class="admin-btn" id="transferGroupBtn" type="button" hidden>Transfer</button>
             <button class="admin-btn" id="editGroupBtn" type="button" hidden>Edit</button>
             <button class="admin-btn danger" id="deleteGroupBtn" type="button" hidden>Delete</button>
@@ -855,8 +856,10 @@
 
     document.getElementById('groupEventsBtn').hidden = !isMember;
     document.getElementById('groupPollsBtn').hidden = !isMember;
+    document.getElementById('groupChallengesBtn').hidden = !isMember;
     document.getElementById('groupEventsLink').href = 'cookzer-group-events.html?id=' + groupId;
     document.getElementById('groupPollsLink').href = 'cookzer-group-polls.html?id=' + groupId;
+    document.getElementById('groupChallengesLink').href = 'cookzer-group-challenges.html?id=' + groupId;
 
     const muteBtn = document.getElementById('muteGroupBtn');
     muteBtn.hidden = !isMember;

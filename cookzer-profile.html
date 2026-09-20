@@ -842,6 +842,7 @@
     <div class="profile-header" style="position:relative;">
       <div class="profile-avatar" id="profileAvatar">--</div>
       <h1 class="profile-name" id="profileName">Loading…</h1>
+      <span id="profileWinnerFlair" title="" hidden style="display:inline-block; margin: -8px 0 4px; font-size:13px; font-weight:700; color:var(--olive-dark);"></span>
       <p class="profile-bio" id="profileBio"></p>
       <p class="profile-location" id="profileLocation"></p>
       <div class="mutual-friends-line" id="mutualFriendsLine" hidden></div>
@@ -1666,6 +1667,14 @@
     document.getElementById('statFollowing').textContent = followingCount || 0;
     document.getElementById('statRemade').textContent = remadeCount;
     document.getElementById('badgeFollowersNum').textContent = followerCount || 0;
+
+    const { count: challengeWinCount } = await sb.from('challenges').select('*', { count: 'exact', head: true }).eq('winner_user_id', viewedId);
+    const winnerFlair = document.getElementById('profileWinnerFlair');
+    winnerFlair.hidden = !challengeWinCount;
+    if (challengeWinCount) {
+      winnerFlair.textContent = '🏆 ' + challengeWinCount + 'x Challenge Winner';
+      winnerFlair.title = 'Won ' + challengeWinCount + ' Cookzer challenge' + (challengeWinCount === 1 ? '' : 's');
+    }
 
     const { data: cookIns } = await sb.from('posts').select('created_at').eq('author_id', viewedId).eq('kind', 'cook_in').order('created_at', { ascending: false });
     document.getElementById('badgeCookInsNum').textContent = cookIns ? cookIns.length : 0;

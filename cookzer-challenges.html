@@ -22,6 +22,7 @@
   <script src="shortcuts.js"></script>
   <script src="countdown.js"></script>
   <script src="confetti.js"></script>
+  <script src="challenges-shared.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
   .brand-header {
@@ -65,101 +66,119 @@
       width: 100%;
     }
 
-  /* Challenge hero */
-    .challenge-hero {
+  /* Top row: title + "Start a Challenge" */
+    .challenges-top-row {
       width: 100%;
       max-width: 700px;
-      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
-      color: #fff;
-      padding: 40px;
-      border-radius: 18px;
-      text-align: center;
-      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
     }
 
-  .challenge-badge {
-      font-size: 12px;
+  .challenges-top-row .page-title { margin-bottom: 0; text-align: left; width: auto; }
+
+  .new-challenge-btn {
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: none;
+      background: var(--olive);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+  .new-challenge-btn:hover { background: var(--olive-dark); }
+
+  /* Active challenges — multiple concurrent challenges, each its own
+     card with its own join button + expandable leaderboard, replacing
+     the old single "the one active challenge" hero. */
+    .challenges-list {
+      width: 100%;
+      max-width: 700px;
+      margin-bottom: 28px;
+    }
+
+  .challenge-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--olive);
+      border-radius: 16px;
+      padding: 22px 24px;
+      margin-bottom: 16px;
+    }
+
+  .challenge-card-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      font-weight: 600;
-      margin-bottom: 12px;
-      opacity: 0.9;
+      color: var(--olive-dark);
+      margin-bottom: 8px;
     }
 
-  .challenge-title {
-      font-size: 32px;
+  .challenge-card-title {
       font-family: 'Fraunces', serif;
-      margin-bottom: 12px;
+      font-size: 22px;
       font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 6px;
     }
 
-  .challenge-details {
-      font-size: 14px;
-      margin-bottom: 20px;
-      opacity: 0.95;
-    }
+  .challenge-card-desc { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 12px; }
+  .challenge-card-meta { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 14px; }
 
-  .challenge-btn {
-      background: #fff;
-      color: var(--olive);
-      padding: 12px 32px;
+  .challenge-card-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .challenge-card .challenge-btn {
+      background: var(--olive);
+      color: #fff;
+      padding: 10px 22px;
       border: none;
       border-radius: 12px;
       font-weight: 600;
-      font-size: 14px;
+      font-size: 13.5px;
       cursor: pointer;
-      transition: all 0.2s;
     }
 
-  .challenge-btn:hover {
-      background: var(--cream);
-      transform: translateY(-2px);
-    }
+  .challenge-card .challenge-btn:hover { background: var(--olive-dark); }
+  .challenge-card .challenge-btn.joined { background: var(--cream); color: var(--olive-dark); border: 1px solid var(--line); cursor: default; }
 
-  /* Filters */
-    .filters-section {
-      width: 100%;
-      max-width: 700px;
-      margin-bottom: 32px;
-    }
-
-  .filter-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--ink-soft);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 12px;
-    }
-
-  .filter-chips {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-  .filter-chip {
-      padding: 8px 16px;
-      background: var(--card-bg);
+  .challenge-leaderboard-toggle {
+      background: none;
       border: 1px solid var(--line);
-      border-radius: 20px;
-      cursor: pointer;
+      border-radius: 12px;
+      padding: 10px 16px;
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--ink);
-      transition: all 0.2s;
+      cursor: pointer;
     }
 
-  .filter-chip:hover {
-      border-color: var(--olive);
-      background: rgba(78, 90, 62, 0.05);
+  .challenge-leaderboard-toggle:hover { border-color: var(--olive); }
+
+  .challenge-card-reminder {
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: rgba(255, 107, 74, 0.1);
+      border: 1px solid var(--brick);
+      border-radius: 10px;
+      font-size: 12.5px;
+      color: var(--brick);
+      font-weight: 600;
     }
 
-  .filter-chip.active {
-      background: var(--mustard);
-      color: #fff;
-      border-color: var(--mustard);
+  .challenge-card-leaderboard {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
     }
 
   /* Trend Radar */
@@ -361,44 +380,21 @@
 <!-- Main content -->
 <div class="main">
   <div class="discover-content">
-    <h1 class="page-title">Discover & Compete</h1>
-    
-    <!-- Challenge Hero -->
-    <div class="challenge-hero">
-      <div class="challenge-badge">Weekly Challenge</div>
-      <h2 class="challenge-title" id="challengeTitle">Loading…</h2>
-      <p class="challenge-details" id="challengeDetails"></p>
-      <button class="challenge-btn" id="joinBtn">Join the challenge</button>
+    <div class="challenges-top-row">
+      <h1 class="page-title">Discover & Compete</h1>
+      <button class="new-challenge-btn" id="newChallengeBtn" type="button">+ Start a Challenge</button>
     </div>
+
+    <!-- Active challenges — one or more running at once -->
+    <div class="challenges-list" id="challengesList"></div>
+    <div class="empty-note" id="challengesEmpty" hidden>No active challenges right now — be the first to start one!</div>
 
     <!-- Trend Radar -->
     <div class="trend-radar-section">
       <div class="section-title">🔥 Trend Radar</div>
-      <div class="trend-radar-dek">Ingredients showing up a lot in the last 7 days — spawn a 3-day mini-challenge from one.</div>
+      <div class="trend-radar-dek">Ingredients showing up a lot in the last 7 days — spawn a mini-challenge from one.</div>
       <div id="trendRadarList"></div>
       <div id="trendRadarEmpty" class="trend-item" style="justify-content:center; color:var(--ink-soft);" hidden>Not enough recent activity to spot a trend yet.</div>
-    </div>
-
-    <!-- Filters -->
-    <div class="filters-section">
-      <div class="filter-label">Filter recipes by category</div>
-      <div class="filter-chips" id="filterChips">
-        <div class="filter-chip active" data-category="">All</div>
-        <div class="filter-chip" data-category="Breakfast">Breakfast</div>
-        <div class="filter-chip" data-category="Lunch">Lunch</div>
-        <div class="filter-chip" data-category="Dinner">Dinner</div>
-        <div class="filter-chip" data-category="Dessert">Dessert</div>
-        <div class="filter-chip" data-category="Baking">Baking</div>
-        <div class="filter-chip" data-category="Appetizers">Appetizers</div>
-        <div class="filter-chip" data-category="BBQ">BBQ</div>
-      </div>
-    </div>
-
-    <!-- Leaderboard -->
-    <div class="leaderboard-section">
-      <div class="section-title">Top entries this week</div>
-      <div id="leaderboardList"></div>
-      <div id="leaderboardEmpty" class="entry-recipe" style="text-align:center; padding:20px;" hidden>No entries yet — be the first to join.</div>
     </div>
 
     <!-- Past challenges archive -->
@@ -410,6 +406,10 @@
   </div>
 </div>
 
+<div class="cz2-overlay" id="pickerOverlay" hidden>
+  <div class="cz2-modal" id="pickerModal"></div>
+</div>
+
 <script>
   function toggleSidebar() {
     document.querySelector('.sidebar').classList.toggle('open');
@@ -417,102 +417,188 @@
   }
 
   let currentUser = null;
-  let activeChallenge = null;
-  let categoryFilter = '';
-  let challengeCountdownTimer = null;
+  let activeChallenge = null; // the most recent sitewide challenge — kept for any future composer-style integration
+  const countdownTimers = [];
 
-  async function loadChallenge() {
-    const { data: challenges } = await sb
-      .from('challenges')
-      .select('id, title, description, ends_at')
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    if (!challenges || challenges.length === 0) {
-      document.getElementById('challengeTitle').textContent = 'No active challenge';
-      return;
-    }
-    activeChallenge = challenges[0];
-    document.getElementById('challengeTitle').textContent = activeChallenge.title;
-
-    const { count: entryCount } = await sb
-      .from('challenge_entries')
-      .select('*', { count: 'exact', head: true })
-      .eq('challenge_id', activeChallenge.id);
-
-    const detailsEl = document.getElementById('challengeDetails');
-    detailsEl.innerHTML = (entryCount || 0) + ' cooks entered so far • ends in <span id="challengeCountdown"></span>';
-    if (challengeCountdownTimer) clearInterval(challengeCountdownTimer);
-    challengeCountdownTimer = startCountdown(document.getElementById('challengeCountdown'), activeChallenge.ends_at);
-
-    const { data: mine } = await sb
-      .from('challenge_entries')
-      .select('id')
-      .eq('challenge_id', activeChallenge.id)
-      .eq('user_id', currentUser.id)
-      .maybeSingle();
-
-    const joinBtn = document.getElementById('joinBtn');
-    joinBtn.textContent = mine ? 'Joined ✓' : 'Join the challenge';
-    joinBtn.onclick = async () => {
-      const { error } = await sb.from('challenge_entries').upsert(
-        { challenge_id: activeChallenge.id, user_id: currentUser.id },
-        { onConflict: 'challenge_id,user_id' }
-      );
-      if (error) {
-        await CookzerModal.alert('Could not join: ' + error.message);
-        return;
-      }
-      if (!mine) burstConfetti();
-      await loadChallenge();
-    };
-
-    await loadLeaderboard();
+  function closePicker() {
+    document.getElementById('pickerOverlay').hidden = true;
+    document.getElementById('pickerModal').innerHTML = '';
   }
-
-  document.querySelectorAll('.filter-chip').forEach((chip) => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('.filter-chip').forEach((c) => c.classList.remove('active'));
-      chip.classList.add('active');
-      categoryFilter = chip.dataset.category || '';
-      loadLeaderboard();
-    });
+  document.getElementById('pickerOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'pickerOverlay') closePicker();
   });
 
-  async function loadLeaderboard() {
-    if (!activeChallenge) return;
-    const listEl = document.getElementById('leaderboardList');
+  function cz2Button(label, primary) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = label;
+    btn.style.cssText = primary
+      ? 'padding:10px 20px; border-radius:12px; border:none; background:var(--olive); color:#fff; font-weight:600; font-size:14px; cursor:pointer;'
+      : 'padding:10px 20px; border-radius:12px; border:1px solid var(--line); background:var(--cream); color:var(--ink); font-weight:600; font-size:14px; cursor:pointer;';
+    return btn;
+  }
 
-    let query = sb
+  function openNewChallengeModal() {
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+
+    const title = document.createElement('h3');
+    title.textContent = 'Start a Challenge';
+    modal.appendChild(title);
+
+    const titleLabel = document.createElement('div');
+    titleLabel.className = 'cz2-label';
+    titleLabel.textContent = 'Title';
+    modal.appendChild(titleLabel);
+    const titleInput = document.createElement('input');
+    titleInput.type = 'text';
+    titleInput.placeholder = 'e.g. One-Pot Wonders';
+    modal.appendChild(titleInput);
+
+    const descLabel = document.createElement('div');
+    descLabel.className = 'cz2-label';
+    descLabel.textContent = 'What should people cook?';
+    modal.appendChild(descLabel);
+    const descField = document.createElement('div');
+    descField.className = 'cz2-field';
+    const descInput = document.createElement('textarea');
+    descInput.rows = 3;
+    descInput.placeholder = 'Describe the challenge — the more specific, the more fun.';
+    descField.appendChild(descInput);
+    modal.appendChild(descField);
+
+    const catLabel = document.createElement('div');
+    catLabel.className = 'cz2-label';
+    catLabel.textContent = 'Category (optional)';
+    modal.appendChild(catLabel);
+    const catRow = document.createElement('div');
+    catRow.className = 'cz2-chip-row';
+    let selectedCategory = null;
+    Object.entries(window.CookzerChallenges.CATEGORIES).forEach(([key, meta]) => {
+      const chip = document.createElement('div');
+      chip.className = 'cz2-chip';
+      chip.textContent = meta.icon + ' ' + meta.label;
+      chip.addEventListener('click', () => {
+        const wasSelected = selectedCategory === key;
+        catRow.querySelectorAll('.cz2-chip').forEach((c) => c.classList.remove('selected'));
+        selectedCategory = wasSelected ? null : key;
+        if (selectedCategory) chip.classList.add('selected');
+      });
+      catRow.appendChild(chip);
+    });
+    modal.appendChild(catRow);
+
+    const durLabel = document.createElement('div');
+    durLabel.className = 'cz2-label';
+    durLabel.textContent = 'Runs for';
+    modal.appendChild(durLabel);
+    const durRow = document.createElement('div');
+    durRow.className = 'cz2-chip-row';
+    let selectedDays = 7;
+    [3, 7, 14].forEach((days) => {
+      const chip = document.createElement('div');
+      chip.className = 'cz2-chip' + (days === 7 ? ' selected' : '');
+      chip.textContent = days + ' days';
+      chip.addEventListener('click', () => {
+        durRow.querySelectorAll('.cz2-chip').forEach((c) => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        selectedDays = days;
+      });
+      durRow.appendChild(chip);
+    });
+    modal.appendChild(durRow);
+
+    const actions = document.createElement('div');
+    actions.className = 'cz2-actions';
+    const cancelBtn = cz2Button('Cancel', false);
+    cancelBtn.addEventListener('click', closePicker);
+    const createBtn = cz2Button('Start it', true);
+    createBtn.addEventListener('click', async () => {
+      const titleVal = titleInput.value.trim();
+      if (!titleVal) { await CookzerModal.alert('Give your challenge a title.'); return; }
+      createBtn.disabled = true;
+      createBtn.textContent = 'Starting…';
+
+      const { error } = await sb.from('challenges').insert({
+        title: titleVal,
+        description: descInput.value.trim() || null,
+        category: selectedCategory,
+        ends_at: new Date(Date.now() + selectedDays * 86400000).toISOString(),
+        created_by: currentUser.id,
+      });
+
+      if (error) {
+        await CookzerModal.alert('Could not start challenge: ' + error.message);
+        createBtn.disabled = false;
+        createBtn.textContent = 'Start it';
+        return;
+      }
+      closePicker();
+      await loadActiveChallenges();
+    });
+    actions.appendChild(cancelBtn);
+    actions.appendChild(createBtn);
+    modal.appendChild(actions);
+
+    document.getElementById('pickerOverlay').hidden = false;
+    titleInput.focus();
+  }
+  document.getElementById('newChallengeBtn').addEventListener('click', openNewChallengeModal);
+
+  function challengeBadgeLine(challenge) {
+    const meta = window.CookzerChallenges.categoryMeta(challenge.category);
+    const parts = [];
+    if (meta) parts.push(meta.icon + ' ' + meta.label);
+    parts.push(challenge.is_auto_generated ? 'This week\'s featured challenge' : 'Started by ' + (challenge.creator_name || 'someone'));
+    return parts.join(' · ');
+  }
+
+  async function joinChallenge(challenge) {
+    const { data: existing } = await sb
       .from('challenge_entries')
-      .select('user_id, post_id, profiles(id, display_name, initials), posts(recipe_id, recipes!posts_recipe_id_fkey(id, title, category))')
-      .eq('challenge_id', activeChallenge.id)
-      .not('post_id', 'is', null);
+      .select('id, post_id')
+      .eq('challenge_id', challenge.id)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+    if (existing) return; // already joined — button already reflects that
 
-    const { data: entries } = await query;
-    let filtered = entries || [];
-    if (categoryFilter) {
-      filtered = filtered.filter((e) => e.posts && e.posts.recipes && e.posts.recipes.category === categoryFilter);
-    }
-
-    if (filtered.length === 0) {
-      listEl.innerHTML = '';
-      document.getElementById('leaderboardEmpty').hidden = false;
+    const { error } = await sb.from('challenge_entries').upsert(
+      { challenge_id: challenge.id, user_id: currentUser.id },
+      { onConflict: 'challenge_id,user_id' }
+    );
+    if (error) {
+      await CookzerModal.alert('Could not join: ' + error.message);
       return;
     }
-    document.getElementById('leaderboardEmpty').hidden = true;
+    burstConfetti();
+    await loadActiveChallenges();
+  }
 
-    const postIds = filtered.map((e) => e.post_id).filter(Boolean);
+  async function renderLeaderboardInto(container, challenge) {
+    container.innerHTML = '<div class="entry-recipe" style="text-align:center; padding:12px;">Loading…</div>';
+
+    const { data: entries } = await sb
+      .from('challenge_entries')
+      .select('user_id, post_id, profiles(id, display_name, initials), posts(recipe_id, recipes!posts_recipe_id_fkey(id, title))')
+      .eq('challenge_id', challenge.id)
+      .not('post_id', 'is', null);
+
+    if (!entries || entries.length === 0) {
+      container.innerHTML = '<div class="entry-recipe" style="text-align:center; padding:12px;">No entries yet — be the first to join.</div>';
+      return;
+    }
+
+    const postIds = entries.map((e) => e.post_id).filter(Boolean);
     const { data: hearts } = postIds.length > 0
       ? await sb.from('hearts').select('post_id').in('post_id', postIds)
       : { data: [] };
     const heartCounts = {};
     (hearts || []).forEach((h) => { heartCounts[h.post_id] = (heartCounts[h.post_id] || 0) + 1; });
-    const withHearts = filtered.map((e) => ({ ...e, hearts: heartCounts[e.post_id] || 0 }));
-
+    const withHearts = entries.map((e) => ({ ...e, hearts: heartCounts[e.post_id] || 0 }));
     withHearts.sort((a, b) => b.hearts - a.hearts);
+
     const medals = ['🥇', '🥈', '🥉'];
-    listEl.innerHTML = '';
+    container.innerHTML = '';
     withHearts.forEach((e, i) => {
       const item = document.createElement('div');
       item.className = 'leaderboard-item';
@@ -544,22 +630,133 @@
       content.appendChild(name);
       content.appendChild(recipeLine);
 
-      const hearts = document.createElement('div');
-      hearts.className = 'entry-hearts';
-      hearts.textContent = e.hearts + ' ❤️';
+      const heartsEl = document.createElement('div');
+      heartsEl.className = 'entry-hearts';
+      heartsEl.textContent = e.hearts + ' ❤️';
 
       item.appendChild(rank);
       item.appendChild(avatar);
       item.appendChild(content);
-      item.appendChild(hearts);
-      listEl.appendChild(item);
+      item.appendChild(heartsEl);
+      container.appendChild(item);
+    });
+  }
+
+  function renderChallengeCard(challenge, myEntry) {
+    const card = document.createElement('div');
+    card.className = 'challenge-card';
+
+    const badge = document.createElement('div');
+    badge.className = 'challenge-card-badge';
+    badge.textContent = challengeBadgeLine(challenge);
+    card.appendChild(badge);
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'challenge-card-title';
+    titleEl.textContent = challenge.title;
+    card.appendChild(titleEl);
+
+    if (challenge.description) {
+      const desc = document.createElement('div');
+      desc.className = 'challenge-card-desc';
+      desc.textContent = challenge.description;
+      card.appendChild(desc);
+    }
+
+    const meta = document.createElement('div');
+    meta.className = 'challenge-card-meta';
+    const countdownSpan = document.createElement('span');
+    meta.textContent = challenge.entryCount + (challenge.entryCount === 1 ? ' cook entered' : ' cooks entered') + ' so far · ends in ';
+    meta.appendChild(countdownSpan);
+    card.appendChild(meta);
+    countdownTimers.push(startCountdown(countdownSpan, challenge.ends_at));
+
+    const actions = document.createElement('div');
+    actions.className = 'challenge-card-actions';
+    const joinBtn = document.createElement('button');
+    joinBtn.className = 'challenge-btn' + (myEntry ? ' joined' : '');
+    joinBtn.type = 'button';
+    joinBtn.textContent = myEntry ? 'Joined ✓' : 'Join the challenge';
+    if (!myEntry) joinBtn.addEventListener('click', () => joinChallenge(challenge));
+    actions.appendChild(joinBtn);
+
+    const lbToggle = document.createElement('button');
+    lbToggle.className = 'challenge-leaderboard-toggle';
+    lbToggle.type = 'button';
+    lbToggle.textContent = 'View leaderboard ▾';
+    actions.appendChild(lbToggle);
+    card.appendChild(actions);
+
+    // Reminder — joined but hasn't posted a dish, and the clock's
+    // running out. Post the dish from the Feed composer's 🏆 Challenge
+    // toggle to enter it here.
+    const hoursLeft = (new Date(challenge.ends_at).getTime() - Date.now()) / 3600000;
+    if (myEntry && !myEntry.post_id && hoursLeft > 0 && hoursLeft <= 24) {
+      const reminder = document.createElement('div');
+      reminder.className = 'challenge-card-reminder';
+      reminder.textContent = '⏰ Ends in ' + formatCountdown(challenge.ends_at) + ' — you joined but haven\'t entered a dish yet! Post one from the Feed and tag it 🏆 Challenge.';
+      card.appendChild(reminder);
+    }
+
+    const lbContainer = document.createElement('div');
+    lbContainer.className = 'challenge-card-leaderboard';
+    lbContainer.hidden = true;
+    card.appendChild(lbContainer);
+
+    let loaded = false;
+    lbToggle.addEventListener('click', async () => {
+      lbContainer.hidden = !lbContainer.hidden;
+      lbToggle.textContent = lbContainer.hidden ? 'View leaderboard ▾' : 'Hide leaderboard ▴';
+      if (!lbContainer.hidden && !loaded) {
+        loaded = true;
+        await renderLeaderboardInto(lbContainer, challenge);
+      }
+    });
+
+    return card;
+  }
+
+  async function loadActiveChallenges() {
+    await window.CookzerChallenges.ensureWeeklyChallenge(sb, currentUser.id);
+
+    countdownTimers.forEach((t) => clearInterval(t));
+    countdownTimers.length = 0;
+
+    const { data: challenges } = await sb
+      .from('challenges')
+      .select('id, title, description, category, ends_at, created_by, is_auto_generated, profiles!challenges_created_by_fkey(display_name)')
+      .is('group_id', null)
+      .gt('ends_at', new Date().toISOString())
+      .order('created_at', { ascending: false });
+
+    const listEl = document.getElementById('challengesList');
+    listEl.innerHTML = '';
+    document.getElementById('challengesEmpty').hidden = !!(challenges && challenges.length);
+    activeChallenge = (challenges && challenges[0]) || null;
+
+    if (!challenges || challenges.length === 0) return;
+
+    const ids = challenges.map((c) => c.id);
+    const { data: allEntries } = await sb.from('challenge_entries').select('challenge_id, user_id, post_id').in('challenge_id', ids);
+    const entryCounts = {};
+    const myEntries = {};
+    (allEntries || []).forEach((e) => {
+      entryCounts[e.challenge_id] = (entryCounts[e.challenge_id] || 0) + 1;
+      if (e.user_id === currentUser.id) myEntries[e.challenge_id] = e;
+    });
+
+    challenges.forEach((c) => {
+      c.entryCount = entryCounts[c.id] || 0;
+      c.creator_name = c.profiles ? c.profiles.display_name : null;
+      listEl.appendChild(renderChallengeCard(c, myEntries[c.id] || null));
     });
   }
 
   async function loadPastChallenges() {
     const { data: past } = await sb
       .from('challenges')
-      .select('id, title, ends_at')
+      .select('id, title, ends_at, winner_user_id')
+      .is('group_id', null)
       .lt('ends_at', new Date().toISOString())
       .order('ends_at', { ascending: false })
       .limit(10);
@@ -575,10 +772,9 @@
     const { data: entryRows } = await sb.from('challenge_entries').select('challenge_id').in('challenge_id', past.map((c) => c.id));
     const entryCounts = {};
     (entryRows || []).forEach((e) => { entryCounts[e.challenge_id] = (entryCounts[e.challenge_id] || 0) + 1; });
-    const withCounts = past.map((c) => ({ ...c, count: entryCounts[c.id] || 0 }));
 
     listEl.innerHTML = '';
-    withCounts.forEach((c) => {
+    for (const c of past) {
       const item = document.createElement('div');
       item.className = 'leaderboard-item';
       const ended = new Date(c.ends_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
@@ -587,9 +783,18 @@
         '<div class="entry-content"><div class="entry-name"></div><div class="entry-recipe">Ended ' + ended + '</div></div>' +
         '<div class="entry-hearts"></div>';
       item.querySelector('.entry-name').textContent = c.title;
-      item.querySelector('.entry-hearts').textContent = c.count + ' entries';
+      item.querySelector('.entry-hearts').textContent = (entryCounts[c.id] || 0) + ' entries';
       listEl.appendChild(item);
-    });
+
+      const winner = await window.CookzerChallenges.finalizeWinnerIfNeeded(sb, c);
+      if (winner) {
+        const winnerLine = document.createElement('div');
+        winnerLine.className = 'entry-recipe';
+        winnerLine.style.cssText = 'margin: -8px 0 12px 52px; font-weight:600; color:var(--olive-dark);';
+        winnerLine.textContent = '🏆 Winner: ' + (winner.display_name || 'Someone');
+        item.after(winnerLine);
+      }
+    }
   }
 
   async function loadTrendRadar() {
@@ -644,12 +849,13 @@
   }
 
   async function spawnTrendChallenge(ingredientName, btn) {
-    if (!(await CookzerModal.confirm('Start a 3-day mini-challenge around "' + ingredientName + '"? This becomes the new active challenge for everyone.'))) return;
+    if (!(await CookzerModal.confirm('Start a 3-day mini-challenge around "' + ingredientName + '"? It runs alongside whatever else is active.'))) return;
     btn.disabled = true;
 
     const { error } = await sb.from('challenges').insert({
       title: 'Trending: ' + ingredientName,
       description: ingredientName + ' is showing up a lot this week — cook something with it and share your dish.',
+      category: 'trending',
       ends_at: new Date(Date.now() + 3 * 86400000).toISOString(),
       created_by: currentUser.id,
     });
@@ -660,7 +866,7 @@
       return;
     }
 
-    await loadChallenge();
+    await loadActiveChallenges();
     await CookzerModal.alert('New challenge live: "Trending: ' + ingredientName + '"');
   }
 
@@ -668,7 +874,7 @@
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
     currentUser = user;
-    await loadChallenge();
+    await loadActiveChallenges();
     await loadTrendRadar();
     await loadPastChallenges();
   })();

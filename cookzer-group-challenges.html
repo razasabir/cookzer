@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#2E8F5C">
+  <title>Group Challenges — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="notifications-shared.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="push-notifications.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="friends-widget.js"></script>
+  <script src="cookzer-modal.js"></script>
+  <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <script src="countdown.js"></script>
+  <script src="confetti.js"></script>
+  <script src="challenges-shared.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .brand-header {
+      font-size: 20px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+    }
+
+  .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
+  .main { flex: 1; margin-top: 60px; overflow-y: auto; }
+
+  .challenges-content { max-width: 700px; margin: 0 auto; padding: 24px; }
+
+  .challenges-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      gap: 12px;
+    }
+
+  .challenges-back-link { font-size: 13px; color: var(--ink-soft); text-decoration: none; }
+  .challenges-title { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; color: var(--olive-dark); margin-top: 4px; }
+
+  .new-challenge-btn {
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: none;
+      background: var(--olive);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+  .new-challenge-btn:hover { background: var(--olive-dark); }
+
+  .challenge-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--olive);
+      border-radius: 16px;
+      padding: 20px 22px;
+      margin-bottom: 14px;
+    }
+
+  .challenge-card-badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--olive-dark); margin-bottom: 8px; }
+  .challenge-card-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .challenge-card-desc { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 10px; }
+  .challenge-card-meta { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 12px; }
+  .challenge-card.ended .challenge-card-meta { color: var(--ink-soft); }
+
+  .challenge-card-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .challenge-btn {
+      background: var(--olive);
+      color: #fff;
+      padding: 9px 20px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+  .challenge-btn:hover { background: var(--olive-dark); }
+  .challenge-btn.joined { background: var(--cream); color: var(--olive-dark); border: 1px solid var(--line); cursor: default; }
+
+  .challenge-leaderboard-toggle {
+      background: none;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+  .challenge-card-leaderboard { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+
+  .challenge-leaderboard-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 13px;
+    }
+
+  .challenge-leaderboard-rank { font-weight: 700; color: var(--brick); min-width: 22px; text-align: center; }
+  .challenge-leaderboard-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; font-size: 11px; flex-shrink: 0;
+    }
+  .challenge-leaderboard-name { flex: 1; color: var(--ink); }
+  .challenge-leaderboard-hearts { font-weight: 600; color: var(--brick); }
+  .challenge-winner-line { font-size: 12.5px; font-weight: 600; color: var(--olive-dark); margin-top: 8px; }
+
+  .empty-note { text-align: center; color: var(--ink-soft); font-size: 14px; padding: 40px 20px; }
+
+  @media (max-width: 900px) { .right-sidebar { display: none; } }
+  @media (max-width: 768px) {
+      .sidebar { position: fixed; top: 0; left: -280px; height: 100vh; height: 100dvh; z-index: 100; transition: left 0.25s ease; }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+    }
+  @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-groups.html" style="text-decoration: none;"><div class="sidebar-item icon groups active">Groups</div></a>
+  <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants">Restaurants</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+  <a href="cookzer-convert.html" style="text-decoration: none;"><div class="sidebar-item icon convert">Measure &amp; Convert</div></a>
+  <a href="cookzer-feed.html?filter=tips" style="text-decoration: none;"><div class="sidebar-item icon tips">Tips &amp; Tricks</div></a>
+
+<div class="sidebar-plus">
+  <div class="sidebar-plus-label">Cookzer+</div>
+  <a href="cookzer-pantry.html" class="sidebar-plus-item pantry">Cooking Ideas</a>
+  <a href="cookzer-pantry.html?tab=leftovers" class="sidebar-plus-item leftovers">Leftover Help</a>
+  <a href="cookzer-health.html" class="sidebar-plus-item health">Health & Nutritions</a>
+</div>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn" id="notifBellBtn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
+    <a href="cookzer-settings.html" style="text-decoration:none;"><button class="icon-btn" title="Settings" type="button">⚙️</button></a>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="challenges-content">
+    <div class="challenges-top-row">
+      <div>
+        <a class="challenges-back-link" id="backToGroupLink" href="cookzer-group.html">&larr; Back to group</a>
+        <div class="challenges-title" id="pageTitle">Challenges</div>
+      </div>
+      <button class="new-challenge-btn" id="newChallengeBtn" type="button" hidden>+ New Challenge</button>
+    </div>
+
+    <div id="challengesList"></div>
+    <div class="empty-note" id="challengesEmpty" hidden>No challenges yet. Start one and see who steps up.</div>
+  </div>
+</div>
+
+<div class="cz2-overlay" id="pickerOverlay" hidden>
+  <div class="cz2-modal" id="pickerModal"></div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  const params = new URLSearchParams(location.search);
+  const groupId = params.get('id');
+  let currentUser = null;
+  let isMember = false;
+  const countdownTimers = [];
+
+  document.getElementById('backToGroupLink').href = 'cookzer-group.html?id=' + groupId;
+
+  function closePicker() {
+    document.getElementById('pickerOverlay').hidden = true;
+    document.getElementById('pickerModal').innerHTML = '';
+  }
+  document.getElementById('pickerOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'pickerOverlay') closePicker();
+  });
+
+  function cz2Button(label, primary) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = label;
+    btn.style.cssText = primary
+      ? 'padding:10px 20px; border-radius:12px; border:none; background:var(--olive); color:#fff; font-weight:600; font-size:14px; cursor:pointer;'
+      : 'padding:10px 20px; border-radius:12px; border:1px solid var(--line); background:var(--cream); color:var(--ink); font-weight:600; font-size:14px; cursor:pointer;';
+    return btn;
+  }
+
+  function openNewChallengeModal() {
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+
+    const title = document.createElement('h3');
+    title.textContent = 'New group challenge';
+    modal.appendChild(title);
+
+    const titleLabel = document.createElement('div');
+    titleLabel.className = 'cz2-label';
+    titleLabel.textContent = 'Title';
+    modal.appendChild(titleLabel);
+    const titleInput = document.createElement('input');
+    titleInput.type = 'text';
+    titleInput.placeholder = 'e.g. Sunday Roast Showdown';
+    modal.appendChild(titleInput);
+
+    const descLabel = document.createElement('div');
+    descLabel.className = 'cz2-label';
+    descLabel.textContent = 'What should the group cook?';
+    modal.appendChild(descLabel);
+    const descField = document.createElement('div');
+    descField.className = 'cz2-field';
+    const descInput = document.createElement('textarea');
+    descInput.rows = 3;
+    descInput.placeholder = 'Describe the challenge.';
+    descField.appendChild(descInput);
+    modal.appendChild(descField);
+
+    const catLabel = document.createElement('div');
+    catLabel.className = 'cz2-label';
+    catLabel.textContent = 'Category (optional)';
+    modal.appendChild(catLabel);
+    const catRow = document.createElement('div');
+    catRow.className = 'cz2-chip-row';
+    let selectedCategory = null;
+    Object.entries(window.CookzerChallenges.CATEGORIES).forEach(([key, meta]) => {
+      const chip = document.createElement('div');
+      chip.className = 'cz2-chip';
+      chip.textContent = meta.icon + ' ' + meta.label;
+      chip.addEventListener('click', () => {
+        const wasSelected = selectedCategory === key;
+        catRow.querySelectorAll('.cz2-chip').forEach((c) => c.classList.remove('selected'));
+        selectedCategory = wasSelected ? null : key;
+        if (selectedCategory) chip.classList.add('selected');
+      });
+      catRow.appendChild(chip);
+    });
+    modal.appendChild(catRow);
+
+    const durLabel = document.createElement('div');
+    durLabel.className = 'cz2-label';
+    durLabel.textContent = 'Runs for';
+    modal.appendChild(durLabel);
+    const durRow = document.createElement('div');
+    durRow.className = 'cz2-chip-row';
+    let selectedDays = 7;
+    [3, 7, 14].forEach((days) => {
+      const chip = document.createElement('div');
+      chip.className = 'cz2-chip' + (days === 7 ? ' selected' : '');
+      chip.textContent = days + ' days';
+      chip.addEventListener('click', () => {
+        durRow.querySelectorAll('.cz2-chip').forEach((c) => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        selectedDays = days;
+      });
+      durRow.appendChild(chip);
+    });
+    modal.appendChild(durRow);
+
+    const actions = document.createElement('div');
+    actions.className = 'cz2-actions';
+    const cancelBtn = cz2Button('Cancel', false);
+    cancelBtn.addEventListener('click', closePicker);
+    const createBtn = cz2Button('Start it', true);
+    createBtn.addEventListener('click', async () => {
+      const titleVal = titleInput.value.trim();
+      if (!titleVal) { await CookzerModal.alert('Give your challenge a title.'); return; }
+      createBtn.disabled = true;
+      createBtn.textContent = 'Starting…';
+
+      const { error } = await sb.from('challenges').insert({
+        title: titleVal,
+        description: descInput.value.trim() || null,
+        category: selectedCategory,
+        group_id: groupId,
+        ends_at: new Date(Date.now() + selectedDays * 86400000).toISOString(),
+        created_by: currentUser.id,
+      });
+
+      if (error) {
+        await CookzerModal.alert('Could not start challenge: ' + error.message);
+        createBtn.disabled = false;
+        createBtn.textContent = 'Start it';
+        return;
+      }
+      closePicker();
+      await loadChallenges();
+    });
+    actions.appendChild(cancelBtn);
+    actions.appendChild(createBtn);
+    modal.appendChild(actions);
+
+    document.getElementById('pickerOverlay').hidden = false;
+    titleInput.focus();
+  }
+  document.getElementById('newChallengeBtn').addEventListener('click', openNewChallengeModal);
+
+  async function joinChallenge(challenge) {
+    const { error } = await sb.from('challenge_entries').upsert(
+      { challenge_id: challenge.id, user_id: currentUser.id },
+      { onConflict: 'challenge_id,user_id' }
+    );
+    if (error) {
+      await CookzerModal.alert('Could not join: ' + error.message);
+      return;
+    }
+    burstConfetti();
+    await loadChallenges();
+  }
+
+  async function renderLeaderboardInto(container, challenge) {
+    container.innerHTML = '<div style="text-align:center; padding:10px; font-size:13px; color:var(--ink-soft);">Loading…</div>';
+
+    const { data: entries } = await sb
+      .from('challenge_entries')
+      .select('user_id, post_id, profiles(id, display_name, initials), posts(recipe_id, recipes!posts_recipe_id_fkey(id, title))')
+      .eq('challenge_id', challenge.id)
+      .not('post_id', 'is', null);
+
+    if (!entries || entries.length === 0) {
+      container.innerHTML = '<div style="text-align:center; padding:10px; font-size:13px; color:var(--ink-soft);">No entries yet — be the first to join.</div>';
+      return;
+    }
+
+    const postIds = entries.map((e) => e.post_id).filter(Boolean);
+    const { data: hearts } = postIds.length > 0
+      ? await sb.from('hearts').select('post_id').in('post_id', postIds)
+      : { data: [] };
+    const heartCounts = {};
+    (hearts || []).forEach((h) => { heartCounts[h.post_id] = (heartCounts[h.post_id] || 0) + 1; });
+    const withHearts = entries.map((e) => ({ ...e, hearts: heartCounts[e.post_id] || 0 }));
+    withHearts.sort((a, b) => b.hearts - a.hearts);
+
+    const medals = ['🥇', '🥈', '🥉'];
+    container.innerHTML = '';
+    withHearts.forEach((e, i) => {
+      const item = document.createElement('div');
+      item.className = 'challenge-leaderboard-item';
+
+      const rank = document.createElement('div');
+      rank.className = 'challenge-leaderboard-rank';
+      rank.textContent = medals[i] || (i + 1);
+
+      const avatar = document.createElement('div');
+      avatar.className = 'challenge-leaderboard-avatar';
+      avatar.textContent = e.profiles ? e.profiles.initials : '??';
+
+      const name = document.createElement('div');
+      name.className = 'challenge-leaderboard-name';
+      name.textContent = e.profiles ? e.profiles.display_name : 'Someone';
+      if (e.posts && e.posts.recipes) name.textContent += ' — ' + e.posts.recipes.title;
+
+      const heartsEl = document.createElement('div');
+      heartsEl.className = 'challenge-leaderboard-hearts';
+      heartsEl.textContent = e.hearts + ' ❤️';
+
+      item.appendChild(rank);
+      item.appendChild(avatar);
+      item.appendChild(name);
+      item.appendChild(heartsEl);
+      container.appendChild(item);
+    });
+  }
+
+  function challengeBadgeLine(challenge) {
+    const meta = window.CookzerChallenges.categoryMeta(challenge.category);
+    const parts = [];
+    if (meta) parts.push(meta.icon + ' ' + meta.label);
+    parts.push('Started by ' + (challenge.creator_name || 'someone'));
+    return parts.join(' · ');
+  }
+
+  function renderChallengeCard(challenge, myEntry, hasEnded) {
+    const card = document.createElement('div');
+    card.className = 'challenge-card' + (hasEnded ? ' ended' : '');
+
+    const badge = document.createElement('div');
+    badge.className = 'challenge-card-badge';
+    badge.textContent = challengeBadgeLine(challenge);
+    card.appendChild(badge);
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'challenge-card-title';
+    titleEl.textContent = challenge.title;
+    card.appendChild(titleEl);
+
+    if (challenge.description) {
+      const desc = document.createElement('div');
+      desc.className = 'challenge-card-desc';
+      desc.textContent = challenge.description;
+      card.appendChild(desc);
+    }
+
+    const meta = document.createElement('div');
+    meta.className = 'challenge-card-meta';
+    if (hasEnded) {
+      meta.textContent = challenge.entryCount + (challenge.entryCount === 1 ? ' entry' : ' entries') + ' · ended ' + new Date(challenge.ends_at).toLocaleDateString([], { month: 'short', day: 'numeric' });
+    } else {
+      const countdownSpan = document.createElement('span');
+      meta.textContent = challenge.entryCount + (challenge.entryCount === 1 ? ' cook entered' : ' cooks entered') + ' so far · ends in ';
+      meta.appendChild(countdownSpan);
+      countdownTimers.push(startCountdown(countdownSpan, challenge.ends_at));
+    }
+    card.appendChild(meta);
+
+    const lbContainer = document.createElement('div');
+    lbContainer.className = 'challenge-card-leaderboard';
+    lbContainer.hidden = true;
+    let loaded = false;
+    async function toggleLeaderboard(lbToggle) {
+      lbContainer.hidden = !lbContainer.hidden;
+      lbToggle.textContent = lbContainer.hidden ? 'View leaderboard ▾' : 'Hide leaderboard ▴';
+      if (!lbContainer.hidden && !loaded) {
+        loaded = true;
+        await renderLeaderboardInto(lbContainer, challenge);
+      }
+    }
+
+    if (!hasEnded) {
+      const actions = document.createElement('div');
+      actions.className = 'challenge-card-actions';
+      const joinBtn = document.createElement('button');
+      joinBtn.className = 'challenge-btn' + (myEntry ? ' joined' : '');
+      joinBtn.type = 'button';
+      joinBtn.textContent = myEntry ? 'Joined ✓' : 'Join the challenge';
+      if (!myEntry) joinBtn.addEventListener('click', () => joinChallenge(challenge));
+      actions.appendChild(joinBtn);
+
+      const lbToggle = document.createElement('button');
+      lbToggle.className = 'challenge-leaderboard-toggle';
+      lbToggle.type = 'button';
+      lbToggle.textContent = 'View leaderboard ▾';
+      lbToggle.addEventListener('click', () => toggleLeaderboard(lbToggle));
+      actions.appendChild(lbToggle);
+      card.appendChild(actions);
+    } else {
+      const lbToggle = document.createElement('button');
+      lbToggle.className = 'challenge-leaderboard-toggle';
+      lbToggle.type = 'button';
+      lbToggle.textContent = 'View leaderboard ▾';
+      lbToggle.addEventListener('click', () => toggleLeaderboard(lbToggle));
+      card.appendChild(lbToggle);
+    }
+
+    card.appendChild(lbContainer);
+
+    if (hasEnded) {
+      window.CookzerChallenges.finalizeWinnerIfNeeded(sb, challenge).then((winner) => {
+        if (!winner) return;
+        const winnerLine = document.createElement('div');
+        winnerLine.className = 'challenge-winner-line';
+        winnerLine.textContent = '🏆 Winner: ' + (winner.display_name || 'Someone');
+        card.insertBefore(winnerLine, lbContainer);
+      });
+    }
+
+    return card;
+  }
+
+  async function loadChallenges() {
+    countdownTimers.forEach((t) => clearInterval(t));
+    countdownTimers.length = 0;
+
+    const { data: challenges } = await sb
+      .from('challenges')
+      .select('id, title, description, category, ends_at, created_by, winner_user_id, profiles!challenges_created_by_fkey(display_name)')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: false });
+
+    const listEl = document.getElementById('challengesList');
+    listEl.innerHTML = '';
+    document.getElementById('challengesEmpty').hidden = !!(challenges && challenges.length);
+    if (!challenges || challenges.length === 0) return;
+
+    const ids = challenges.map((c) => c.id);
+    const { data: allEntries } = await sb.from('challenge_entries').select('challenge_id, user_id, post_id').in('challenge_id', ids);
+    const entryCounts = {};
+    const myEntries = {};
+    (allEntries || []).forEach((e) => {
+      entryCounts[e.challenge_id] = (entryCounts[e.challenge_id] || 0) + 1;
+      if (e.user_id === currentUser.id) myEntries[e.challenge_id] = e;
+    });
+
+    const now = Date.now();
+    challenges.forEach((c) => {
+      c.entryCount = entryCounts[c.id] || 0;
+      c.creator_name = c.profiles ? c.profiles.display_name : null;
+      const hasEnded = new Date(c.ends_at).getTime() < now;
+      listEl.appendChild(renderChallengeCard(c, myEntries[c.id] || null, hasEnded));
+    });
+  }
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    if (!groupId) {
+      document.getElementById('pageTitle').textContent = 'No group specified';
+      return;
+    }
+
+    const { data: group } = await sb.from('groups').select('name').eq('id', groupId).single();
+    const { data: myRow } = await sb.from('group_members').select('role').eq('group_id', groupId).eq('user_id', user.id).maybeSingle();
+    isMember = !!myRow;
+
+    if (group) document.getElementById('pageTitle').textContent = group.name + ' — Challenges';
+    document.getElementById('newChallengeBtn').hidden = !isMember;
+
+    if (!isMember) {
+      document.getElementById('challengesEmpty').hidden = false;
+      document.getElementById('challengesEmpty').textContent = 'Join this group to see and start its challenges.';
+      return;
+    }
+
+    await loadChallenges();
+  })();
+</script>
+</body>
+</html>

@@ -136,3 +136,21 @@ test.describe('messenger: ?with= auto-starts a conversation', () => {
     expect(insertCalls).toHaveLength(0);
   });
 });
+
+test.describe('profile: challenge winner flair', () => {
+  test('shows a 🏆 flair with the win count for someone who has won a challenge', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-profile.html', 'profile-activity.js');
+    await page.goto(page.url() + '?id=alice-1');
+
+    const flair = page.locator('#profileWinnerFlair');
+    await expect(flair).toBeVisible();
+    await expect(flair).toHaveText('🏆 1x Challenge Winner');
+  });
+
+  test('stays hidden for someone who has never won one', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-profile.html', 'profile-activity.js');
+    await page.goto(page.url());
+
+    await expect(page.locator('#profileWinnerFlair')).toBeHidden();
+  });
+});
