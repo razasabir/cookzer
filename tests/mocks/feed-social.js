@@ -9,7 +9,8 @@ const ME = { display_name: 'Me Cook', initials: 'MC', avatar_url: 'https://examp
 const POSTS = [
   { id: 'post-recipe', author_id: 'user-2', kind: 'post', recipe_id: 'r1', caption: 'Nailed it.', photo_path: null, video_uid: null, mood: null, restaurant_name: null, created_at: new Date().toISOString(), profiles: { display_name: 'Cook B', initials: 'CB', avatar_url: null }, recipes: { title: 'Lemon Herb Chicken', hero_photo_path: null } },
   { id: 'post-tip', author_id: 'user-3', kind: 'tip', recipe_id: null, caption: 'Salt the pasta water.', photo_path: null, video_uid: null, mood: null, restaurant_name: null, created_at: new Date().toISOString(), profiles: { display_name: 'Cook C', initials: 'CC', avatar_url: 'https://example.com/cookc.jpg' }, recipes: null },
-  { id: 'post-plain', author_id: 'user-4', kind: 'post', recipe_id: null, caption: 'Made dinner tonight.', photo_path: null, video_uid: null, mood: null, restaurant_name: null, created_at: new Date().toISOString(), profiles: { display_name: 'Cook D', initials: 'CD', avatar_url: null }, recipes: null },
+  { id: 'post-plain', author_id: 'user-4', kind: 'post', recipe_id: null, caption: 'Made dinner tonight.', photo_path: 'dinner.jpg', video_uid: null, mood: null, restaurant_name: null, created_at: new Date().toISOString(), profiles: { display_name: 'Cook D', initials: 'CD', avatar_url: null }, recipes: null },
+  { id: 'post-no-photo', author_id: 'user-4', kind: 'post', recipe_id: null, caption: 'Just words, no photo.', photo_path: null, video_uid: null, mood: null, restaurant_name: null, created_at: new Date().toISOString(), profiles: { display_name: 'Cook D', initials: 'CD', avatar_url: null }, recipes: null },
 ];
 
 const FRIENDS = [
