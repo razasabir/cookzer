@@ -764,7 +764,7 @@
       summary.className = 'restaurant-summary';
       summary.innerHTML =
         '<div>' +
-          '<div class="restaurant-name">' + r.name + '</div>' +
+          '<a class="restaurant-name" href="cookzer-restaurant.html?id=' + r.id + '" style="text-decoration:none;color:inherit;">' + r.name + '</a>' +
           '<div class="restaurant-meta">' +
             (r.count > 0
               ? '<span class="stars">' + starString(r.avg) + '</span><span>' + r.avg.toFixed(1) + ' · ' + r.count + (r.count === 1 ? ' rating' : ' ratings') + '</span>'
@@ -772,6 +772,7 @@
           '</div>' +
         '</div>' +
         (r.count > 0 ? '<span class="verified-pill">🧾 Receipt-verified</span>' : '');
+      summary.querySelector('.restaurant-name').addEventListener('click', (e) => e.stopPropagation());
 
       const detail = document.createElement('div');
       detail.className = 'restaurant-detail';
