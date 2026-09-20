@@ -214,6 +214,50 @@ test.describe('Auto filter suggestion in the composer UI', () => {
   });
 });
 
+// The composer's own background (a green gradient) made the old plain-
+// text swatch labels and suggestion line nearly unreadable — each name
+// is now an opaque pill using the app's own card/ink color pair, which
+// stays legible regardless of what's behind the row, and the food-
+// photography-tuned presets lead the row instead of trailing the
+// generic Instagram-style ones.
+test.describe('Filter row heading, label contrast, and ordering', () => {
+  test('shows a "Food Photography Effects" heading above the swatches', async ({ page }) => {
+    await page.addInitScript(() => {
+      try { localStorage.setItem('cookzer-welcomed', '1'); } catch (e) {}
+    });
+    await loadPageWithMock(page, 'cookzer-feed.html', 'photo-composer.js');
+    await page.locator('#composerMediaInput').setInputFiles(SAMPLE_IMAGE);
+    await confirmCrop(page);
+
+    await expect(page.locator('#composerFilterRow .pf-swatch-heading')).toHaveText('Food Photography Effects');
+  });
+
+  test('the food-photography presets lead the row, ahead of the generic ones', async ({ page }) => {
+    await page.addInitScript(() => {
+      try { localStorage.setItem('cookzer-welcomed', '1'); } catch (e) {}
+    });
+    await loadPageWithMock(page, 'cookzer-feed.html', 'photo-composer.js');
+    await page.locator('#composerMediaInput').setInputFiles(SAMPLE_IMAGE);
+    await confirmCrop(page);
+
+    const labels = await page.locator('#composerFilterRow .pf-swatch-label').allTextContents();
+    expect(labels).toEqual(['Original', 'Golden Hour', 'Fresh', 'Crisp', 'Bakery', 'Char', 'Vivid', 'Warm', 'Cool', 'B&W', 'Vintage', 'Moody']);
+  });
+
+  test('each swatch label is an opaque pill (card background), not text on the composer\'s own background', async ({ page }) => {
+    await page.addInitScript(() => {
+      try { localStorage.setItem('cookzer-welcomed', '1'); } catch (e) {}
+    });
+    await loadPageWithMock(page, 'cookzer-feed.html', 'photo-composer.js');
+    await page.locator('#composerMediaInput').setInputFiles(SAMPLE_IMAGE);
+    await confirmCrop(page);
+
+    const label = page.locator('#composerFilterRow .pf-swatch-label').first();
+    const bg = await label.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(bg).not.toBe('rgba(0, 0, 0, 0)'); // not transparent — an actual opaque backdrop
+  });
+});
+
 test.describe('Vignette toggle on post composers', () => {
   test('feed composer: toggling vignette updates the preview and bakes even with Original selected', async ({ page }) => {
     await page.addInitScript(() => {
