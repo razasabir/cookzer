@@ -142,18 +142,24 @@
     .header-name { display: none; }
   }
 
-  /* Main content */
+  /* Main content — the feed and right sidebar sit in one flex row that
+     fills .main's full width (same right edge the header spans to),
+     rather than being centered as one block with dead space left over
+     on both sides. The feed column gets its own auto margins so it
+     centers within whatever room is left beside the fixed-width right
+     sidebar, matching Facebook's framing: a wider, still-centered
+     middle column, and a right rail flush against the frame's edge. */
     .main {
       flex: 1;
       margin-top: 60px;
       display: flex;
-      justify-content: center;
       overflow: hidden;
     }
 
   .feed-container {
       flex: 1;
-      max-width: 600px;
+      max-width: 680px;
+      margin: 0 auto;
       overflow-y: auto;
       padding: 24px;
       display: flex;
