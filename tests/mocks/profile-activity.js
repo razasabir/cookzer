@@ -32,6 +32,9 @@ window.__STATE__ = {
     { user_id: 'alice-1', recipe_id: 'r2', created_at: '2024-03-01T00:00:00Z' },
   ],
   challenge_entries: [],
+  challenges: [
+    { id: 'chal-1', title: 'Budget Bites', winner_user_id: 'alice-1' },
+  ],
   recipe_photos: [
     { id: 'ph1', user_id: 'alice-1', recipe_id: 'r1', storage_path: 'alice-1/x.jpg' },
   ],
