@@ -72,6 +72,40 @@ test.describe('Photo filters on post composers', () => {
     expect(upload.hasName).toBe(false);
   });
 
+  test('feed composer: a remove button lets you cancel the selected photo and pick a different one, without cancelling the whole post', async ({ page }) => {
+    await page.addInitScript(() => {
+      try { localStorage.setItem('cookzer-welcomed', '1'); } catch (e) {}
+    });
+    await loadPageWithMock(page, 'cookzer-feed.html', 'photo-composer.js');
+
+    const removeBtn = page.locator('#composerMediaRemoveBtn');
+    await expect(removeBtn).toBeHidden();
+
+    const photoInput = page.locator('#composerMediaInput');
+    await photoInput.setInputFiles(SAMPLE_IMAGE);
+    await confirmCrop(page);
+
+    await expect(page.locator('#composerPhotoPreview')).toBeVisible();
+    await expect(page.locator('#composerFilterRow')).toBeVisible();
+    await expect(removeBtn).toBeVisible();
+
+    await removeBtn.click();
+
+    await expect(page.locator('#composerPhotoPreview')).toBeHidden();
+    await expect(page.locator('#composerFilterRow')).toBeHidden();
+    await expect(removeBtn).toBeHidden();
+
+    // Picking a different photo afterward works cleanly — the whole
+    // point is not having to cancel the post to change your mind.
+    await photoInput.setInputFiles(SAMPLE_IMAGE_2);
+    await confirmCrop(page);
+    await expect(page.locator('#composerPhotoPreview')).toBeVisible();
+    await expect(removeBtn).toBeVisible();
+
+    await page.locator('#composerPostBtn').click();
+    await expect.poll(() => page.evaluate(() => window.__UPLOADS__.length)).toBe(1);
+  });
+
   test('group composer: filter row appears and swatch selection updates the preview', async ({ page }) => {
     await page.addInitScript(() => {
       window.__GROUP_ID__ = 'g1';

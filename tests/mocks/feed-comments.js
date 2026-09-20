@@ -6,11 +6,19 @@ const POSTS = [
   { id: 'post-other', author_id: 'user-2', kind: 'post', recipe_id: null, caption: "Someone else's post.", photo_path: null, video_uid: null, mood: null, restaurant_name: null, created_at: new Date().toISOString(), profiles: { display_name: 'Cook B', initials: 'CB' }, recipes: null },
 ];
 
+const PROFILES = [
+  { id: 'me-1', display_name: 'Me', initials: 'ME' },
+  { id: 'user-2', display_name: 'Cook B', initials: 'CB' },
+  { id: 'user-3', display_name: 'Cook C', initials: 'CC' },
+  { id: 'user-4', display_name: 'Cook D', initials: 'CD' },
+];
+
 // Covers all four combinations: my comment / someone else's comment,
-// on my post / someone else's post.
+// on my post / someone else's post. c-other-on-mine also tags a real
+// registered name to cover the mention-hyperlink rendering path.
 let comments = [
   { id: 'c-mine-on-mine', post_id: 'post-mine', author_id: 'me-1', text: 'My comment on my own post.', created_at: new Date().toISOString(), profiles: { display_name: 'Me', initials: 'ME' } },
-  { id: 'c-other-on-mine', post_id: 'post-mine', author_id: 'user-3', text: "Someone else's comment on my post.", created_at: new Date().toISOString(), profiles: { display_name: 'Cook C', initials: 'CC' } },
+  { id: 'c-other-on-mine', post_id: 'post-mine', author_id: 'user-3', text: "Thanks @Cook B, someone else's comment on my post.", created_at: new Date().toISOString(), profiles: { display_name: 'Cook C', initials: 'CC' } },
   { id: 'c-mine-on-other', post_id: 'post-other', author_id: 'me-1', text: "My comment on someone else's post.", created_at: new Date().toISOString(), profiles: { display_name: 'Me', initials: 'ME' } },
   { id: 'c-other-on-other', post_id: 'post-other', author_id: 'user-4', text: "Someone else's comment on someone else's post.", created_at: new Date().toISOString(), profiles: { display_name: 'Cook D', initials: 'CD' } },
 ];
@@ -48,7 +56,7 @@ function chain(table) {
       } else if (table === 'hearts' || table === 'post_bookmarks' || table === 'challenge_entries' || table === 'follows') {
         result = [];
       } else if (table === 'profiles') {
-        result = { display_name: 'Me', initials: 'ME' };
+        result = PROFILES;
       }
       return Promise.resolve({ data: result, error: null, count }).then(resolve);
     },

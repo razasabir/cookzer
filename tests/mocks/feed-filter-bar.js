@@ -53,7 +53,7 @@ function chain(table) {
       } else if (table === 'challenge_entries') {
         result = CHALLENGE_ENTRIES;
       } else if (table === 'profiles') {
-        result = { display_name: 'Me', initials: 'ME', avatar_url: null };
+        result = [{ id: 'me-1', display_name: 'Me', initials: 'ME', avatar_url: null }];
       }
       return Promise.resolve({ data: result, error: null }).then(resolve);
     },

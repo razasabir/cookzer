@@ -81,7 +81,7 @@ function chain(table) {
       let result = [];
       if (table === 'posts') result = POSTS;
       else if (table === 'hearts' || table === 'post_bookmarks' || table === 'comments' || table === 'challenge_entries' || table === 'follows') result = [];
-      else if (table === 'profiles') result = ME;
+      else if (table === 'profiles') result = [ME];
       return Promise.resolve({ data: result, error: null }).then(resolve);
     },
     delete() { return { eq() { return Promise.resolve({ data: null, error: null }); } }; },

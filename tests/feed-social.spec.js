@@ -173,3 +173,17 @@ test.describe('Feed — @mention autocomplete', () => {
     await expect(page.locator('.mention-dropdown')).toHaveCount(0);
   });
 });
+
+test.describe('Feed — @mentions in a rendered caption link to the tagged profile', () => {
+  test('a mention matching a real display name renders as a link to that profile, an unmatched "@" stays plain text', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
+    const card = page.locator('#post-post-mention');
+    const mentionLink = card.locator('.mention-link');
+    await expect(mentionLink).toHaveCount(1);
+    await expect(mentionLink).toHaveText('@Cook B');
+    await expect(mentionLink).toHaveAttribute('href', 'cookzer-profile.html?id=user-2');
+    // "@Not A Real Person" matches no real display_name, so it's left
+    // as ordinary text rather than a dead/misleading link.
+    await expect(card.locator('.card-description')).toContainText('@Not A Real Person said hi');
+  });
+});

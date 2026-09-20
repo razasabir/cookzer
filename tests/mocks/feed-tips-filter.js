@@ -29,7 +29,7 @@ function chain(table) {
         result = kindFilter ? ALL_POSTS.filter((p) => p.kind === kindFilter[1]) : ALL_POSTS;
         if (rangeArgs) result = result.slice(rangeArgs[0], rangeArgs[1] + 1);
       } else if (table === 'profiles') {
-        result = { display_name: 'Me', initials: 'ME', avatar_url: null };
+        result = [{ id: 'me-1', display_name: 'Me', initials: 'ME', avatar_url: null }];
       }
       return Promise.resolve({ data: result, error: null }).then(resolve);
     },
