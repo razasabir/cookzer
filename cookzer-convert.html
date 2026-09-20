@@ -233,7 +233,15 @@
        collapsed to a point via opacity, not display:none — so existing
        value-reading code (and tests) keep working unchanged. */
     .unit-picker { position: relative; }
-    .unit-native-select {
+    /* .convert-field select { width: 100%; ... } above outranks a bare
+       .unit-native-select on specificity alone (two selector parts vs
+       one), which was winning the cascade and undoing this collapse —
+       the native <select> rendered at full width instead of hidden,
+       forcing the page wider than the viewport on every phone width.
+       .convert-field select.unit-native-select matches that specificity
+       and adds one more class, so this rule wins regardless of source
+       order. */
+    .convert-field select.unit-native-select {
       position: absolute;
       width: 1px;
       height: 1px;
@@ -371,6 +379,34 @@
     .oven-row-body { flex: 1; }
     .oven-row-name { font-size: 13px; font-weight: 600; color: var(--ink); }
     .oven-row-temp { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+    /* Responsive — this page was missing the off-canvas drawer sidebar
+       fix every other page has (see menu-toggle/sidebar-overlay in the
+       markup below, wired up in JS but never actually switched on by
+       CSS), so the full 280px desktop sidebar tried to render on every
+       phone width, pushing the header and page content far enough off
+       the right edge to make the whole page look broken. */
+    @media (max-width: 1024px) {
+      .sidebar { position: fixed; top: 0; left: -280px; height: 100vh; height: 100dvh; z-index: 100; transition: left 0.25s ease; }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+    }
+
+    @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+    }
+    @media (max-width: 400px) {
+      .header { gap: 8px; }
+      .header-right { gap: 6px; }
+      .menu-toggle { width: 30px; height: 30px; }
+      .icon-btn, .avatar { width: 28px; height: 28px; font-size: 13px; }
+      .brand-header { font-size: 16px; }
+    }
   </style>
 </head>
 <body>
