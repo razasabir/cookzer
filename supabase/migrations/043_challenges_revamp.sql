@@ -11,24 +11,30 @@
 --     (see cookzer-challenges.html loadPastChallenges) — computed once,
 --     not on every page load, and only usable to *set* a currently-null
 --     winner on an already-ended challenge (see the update policy below).
-alter table public.challenges
-  add column category text,
-  add column group_id uuid references public.groups(id) on delete cascade,
-  add column winner_user_id uuid references public.profiles(id) on delete set null,
-  add column winner_computed_at timestamptz,
-  -- True for the client's own weekly auto-seeded challenge (see
-  -- ensureWeeklyChallenge in challenges-shared.js) — labeled "This
-  -- week's featured challenge" rather than "Started by <whoever's
-  -- browser happened to trigger it>".
-  add column is_auto_generated boolean not null default false;
+--
+-- Every statement below is written to be safely re-run (IF [NOT]
+-- EXISTS guards throughout) — plain ALTER TABLE ADD COLUMN and CREATE
+-- POLICY/TRIGGER aren't idempotent on their own, and a first attempt at
+-- this file failed partway through in the Supabase SQL Editor (column
+-- "category" already exists), which would otherwise block every retry.
+alter table public.challenges add column if not exists category text;
+alter table public.challenges add column if not exists group_id uuid references public.groups(id) on delete cascade;
+alter table public.challenges add column if not exists winner_user_id uuid references public.profiles(id) on delete set null;
+alter table public.challenges add column if not exists winner_computed_at timestamptz;
+-- True for the client's own weekly auto-seeded challenge (see
+-- ensureWeeklyChallenge in challenges-shared.js) — labeled "This week's
+-- featured challenge" rather than "Started by <whoever's browser
+-- happened to trigger it>".
+alter table public.challenges add column if not exists is_auto_generated boolean not null default false;
 
-create index challenges_group_idx on public.challenges(group_id);
-create index challenges_ends_at_idx on public.challenges(ends_at);
+create index if not exists challenges_group_idx on public.challenges(group_id);
+create index if not exists challenges_ends_at_idx on public.challenges(ends_at);
 
 -- Sitewide challenges (group_id null) stay visible to any authenticated
 -- user, same as before; a group challenge is only visible to that
 -- group's members.
-drop policy "Challenges are viewable by any authenticated user" on public.challenges;
+drop policy if exists "Challenges are viewable by any authenticated user" on public.challenges;
+drop policy if exists "Sitewide challenges viewable by anyone; group challenges by members" on public.challenges;
 create policy "Sitewide challenges viewable by anyone; group challenges by members"
   on public.challenges for select
   using (
@@ -38,7 +44,8 @@ create policy "Sitewide challenges viewable by anyone; group challenges by membe
 
 -- Creating a challenge for a group now requires being a member of it
 -- (sitewide creation is unchanged — any authenticated user, as before).
-drop policy "Authenticated users can create a challenge" on public.challenges;
+drop policy if exists "Authenticated users can create a challenge" on public.challenges;
+drop policy if exists "Create a sitewide challenge, or one for a group you're in" on public.challenges;
 create policy "Create a sitewide challenge, or one for a group you're in"
   on public.challenges for insert
   with check (
@@ -54,6 +61,7 @@ create policy "Create a sitewide challenge, or one for a group you're in"
 -- already-ended challenge that doesn't have one yet (whoever's Past
 -- Challenges list loads first does the computing) — never on a still-
 -- running challenge, and never overwriting one already set.
+drop policy if exists "Anyone can finalize an ended challenge's winner once" on public.challenges;
 create policy "Anyone can finalize an ended challenge's winner once"
   on public.challenges for update
   using (ends_at < now() and winner_user_id is null)
@@ -63,7 +71,7 @@ create policy "Anyone can finalize an ended challenge's winner once"
 -- way every other event type here does (a security-definer trigger, not
 -- a client-side insert — public.notifications still has no insert
 -- policy of its own; see migration 025).
-alter table public.notifications drop constraint notifications_type_check;
+alter table public.notifications drop constraint if exists notifications_type_check;
 alter table public.notifications add constraint notifications_type_check
   check (type in ('follow', 'heart', 'comment', 'remake', 'challenge_join', 'message', 'review', 'group_join', 'challenge_winner'));
 
@@ -82,6 +90,7 @@ begin
 end;
 $$;
 
+drop trigger if exists trg_notify_on_challenge_winner on public.challenges;
 create trigger trg_notify_on_challenge_winner
   after update on public.challenges
   for each row execute function public.notify_on_challenge_winner();
