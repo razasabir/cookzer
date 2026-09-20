@@ -90,4 +90,12 @@ test.describe('Feed — Dining Out via Google Places', () => {
     await expect(body).toContainText('took too long to respond');
     await expect(body).not.toContainText('permission denied');
   });
+
+  test('when the places lookup fails server-side, the real reason (e.g. a missing API key) is shown, not a generic "couldn\'t reach" message', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-dining-out.js', "window.__PLACES_FETCH_MODE__ = 'server-error';");
+    await page.click('#composerRestaurantBtn');
+    const body = page.locator('#restaurantPanelBody');
+    await expect(body).toContainText('Google Maps lookup is not configured yet.');
+    await expect(body).not.toContainText("Couldn't reach the places lookup");
+  });
 });
