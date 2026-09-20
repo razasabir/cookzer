@@ -18,6 +18,19 @@ const FRIENDS = [
   { followee_id: 'friend-2', profiles: { id: 'friend-2', display_name: 'Bob Baker', initials: 'BB' } },
 ];
 
+// post-plain has hearts/comments to test the inline "❤️ N / 💬 N" count
+// display; post-no-photo and post-recipe stay at zero to test that the
+// count is left blank rather than shown as "0".
+const HEARTS = [
+  { post_id: 'post-plain', user_id: 'x1' },
+  { post_id: 'post-plain', user_id: 'x2' },
+  { post_id: 'post-plain', user_id: 'x3' },
+];
+const COMMENTS = [
+  { post_id: 'post-plain', id: 'c1' },
+  { post_id: 'post-plain', id: 'c2' },
+];
+
 function chain(table) {
   let eqArgs = [];
   const builder = {
@@ -36,9 +49,12 @@ function chain(table) {
     maybeSingle() { return Promise.resolve({ data: null, error: null }); },
     then(resolve) {
       let result = [];
+      const postIdFilter = eqArgs.find((a) => a[0] === 'post_id');
       if (table === 'posts') result = POSTS;
       else if (table === 'follows') result = FRIENDS;
-      else if (table === 'hearts' || table === 'post_bookmarks' || table === 'comments' || table === 'challenge_entries') result = [];
+      else if (table === 'hearts') result = postIdFilter ? HEARTS.filter((h) => h.post_id === postIdFilter[1]) : HEARTS;
+      else if (table === 'comments') result = postIdFilter ? COMMENTS.filter((c) => c.post_id === postIdFilter[1]) : COMMENTS;
+      else if (table === 'post_bookmarks' || table === 'challenge_entries') result = [];
       else if (table === 'profiles') result = ME;
       return Promise.resolve({ data: result, error: null }).then(resolve);
     },

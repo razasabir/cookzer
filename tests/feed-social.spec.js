@@ -74,6 +74,31 @@ test.describe('Feed — action buttons', () => {
     await expect(page.locator('#post-post-plain .card-stats')).toHaveCount(0);
   });
 
+  test('the comment input has a Send button beside it', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
+    const sendBtn = page.locator('#post-post-plain .card-comment-send-btn');
+    await expect(sendBtn).toHaveText('Send');
+  });
+
+  test('the caption is bold', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
+    const caption = page.locator('#post-post-plain .card-description');
+    const weight = await caption.evaluate((el) => getComputedStyle(el).fontWeight);
+    expect(Number(weight)).toBeGreaterThanOrEqual(700);
+  });
+
+  test('hearts and comments counts show inline with the caption when there are any', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
+    await expect(page.locator('#post-post-plain .card-inline-stats')).toContainText('3');
+    await expect(page.locator('#post-post-plain .card-inline-stats')).toContainText('2');
+  });
+
+  test('the counts are left blank, not shown as 0, when a post has neither', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
+    const stats = page.locator('#post-post-no-photo .card-inline-stats');
+    await expect(stats).toHaveText('');
+  });
+
   test('the Share icon is the brand orange, not the default action color', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
     const shareBtn = page.locator('#post-post-plain .action-btn[title="Share"]');

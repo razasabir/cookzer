@@ -580,12 +580,41 @@
       font-family: 'Fraunces', serif;
     }
 
-  .card-description {
-      font-size: 13px;
-      color: var(--ink-soft);
-      line-height: 1.5;
+  .card-caption-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
       margin-bottom: 12px;
     }
+
+  .card-description {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+
+  .card-inline-stats {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--ink-soft);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+  .card-inline-comments-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+    }
+
+  .card-inline-comments-btn:hover { color: var(--olive-dark); }
 
   .mood-badge {
       display: inline-block;
@@ -614,24 +643,16 @@
       font-weight: 500;
     }
 
-  .card-view-comments-link {
-      display: inline-block;
-      background: none;
-      border: none;
-      padding: 0;
-      font-size: 12px;
-      font-family: inherit;
-      color: var(--ink-soft);
-      cursor: pointer;
+  .card-comment-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       margin-top: 10px;
     }
 
-  .card-view-comments-link:hover { color: var(--olive-dark); }
-
-  .card-comment-input-row { margin-top: 10px; }
-
   .card-comment-input {
-      width: 100%;
+      flex: 1;
+      min-width: 0;
       padding: 9px 14px;
       border: 1px solid var(--line);
       border-radius: 18px;
@@ -642,6 +663,21 @@
     }
 
   .card-comment-input::placeholder { color: var(--ink-soft); }
+
+  .card-comment-send-btn {
+      flex-shrink: 0;
+      padding: 9px 16px;
+      border: none;
+      border-radius: 18px;
+      background: var(--olive);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+  .card-comment-send-btn:hover { background: var(--olive-dark); }
 
   .card-actions {
       display: flex;
@@ -1980,25 +2016,35 @@
     challengeBadge.hidden = true;
     content.appendChild(challengeBadge);
 
+    // Caption on the left, hearts/comments counts on the right of the
+    // same line — blank on either side when there's nothing to show
+    // (no caption, or a fresh post with zero hearts/comments) rather
+    // than an empty "0 hearts" row.
+    const captionRow = document.createElement('div');
+    captionRow.className = 'card-caption-row';
     if (post.caption) {
       const desc = document.createElement('div');
       desc.className = 'card-description';
       desc.textContent = post.caption;
-      content.appendChild(desc);
+      captionRow.appendChild(desc);
     }
+    const inlineStats = document.createElement('div');
+    inlineStats.className = 'card-inline-stats';
+    const inlineHearts = document.createElement('span');
+    inlineHearts.id = 'inlineHearts-' + post.id;
+    const inlineComments = document.createElement('button');
+    inlineComments.type = 'button';
+    inlineComments.className = 'card-inline-comments-btn';
+    inlineComments.id = 'inlineComments-' + post.id;
+    inlineComments.hidden = true;
+    inlineComments.addEventListener('click', () => toggleCommentsList(post.id, post.author_id));
+    inlineStats.appendChild(inlineHearts);
+    inlineStats.appendChild(inlineComments);
+    captionRow.appendChild(inlineStats);
+    content.appendChild(captionRow);
 
-    // Existing comments stay collapsed behind a "View N comments" link
-    // (shown/labeled once refreshPostStats()/refreshAllPostStats() know
-    // the count) rather than always rendered — the input row below is
-    // what's always there now, not the list itself.
-    const viewCommentsLink = document.createElement('button');
-    viewCommentsLink.type = 'button';
-    viewCommentsLink.className = 'card-view-comments-link';
-    viewCommentsLink.id = 'viewComments-' + post.id;
-    viewCommentsLink.hidden = true;
-    viewCommentsLink.addEventListener('click', () => toggleCommentsList(post.id, post.author_id));
-    content.appendChild(viewCommentsLink);
-
+    // Existing comments stay collapsed (revealed via the inline "💬 N"
+    // count above, or by posting a new one) rather than always rendered.
     const commentsList = document.createElement('div');
     commentsList.id = 'commentBox-' + post.id;
     commentsList.hidden = true;
@@ -2015,7 +2061,13 @@
       if (e.key === 'Enter') submitComment(post.id, commentInput, commentsList, post.author_id);
     });
     attachMentionAutocomplete(commentInput);
+    const sendBtn = document.createElement('button');
+    sendBtn.type = 'button';
+    sendBtn.className = 'card-comment-send-btn';
+    sendBtn.textContent = 'Send';
+    sendBtn.addEventListener('click', () => submitComment(post.id, commentInput, commentsList, post.author_id));
     commentInputRow.appendChild(commentInput);
+    commentInputRow.appendChild(sendBtn);
     content.appendChild(commentInputRow);
 
     // Every action here is icon-only (no "0 hearts"/"0 comments" counts,
@@ -2128,6 +2180,10 @@
   }
 
   async function refreshPostStats(postId) {
+    const { count: heartCount } = await sb
+      .from('hearts')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', postId);
     const { count: commentCount } = await sb
       .from('comments')
       .select('*', { count: 'exact', head: true })
@@ -2148,7 +2204,7 @@
 
     const heartBtn = document.getElementById('heartBtn-' + postId);
     const bookmarkBtn = document.getElementById('bookmarkBtn-' + postId);
-    updateViewCommentsLink(postId, commentCount || 0);
+    updateInlineStats(postId, heartCount || 0, commentCount || 0);
     if (heartBtn) {
       heartBtn.title = mine ? 'Hearted' : 'Heart';
       heartBtn.style.color = mine ? 'var(--brick)' : '';
@@ -2159,18 +2215,21 @@
     }
   }
 
-  // No numeric counts shown on the card itself anymore (see the reference
-  // design this card was rewritten to match) — a comment count still
-  // needs to exist somewhere so a post with replies isn't silently
-  // impossible to find, hence the one small "View N comments" link.
-  function updateViewCommentsLink(postId, count) {
-    const link = document.getElementById('viewComments-' + postId);
-    if (!link) return;
-    if (count > 0) {
-      link.hidden = false;
-      link.textContent = 'View ' + count + (count === 1 ? ' comment' : ' comments');
+  // In line with the caption: a heart count and a comment count, each
+  // shown only once it's actually above zero — a fresh post with
+  // neither shows nothing rather than "0 hearts". The comment count
+  // doubles as the control that reveals the full comment list, so it
+  // stays a button rather than plain text.
+  function updateInlineStats(postId, heartCount, commentCount) {
+    const heartsEl = document.getElementById('inlineHearts-' + postId);
+    if (heartsEl) heartsEl.textContent = heartCount > 0 ? '❤️ ' + heartCount : '';
+    const commentsBtn = document.getElementById('inlineComments-' + postId);
+    if (!commentsBtn) return;
+    if (commentCount > 0) {
+      commentsBtn.hidden = false;
+      commentsBtn.textContent = '💬 ' + commentCount;
     } else {
-      link.hidden = true;
+      commentsBtn.hidden = true;
     }
   }
 
@@ -2494,7 +2553,7 @@
 
     postIds.forEach((postId) => {
       const heartBtn = document.getElementById('heartBtn-' + postId);
-      updateViewCommentsLink(postId, commentCounts[postId] || 0);
+      updateInlineStats(postId, heartCounts[postId] || 0, commentCounts[postId] || 0);
       if (heartBtn) {
         const mine = myHearts.has(postId);
         heartBtn.title = mine ? 'Hearted' : 'Heart';
