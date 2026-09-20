@@ -1,5 +1,7 @@
 window.__CALLS__ = [];
 
+const HOUSEHOLD = { id: 'household-1', name: null, household_size: 4 };
+
 const PLANNED_ENTRIES = [
   { recipe_id: 'r1', recipes: { ingredients: [{ name: 'Chicken breast', qty: '600 g' }, { name: 'Rice', qty: '2 cups' }] } },
   { recipe_id: 'r2', recipes: { ingredients: [{ name: 'Olive oil', qty: '2 tbsp' }, { name: 'unobtainium dust', qty: '1 cup' }] } },
@@ -14,7 +16,10 @@ function chain(table) {
     not() { return builder; },
     order() { return builder; },
     limit() { return builder; },
-    single() { return Promise.resolve({ data: null, error: null }); },
+    single() {
+      if (table === 'households') return Promise.resolve({ data: HOUSEHOLD, error: null });
+      return Promise.resolve({ data: null, error: null });
+    },
     maybeSingle() { return Promise.resolve({ data: null, error: null }); },
     then(resolve) {
       window.__CALLS__.push({ table, selectArg });
@@ -38,6 +43,10 @@ window.supabase = {
       signOut: () => Promise.resolve({}),
     },
     from: (table) => chain(table),
+    rpc: (fn) => {
+      if (fn === 'get_or_create_my_household') return Promise.resolve({ data: HOUSEHOLD.id, error: null });
+      return Promise.resolve({ data: null, error: null });
+    },
     storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: 'https://example.com/x.jpg' } }), upload: () => Promise.resolve({ data: {}, error: null }) }) },
     channel: () => ({ on: () => ({ subscribe: () => ({}) }), subscribe: () => ({}) }),
     removeChannel: () => {},

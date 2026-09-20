@@ -17,6 +17,7 @@
   <script src="push-notifications.js"></script>
   <script src="auth-guard.js"></script>
   <script src="friends-widget.js"></script>
+  <script src="household.js"></script>
   <script src="cookzer-modal.js"></script>
   <script src="nutrition-data.js"></script>
   <script src="theme.js"></script>
@@ -545,6 +546,7 @@
   }
 
   let currentUser = null;
+  let currentHousehold = null;
   const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   // The planner browses week by week, from the current week out to
@@ -639,13 +641,13 @@
 
   document.getElementById('shareApplyBtn').addEventListener('click', async () => {
     if (!currentShareGroupId) return;
-    await sb.from('meal_plan_entries').update({ group_id: currentShareGroupId }).eq('user_id', currentUser.id).in('plan_date', weekDates());
+    await sb.from('meal_plan_entries').update({ group_id: currentShareGroupId }).eq('household_id', currentHousehold.id).in('plan_date', weekDates());
     await CookzerModal.alert('This week\'s existing meals are now shared with that group too.');
   });
 
   async function loadFamilyProfilesCache() {
     if (familyProfilesCache) return familyProfilesCache;
-    const { data } = await sb.from('family_profiles').select('id, name, avatar_emoji').eq('owner_id', currentUser.id).order('created_at', { ascending: true });
+    const { data } = await sb.from('family_profiles').select('id, name, avatar_emoji').eq('household_id', currentHousehold.id).order('created_at', { ascending: true });
     familyProfilesCache = data || [];
     return familyProfilesCache;
   }
@@ -662,8 +664,7 @@
       return;
     }
 
-    const { data: profile } = await sb.from('profiles').select('household_size').eq('id', currentUser.id).maybeSingle();
-    const householdSize = (profile && profile.household_size) || 4;
+    const householdSize = currentHousehold.household_size || 4;
     const familyProfiles = await loadFamilyProfilesCache();
 
     plannerPeople = [
@@ -680,7 +681,7 @@
     const { data } = await sb
       .from('meal_suggestions')
       .select('id, suggestion_date, dish_text, recipe_id, suggested_by_user_id, suggested_by_family_profile_id, profiles!meal_suggestions_suggested_by_user_id_fkey(display_name), family_profiles(name, avatar_emoji)')
-      .eq('owner_id', currentUser.id)
+      .eq('household_id', currentHousehold.id)
       .in('suggestion_date', weekDates())
       .order('created_at', { ascending: true });
     (data || []).forEach((s) => {
@@ -704,6 +705,7 @@
   async function useSuggestion(s, date) {
     const { error } = await sb.from('meal_plan_entries').insert({
       user_id: currentUser.id,
+      household_id: currentHousehold.id,
       plan_date: date,
       recipe_id: s.recipe_id,
       free_text: s.recipe_id ? null : s.dish_text,
@@ -770,7 +772,7 @@
       // which looks exactly like "nothing got saved" even though it did.
       const query = existing
         ? sb.from('meal_suggestions').update({ dish_text: dish }).eq('id', existing.id)
-        : sb.from('meal_suggestions').insert({ owner_id: currentUser.id, suggestion_date: date, dish_text: dish, ...suggesterFields });
+        : sb.from('meal_suggestions').insert({ owner_id: currentUser.id, household_id: currentHousehold.id, suggestion_date: date, dish_text: dish, ...suggesterFields });
       const { data, error } = await query
         .select('id, suggestion_date, dish_text, recipe_id, suggested_by_user_id, suggested_by_family_profile_id, profiles!meal_suggestions_suggested_by_user_id_fkey(display_name), family_profiles(name, avatar_emoji)')
         .single();
@@ -876,7 +878,7 @@
     const { data: lastWeekEntries } = await sb
       .from('meal_plan_entries')
       .select('plan_date, recipe_id, free_text, source_note')
-      .eq('user_id', currentUser.id)
+      .eq('household_id', currentHousehold.id)
       .in('plan_date', lastWeek);
 
     if (!lastWeekEntries || lastWeekEntries.length === 0) {
@@ -888,6 +890,7 @@
       .filter((e) => !entriesByDate[thisWeek[lastWeek.indexOf(e.plan_date)]])
       .map((e) => ({
         user_id: currentUser.id,
+        household_id: currentHousehold.id,
         plan_date: thisWeek[lastWeek.indexOf(e.plan_date)],
         recipe_id: e.recipe_id,
         free_text: e.free_text,
@@ -912,7 +915,7 @@
     const { data } = await sb
       .from('meal_plan_entries')
       .select('id, plan_date, recipe_id, free_text, source_note, recipes(id, title, nutrition)')
-      .eq('user_id', currentUser.id)
+      .eq('household_id', currentHousehold.id)
       .in('plan_date', dates);
 
     entriesByDate = {};
@@ -1067,6 +1070,7 @@
   async function saveMealEntry(date, choice) {
     const { error } = await sb.from('meal_plan_entries').insert({
       user_id: currentUser.id,
+      household_id: currentHousehold.id,
       plan_date: date,
       group_id: currentShareGroupId || null,
       ...choice,
@@ -1174,7 +1178,7 @@
     const { data: entries } = await sb
       .from('meal_plan_entries')
       .select('recipe_id, recipes(ingredients)')
-      .eq('user_id', currentUser.id)
+      .eq('household_id', currentHousehold.id)
       .in('plan_date', dates)
       .not('recipe_id', 'is', null);
 
@@ -1243,6 +1247,7 @@
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
     currentUser = user;
+    currentHousehold = await CookzerHousehold.getOrCreate(sb);
     await loadMyGroups();
     document.getElementById('shareApplyBtn').hidden = !currentShareGroupId;
     updateWeekNav();

@@ -1,6 +1,8 @@
 window.__CALLS__ = [];
 window.__PREFS_SAVED__ = [];
 
+const HOUSEHOLD = { id: 'household-1', name: null, household_size: 4 };
+
 window.__SEED_PREFS__ = window.__SEED_PREFS__ || {
   notify_follows: true, notify_hearts: false, notify_comments: true,
   notify_remakes: true, notify_challenge_joins: false,
@@ -25,6 +27,7 @@ function chain(table) {
     single() {
       window.__CALLS__.push({ table, method: 'single', eqArgs });
       if (table === 'profiles') return Promise.resolve({ data: { display_name: 'Test Cook', initials: 'TC', avatar_url: null }, error: null });
+      if (table === 'households') return Promise.resolve({ data: HOUSEHOLD, error: null });
       return Promise.resolve({ data: null, error: null });
     },
     upsert(payload) {
@@ -50,6 +53,10 @@ window.supabase = {
       signOut: () => Promise.resolve({}),
     },
     from: (table) => chain(table),
+    rpc: (fn) => {
+      if (fn === 'get_or_create_my_household') return Promise.resolve({ data: HOUSEHOLD.id, error: null });
+      return Promise.resolve({ data: null, error: null });
+    },
     storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: '' } }) }) },
     channel: () => ({ on: () => ({ subscribe: () => ({}) }), subscribe: () => ({}) }),
     removeChannel: () => {},

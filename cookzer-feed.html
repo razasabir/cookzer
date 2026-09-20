@@ -20,6 +20,7 @@
   <script src="bunny-config.js"></script>
   <script src="auth-guard.js"></script>
   <script src="cookzer-modal.js"></script>
+  <script src="household.js"></script>
   <script src="share-save-menu.js"></script>
   <script src="photo-filters.js"></script>
   <script src="photo-cropper.js"></script>
@@ -1340,6 +1341,7 @@
   }
 
   let currentUser = null;
+  let currentHousehold = null; // loaded lazily — only Save > Save to Meal Planner needs it
   let activeChallenge = null;
   let challengeCountdownTimer = null;
   let pendingPhotoFile = null;
@@ -2307,14 +2309,18 @@
       bookmarkBtn.id = 'bookmarkBtn-' + post.id;
       bookmarkBtn.title = 'Save';
       bookmarkBtn.textContent = '🔖';
-      bookmarkBtn.addEventListener('click', () => CookzerSaveMenu.open({
-        sb,
-        currentUserId: currentUser.id,
-        recipeId: post.recipe_id,
-        imageUrl: cardImageUrl,
-        deviceFilename: 'cookzer-photo.jpg',
-        onSaveAsRecipe: () => toggleBookmark(post.id),
-      }));
+      bookmarkBtn.addEventListener('click', async () => {
+        if (!currentHousehold) currentHousehold = await CookzerHousehold.getOrCreate(sb);
+        CookzerSaveMenu.open({
+          sb,
+          currentUserId: currentUser.id,
+          householdId: currentHousehold.id,
+          recipeId: post.recipe_id,
+          imageUrl: cardImageUrl,
+          deviceFilename: 'cookzer-photo.jpg',
+          onSaveAsRecipe: () => toggleBookmark(post.id),
+        });
+      });
       actions.appendChild(bookmarkBtn);
     }
     content.appendChild(actions);
