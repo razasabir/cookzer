@@ -624,3 +624,90 @@ body {
   margin-bottom: 10px;
   border: 1px solid var(--line);
 }
+
+/* Profile hover card (profile-hover-card.js) — a quick peek shown when
+   hovering any link to a Cookzer profile: avatar, bio/location, and a
+   few stats, without navigating away. One shared element, repositioned
+   and refilled per hover rather than built once per profile link. */
+.cz-hovercard {
+  position: fixed;
+  z-index: 500;
+  width: 240px;
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.cz-hovercard-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.cz-hovercard-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.cz-hovercard-titles { min-width: 0; }
+
+.cz-hovercard-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cz-hovercard-meta {
+  font-size: 12px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cz-hovercard-stats {
+  display: flex;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.cz-hovercard-stat { text-align: center; flex: 1; }
+
+.cz-hovercard-stat-num {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--olive-dark);
+}
+
+.cz-hovercard-stat-label {
+  display: block;
+  font-size: 10px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cz-hovercard-loading {
+  font-size: 12px;
+  color: var(--ink-soft);
+  padding: 4px 0;
+}
