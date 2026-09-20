@@ -62,12 +62,12 @@
       border: 1px solid var(--line);
       border-radius: 14px;
       margin-bottom: 8px;
-      text-decoration: none;
-      color: inherit;
     }
 
   .notif-row:hover { border-color: var(--mustard); }
   .notif-row.unread { background: rgba(0, 156, 74, 0.06); border-color: rgba(0, 156, 74, 0.3); }
+
+  .notif-link { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 12px; text-decoration: none; color: inherit; }
 
   .notif-avatar {
       width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
@@ -78,6 +78,33 @@
 
   .notif-text { font-size: 14px; color: var(--ink); }
   .notif-time { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+  .notif-mark-read {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: var(--card-bg);
+      color: var(--olive-dark);
+      font-size: 14px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+  .notif-mark-read:hover { border-color: var(--olive-dark); }
+
+  .notif-header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+  .notif-header-row .page-title { margin-bottom: 0; }
+  .mark-all-read-btn {
+      background: none;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--olive-dark);
+      cursor: pointer;
+    }
+  .mark-all-read-btn:hover { border-color: var(--olive-dark); }
 
   .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 40px 20px; }
 
@@ -143,7 +170,10 @@
 
 <div class="main">
   <div class="notif-content">
-    <h1 class="page-title">Notifications</h1>
+    <div class="notif-header-row">
+      <h1 class="page-title">Notifications</h1>
+      <button class="mark-all-read-btn" id="markAllReadBtn" hidden>Mark all read</button>
+    </div>
     <div id="notifList"></div>
     <div class="empty-note" id="notifEmpty" hidden>No activity yet — when someone follows you, hearts a post, comments, messages you, remakes your recipe, reviews it, or joins your challenge or group, it'll show up here.</div>
   </div>
@@ -170,38 +200,71 @@
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
 
-    const items = await window.CookzerNotifications.fetchItems(user.id, 30);
-    const listEl = document.getElementById('notifList');
-    listEl.innerHTML = '';
-    document.getElementById('notifEmpty').hidden = items.length > 0;
-
     const TYPE_EMOJI = { follow: '👋', heart: '❤️', comment: '💬', remake: '🍳', challenge_join: '🏆', message: '✉️', review: '⭐', group_join: '👥' };
+    const markAllBtn = document.getElementById('markAllReadBtn');
 
-    items.forEach((item) => {
-      const row = document.createElement('a');
-      row.className = 'notif-row' + (item.read_at ? '' : ' unread');
-      row.href = item.linkUrl || ('cookzer-profile.html?id=' + item.actorId);
+    async function render() {
+      const items = await window.CookzerNotifications.fetchItems(user.id, 30);
+      const listEl = document.getElementById('notifList');
+      listEl.innerHTML = '';
+      document.getElementById('notifEmpty').hidden = items.length > 0;
+      markAllBtn.hidden = !items.some((item) => !item.read_at);
 
-      const avatar = document.createElement('div');
-      avatar.className = 'notif-avatar';
-      avatar.textContent = TYPE_EMOJI[item.type] || '🔔';
+      items.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'notif-row' + (item.read_at ? '' : ' unread');
 
-      const body = document.createElement('div');
-      const text = document.createElement('div');
-      text.className = 'notif-text';
-      text.textContent = item.text;
-      const time = document.createElement('div');
-      time.className = 'notif-time';
-      time.textContent = timeAgo(item.created_at);
-      body.appendChild(text);
-      body.appendChild(time);
+        const link = document.createElement('a');
+        link.className = 'notif-link';
+        link.href = item.linkUrl || ('cookzer-profile.html?id=' + item.actorId);
 
-      row.appendChild(avatar);
-      row.appendChild(body);
-      listEl.appendChild(row);
+        const avatar = document.createElement('div');
+        avatar.className = 'notif-avatar';
+        avatar.textContent = TYPE_EMOJI[item.type] || '🔔';
+
+        const body = document.createElement('div');
+        const text = document.createElement('div');
+        text.className = 'notif-text';
+        text.textContent = item.text;
+        const time = document.createElement('div');
+        time.className = 'notif-time';
+        time.textContent = timeAgo(item.created_at);
+        body.appendChild(text);
+        body.appendChild(time);
+
+        link.appendChild(avatar);
+        link.appendChild(body);
+        row.appendChild(link);
+
+        // A per-notification mark-read control, so clearing one doesn't
+        // require clicking into (navigating to) what it's about.
+        if (!item.read_at) {
+          const markBtn = document.createElement('button');
+          markBtn.type = 'button';
+          markBtn.className = 'notif-mark-read';
+          markBtn.title = 'Mark as read';
+          markBtn.setAttribute('aria-label', 'Mark as read');
+          markBtn.textContent = '✓';
+          markBtn.addEventListener('click', async () => {
+            markBtn.disabled = true;
+            await window.CookzerNotifications.markRead(user.id, item.id);
+            row.classList.remove('unread');
+            markBtn.remove();
+            markAllBtn.hidden = !listEl.querySelector('.notif-row.unread');
+          });
+          row.appendChild(markBtn);
+        }
+
+        listEl.appendChild(row);
+      });
+    }
+
+    markAllBtn.addEventListener('click', async () => {
+      await window.CookzerNotifications.markAllRead(user.id);
+      await render();
     });
 
-    await window.CookzerNotifications.markAllRead(user.id);
+    await render();
   })();
 </script>
 </body>

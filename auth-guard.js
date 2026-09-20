@@ -403,20 +403,61 @@ function applyKidModeRestrictions(kidMode) {
       const items = await window.CookzerNotifications.fetchItems(userId, 8);
 
       panel.innerHTML = '';
+
+      if (items.some((item) => !item.read_at)) {
+        const markAllBtn = document.createElement('button');
+        markAllBtn.type = 'button';
+        markAllBtn.style.cssText = 'display:block; width:100%; text-align:right; background:none; border:none; padding:4px 8px 8px; font-size:12px; color:var(--olive-dark); font-weight:600; cursor:pointer;';
+        markAllBtn.textContent = 'Mark all read';
+        markAllBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          await window.CookzerNotifications.markAllRead(userId);
+          await loadNotifications();
+          refreshUnreadDot();
+        });
+        panel.appendChild(markAllBtn);
+      }
+
       if (items.length === 0) {
-        panel.innerHTML = '<div style="padding:12px; font-size:13px; color:var(--ink-soft);">No activity yet.</div>';
+        panel.innerHTML += '<div style="padding:12px; font-size:13px; color:var(--ink-soft);">No activity yet.</div>';
       } else {
         items.forEach((item) => {
-          const row = document.createElement('a');
-          row.href = item.linkUrl || ('cookzer-profile.html?id=' + item.actorId);
-          row.style.cssText = 'display:block; padding:10px 8px; font-size:13px; color:var(--ink); border-bottom:1px solid var(--line); text-decoration:none;' + (item.read_at ? '' : ' background:rgba(0,156,74,0.06);');
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex; align-items:flex-start; gap:6px; padding:10px 8px; border-bottom:1px solid var(--line);' + (item.read_at ? '' : ' background:rgba(0,156,74,0.06);');
+
+          const link = document.createElement('a');
+          link.href = item.linkUrl || ('cookzer-profile.html?id=' + item.actorId);
+          link.style.cssText = 'flex:1; min-width:0; font-size:13px; color:var(--ink); text-decoration:none;';
           const text = document.createElement('div');
           text.textContent = item.text;
           const time = document.createElement('div');
           time.style.cssText = 'font-size:11px; color:var(--ink-soft); margin-top:2px;';
           time.textContent = timeAgo(item.created_at);
-          row.appendChild(text);
-          row.appendChild(time);
+          link.appendChild(text);
+          link.appendChild(time);
+          row.appendChild(link);
+
+          // A dedicated mark-read control — clicking a notification's own
+          // text still navigates you to what it's about, but this lets
+          // you clear just this one without having to go there.
+          if (!item.read_at) {
+            const markBtn = document.createElement('button');
+            markBtn.type = 'button';
+            markBtn.title = 'Mark as read';
+            markBtn.setAttribute('aria-label', 'Mark as read');
+            markBtn.style.cssText = 'flex-shrink:0; width:22px; height:22px; border-radius:50%; border:1px solid var(--line); background:var(--card-bg); color:var(--olive-dark); font-size:12px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;';
+            markBtn.textContent = '✓';
+            markBtn.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              markBtn.disabled = true;
+              await window.CookzerNotifications.markRead(userId, item.id);
+              row.style.background = '';
+              markBtn.remove();
+              refreshUnreadDot();
+            });
+            row.appendChild(markBtn);
+          }
+
           panel.appendChild(row);
         });
       }
@@ -426,9 +467,6 @@ function applyKidModeRestrictions(kidMode) {
       seeAll.style.cssText = 'display:block; padding:10px 8px; font-size:12.5px; color:var(--olive-dark); font-weight:600; text-decoration:none; text-align:center;';
       seeAll.textContent = 'See all notifications';
       panel.appendChild(seeAll);
-
-      await window.CookzerNotifications.markAllRead(userId);
-      dot.style.display = 'none';
     }
 
     refreshUnreadDot();
