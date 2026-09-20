@@ -565,6 +565,7 @@
     document.querySelector('.sidebar-overlay').classList.toggle('open');
   }
 
+  const params = new URLSearchParams(location.search);
   let currentUser = null;
   let conversations = []; // [{ id, name, initials, otherId, lastText, lastTime, unread }]
   let activeId = null;
@@ -1328,6 +1329,14 @@
     await loadConversations();
     renderList();
     renderThread();
+
+    // Opened via a "Message" link elsewhere (e.g. someone's profile) —
+    // jump straight into a conversation with them instead of the inbox.
+    const withId = params.get('with');
+    if (withId && withId !== currentUser.id) {
+      const { data: person } = await sb.from('profiles').select('id, display_name, initials').eq('id', withId).maybeSingle();
+      if (person) await startConversation(person);
+    }
   })();
 </script>
 </body>

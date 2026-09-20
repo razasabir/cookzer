@@ -450,6 +450,109 @@
       line-height: 1.4;
     }
 
+  /* Featured (pinned) recipe */
+    .featured-recipe-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 32px;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      text-decoration: none;
+      color: var(--ink);
+      transition: border-color 0.2s;
+    }
+
+  .featured-recipe-card:hover { border-color: var(--mustard); }
+
+  .featured-recipe-thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #F3EEE3, #E5D9C8);
+      background-size: cover;
+      background-position: center;
+      flex-shrink: 0;
+    }
+
+  .featured-recipe-body { flex: 1; min-width: 0; text-align: left; }
+
+  .featured-recipe-tag {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--mustard);
+      margin-bottom: 3px;
+    }
+
+  .featured-recipe-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--olive-dark);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+  .featured-recipe-meta { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+  /* Cooking streak heatmap */
+    .streak-heatmap {
+      display: grid;
+      grid-template-rows: repeat(7, 1fr);
+      grid-auto-flow: column;
+      grid-auto-columns: 14px;
+      gap: 3px;
+      width: 100%;
+      max-width: 500px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 6px;
+    }
+
+  .streak-cell {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      background: var(--line);
+    }
+
+  .streak-cell.active { background: var(--olive); }
+  .streak-cell.today { box-shadow: 0 0 0 2px var(--mustard); }
+
+  .streak-caption { font-size: 12px; color: var(--ink-soft); margin-bottom: 32px; }
+
+  /* Lists */
+    .lists-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 32px;
+    }
+
+  .list-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 16px;
+      text-decoration: none;
+      color: var(--ink);
+      min-width: 150px;
+      transition: border-color 0.2s;
+    }
+
+  .list-card:hover { border-color: var(--mustard); }
+  .list-card .list-card-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  .list-card .list-card-meta { font-size: 12px; color: var(--ink-soft); }
+
   /* Tabs */
     .tabs {
       display: flex;
@@ -765,6 +868,18 @@
       <div class="profile-actions" id="profileActions"></div>
     </div>
 
+    <!-- Featured recipe (pinned by the profile owner) -->
+    <div class="profile-section" id="featuredRecipeSection" hidden>
+      <a class="featured-recipe-card" id="featuredRecipeCard" href="#">
+        <div class="featured-recipe-thumb" id="featuredRecipeThumb"></div>
+        <div class="featured-recipe-body">
+          <div class="featured-recipe-tag">★ Featured recipe</div>
+          <div class="featured-recipe-title" id="featuredRecipeTitle"></div>
+          <div class="featured-recipe-meta" id="featuredRecipeMeta"></div>
+        </div>
+      </a>
+    </div>
+
     <!-- Badges Section -->
     <div class="profile-section">
       <h2 class="section-title">Achievements</h2>
@@ -786,6 +901,44 @@
           <span class="badge-label">followers</span>
         </div>
       </div>
+    </div>
+
+    <!-- Activity: how active this person is, beyond the gamified badges above -->
+    <div class="profile-section">
+      <h2 class="section-title">Activity</h2>
+      <div class="badges-grid">
+        <div class="badge-tile">
+          <span class="badge-number" id="activityTipsNum">0</span>
+          <span class="badge-label">tips shared</span>
+        </div>
+        <div class="badge-tile">
+          <span class="badge-number" id="activityCommentsNum">0</span>
+          <span class="badge-label">comments left</span>
+        </div>
+        <div class="badge-tile">
+          <span class="badge-number" id="activityHeartsGivenNum">0</span>
+          <span class="badge-label">hearts given</span>
+        </div>
+        <div class="badge-tile">
+          <span class="badge-number" id="activityPhotosNum">0</span>
+          <span class="badge-label">photos added</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cooking streak: the same cook-in dates as the badge above, as a
+         calendar heatmap instead of a single number, so consistency
+         (not just a lifetime count) actually shows. -->
+    <div class="profile-section">
+      <h2 class="section-title">Cooking Streak</h2>
+      <div class="streak-heatmap" id="streakHeatmap"></div>
+      <div class="streak-caption">Last 12 weeks of cook-ins</div>
+    </div>
+
+    <!-- Lists: this person's public curatable recipe lists (all of them, on your own profile) -->
+    <div class="profile-section" id="listsSection" hidden>
+      <h2 class="section-title">Lists</h2>
+      <div class="lists-row" id="listsRow"></div>
     </div>
 
     <!-- Milestones (locked/unlocked achievement preview) -->
@@ -844,6 +997,13 @@
     <div class="field"><label>Display name</label><input type="text" id="editName"></div>
     <div class="field"><label>Bio</label><textarea id="editBio"></textarea></div>
     <div class="field"><label>Location</label><input type="text" id="editLocation"></div>
+    <div class="field">
+      <label>Featured recipe (pinned to the top of your profile)</label>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div id="editPinnedRecipeName" style="flex:1; font-size:14px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">None</div>
+        <button type="button" class="btn-secondary" id="choosePinnedRecipeBtn" style="padding:7px 14px; font-size:13px; flex-shrink:0;">Choose</button>
+      </div>
+    </div>
     <div class="field">
       <label>Birthday (month &amp; day only — no year shown)</label>
       <div style="display:flex; gap:8px;">
@@ -977,7 +1137,7 @@
 
     const { data: profile } = await sb
       .from('profiles')
-      .select('id, display_name, initials, bio, location, avatar_url, is_kitchen_cv, cv_title, cv_bio, open_to_work, cover_gradient, created_at, birthday_month, birthday_day')
+      .select('id, display_name, initials, bio, location, avatar_url, is_kitchen_cv, cv_title, cv_bio, open_to_work, cover_gradient, created_at, birthday_month, birthday_day, pinned_recipe_id, pinned_recipe:recipes!profiles_pinned_recipe_id_fkey(id, title, hero_photo_path, category)')
       .eq('id', viewedId)
       .single();
 
@@ -1004,6 +1164,18 @@
       document.getElementById('cvTitle').textContent = profile.cv_title || 'Kitchen professional';
       document.getElementById('cvBio').textContent = profile.cv_bio || '';
       document.getElementById('openToWorkPill').hidden = !profile.open_to_work;
+    }
+
+    const featuredSection = document.getElementById('featuredRecipeSection');
+    if (profile.pinned_recipe) {
+      featuredSection.hidden = false;
+      document.getElementById('featuredRecipeCard').href = 'cookzer-recipe.html?id=' + profile.pinned_recipe.id;
+      document.getElementById('featuredRecipeThumb').style.backgroundImage = profile.pinned_recipe.hero_photo_path
+        ? "url('" + publicUrl('recipe-photos', profile.pinned_recipe.hero_photo_path) + "')" : '';
+      document.getElementById('featuredRecipeTitle').textContent = profile.pinned_recipe.title;
+      document.getElementById('featuredRecipeMeta').textContent = profile.pinned_recipe.category || '';
+    } else {
+      featuredSection.hidden = true;
     }
 
     const isOwn = viewedId === currentUser.id;
@@ -1042,6 +1214,15 @@
       actions.appendChild(followBtn);
       await refreshFollowButton();
 
+      const messageBtn = document.createElement('button');
+      messageBtn.className = 'btn btn-secondary';
+      messageBtn.id = 'messageBtn';
+      messageBtn.textContent = 'Message';
+      messageBtn.addEventListener('click', () => {
+        window.location.href = 'cookzer-messenger.html?with=' + viewedId;
+      });
+      actions.appendChild(messageBtn);
+
       const shareBtn = document.createElement('button');
       shareBtn.className = 'btn btn-secondary';
       shareBtn.textContent = 'Share';
@@ -1066,10 +1247,52 @@
       document.addEventListener('click', () => dropdown.classList.remove('open'));
 
       await refreshMoreMenu(dropdown);
+      // Messaging someone you've blocked (or unblocked mid-session) doesn't
+      // make sense — refreshMoreMenu is what actually knows the current
+      // block state, so gate visibility on it rather than duplicating the lookup.
+      messageBtn.hidden = profileBlockedByMe;
     }
 
     await loadStats();
+    await loadLists(isOwn);
     await loadRecipesView();
+  }
+
+  // Public curatable lists — every list on your own profile, only the
+  // public ones on someone else's (RLS would already hide private ones
+  // from a non-owner, but filtering explicitly keeps the query's intent
+  // obvious rather than relying on that alone).
+  async function loadLists(isOwn) {
+    let query = sb
+      .from('recipe_lists')
+      .select('id, name, is_public, recipe_list_items(recipe_id)')
+      .eq('owner_id', viewedId);
+    if (!isOwn) query = query.eq('is_public', true);
+    const { data: lists } = await query.order('created_at', { ascending: false });
+
+    const section = document.getElementById('listsSection');
+    const row = document.getElementById('listsRow');
+    row.innerHTML = '';
+    if (!lists || lists.length === 0) {
+      section.hidden = true;
+      return;
+    }
+    section.hidden = false;
+    lists.forEach((list) => {
+      const card = document.createElement('a');
+      card.className = 'list-card';
+      card.href = 'cookzer-list.html?id=' + list.id;
+      const count = (list.recipe_list_items || []).length;
+      const name = document.createElement('div');
+      name.className = 'list-card-name';
+      name.textContent = (list.is_public ? '' : '🔒 ') + list.name;
+      const meta = document.createElement('div');
+      meta.className = 'list-card-meta';
+      meta.textContent = count + ' recipe' + (count === 1 ? '' : 's') + (list.is_public ? ' · Public' : ' · Private');
+      card.appendChild(name);
+      card.appendChild(meta);
+      row.appendChild(card);
+    });
   }
 
   async function refreshMoreMenu(dropdown) {
@@ -1447,6 +1670,14 @@
     const { data: cookIns } = await sb.from('posts').select('created_at').eq('author_id', viewedId).eq('kind', 'cook_in').order('created_at', { ascending: false });
     document.getElementById('badgeCookInsNum').textContent = cookIns ? cookIns.length : 0;
     document.getElementById('badgeStreakNum').textContent = computeStreak(cookIns || []);
+    renderStreakHeatmap(cookIns || []);
+
+    const { count: tipsCount } = await sb.from('posts').select('*', { count: 'exact', head: true }).eq('author_id', viewedId).eq('kind', 'tip');
+    const { count: commentsCount } = await sb.from('comments').select('*', { count: 'exact', head: true }).eq('author_id', viewedId);
+    const { count: heartsGivenCount } = await sb.from('hearts').select('*', { count: 'exact', head: true }).eq('user_id', viewedId);
+    document.getElementById('activityTipsNum').textContent = tipsCount || 0;
+    document.getElementById('activityCommentsNum').textContent = commentsCount || 0;
+    document.getElementById('activityHeartsGivenNum').textContent = heartsGivenCount || 0;
 
     const { count: challengeCount } = await sb.from('challenge_entries').select('*', { count: 'exact', head: true }).eq('user_id', viewedId);
     document.getElementById('badgeChallengesNum').textContent = challengeCount || 0;
@@ -1462,6 +1693,7 @@
     const { count: groupPostCount } = await sb.from('posts').select('*', { count: 'exact', head: true }).eq('author_id', viewedId).not('group_id', 'is', null);
     const { count: photoCount } = await sb.from('recipe_photos').select('*', { count: 'exact', head: true }).eq('user_id', viewedId);
     const { count: followingCountForBadge } = await sb.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', viewedId);
+    document.getElementById('activityPhotosNum').textContent = photoCount || 0;
 
     renderMilestoneBadges({
       cookIns: cookIns ? cookIns.length : 0,
@@ -1525,6 +1757,40 @@
       cursor.setDate(cursor.getDate() - 1);
     }
     return streak;
+  }
+
+  // A GitHub-style contribution grid — columns are weeks, rows are days
+  // of the week — over the last 12 weeks, built from the same cook-in
+  // dates the streak number above already uses. Shows consistency, not
+  // just a lifetime count.
+  const STREAK_WEEKS = 12;
+  function renderStreakHeatmap(cookIns) {
+    const grid = document.getElementById('streakHeatmap');
+    grid.innerHTML = '';
+    const days = new Set(cookIns.map((c) => new Date(c.created_at).toDateString()));
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(today);
+    start.setDate(start.getDate() - (STREAK_WEEKS * 7 - 1));
+    start.setDate(start.getDate() - start.getDay()); // back up to the preceding Sunday, so weeks align into full columns
+
+    const totalDays = Math.round((today - start) / 86400000) + 1;
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const cell = document.createElement('div');
+      cell.className = 'streak-cell';
+      if (d > today) {
+        cell.style.visibility = 'hidden'; // future days padding out this week's column
+      } else {
+        const isToday = d.getTime() === today.getTime();
+        if (days.has(d.toDateString())) cell.classList.add('active');
+        if (isToday) cell.classList.add('today');
+        cell.title = d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + (days.has(d.toDateString()) ? ' — cooked' : '');
+      }
+      grid.appendChild(cell);
+    }
   }
 
   document.querySelectorAll('.tab').forEach((tab) => {
@@ -1728,6 +1994,62 @@
   // ----- Edit profile modal -----
   const editModal = document.getElementById('editModal');
   let selectedAvatarFile = null;
+  let selectedPinnedRecipe = null; // {id, title} or null
+
+  function renderPinnedRecipeField() {
+    document.getElementById('editPinnedRecipeName').textContent = selectedPinnedRecipe ? selectedPinnedRecipe.title : 'None';
+  }
+
+  async function openPinnedRecipePicker() {
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+    const title = document.createElement('h3');
+    title.textContent = 'Pin a recipe to your profile';
+    modal.appendChild(title);
+
+    const { data: myRecipes } = await sb.from('recipes').select('id, title').eq('author_id', currentUser.id).order('created_at', { ascending: false });
+
+    const list = document.createElement('div');
+    list.className = 'cz2-list';
+    if (!myRecipes || myRecipes.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'cz2-empty';
+      empty.textContent = "You haven't published a recipe yet.";
+      list.appendChild(empty);
+    } else {
+      myRecipes.forEach((r) => {
+        const row = document.createElement('div');
+        row.className = 'cz2-row';
+        row.textContent = r.title;
+        row.addEventListener('click', () => {
+          selectedPinnedRecipe = { id: r.id, title: r.title };
+          renderPinnedRecipeField();
+          closePicker();
+        });
+        list.appendChild(row);
+      });
+    }
+    modal.appendChild(list);
+
+    const actions = document.createElement('div');
+    actions.className = 'cz2-actions';
+    if (selectedPinnedRecipe) {
+      const clearBtn = cz2Button('Unpin', false);
+      clearBtn.addEventListener('click', () => {
+        selectedPinnedRecipe = null;
+        renderPinnedRecipeField();
+        closePicker();
+      });
+      actions.appendChild(clearBtn);
+    }
+    const cancelBtn = cz2Button('Cancel', false);
+    cancelBtn.addEventListener('click', closePicker);
+    actions.appendChild(cancelBtn);
+    modal.appendChild(actions);
+
+    document.getElementById('pickerOverlay').hidden = false;
+  }
+  document.getElementById('choosePinnedRecipeBtn').addEventListener('click', openPinnedRecipePicker);
 
   function openEditModal() {
     document.getElementById('editName').value = viewedProfile.display_name || '';
@@ -1739,6 +2061,8 @@
     document.getElementById('editCvTitle').value = viewedProfile.cv_title || '';
     document.getElementById('editCvBio').value = viewedProfile.cv_bio || '';
     document.getElementById('editOpenToWork').checked = !!viewedProfile.open_to_work;
+    selectedPinnedRecipe = viewedProfile.pinned_recipe ? { id: viewedProfile.pinned_recipe.id, title: viewedProfile.pinned_recipe.title } : null;
+    renderPinnedRecipeField();
     selectedAvatarFile = null;
     const preview = document.getElementById('editAvatarPreview');
     if (viewedProfile.avatar_url) {
@@ -1800,6 +2124,7 @@
       cv_title: document.getElementById('editCvTitle').value.trim() || null,
       cv_bio: document.getElementById('editCvBio').value.trim() || null,
       open_to_work: document.getElementById('editOpenToWork').checked,
+      pinned_recipe_id: selectedPinnedRecipe ? selectedPinnedRecipe.id : null,
     };
     const { error } = await sb.from('profiles').update(payload).eq('id', currentUser.id);
     if (error) {
