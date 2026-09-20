@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#2E8F5C">
+  <title>Restaurant — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="notifications-shared.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="push-notifications.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="friends-widget.js"></script>
+  <script src="cookzer-modal.js"></script>
+  <script src="theme.js"></script>
+  <script src="photo-lightbox.js"></script>
+  <script src="shortcuts.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .brand-header {
+      font-size: 20px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+    }
+
+  .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
+  .main {
+      flex: 1;
+      margin-top: 60px;
+      overflow-y: auto;
+    }
+
+  .restaurant-content { max-width: 760px; margin: 0 auto; padding: 24px 24px 60px; }
+
+  .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600; color: var(--ink-soft);
+      text-decoration: none; margin-bottom: 16px;
+    }
+  .back-link:hover { color: var(--olive-dark); }
+
+  /* Hero photo strip */
+  .hero-strip {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 6px;
+      height: 260px;
+      border-radius: 18px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+  .hero-strip.single { grid-template-columns: 1fr; grid-template-rows: 1fr; height: 200px; }
+  .hero-strip > div {
+      background: linear-gradient(135deg, var(--block, #E7E2D2), var(--line));
+      background-size: cover;
+      background-position: center;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px;
+      position: relative;
+    }
+  .hero-strip > div:first-child:not(:only-child) { grid-row: 1 / 3; font-size: 46px; }
+  .hero-more {
+      position: absolute; inset: 0;
+      background: rgba(20,18,14,0.45);
+      color: #fff; font-weight: 700; font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+  .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+  .restaurant-title { font-size: 27px; font-family: 'Fraunces', serif; font-weight: 600; color: var(--ink); }
+  .maps-link {
+      flex-shrink: 0;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--olive-dark);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 7px 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+  .maps-link:hover { background: var(--cream); }
+  .address-line { font-size: 13px; color: var(--ink-soft); margin: 6px 0 20px; }
+
+  /* Stat tiles */
+  .stat-row { display: flex; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; }
+  .stat-tile {
+      flex: 1;
+      min-width: 130px;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+  .stat-tile.hot { background: rgba(255, 107, 74, 0.08); border-color: rgba(255, 107, 74, 0.28); }
+  .stat-num { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: var(--olive-dark); font-variant-numeric: tabular-nums; }
+  .stat-tile.hot .stat-num { color: var(--brick); }
+  .stat-sub { font-size: 11.5px; color: var(--ink-soft); margin-top: 2px; }
+
+  .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 11px 20px;
+      border-radius: 16px;
+      border: none;
+      background: var(--olive);
+      color: #fff;
+      font: inherit;
+      font-weight: 600;
+      font-size: 13.5px;
+      cursor: pointer;
+      margin-bottom: 22px;
+    }
+  .cta-btn:hover { background: var(--olive-dark); }
+
+  /* Inline rate panel (reuses the .rate-panel pattern from cookzer-restaurants.html) */
+  .rate-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 26px;
+    }
+  .rate-panel.hidden { display: none; }
+  .rate-panel label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 14px 0 6px;
+    }
+  .rate-panel label:first-child { margin-top: 0; }
+  .rate-panel textarea {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font-size: 14px;
+      color: var(--ink);
+      font-family: inherit;
+      resize: vertical;
+    }
+  .star-picker { display: flex; gap: 4px; margin-top: 4px; }
+  .star-picker .star {
+      font-size: 26px;
+      cursor: pointer;
+      color: var(--line);
+      user-select: none;
+      transition: color 0.1s;
+    }
+  .star-picker .star.filled { color: var(--mustard, #F4B942); }
+  .receipt-input-row { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+  .rate-panel label.receipt-upload-btn {
+      display: inline-block;
+      background: var(--cream);
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      padding: 10px 16px;
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: normal;
+      color: var(--ink-soft);
+      cursor: pointer;
+    }
+  .receipt-preview-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid var(--line); }
+  .receipt-note { font-size: 12px; color: var(--ink-faint); margin-top: 6px; }
+  .rate-panel-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+  .rate-btn {
+      background: var(--olive);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+  .rate-btn:hover { background: var(--olive-dark); }
+  .rate-btn.ghost { background: var(--cream); color: var(--ink-soft); }
+
+  /* Tabs */
+  .tab-row { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  .tab {
+      padding: 10px 4px;
+      margin-right: 18px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--ink-faint);
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      background: none;
+      border-top: none; border-left: none; border-right: none;
+      font-family: inherit;
+    }
+  .tab.active { color: var(--olive-dark); border-bottom-color: var(--olive); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .community-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .community-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+  .community-photo {
+      aspect-ratio: 1;
+      background: linear-gradient(135deg, var(--block, #E7E2D2), var(--line));
+      background-size: cover;
+      background-position: center;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+    }
+  .community-meta { padding: 9px 11px; }
+  .community-author { font-size: 12px; font-weight: 700; }
+  .community-caption { font-size: 11.5px; color: var(--ink-soft); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .review-row { display: flex; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .review-row:last-child { border-bottom: none; }
+  .review-avatar {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      color: #fff; font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+  .review-body { flex: 1; min-width: 0; }
+  .review-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .review-name { font-size: 13px; font-weight: 700; text-decoration: none; color: inherit; }
+  .review-stars { color: var(--mustard, #F4B942); font-size: 12px; letter-spacing: 1px; }
+  .verified-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10.5px; font-weight: 700; color: var(--olive-dark);
+      background: rgba(46,143,92,0.10); border-radius: 8px; padding: 2px 7px;
+    }
+  .review-text { font-size: 13px; color: var(--ink); margin-top: 5px; line-height: 1.5; }
+  .review-date { font-size: 11px; color: var(--ink-faint); margin-top: 5px; }
+  .review-receipt { margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--olive-dark); cursor: pointer; }
+  .review-receipt img { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; border: 1px solid var(--line); }
+
+  .taggers-section { margin-top: 30px; }
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-faint); margin-bottom: 10px; }
+  .taggers-row { display: flex; align-items: center; }
+  .tagger-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      color: #fff; font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--cream);
+      margin-left: -8px;
+    }
+  .tagger-avatar:first-child { margin-left: 0; }
+  .taggers-more { font-size: 12px; color: var(--ink-soft); margin-left: 10px; }
+
+  .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 24px; }
+  .not-found-note { text-align: center; color: var(--ink-soft); font-size: 14px; padding: 60px 20px; }
+
+  @media (max-width: 1024px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        height: 100vh;
+        height: 100dvh;
+        z-index: 100;
+        transition: left 0.25s ease;
+      }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .search-bar { display: none; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+    }
+  @media (max-width: 720px) {
+      .hero-strip { height: 200px; }
+      .community-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+      .restaurant-content { padding: 20px 16px 48px; }
+    }
+  @media (max-width: 400px) {
+      .header { gap: 8px; }
+      .header-right { gap: 6px; }
+      .menu-toggle { width: 30px; height: 30px; }
+      .icon-btn, .avatar { width: 28px; height: 28px; font-size: 13px; }
+      .brand-header { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
+
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-groups.html" style="text-decoration: none;"><div class="sidebar-item icon groups">Groups</div></a>
+  <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants active">Restaurants</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+  <a href="cookzer-convert.html" style="text-decoration: none;"><div class="sidebar-item icon convert">Measure &amp; Convert</div></a>
+  <a href="cookzer-feed.html?filter=tips" style="text-decoration: none;"><div class="sidebar-item icon tips">Tips &amp; Tricks</div></a>
+
+<div class="sidebar-plus">
+  <div class="sidebar-plus-label">Cookzer+</div>
+  <a href="cookzer-pantry.html" class="sidebar-plus-item pantry">Cooking Ideas</a>
+  <a href="cookzer-pantry.html?tab=leftovers" class="sidebar-plus-item leftovers">Leftover Help</a>
+  <a href="cookzer-health.html" class="sidebar-plus-item health">Health & Nutritions</a>
+</div>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Header -->
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn" id="notifBellBtn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
+    <a href="cookzer-settings.html" style="text-decoration:none;"><button class="icon-btn" title="Settings" type="button">⚙️</button></a>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+  <div class="restaurant-content" id="restaurantContent">
+    <a class="back-link" href="cookzer-restaurants.html">← Back to Restaurants</a>
+    <div id="pageBody">
+      <div class="empty-note">Loading restaurant...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  const restaurantId = new URLSearchParams(location.search).get('id');
+  let currentUser = null;
+  let selectedRatingValue = 0;
+  let pendingReceiptFile = null;
+
+  function publicUrl(bucket, path) {
+    if (!path) return null;
+    if (path.indexOf('http://') === 0 || path.indexOf('https://') === 0) return path;
+    return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  }
+
+  function starString(avg) {
+    const rounded = Math.round(avg);
+    return '★★★★★'.slice(0, rounded) + '☆☆☆☆☆'.slice(0, 5 - rounded);
+  }
+
+  function timeAgo(iso) {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + ' min' + (mins === 1 ? '' : 's') + ' ago';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + ' hour' + (hours === 1 ? '' : 's') + ' ago';
+    const days = Math.floor(hours / 24);
+    return days + ' day' + (days === 1 ? '' : 's') + ' ago';
+  }
+
+  function escapeHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s || '';
+    return div.innerHTML;
+  }
+
+  function renderPage(restaurant, posts, ratings) {
+    const body = document.getElementById('pageBody');
+
+    const photoPosts = posts.filter((p) => p.photo_path);
+    const heroPhotos = photoPosts.slice(0, 3);
+    let heroHtml;
+    if (heroPhotos.length === 0) {
+      heroHtml = '<div class="hero-strip single"><div>🍽️</div></div>';
+    } else {
+      const extra = photoPosts.length - heroPhotos.length;
+      heroHtml = '<div class="hero-strip' + (heroPhotos.length === 1 ? ' single' : '') + '">' +
+        heroPhotos.map((p, i) => {
+          const url = publicUrl('post-photos', p.photo_path);
+          const more = (i === heroPhotos.length - 1 && extra > 0) ? '<div class="hero-more">+' + extra + ' more</div>' : '';
+          return '<div style="background-image:url(\'' + url + '\')">' + more + '</div>';
+        }).join('') +
+        '</div>';
+    }
+
+    const mapsUrl = restaurant.google_place_id
+      ? 'https://www.google.com/maps/place/?q=place_id:' + encodeURIComponent(restaurant.google_place_id)
+      : (restaurant.lat && restaurant.lng ? 'https://www.google.com/maps/search/?api=1&query=' + restaurant.lat + ',' + restaurant.lng : null);
+
+    const ratingsCount = ratings.length;
+    const ratingsAvg = ratingsCount ? ratings.reduce((s, r) => s + r.rating, 0) / ratingsCount : 0;
+
+    body.innerHTML =
+      heroHtml +
+      '<div class="title-row">' +
+        '<h1 class="restaurant-title">' + escapeHtml(restaurant.name) + '</h1>' +
+        (mapsUrl ? '<a class="maps-link" href="' + mapsUrl + '" target="_blank" rel="noopener">📍 Open in Google Maps</a>' : '') +
+      '</div>' +
+      (restaurant.address ? '<div class="address-line">' + escapeHtml(restaurant.address) + '</div>' : '<div class="address-line">&nbsp;</div>') +
+      '<div class="stat-row">' +
+        '<div class="stat-tile">' +
+          '<div class="stat-num">' + (restaurant.google_rating ? Number(restaurant.google_rating).toFixed(1) + '★' : '—') + '</div>' +
+          '<div class="stat-sub">' + (restaurant.google_rating ? 'Google rating' : 'No Google rating yet') + '</div>' +
+        '</div>' +
+        '<div class="stat-tile">' +
+          '<div class="stat-num">' + (ratingsCount ? ratingsAvg.toFixed(1) + '★' : '—') + '</div>' +
+          '<div class="stat-sub">' + (ratingsCount ? 'Cookzer · ' + ratingsCount + (ratingsCount === 1 ? ' receipt-verified' : ' receipt-verified') : 'No ratings yet') + '</div>' +
+        '</div>' +
+        '<div class="stat-tile hot">' +
+          '<div class="stat-num">' + (restaurant.tag_count || 0) + '</div>' +
+          '<div class="stat-sub">🔥 Dining Out tags</div>' +
+        '</div>' +
+      '</div>' +
+      '<button class="cta-btn" id="rateBtn" type="button">⭐ Rate this restaurant</button>' +
+      '<div class="rate-panel hidden" id="ratePanel">' +
+        '<label>Your rating</label>' +
+        '<div class="star-picker" id="starPicker">' +
+          '<span class="star" data-value="1">★</span><span class="star" data-value="2">★</span><span class="star" data-value="3">★</span><span class="star" data-value="4">★</span><span class="star" data-value="5">★</span>' +
+        '</div>' +
+        '<label>Review (optional)</label>' +
+        '<textarea id="reviewInput" rows="3" maxlength="500" placeholder="What did you have? Would you go back?"></textarea>' +
+        '<label>Receipt or invoice — your proof</label>' +
+        '<div class="receipt-input-row">' +
+          '<label class="receipt-upload-btn" for="receiptInput">📎 Attach receipt photo</label>' +
+          '<input type="file" id="receiptInput" accept="image/*" hidden>' +
+          '<img id="receiptPreview" class="receipt-preview-thumb" hidden>' +
+        '</div>' +
+        '<div class="receipt-note">Ratings without a receipt or invoice photo can\'t be submitted — this is what keeps ratings honest.</div>' +
+        '<div class="rate-panel-actions">' +
+          '<button class="rate-btn ghost" id="cancelRateBtn" type="button">Cancel</button>' +
+          '<button class="rate-btn" id="submitRatingBtn" type="button">Submit rating</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="tab-row">' +
+        '<button class="tab active" data-tab="community">From the community (' + posts.length + ')</button>' +
+        '<button class="tab" data-tab="reviews">Verified reviews (' + ratingsCount + ')</button>' +
+      '</div>' +
+      '<div class="tab-panel active" id="tab-community"></div>' +
+      '<div class="tab-panel" id="tab-reviews"></div>';
+
+    renderCommunityTab(posts);
+    renderReviewsTab(ratings);
+    wireRatePanel(restaurant);
+
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+  }
+
+  function renderCommunityTab(posts) {
+    const panel = document.getElementById('tab-community');
+    if (posts.length === 0) {
+      panel.innerHTML = '<div class="empty-note">No one has tagged this place yet. Be the first to post from here!</div>';
+      return;
+    }
+
+    const gridHtml = '<div class="community-grid">' +
+      posts.map((p) => {
+        const authorName = (p.profiles && p.profiles.display_name) || 'Someone';
+        const photoStyle = p.photo_path ? " style=\"background-image:url('" + publicUrl('post-photos', p.photo_path) + "')\"" : '';
+        return '<a class="community-card" href="cookzer-feed.html?post=' + p.id + '">' +
+          '<div class="community-photo"' + photoStyle + '>' + (p.photo_path ? '' : '🍽️') + '</div>' +
+          '<div class="community-meta">' +
+            '<div class="community-author">' + escapeHtml(authorName) + '</div>' +
+            '<div class="community-caption">' + escapeHtml(p.caption || '') + '</div>' +
+          '</div>' +
+        '</a>';
+      }).join('') +
+    '</div>';
+
+    const seen = {};
+    const taggers = [];
+    posts.forEach((p) => {
+      if (!seen[p.author_id]) {
+        seen[p.author_id] = true;
+        taggers.push(p.profiles || { display_name: 'Someone', initials: '?' });
+      }
+    });
+    const shown = taggers.slice(0, 6);
+    const moreCount = taggers.length - shown.length;
+    const taggersHtml = '<div class="taggers-section">' +
+      '<div class="section-label">Recently tagged by</div>' +
+      '<div class="taggers-row">' +
+        shown.map((t) => '<div class="tagger-avatar">' + escapeHtml(t.initials || '?') + '</div>').join('') +
+        (moreCount > 0 ? '<span class="taggers-more">+' + moreCount + ' other' + (moreCount === 1 ? '' : 's') + '</span>' : '') +
+      '</div>' +
+    '</div>';
+
+    panel.innerHTML = gridHtml + taggersHtml;
+  }
+
+  function renderReviewsTab(ratings) {
+    const panel = document.getElementById('tab-reviews');
+    if (ratings.length === 0) {
+      panel.innerHTML = '<div class="empty-note">No receipt-verified ratings yet.</div>';
+      return;
+    }
+    panel.innerHTML = '';
+    ratings.forEach((r) => {
+      const row = document.createElement('div');
+      row.className = 'review-row';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'review-avatar';
+      avatar.textContent = (r.profiles && r.profiles.initials) || '?';
+
+      const bodyEl = document.createElement('div');
+      bodyEl.className = 'review-body';
+
+      const top = document.createElement('div');
+      top.className = 'review-top';
+      const nameLink = document.createElement('a');
+      nameLink.className = 'review-name';
+      nameLink.href = 'cookzer-profile.html?id=' + r.user_id;
+      nameLink.textContent = (r.profiles && r.profiles.display_name) || 'Someone';
+      const stars = document.createElement('span');
+      stars.className = 'review-stars';
+      stars.textContent = starString(r.rating);
+      const badge = document.createElement('span');
+      badge.className = 'verified-badge';
+      badge.textContent = '✓ Receipt verified';
+      top.appendChild(nameLink);
+      top.appendChild(stars);
+      top.appendChild(badge);
+      bodyEl.appendChild(top);
+
+      if (r.review) {
+        const text = document.createElement('div');
+        text.className = 'review-text';
+        text.textContent = r.review;
+        bodyEl.appendChild(text);
+      }
+
+      const date = document.createElement('div');
+      date.className = 'review-date';
+      date.textContent = timeAgo(r.created_at);
+      bodyEl.appendChild(date);
+
+      if (r.receipt_photo_path) {
+        const receiptUrl = publicUrl('restaurant-receipts', r.receipt_photo_path);
+        const proof = document.createElement('div');
+        proof.className = 'review-receipt';
+        proof.innerHTML = '<img src="' + receiptUrl + '" alt="Receipt"> 🧾 Proof attached';
+        proof.addEventListener('click', () => CookzerLightbox.open({
+          imageUrl: receiptUrl,
+          authorName: (r.profiles && r.profiles.display_name) || 'Someone',
+          authorInitials: (r.profiles && r.profiles.initials) || '??',
+          authorHref: 'cookzer-profile.html?id=' + r.user_id,
+          timestamp: r.created_at,
+          caption: r.review || '',
+          meta: [{ label: 'Rating', value: starString(r.rating) }],
+        }));
+        bodyEl.appendChild(proof);
+      }
+
+      row.appendChild(avatar);
+      row.appendChild(bodyEl);
+      panel.appendChild(row);
+    });
+  }
+
+  function updateStarDisplay() {
+    document.querySelectorAll('#starPicker .star').forEach((s) => {
+      s.classList.toggle('filled', Number(s.dataset.value) <= selectedRatingValue);
+    });
+  }
+
+  async function uploadReceipt(file) {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
+    const { error } = await sb.storage.from('restaurant-receipts').upload(path, file);
+    if (error) {
+      await CookzerModal.alert('Receipt upload failed: ' + error.message);
+      return null;
+    }
+    return path;
+  }
+
+  function wireRatePanel(restaurant) {
+    const ratePanel = document.getElementById('ratePanel');
+    selectedRatingValue = 0;
+    pendingReceiptFile = null;
+
+    document.getElementById('rateBtn').addEventListener('click', () => {
+      ratePanel.classList.remove('hidden');
+      document.getElementById('rateBtn').style.display = 'none';
+    });
+
+    document.getElementById('cancelRateBtn').addEventListener('click', () => {
+      ratePanel.classList.add('hidden');
+      document.getElementById('rateBtn').style.display = '';
+      document.getElementById('reviewInput').value = '';
+      document.getElementById('receiptInput').value = '';
+      document.getElementById('receiptPreview').hidden = true;
+      selectedRatingValue = 0;
+      pendingReceiptFile = null;
+      updateStarDisplay();
+    });
+
+    document.querySelectorAll('#starPicker .star').forEach((s) => {
+      s.addEventListener('click', () => {
+        selectedRatingValue = Number(s.dataset.value);
+        updateStarDisplay();
+      });
+    });
+
+    document.getElementById('receiptInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      pendingReceiptFile = file;
+      const preview = document.getElementById('receiptPreview');
+      preview.src = URL.createObjectURL(file);
+      preview.hidden = false;
+    });
+
+    document.getElementById('submitRatingBtn').addEventListener('click', async () => {
+      if (!selectedRatingValue) { await CookzerModal.alert('Pick a star rating first.'); return; }
+      if (!pendingReceiptFile) { await CookzerModal.alert('Attach a receipt or invoice photo — ratings need proof.'); return; }
+
+      const btn = document.getElementById('submitRatingBtn');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      const receiptPath = await uploadReceipt(pendingReceiptFile);
+      if (!receiptPath) {
+        btn.disabled = false; btn.textContent = 'Submit rating';
+        return;
+      }
+
+      const review = document.getElementById('reviewInput').value.trim();
+      const { error: ratingErr } = await sb
+        .from('restaurant_ratings')
+        .upsert({
+          restaurant_id: restaurant.id,
+          user_id: currentUser.id,
+          rating: selectedRatingValue,
+          review: review || null,
+          receipt_photo_path: receiptPath,
+        }, { onConflict: 'restaurant_id,user_id' });
+
+      btn.disabled = false;
+      btn.textContent = 'Submit rating';
+
+      if (ratingErr) {
+        await CookzerModal.alert('Could not save rating: ' + ratingErr.message);
+        return;
+      }
+
+      await loadAndRender();
+    });
+  }
+
+  async function loadAndRender() {
+    const { data: restaurant, error } = await sb
+      .from('restaurants')
+      .select('id, name, address, lat, lng, google_place_id, google_rating, tag_count')
+      .eq('id', restaurantId)
+      .single();
+
+    if (error || !restaurant) {
+      document.getElementById('pageBody').innerHTML = '<div class="not-found-note">This restaurant couldn\'t be found. It may have been removed.</div>';
+      return;
+    }
+
+    document.title = restaurant.name + ' — Cookzer';
+
+    const [{ data: posts }, { data: ratings }] = await Promise.all([
+      sb.from('posts')
+        .select('id, author_id, caption, photo_path, created_at, profiles!posts_author_id_fkey(display_name, initials, avatar_url)')
+        .eq('restaurant_id', restaurantId)
+        .order('created_at', { ascending: false }),
+      sb.from('restaurant_ratings')
+        .select('id, user_id, rating, review, receipt_photo_path, created_at, profiles(display_name, initials)')
+        .eq('restaurant_id', restaurantId)
+        .order('created_at', { ascending: false }),
+    ]);
+
+    renderPage(restaurant, posts || [], ratings || []);
+  }
+
+  (async function init() {
+    if (!restaurantId) {
+      document.getElementById('pageBody').innerHTML = '<div class="not-found-note">No restaurant specified.</div>';
+      return;
+    }
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+    await loadAndRender();
+  })();
+</script>
+</body>
+</html>
