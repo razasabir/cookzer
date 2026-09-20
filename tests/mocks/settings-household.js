@@ -1,10 +1,14 @@
 window.__INSERTED_FAMILY_PROFILES__ = [];
-window.__DELETED_FAMILY_PROFILE_IDS__ = [];
-window.__PROFILE_UPDATES__ = [];
-window.__HOUSEHOLD_UPDATES__ = [];
+window.__ADD_CO_ADMIN_CALLS__ = [];
+window.__REMOVED_MEMBER_IDS__ = [];
 
-let profiles = [{ id: 'fam-1', name: 'Emma', avatar_emoji: '👧', linked_user_id: null }];
 const HOUSEHOLD = { id: 'household-1', name: null, household_size: 4 };
+
+const ME_MEMBER = { user_id: 'me-1', joined_at: '2024-01-01T00:00:00Z', profiles: { display_name: 'Test Cook', initials: 'TC', avatar_url: null } };
+const JORDAN_MEMBER = { user_id: 'friend-1', joined_at: '2024-01-02T00:00:00Z', profiles: { display_name: 'Jordan Lee', initials: 'JL', avatar_url: null } };
+
+let members = [ME_MEMBER];
+let profiles = [];
 
 const FOLLOWS = [
   { followee_id: 'friend-1', profiles: { id: 'friend-1', display_name: 'Jordan Lee', initials: 'JL' } },
@@ -18,22 +22,20 @@ function chain(table) {
     eq(col, val) { builder._eqId = val; return builder; },
     order() { return builder; },
     not(col, op, val) { notArgs = [col, op, val]; return builder; },
-    maybeSingle() {
-      if (table === 'profiles') return Promise.resolve({ data: { display_name: 'Test Cook' }, error: null });
-      return Promise.resolve({ data: null, error: null });
-    },
+    maybeSingle() { return Promise.resolve({ data: null, error: null }); },
     single() {
       if (table === 'households') return Promise.resolve({ data: HOUSEHOLD, error: null });
       return Promise.resolve({ data: null, error: null });
     },
     then(resolve) {
       let result = [];
-      if (table === 'family_profiles') {
+      if (table === 'household_members') result = members;
+      else if (table === 'follows') result = FOLLOWS;
+      else if (table === 'family_profiles') {
         result = (notArgs && notArgs[0] === 'linked_user_id')
           ? profiles.filter((p) => p.linked_user_id != null)
           : profiles;
-      } else if (table === 'profiles') result = { display_name: 'Test Cook' };
-      else if (table === 'follows') result = FOLLOWS;
+      }
       return Promise.resolve({ data: result, error: null }).then(resolve);
     },
     insert(payload) {
@@ -48,20 +50,19 @@ function chain(table) {
       }
       return Promise.resolve({ data: null, error: null });
     },
-    update(payload) {
-      if (table === 'profiles') window.__PROFILE_UPDATES__.push(payload);
-      if (table === 'households') {
-        window.__HOUSEHOLD_UPDATES__.push(payload);
-        Object.assign(HOUSEHOLD, payload);
-      }
-      return { eq: () => Promise.resolve({ data: null, error: null }) };
-    },
+    update() { return { eq: () => Promise.resolve({ data: null, error: null }) }; },
     delete() {
       return {
-        eq(col, val) {
-          window.__DELETED_FAMILY_PROFILE_IDS__.push(val);
-          profiles = profiles.filter((p) => p.id !== val);
-          return Promise.resolve({ data: null, error: null });
+        eq(col1, val1) {
+          return {
+            eq(col2, val2) {
+              if (table === 'household_members') {
+                window.__REMOVED_MEMBER_IDS__.push(val2);
+                members = members.filter((m) => m.user_id !== val2);
+              }
+              return Promise.resolve({ data: null, error: null });
+            },
+          };
         },
       };
     },
@@ -79,8 +80,13 @@ window.supabase = {
       signOut: () => Promise.resolve({}),
     },
     from: (table) => chain(table),
-    rpc: (fn) => {
+    rpc: (fn, params) => {
       if (fn === 'get_or_create_my_household') return Promise.resolve({ data: HOUSEHOLD.id, error: null });
+      if (fn === 'add_household_co_admin') {
+        window.__ADD_CO_ADMIN_CALLS__.push(params);
+        if (params.p_invitee_user_id === 'friend-1') members = members.concat([JORDAN_MEMBER]);
+        return Promise.resolve({ data: HOUSEHOLD.id, error: null });
+      }
       return Promise.resolve({ data: null, error: null });
     },
     storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: '' } }) }) },

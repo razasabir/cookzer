@@ -26,6 +26,7 @@ const RECIPE = {
 };
 
 const FOLDERS = [{ id: 'f1', name: 'Weeknights', emoji: '🌙' }];
+const HOUSEHOLD = { id: 'household-1', name: null, household_size: 4 };
 
 // The current user ("me-1") is also the recipe's author here — covers
 // the more interesting moderation case: deleting both your own comment
@@ -48,7 +49,10 @@ function chain(table) {
     limit() { return builder; },
     or() { return builder; },
     in(col, vals) { eqArgs.push([col, vals]); return builder; },
-    single() { return Promise.resolve({ data: null, error: null }); },
+    single() {
+      if (table === 'households') return Promise.resolve({ data: HOUSEHOLD, error: null });
+      return Promise.resolve({ data: null, error: null });
+    },
     maybeSingle() {
       if (table === 'recipes') return Promise.resolve({ data: RECIPE, error: null });
       if (table === 'hearts') {
@@ -142,6 +146,10 @@ window.supabase = {
       signOut: () => Promise.resolve({}),
     },
     from: (table) => chain(table),
+    rpc: (fn) => {
+      if (fn === 'get_or_create_my_household') return Promise.resolve({ data: HOUSEHOLD.id, error: null });
+      return Promise.resolve({ data: null, error: null });
+    },
     storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: '' } }), upload: () => Promise.resolve({ data: {}, error: null }) }) },
     channel: () => ({ on: () => ({ subscribe: () => ({}) }), subscribe: () => ({}) }),
     removeChannel: () => {},

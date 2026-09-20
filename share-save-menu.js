@@ -173,7 +173,11 @@
 
   function openSaveMenu(opts) {
     // opts: { sb, currentUserId, recipeId, imageUrl?, deviceFilename?,
-    //   onSaveAsRecipe, saveAsRecipeLabel?, onSaveToMealPlanner? }
+    //   onSaveAsRecipe, saveAsRecipeLabel?, onSaveToMealPlanner?,
+    //   householdId? — required unless onSaveToMealPlanner is passed,
+    //   since the generic Meal Planner picker below queries/inserts
+    //   meal_plan_entries by household, not by user, now that it's a
+    //   shared plan (see household.js / migration 046) }
     show('Save', (body) => {
       const list = document.createElement('div');
       list.className = 'cz2-list';
@@ -231,7 +235,7 @@
       const { data: existing } = await opts.sb
         .from('meal_plan_entries')
         .select('plan_date, free_text, recipes(title)')
-        .eq('user_id', opts.currentUserId)
+        .eq('household_id', opts.householdId)
         .in('plan_date', week.map((w) => w.iso));
       const existingByDate = {};
       (existing || []).forEach((e) => { existingByDate[e.plan_date] = e; });
@@ -252,6 +256,7 @@
             close();
             const { error } = await opts.sb.from('meal_plan_entries').insert({
               user_id: opts.currentUserId,
+              household_id: opts.householdId,
               plan_date: w.iso,
               recipe_id: opts.recipeId,
               source_note: 'Saved from Share/Save',

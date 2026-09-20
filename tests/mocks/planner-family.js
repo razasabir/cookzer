@@ -3,6 +3,7 @@ window.__INSERTED_ENTRIES__ = [];
 window.__UPDATED_SUGGESTIONS__ = [];
 
 const MY_GROUPS = [{ group_id: 'group-1', groups: { id: 'group-1', name: 'The Smiths' } }];
+const HOUSEHOLD = { id: 'household-1', name: null, household_size: 3 };
 const FAMILY_PROFILES = [{ id: 'fam-1', name: 'Emma', avatar_emoji: '👧' }];
 const RECIPES = [
   { id: 'r1', title: 'Lemon Herb Chicken', tags: ['quick', 'weeknight'] },
@@ -46,12 +47,12 @@ function chain(table) {
         window.__UPDATED_SUGGESTIONS__.push({ id: idArg && idArg[1], payload: updatePayload });
         return Promise.resolve({ data: row ? suggestionDisplay(row) : null, error: null });
       }
+      // household_size: 3 with 1 named Family Profile (Emma) means the
+      // planner shows You + Emma + one "ghost" placeholder column.
+      if (table === 'households') return Promise.resolve({ data: HOUSEHOLD, error: null });
       return Promise.resolve({ data: null, error: null });
     },
-    // household_size: 3 with 1 named Family Profile (Emma) means the
-    // planner shows You + Emma + one "ghost" placeholder column.
     maybeSingle() {
-      if (table === 'profiles') return Promise.resolve({ data: { household_size: 3 }, error: null });
       return Promise.resolve({ data: null, error: null });
     },
     then(resolve) {
@@ -110,6 +111,10 @@ window.supabase = {
       signOut: () => Promise.resolve({}),
     },
     from: (table) => chain(table),
+    rpc: (fn) => {
+      if (fn === 'get_or_create_my_household') return Promise.resolve({ data: HOUSEHOLD.id, error: null });
+      return Promise.resolve({ data: null, error: null });
+    },
     storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: 'https://example.com/x.jpg' } }) }) },
     channel: () => ({ on: () => ({ subscribe: () => ({}) }), subscribe: () => ({}) }),
     removeChannel: () => {},

@@ -5,6 +5,7 @@ Object.defineProperty(navigator, 'clipboard', {
 });
 
 const ME = { id: 'me-1', display_name: 'Me Cook', initials: 'MC', avatar_url: 'https://example.com/me.jpg' };
+const HOUSEHOLD = { id: 'household-1', name: null, household_size: 4 };
 
 const PROFILES = [
   ME,
@@ -61,6 +62,7 @@ function chain(table) {
     not() { return builder; },
     single() {
       if (table === 'profiles') return Promise.resolve({ data: ME, error: null });
+      if (table === 'households') return Promise.resolve({ data: HOUSEHOLD, error: null });
       return Promise.resolve({ data: null, error: null });
     },
     maybeSingle() {
@@ -102,6 +104,10 @@ window.supabase = {
       signOut: () => Promise.resolve({}),
     },
     from: (table) => chain(table),
+    rpc: (fn) => {
+      if (fn === 'get_or_create_my_household') return Promise.resolve({ data: HOUSEHOLD.id, error: null });
+      return Promise.resolve({ data: null, error: null });
+    },
     storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: 'https://example.com/x.jpg' } }), upload: () => Promise.resolve({ data: {}, error: null }) }) },
     channel: () => ({ on: () => ({ subscribe: () => ({}) }), subscribe: () => ({}) }),
     removeChannel: () => {},

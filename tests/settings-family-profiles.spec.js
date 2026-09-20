@@ -56,8 +56,8 @@ test.describe('Settings — how many people you cook for', () => {
     await page.fill('#householdSizeInput', '3');
     await page.click('#saveHouseholdSizeBtn');
 
-    await expect.poll(() => page.evaluate(() => window.__PROFILE_UPDATES__.length)).toBe(1);
-    const updated = await page.evaluate(() => window.__PROFILE_UPDATES__[0]);
+    await expect.poll(() => page.evaluate(() => window.__HOUSEHOLD_UPDATES__.length)).toBe(1);
+    const updated = await page.evaluate(() => window.__HOUSEHOLD_UPDATES__[0]);
     expect(updated.household_size).toBe(3);
     await expect(page.locator('#householdSizeStatus')).toContainText('3 columns');
     await expect(page.locator('#householdSizeStatus')).toContainText('you + 2 others');
@@ -67,7 +67,7 @@ test.describe('Settings — how many people you cook for', () => {
     await loadPageWithMock(page, 'cookzer-settings.html', 'settings-family-profiles.js');
     await page.fill('#householdSizeInput', '1');
     await page.click('#saveHouseholdSizeBtn');
-    await expect.poll(() => page.evaluate(() => window.__PROFILE_UPDATES__.length)).toBe(1);
+    await expect.poll(() => page.evaluate(() => window.__HOUSEHOLD_UPDATES__.length)).toBe(1);
     await expect(page.locator('#householdSizeStatus')).toContainText('1 column (you)');
   });
 
@@ -76,7 +76,7 @@ test.describe('Settings — how many people you cook for', () => {
     await page.fill('#householdSizeInput', '20');
     await page.click('#saveHouseholdSizeBtn');
     await expect(page.locator('#householdSizeStatus')).toContainText('between 1 and 12');
-    expect(await page.evaluate(() => window.__PROFILE_UPDATES__.length)).toBe(0);
+    expect(await page.evaluate(() => window.__HOUSEHOLD_UPDATES__.length)).toBe(0);
   });
 
   test('the hint button explains what the columns are, that the count includes yourself, and where to change them', async ({ page }) => {

@@ -17,6 +17,7 @@
   <script src="push-notifications.js"></script>
   <script src="auth-guard.js"></script>
   <script src="friends-widget.js"></script>
+  <script src="household.js"></script>
   <script src="cookzer-modal.js"></script>
   <script src="share-save-menu.js"></script>
   <script src="photo-filters.js"></script>
@@ -759,6 +760,7 @@
   const recipeId = params.get('id');
 
   let currentUser = null;
+  let currentHousehold = null; // loaded lazily — only "Add to Meal Planner" needs it
   let recipe = null;
   let recipeHeroUrl = null;
   let selectedStar = 0;
@@ -1334,11 +1336,12 @@
   }
 
   async function openAddToPlannerPicker() {
+    if (!currentHousehold) currentHousehold = await CookzerHousehold.getOrCreate(sb);
     const week = plannerWeekDates();
     const { data: existing } = await sb
       .from('meal_plan_entries')
       .select('plan_date, free_text, recipes(title)')
-      .eq('user_id', currentUser.id)
+      .eq('household_id', currentHousehold.id)
       .in('plan_date', week.map((w) => w.iso));
     const existingByDate = {};
     (existing || []).forEach((e) => { existingByDate[e.plan_date] = e; });
@@ -1367,6 +1370,7 @@
           closePicker();
           const { error } = await sb.from('meal_plan_entries').insert({
             user_id: currentUser.id,
+            household_id: currentHousehold.id,
             plan_date: w.iso,
             recipe_id: recipeId,
             source_note: 'added from the recipe page',

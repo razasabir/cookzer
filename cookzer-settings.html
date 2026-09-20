@@ -17,6 +17,7 @@
   <script src="push-notifications.js"></script>
   <script src="auth-guard.js"></script>
   <script src="friends-widget.js"></script>
+  <script src="household.js"></script>
   <script src="cookzer-modal.js"></script>
   <script src="theme.js"></script>
   <script src="shortcuts.js"></script>
@@ -324,6 +325,16 @@
     </div>
 
     <div class="settings-section">
+      <h2>Household Co-Admins</h2>
+      <div class="section-dek">Invite another adult in your household (e.g. your spouse) so you both have full access to the same Family Profiles and Meal Planner — either of you can add a dish for the kids, and you're both editing the same shared weekly plan, not separate copies.</div>
+      <div id="householdMembersList"></div>
+      <div class="field-row" style="margin-top:10px;">
+        <button class="settings-btn secondary" id="addCoAdminBtn" type="button">+ Add a co-admin</button>
+      </div>
+      <div class="settings-status" id="householdMembersStatus"></div>
+    </div>
+
+    <div class="settings-section">
       <h2>Family Profiles</h2>
       <div class="section-dek">Add household members two ways: a no-login profile a kid can pick on a shared device to suggest a meal, or a friend who already has their own Cookzer account, linked directly so their name and avatar come along automatically. Visible to anyone in a group you share a meal plan with.</div>
 
@@ -461,6 +472,137 @@
   }
 
   let currentUser = null;
+  let currentHousehold = null;
+
+  async function loadHouseholdMembers() {
+    const members = await CookzerHousehold.listMembers(sb, currentHousehold.id);
+    const listEl = document.getElementById('householdMembersList');
+    listEl.innerHTML = '';
+    members.forEach((m) => {
+      const row = document.createElement('div');
+      row.className = 'family-profile-row';
+      const avatar = document.createElement('div');
+      avatar.className = 'family-profile-emoji';
+      avatar.textContent = (m.profiles && m.profiles.initials) || '??';
+      const name = document.createElement('div');
+      name.className = 'family-profile-name';
+      name.textContent = ((m.profiles && m.profiles.display_name) || 'Someone') + (m.user_id === currentUser.id ? ' (you)' : '');
+      row.appendChild(avatar);
+      row.appendChild(name);
+
+      if (members.length > 1) {
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'family-profile-remove';
+        removeBtn.textContent = m.user_id === currentUser.id ? 'Leave' : 'Remove';
+        removeBtn.addEventListener('click', async () => {
+          const confirmMsg = m.user_id === currentUser.id
+            ? 'Leave this household? You\'ll keep your account, but lose shared access to its Family Profiles and Meal Planner.'
+            : 'Remove ' + ((m.profiles && m.profiles.display_name) || 'this person') + ' as a co-admin? They lose access to this household\'s Family Profiles and Meal Planner.';
+          if (!(await CookzerModal.confirm(confirmMsg, { confirmLabel: m.user_id === currentUser.id ? 'Leave' : 'Remove', danger: true }))) return;
+          await CookzerHousehold.removeMember(sb, currentHousehold.id, m.user_id);
+          if (m.user_id === currentUser.id) {
+            currentHousehold = await CookzerHousehold.getOrCreate(sb);
+            await loadFamilyProfiles();
+          }
+          await loadHouseholdMembers();
+        });
+        row.appendChild(removeBtn);
+      }
+      listEl.appendChild(row);
+    });
+  }
+
+  document.getElementById('addCoAdminBtn').addEventListener('click', async () => {
+    const { data: followData } = await sb
+      .from('follows')
+      .select('followee_id, profiles!follows_followee_id_fkey(id, display_name, initials)')
+      .eq('follower_id', currentUser.id)
+      .order('created_at', { ascending: false });
+    const friends = (followData || []).map((f) => f.profiles).filter(Boolean);
+
+    const members = await CookzerHousehold.listMembers(sb, currentHousehold.id);
+    const memberIds = new Set(members.map((m) => m.user_id));
+    const candidates = friends.filter((f) => !memberIds.has(f.id));
+
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+    const title = document.createElement('h3');
+    title.textContent = 'Add a co-admin';
+    modal.appendChild(title);
+
+    if (candidates.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'cz2-label';
+      empty.style.textTransform = 'none';
+      empty.style.letterSpacing = 'normal';
+      empty.textContent = friends.length === 0
+        ? "You're not following anyone yet — follow them first, then come back here to add them as a co-admin."
+        : 'Everyone you follow is already in this household.';
+      modal.appendChild(empty);
+      const actions = document.createElement('div');
+      actions.className = 'cz2-actions';
+      const closeBtn = cz2Button('Close', true);
+      closeBtn.addEventListener('click', closePicker);
+      actions.appendChild(closeBtn);
+      modal.appendChild(actions);
+      document.getElementById('pickerOverlay').hidden = false;
+      return;
+    }
+
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search your friends...';
+    modal.appendChild(searchInput);
+
+    const list = document.createElement('div');
+    list.className = 'cz2-list';
+    modal.appendChild(list);
+
+    function renderList(filter) {
+      list.innerHTML = '';
+      const filtered = candidates.filter((f) => !filter || (f.display_name || '').toLowerCase().includes(filter.toLowerCase()));
+      if (filtered.length === 0) {
+        list.innerHTML = '<div class="cz2-empty">No matching friends.</div>';
+        return;
+      }
+      filtered.forEach((f) => {
+        const row = document.createElement('div');
+        row.className = 'cz2-row';
+        const avatar = document.createElement('div');
+        avatar.className = 'cz2-row-avatar';
+        avatar.textContent = f.initials || '??';
+        const name = document.createElement('span');
+        name.textContent = f.display_name || 'Someone';
+        row.appendChild(avatar);
+        row.appendChild(name);
+        row.addEventListener('click', async () => {
+          closePicker();
+          const status = document.getElementById('householdMembersStatus');
+          try {
+            await CookzerHousehold.addCoAdmin(sb, f.id);
+            status.textContent = '';
+          } catch (err) {
+            status.textContent = 'Could not add: ' + err.message;
+          }
+          await loadHouseholdMembers();
+        });
+        list.appendChild(row);
+      });
+    }
+    renderList('');
+    searchInput.addEventListener('input', () => renderList(searchInput.value));
+
+    const actions = document.createElement('div');
+    actions.className = 'cz2-actions';
+    const cancelBtn = cz2Button('Cancel', false);
+    cancelBtn.addEventListener('click', closePicker);
+    actions.appendChild(cancelBtn);
+    modal.appendChild(actions);
+
+    document.getElementById('pickerOverlay').hidden = false;
+    searchInput.focus();
+  });
 
   const FAMILY_EMOJIS = ['🧑', '👧', '👦', '🧒', '👶', '👴', '👵'];
   let selectedFamilyEmoji = FAMILY_EMOJIS[0];
@@ -482,7 +624,7 @@
     const { data: profiles } = await sb
       .from('family_profiles')
       .select('id, name, avatar_emoji, linked_user_id')
-      .eq('owner_id', currentUser.id)
+      .eq('household_id', currentHousehold.id)
       .order('created_at', { ascending: true });
 
     const listEl = document.getElementById('familyProfilesList');
@@ -583,7 +725,7 @@
     const name = nameInput.value.trim();
     const status = document.getElementById('familyProfilesStatus');
     if (!name) { status.textContent = 'Give them a name first.'; return; }
-    const { error } = await sb.from('family_profiles').insert({ owner_id: currentUser.id, name, avatar_emoji: selectedFamilyEmoji });
+    const { error } = await sb.from('family_profiles').insert({ owner_id: currentUser.id, household_id: currentHousehold.id, name, avatar_emoji: selectedFamilyEmoji });
     if (error) { status.textContent = 'Could not add: ' + error.message; return; }
     nameInput.value = '';
     status.textContent = '';
@@ -616,6 +758,7 @@
     const status = document.getElementById('familyProfilesStatus');
     const { error } = await sb.from('family_profiles').insert({
       owner_id: currentUser.id,
+      household_id: currentHousehold.id,
       name: friend.display_name || 'Someone',
       avatar_emoji: friend.initials || '??',
       linked_user_id: friend.id,
@@ -636,7 +779,7 @@
     const { data: existingLinks } = await sb
       .from('family_profiles')
       .select('linked_user_id')
-      .eq('owner_id', currentUser.id)
+      .eq('household_id', currentHousehold.id)
       .not('linked_user_id', 'is', null);
     const linkedIds = new Set((existingLinks || []).map((r) => r.linked_user_id));
     const candidates = friends.filter((f) => !linkedIds.has(f.id));
@@ -711,15 +854,16 @@
   });
 
   document.getElementById('householdSizeHint').addEventListener('click', async () => {
-    await CookzerModal.alert('This sets how many columns show on your Meal Planner, counting yourself as one of them — a household of 4 (you + 3 others) means 4 columns total, not 5. Give each of the others a name under Family Profiles below so their column shows who they are; any columns beyond your named profiles show as "+ Add a family member" until you do.');
+    await CookzerModal.alert('This sets how many columns show on your Meal Planner, counting yourself as one of them — a household of 4 (you + 3 others) means 4 columns total, not 5. Give each of the others a name under Family Profiles below so their column shows who they are; any columns beyond your named profiles show as "+ Add a family member" until you do. Shared with any co-admins above — it\'s the same Meal Planner for all of you.');
   });
 
   document.getElementById('saveHouseholdSizeBtn').addEventListener('click', async () => {
     const status = document.getElementById('householdSizeStatus');
     const val = parseInt(document.getElementById('householdSizeInput').value, 10);
     if (!Number.isInteger(val) || val < 1 || val > 12) { status.textContent = 'Enter a number between 1 and 12.'; return; }
-    const { error } = await sb.from('profiles').update({ household_size: val }).eq('id', currentUser.id);
+    const { error } = await sb.from('households').update({ household_size: val }).eq('id', currentHousehold.id);
     if (error) { status.textContent = 'Could not save: ' + error.message; return; }
+    currentHousehold.household_size = val;
     const others = val - 1;
     status.textContent = 'Saved — your Meal Planner will show ' + val + ' column' + (val === 1 ? '' : 's') + ' (you' + (others > 0 ? ' + ' + others + ' other' + (others === 1 ? '' : 's') : '') + ').';
   });
@@ -827,12 +971,15 @@
 
     document.getElementById('emailInput').value = user.email || '';
 
-    const { data: profile } = await sb.from('profiles').select('display_name, household_size').eq('id', user.id).maybeSingle();
+    const { data: profile } = await sb.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
     if (profile) {
       document.getElementById('displayNameInput').value = profile.display_name || '';
-      document.getElementById('householdSizeInput').value = profile.household_size || 4;
     }
 
+    currentHousehold = await CookzerHousehold.getOrCreate(sb);
+    document.getElementById('householdSizeInput').value = currentHousehold.household_size || 4;
+
+    await loadHouseholdMembers();
     await loadFamilyProfiles();
 
     const prefs = await window.CookzerNotifications.loadPrefs(user.id);
