@@ -178,9 +178,10 @@ create policy "Household members manage their household's meal plan"
 
 alter table public.meal_suggestions add column if not exists household_id uuid references public.households(id) on delete cascade;
 
-alter table public.meal_suggestions drop constraint if exists meal_suggestions_owner_or_group;
-alter table public.meal_suggestions drop constraint if exists meal_suggestions_household_or_group;
-alter table public.meal_suggestions add constraint meal_suggestions_household_or_group check (household_id is not null or group_id is not null);
+-- The household_or_group replacement constraint is added further down,
+-- *after* the backfill has populated household_id — added here, it
+-- would reject every existing owner_id-only row on production (nullable
+-- household_id, not yet backfilled) the instant it's declared.
 
 drop policy if exists "View your own plan's suggestions or your group's" on public.meal_suggestions;
 drop policy if exists "View your household's suggestions or your group's" on public.meal_suggestions;
@@ -289,6 +290,13 @@ from public.household_members hm
 where hm.user_id = ms.owner_id
 and ms.owner_id is not null
 and ms.household_id is distinct from hm.household_id;
+
+-- Every existing row now satisfies this: a group_id-only row already
+-- did, and an owner_id-only row just got its household_id backfilled
+-- above (the old constraint made "neither" impossible to begin with).
+alter table public.meal_suggestions drop constraint if exists meal_suggestions_owner_or_group;
+alter table public.meal_suggestions drop constraint if exists meal_suggestions_household_or_group;
+alter table public.meal_suggestions add constraint meal_suggestions_household_or_group check (household_id is not null or group_id is not null);
 
 -- owner_id on family_profiles was already not null, so every row above
 -- is guaranteed a household_id now. meal_plan_entries.user_id and
