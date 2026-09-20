@@ -57,12 +57,21 @@ h1, h2, h3, .brand {
   font-weight: 600;
 }
 
-/* Layout */
+/* Layout — capped and centered on wide screens (Facebook-style framing)
+   instead of the sidebar sitting flush against the browser's left edge
+   and stretching everything else to fill an arbitrarily wide window.
+   position: relative also makes body the containing block for .header
+   below (position: absolute), so the header's left/right offsets — and
+   its own overflow clipping via this rule's overflow: hidden — resolve
+   against this centered frame instead of the raw viewport. */
 body {
   display: flex;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
+  max-width: 1440px;
+  margin: 0 auto;
+  position: relative;
 }
 
 /* Sidebar */

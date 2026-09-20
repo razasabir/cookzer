@@ -40,3 +40,28 @@ test.describe('Feed — responsive layout across rotation', () => {
     expect(headerLeft).toBe('0px');
   });
 });
+
+// On a wide monitor the app used to stretch edge-to-edge — the left
+// sidebar sat flush against the browser's left edge, with everything
+// else stretching to fill however wide the window happened to be. Real
+// social apps (Facebook, etc.) cap their content width and center it,
+// leaving symmetric margins on both sides instead.
+test.describe('Feed — capped and centered on wide screens', () => {
+  test('leaves equal margins on both sides past the app\'s max width', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-filter-bar.js');
+    const metrics = await page.evaluate(() => {
+      const b = document.body.getBoundingClientRect();
+      return { left: b.left, right: window.innerWidth - b.right, width: b.width };
+    });
+    expect(metrics.left).toBeGreaterThan(0);
+    expect(Math.abs(metrics.left - metrics.right)).toBeLessThan(1);
+  });
+
+  test('still fills the full width on an ordinary laptop screen', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-filter-bar.js');
+    const bodyWidth = await page.evaluate(() => document.body.getBoundingClientRect().width);
+    expect(bodyWidth).toBe(1280);
+  });
+});
