@@ -64,4 +64,33 @@ test.describe('Feed — capped and centered on wide screens', () => {
     const bodyWidth = await page.evaluate(() => document.body.getBoundingClientRect().width);
     expect(bodyWidth).toBe(1280);
   });
+
+  // The feed column and right sidebar used to be centered together as
+  // one block within .main, which left a wide dead-space gap between
+  // the right sidebar and the header's right edge instead of the
+  // sidebar sitting flush against it (Facebook's own right rail always
+  // touches the frame's edge, with generous padding around the middle
+  // column instead).
+  test('the right sidebar sits flush against the header\'s right edge, not centered with dead space beside it', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-filter-bar.js');
+    const rects = await page.evaluate(() => ({
+      headerRight: document.querySelector('.header').getBoundingClientRect().right,
+      rightSidebarRight: document.querySelector('.right-sidebar').getBoundingClientRect().right,
+    }));
+    expect(Math.abs(rects.headerRight - rects.rightSidebarRight)).toBeLessThan(1);
+  });
+
+  test('the feed column widened and centers within the space left of the right sidebar', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-filter-bar.js');
+    const rects = await page.evaluate(() => {
+      const sidebar = document.querySelector('.sidebar').getBoundingClientRect();
+      const feed = document.querySelector('.feed-container').getBoundingClientRect();
+      const right = document.querySelector('.right-sidebar').getBoundingClientRect();
+      return { leftGap: feed.left - sidebar.right, rightGap: right.left - feed.right, feedWidth: feed.width };
+    });
+    expect(rects.feedWidth).toBeGreaterThan(600);
+    expect(Math.abs(rects.leftGap - rects.rightGap)).toBeLessThan(1);
+  });
 });
