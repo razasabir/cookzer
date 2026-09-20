@@ -1,5 +1,6 @@
 window.__INSERTED_SUGGESTIONS__ = [];
 window.__INSERTED_ENTRIES__ = [];
+window.__UPDATED_SUGGESTIONS__ = [];
 
 const MY_GROUPS = [{ group_id: 'group-1', groups: { id: 'group-1', name: 'The Smiths' } }];
 const FAMILY_PROFILES = [{ id: 'fam-1', name: 'Emma', avatar_emoji: '👧' }];
@@ -26,15 +27,27 @@ function suggestionDisplay(s) {
 
 function chain(table) {
   let inArgs = null;
+  let eqArgs = [];
+  let isUpdate = false;
+  let updatePayload = null;
   const builder = {
     select() { return builder; },
-    eq() { return builder; },
+    eq(col, val) { eqArgs.push([col, val]); return builder; },
     in(col, vals) { inArgs = [col, vals]; return builder; },
     order() { return builder; },
     or() { return builder; },
     limit() { return builder; },
     not() { return builder; },
-    single() { return Promise.resolve({ data: null, error: null }); },
+    single() {
+      if (isUpdate && table === 'meal_suggestions') {
+        const idArg = eqArgs.find(([col]) => col === 'id');
+        const row = (suggestions || []).find((s) => s.id === (idArg && idArg[1]));
+        if (row) Object.assign(row, updatePayload);
+        window.__UPDATED_SUGGESTIONS__.push({ id: idArg && idArg[1], payload: updatePayload });
+        return Promise.resolve({ data: row ? suggestionDisplay(row) : null, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    },
     // household_size: 3 with 1 named Family Profile (Emma) means the
     // planner shows You + Emma + one "ghost" placeholder column.
     maybeSingle() {
@@ -69,7 +82,7 @@ function chain(table) {
       return Promise.resolve({ data: result, error: null }).then(resolve);
     },
     delete() { return Promise.resolve({ data: null, error: null }); },
-    update() { return Promise.resolve({ data: null, error: null }); },
+    update(payload) { isUpdate = true; updatePayload = payload; return builder; },
     insert(payload) {
       if (table === 'meal_suggestions') {
         window.__INSERTED_SUGGESTIONS__.push(payload);
