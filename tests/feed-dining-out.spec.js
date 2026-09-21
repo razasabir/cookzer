@@ -20,6 +20,16 @@ test.describe('Feed — Dining Out via Google Places', () => {
     await expect(body).toContainText('4.7★');
   });
 
+  test('a nearby place Cookzer already knows as Verified/Featured shows those badges; an unknown one shows neither', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-dining-out.js');
+    await page.click('#composerRestaurantBtn');
+    const body = page.locator('#restaurantPanelBody');
+    await expect(body.locator('div', { hasText: 'Casa Elote' })).toContainText('🏅');
+    await expect(body.locator('div', { hasText: 'Casa Elote' })).toContainText('⭐');
+    await expect(body.locator('div', { hasText: 'Marfa Bowl Co.' })).not.toContainText('🏅');
+    await expect(body.locator('div', { hasText: 'Marfa Bowl Co.' })).not.toContainText('⭐');
+  });
+
   test('selecting a nearby place tags the composer with its name', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-dining-out.js');
     await page.click('#composerRestaurantBtn');

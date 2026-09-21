@@ -283,6 +283,17 @@
       border-radius: 999px;
       white-space: nowrap;
     }
+  .card-pills { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .cookzer-verified-pill {
+      font-size: 11px; font-weight: 600; color: #8a6d1a;
+      background: rgba(244,185,66,0.16); padding: 3px 9px;
+      border-radius: 999px; white-space: nowrap;
+    }
+  .featured-pill {
+      font-size: 11px; font-weight: 600; color: var(--brick, #B44A3A);
+      background: rgba(180,74,58,0.10); padding: 3px 9px;
+      border-radius: 999px; white-space: nowrap;
+    }
 
   .restaurant-detail { display: none; border-top: 1px solid var(--line); padding: 4px 18px 14px; }
   .restaurant-detail.open { display: block; }
@@ -734,7 +745,7 @@
   async function loadRestaurants() {
     const { data: restaurants } = await sb
       .from('restaurants')
-      .select('id, name, created_at')
+      .select('id, name, created_at, is_verified, featured_until')
       .order('created_at', { ascending: false });
 
     const list = document.getElementById('restaurantsList');
@@ -750,11 +761,18 @@
     (allRatings || []).forEach((rt) => {
       (ratingsByRestaurant[rt.restaurant_id] = ratingsByRestaurant[rt.restaurant_id] || []).push(rt.rating);
     });
+    const now = Date.now();
     const withRatings = restaurants.map((r) => {
       const rows = ratingsByRestaurant[r.id] || [];
       const avg = rows.length ? rows.reduce((s, x) => s + x, 0) / rows.length : 0;
-      return { ...r, avg, count: rows.length };
+      const isFeatured = !!(r.featured_until && new Date(r.featured_until).getTime() > now);
+      return { ...r, avg, count: rows.length, isFeatured };
     });
+
+    // Sponsored placement's whole point is being seen first — featured
+    // listings float to the top, most-recently-featured-worthy first,
+    // then everyone else in the existing newest-first order.
+    withRatings.sort((a, b) => (b.isFeatured - a.isFeatured));
 
     withRatings.forEach((r) => {
       const card = document.createElement('div');
@@ -771,7 +789,11 @@
               : '<span>No ratings yet</span>') +
           '</div>' +
         '</div>' +
-        (r.count > 0 ? '<span class="verified-pill">🧾 Receipt-verified</span>' : '');
+        '<div class="card-pills">' +
+          (r.isFeatured ? '<span class="featured-pill">⭐ Featured</span>' : '') +
+          (r.is_verified ? '<span class="cookzer-verified-pill">🏅 Cookzer Verified</span>' : '') +
+          (r.count > 0 ? '<span class="verified-pill">🧾 Receipt-verified</span>' : '') +
+        '</div>';
       summary.querySelector('.restaurant-name').addEventListener('click', (e) => e.stopPropagation());
 
       const detail = document.createElement('div');

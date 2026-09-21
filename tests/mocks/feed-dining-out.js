@@ -27,7 +27,7 @@ if (window.__GEO_MODE__ !== 'unsupported') {
 // One existing restaurant already linked to a Google place, to exercise
 // the "reuse, don't re-create" branch.
 let RESTAURANTS = [
-  { id: 'rest-existing', name: 'Casa Elote', google_place_id: 'gp-casa-elote' },
+  { id: 'rest-existing', name: 'Casa Elote', google_place_id: 'gp-casa-elote', is_verified: true, featured_until: '2099-01-01T00:00:00Z' },
 ];
 
 window.__PLACES_FETCH_MODE__ = 'success'; // 'success' | 'server-error'
@@ -82,6 +82,7 @@ function chain(table) {
       if (table === 'posts') result = POSTS;
       else if (table === 'hearts' || table === 'post_bookmarks' || table === 'comments' || table === 'challenge_entries' || table === 'follows') result = [];
       else if (table === 'profiles') result = [ME];
+      else if (table === 'restaurants') result = RESTAURANTS;
       return Promise.resolve({ data: result, error: null }).then(resolve);
     },
     delete() { return { eq() { return Promise.resolve({ data: null, error: null }); } }; },
