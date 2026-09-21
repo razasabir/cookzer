@@ -2086,6 +2086,20 @@
           return;
         }
 
+        // Cross-reference against our own restaurants table so a place
+        // that's Cookzer Verified or currently featured shows that here
+        // too, not just after tagging it — the same trust signal Phase 4
+        // added to the restaurant page and listing.
+        const placeIds = places.map((p) => p.googlePlaceId).filter(Boolean);
+        let badgesByPlaceId = {};
+        if (placeIds.length > 0) {
+          const { data: known } = await sb
+            .from('restaurants')
+            .select('google_place_id, is_verified, featured_until')
+            .in('google_place_id', placeIds);
+          (known || []).forEach((r) => { badgesByPlaceId[r.google_place_id] = r; });
+        }
+
         const body = document.getElementById('restaurantPanelBody');
         body.innerHTML = '';
         const label = document.createElement('div');
@@ -2094,11 +2108,14 @@
         label.textContent = 'You might be at:';
         body.appendChild(label);
         places.forEach((p) => {
+          const known = badgesByPlaceId[p.googlePlaceId];
+          const isFeatured = !!(known && known.featured_until && new Date(known.featured_until) > new Date());
+          const badges = (known && known.is_verified ? ' 🏅' : '') + (isFeatured ? ' ⭐' : '');
           const btn = document.createElement('div');
           btn.style.padding = '6px 8px';
           btn.style.cursor = 'pointer';
           btn.style.borderRadius = '8px';
-          btn.textContent = p.name + ' (' + Math.round(p.distance) + 'm)' + (p.rating ? ' · ' + p.rating.toFixed(1) + '★' : '');
+          btn.textContent = p.name + ' (' + Math.round(p.distance) + 'm)' + (p.rating ? ' · ' + p.rating.toFixed(1) + '★' : '') + badges;
           btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--card-bg)'; });
           btn.addEventListener('mouseleave', () => { btn.style.background = ''; });
           btn.addEventListener('click', () => applyRestaurantSelection(p));

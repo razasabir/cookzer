@@ -3,6 +3,8 @@ window.__RECEIPT_UPLOADS__ = [];
 window.__CLAIM_INSERTS__ = [];
 window.__CLAIM_PROOF_UPLOADS__ = [];
 window.__CLAIMED_DETAILS_RPCS__ = [];
+window.__VERIFIED_RPCS__ = [];
+window.__FEATURED_RPCS__ = [];
 
 const ME = { display_name: 'Me Cook', initials: 'MC', avatar_url: null };
 
@@ -21,6 +23,8 @@ const RESTAURANTS = [
     phone: null,
     website: null,
     menu_url: null,
+    is_verified: false,
+    featured_until: null,
   },
   {
     id: 'rest-2',
@@ -36,6 +40,8 @@ const RESTAURANTS = [
     phone: '512-555-0100',
     website: 'https://ownedeats.example',
     menu_url: 'https://ownedeats.example/menu',
+    is_verified: false,
+    featured_until: null,
   },
   {
     id: 'rest-3',
@@ -51,6 +57,8 @@ const RESTAURANTS = [
     phone: null,
     website: null,
     menu_url: null,
+    is_verified: false,
+    featured_until: null,
   },
   {
     id: 'rest-4',
@@ -66,6 +74,25 @@ const RESTAURANTS = [
     phone: null,
     website: null,
     menu_url: null,
+    is_verified: false,
+    featured_until: null,
+  },
+  {
+    id: 'rest-5',
+    name: 'Trusted Spot',
+    address: '500 Verified Way, Austin, TX',
+    lat: 30.3,
+    lng: -97.71,
+    google_place_id: 'gp-trusted-spot',
+    google_rating: 4.8,
+    tag_count: 2,
+    claimed_by: null,
+    claim_status: 'unclaimed',
+    phone: null,
+    website: null,
+    menu_url: null,
+    is_verified: true,
+    featured_until: '2026-12-31T00:00:00Z',
   },
 ];
 
@@ -107,6 +134,9 @@ function chain(table) {
         const idFilter = eqArgs.find((a) => a[0] === 'id');
         const match = idFilter ? RESTAURANTS.find((r) => r.id === idFilter[1]) : null;
         return Promise.resolve({ data: match || null, error: match ? null : { message: 'not found' } });
+      }
+      if (table === 'profiles') {
+        return Promise.resolve({ data: { is_platform_admin: !!window.__IS_ADMIN__ }, error: null });
       }
       return Promise.resolve({ data: null, error: null });
     },
@@ -175,6 +205,22 @@ window.supabase = {
           return Promise.resolve({ data: null, error: null });
         }
         return Promise.resolve({ data: null, error: { message: 'You do not have an approved claim on this restaurant' } });
+      }
+      if (fn === 'set_restaurant_verified') {
+        window.__VERIFIED_RPCS__.push(args);
+        const restaurant = RESTAURANTS.find((r) => r.id === args.p_restaurant_id);
+        if (restaurant) restaurant.is_verified = args.p_verified;
+        return Promise.resolve({ data: null, error: null });
+      }
+      if (fn === 'set_restaurant_featured') {
+        window.__FEATURED_RPCS__.push(args);
+        const restaurant = RESTAURANTS.find((r) => r.id === args.p_restaurant_id);
+        if (restaurant) {
+          restaurant.featured_until = (args.p_days == null || args.p_days <= 0)
+            ? null
+            : new Date(Date.now() + args.p_days * 86400000).toISOString();
+        }
+        return Promise.resolve({ data: null, error: null });
       }
       return Promise.resolve({ data: null, error: null });
     },

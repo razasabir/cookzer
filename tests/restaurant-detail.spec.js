@@ -181,3 +181,45 @@ test.describe('Restaurant detail page — claimed business profiles', () => {
     await expect(page.locator('.claim-status-note')).toContainText('Your claim is under review');
   });
 });
+
+test.describe('Restaurant detail page — Cookzer Verified + Featured (Phase 4)', () => {
+  test('a non-admin viewer sees the Verified and Featured badges but no admin tools', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-5', 'restaurant-detail.js');
+    await expect(page.locator('.cookzer-verified-badge')).toContainText('Cookzer Verified');
+    await expect(page.locator('.featured-badge')).toContainText('Featured');
+    await expect(page.locator('.admin-tools-panel')).toHaveCount(0);
+  });
+
+  test('an unverified, unfeatured listing shows neither badge', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+    await expect(page.locator('.cookzer-verified-badge')).toHaveCount(0);
+    await expect(page.locator('.featured-badge')).toHaveCount(0);
+  });
+
+  test('a platform admin sees the admin tools panel and can toggle Cookzer Verified', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js', 'window.__IS_ADMIN__ = true;');
+
+    await expect(page.locator('.admin-tools-panel')).toBeVisible();
+    await expect(page.locator('#adminVerifiedCheck')).not.toBeChecked();
+
+    await page.locator('#adminVerifiedCheck').check();
+    await expect.poll(() => page.evaluate(() => window.__VERIFIED_RPCS__.length)).toBe(1);
+    const args = await page.evaluate(() => window.__VERIFIED_RPCS__[0]);
+    expect(args).toMatchObject({ p_restaurant_id: 'rest-1', p_verified: true });
+    await expect(page.locator('.cookzer-verified-badge')).toContainText('Cookzer Verified');
+  });
+
+  test('a platform admin can feature a listing, then remove its featured placement', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js', 'window.__IS_ADMIN__ = true;');
+
+    await page.click('#adminFeatureBtn');
+    await expect.poll(() => page.evaluate(() => window.__FEATURED_RPCS__.length)).toBe(1);
+    expect(await page.evaluate(() => window.__FEATURED_RPCS__[0])).toMatchObject({ p_restaurant_id: 'rest-1', p_days: 30 });
+    await expect(page.locator('.featured-badge')).toContainText('Featured');
+
+    await page.click('#adminUnfeatureBtn');
+    await expect.poll(() => page.evaluate(() => window.__FEATURED_RPCS__.length)).toBe(2);
+    expect(await page.evaluate(() => window.__FEATURED_RPCS__[1])).toMatchObject({ p_restaurant_id: 'rest-1', p_days: null });
+    await expect(page.locator('.featured-badge')).toHaveCount(0);
+  });
+});

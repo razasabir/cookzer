@@ -355,6 +355,35 @@
       font-size: 14px; color: var(--ink); font-family: inherit;
     }
 
+  /* Phase 4 — a Cookzer-granted trust mark (distinct from "claimed
+     business," which only means the listing's owner is verified) and
+     time-boxed sponsored placement. */
+  .cookzer-verified-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11.5px; font-weight: 700; color: #8a6d1a;
+      background: rgba(244,185,66,0.16); border-radius: 10px; padding: 4px 10px;
+      margin-top: 6px; margin-right: 8px;
+    }
+  .featured-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11.5px; font-weight: 700; color: var(--brick, #B44A3A);
+      background: rgba(180,74,58,0.10); border-radius: 10px; padding: 4px 10px;
+      margin-top: 6px;
+    }
+  .admin-tools-panel {
+      background: var(--card-bg); border: 1px dashed var(--line);
+      border-radius: 14px; padding: 14px 16px; margin: 6px 0 18px;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+    }
+  .admin-tools-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-faint); width: 100%; }
+  .admin-tools-panel label.admin-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink); cursor: pointer; text-transform: none; letter-spacing: normal; font-weight: 500; margin: 0; }
+  .admin-tools-panel button {
+      background: var(--cream); border: 1px solid var(--line); border-radius: 10px;
+      padding: 6px 12px; font-size: 12.5px; font-weight: 600; color: var(--ink);
+      cursor: pointer; font-family: inherit;
+    }
+  .admin-tools-panel button:hover { background: var(--line); }
+
   .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 24px; }
   .not-found-note { text-align: center; color: var(--ink-soft); font-size: 14px; padding: 60px 20px; }
 
@@ -455,6 +484,7 @@
   let selectedRatingValue = 0;
   let pendingReceiptFile = null;
   let pendingClaimProofFile = null;
+  let isPlatformAdmin = false;
 
   function publicUrl(bucket, path) {
     if (!path) return null;
@@ -637,6 +667,20 @@
       }
     }
 
+    const isFeatured = !!(restaurant.featured_until && new Date(restaurant.featured_until) > new Date());
+    const trustBadgesHtml =
+      (restaurant.is_verified ? '<span class="cookzer-verified-badge">🏅 Cookzer Verified</span>' : '') +
+      (isFeatured ? '<span class="featured-badge">⭐ Featured</span>' : '');
+
+    const adminToolsHtml = isPlatformAdmin
+      ? '<div class="admin-tools-panel">' +
+          '<div class="admin-tools-label">Admin tools</div>' +
+          '<label class="admin-check"><input type="checkbox" id="adminVerifiedCheck"' + (restaurant.is_verified ? ' checked' : '') + '> Cookzer Verified</label>' +
+          '<button id="adminFeatureBtn" type="button">' + (isFeatured ? 'Extend featured 30 days' : 'Feature for 30 days') + '</button>' +
+          (isFeatured ? '<button id="adminUnfeatureBtn" type="button">Remove featured</button>' : '') +
+        '</div>'
+      : '';
+
     body.innerHTML =
       heroHtml +
       '<div class="title-row">' +
@@ -644,6 +688,8 @@
         (mapsUrl ? '<a class="maps-link" href="' + mapsUrl + '" target="_blank" rel="noopener">📍 Open in Google Maps</a>' : '') +
       '</div>' +
       (restaurant.address ? '<div class="address-line">' + escapeHtml(restaurant.address) + '</div>' : '<div class="address-line">&nbsp;</div>') +
+      trustBadgesHtml +
+      adminToolsHtml +
       bizBadgeHtml +
       bizInfoHtml +
       claimPromptHtml +
@@ -725,6 +771,7 @@
     renderReviewsTab(ratings, credibilityMap);
     wireRatePanel(restaurant);
     wireClaimFlow(restaurant);
+    wireAdminTools(restaurant);
 
     document.querySelectorAll('.tab').forEach((tab) => {
       tab.addEventListener('click', () => {
@@ -1068,10 +1115,50 @@
     }
   }
 
+  function wireAdminTools(restaurant) {
+    const verifiedCheck = document.getElementById('adminVerifiedCheck');
+    if (verifiedCheck) {
+      verifiedCheck.addEventListener('change', async () => {
+        const checked = verifiedCheck.checked;
+        verifiedCheck.disabled = true;
+        const { error } = await sb.rpc('set_restaurant_verified', { p_restaurant_id: restaurant.id, p_verified: checked });
+        if (error) {
+          await CookzerModal.alert('Could not update verified status: ' + error.message);
+          verifiedCheck.checked = !checked;
+          verifiedCheck.disabled = false;
+          return;
+        }
+        await loadAndRender();
+      });
+    }
+
+    const featureBtn = document.getElementById('adminFeatureBtn');
+    if (featureBtn) {
+      featureBtn.addEventListener('click', async () => {
+        featureBtn.disabled = true;
+        const { error } = await sb.rpc('set_restaurant_featured', { p_restaurant_id: restaurant.id, p_days: 30 });
+        featureBtn.disabled = false;
+        if (error) { await CookzerModal.alert('Could not feature this restaurant: ' + error.message); return; }
+        await loadAndRender();
+      });
+    }
+
+    const unfeatureBtn = document.getElementById('adminUnfeatureBtn');
+    if (unfeatureBtn) {
+      unfeatureBtn.addEventListener('click', async () => {
+        unfeatureBtn.disabled = true;
+        const { error } = await sb.rpc('set_restaurant_featured', { p_restaurant_id: restaurant.id, p_days: null });
+        unfeatureBtn.disabled = false;
+        if (error) { await CookzerModal.alert('Could not remove featured placement: ' + error.message); return; }
+        await loadAndRender();
+      });
+    }
+  }
+
   async function loadAndRender() {
     const { data: restaurant, error } = await sb
       .from('restaurants')
-      .select('id, name, address, lat, lng, google_place_id, google_rating, tag_count, claimed_by, claim_status, phone, website, menu_url')
+      .select('id, name, address, lat, lng, google_place_id, google_rating, tag_count, claimed_by, claim_status, phone, website, menu_url, is_verified, featured_until')
       .eq('id', restaurantId)
       .single();
 
@@ -1127,6 +1214,8 @@
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
     currentUser = user;
+    const { data: profile } = await sb.from('profiles').select('is_platform_admin').eq('id', user.id).single();
+    isPlatformAdmin = !!(profile && profile.is_platform_admin);
     await loadAndRender();
   })();
 </script>
