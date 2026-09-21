@@ -12,7 +12,9 @@ test.describe('Restaurant detail page', () => {
 
     const stats = page.locator('.stat-tile');
     await expect(stats.nth(0)).toContainText('4.6★');
-    await expect(stats.nth(1)).toContainText('5.0★');
+    // Recency-weighted average of the two seeded ratings (5★ from Sep 15,
+    // 4★ from Sep 10) — the 5-day-newer rating counts slightly more.
+    await expect(stats.nth(1)).toContainText('4.5★');
     await expect(stats.nth(2)).toContainText('3');
   });
 
@@ -40,31 +42,63 @@ test.describe('Restaurant detail page', () => {
     await expect(reviewsPanel).toContainText('Rae H.');
     await expect(reviewsPanel).toContainText('★★★★★');
     await expect(reviewsPanel).toContainText('Best grain bowl in South Austin.');
-    await expect(reviewsPanel.locator('.verified-badge')).toContainText('Receipt verified');
+    await expect(reviewsPanel.locator('.verified-badge').first()).toContainText('Receipt verified');
   });
 
-  test('the Rate this restaurant button opens an inline panel with no restaurant search step', async ({ page }) => {
+  test('the Rate this restaurant button opens an inline panel with only the dish-name field, no restaurant search step', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
 
     await expect(page.locator('#ratePanel')).toBeHidden();
     await page.click('#rateBtn');
     await expect(page.locator('#ratePanel')).toBeVisible();
-    await expect(page.locator('#ratePanel input[type="text"]')).toHaveCount(0);
+    await expect(page.locator('#ratePanel input[type="text"]')).toHaveCount(1);
+    await expect(page.locator('#dishInput')).toBeVisible();
   });
 
-  test('submitting a star rating with a receipt uploads the photo and upserts the rating for this restaurant', async ({ page }) => {
+  test('submitting a star rating with a receipt uploads the photo and upserts the rating, including the optional dish name', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
 
     await page.click('#rateBtn');
     await page.locator('#starPicker .star[data-value="4"]').click();
+    await page.fill('#dishInput', 'Lamb ragu');
     await page.fill('#reviewInput', 'Great bowls, would return.');
     await page.locator('#receiptInput').setInputFiles(path.join(__dirname, '..', 'icon-192.png'));
     await page.click('#submitRatingBtn');
 
     await expect.poll(() => page.evaluate(() => window.__RATING_UPSERTS__.length)).toBe(1);
     const upsert = await page.evaluate(() => window.__RATING_UPSERTS__[0]);
-    expect(upsert).toMatchObject({ restaurant_id: 'rest-1', user_id: 'me-1', rating: 4, review: 'Great bowls, would return.' });
+    expect(upsert).toMatchObject({ restaurant_id: 'rest-1', user_id: 'me-1', rating: 4, review: 'Great bowls, would return.', dish_name: 'Lamb ragu' });
     expect(await page.evaluate(() => window.__RECEIPT_UPLOADS__.length)).toBe(1);
+  });
+
+  test('cancelling the rate panel clears the dish-name field along with the rest', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+
+    await page.click('#rateBtn');
+    await page.fill('#dishInput', 'Lamb ragu');
+    await page.click('#cancelRateBtn');
+    await page.click('#rateBtn');
+    await expect(page.locator('#dishInput')).toHaveValue('');
+  });
+
+  test('shows friends who\'ve rated here ahead of the stat tiles, and a best-dish rollup from dish names', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+
+    const friends = page.locator('.friends-here-section');
+    await expect(friends).toContainText("Friends who've been here");
+    await expect(friends).toContainText('Rae H.');
+
+    const dishes = page.locator('.dish-rollup-section');
+    await expect(dishes).toContainText('Best dish here');
+    await expect(dishes).toContainText('Sunset Grain Bowl');
+  });
+
+  test('a reviewer with a high Foodie Score shows a credibility badge on their review', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+
+    await page.click('.tab-row .tab:has-text("Verified reviews")');
+    const reviewsPanel = page.locator('#tab-reviews');
+    await expect(reviewsPanel.locator('.credibility-badge').first()).toContainText('Trusted Foodie');
   });
 
   test('submitting without a receipt is rejected and does not upsert', async ({ page }) => {

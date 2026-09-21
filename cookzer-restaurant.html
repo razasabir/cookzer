@@ -286,6 +286,41 @@
   .tagger-avatar:first-child { margin-left: 0; }
   .taggers-more { font-size: 12px; color: var(--ink-soft); margin-left: 10px; }
 
+  /* Friends who've been here — the social proof Google/Yelp structurally
+     can't show, so it sits ahead of the star tiles, not buried in a tab. */
+  .friends-here-section { margin-bottom: 20px; }
+  .friends-here-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .friend-here-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--card-bg); border: 1px solid var(--line); border-radius: 20px;
+      padding: 4px 12px 4px 4px; text-decoration: none; color: inherit; font-size: 12.5px;
+    }
+  .friend-here-chip:hover { border-color: var(--olive); }
+  .friend-here-avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      color: #fff; font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+  .friend-here-stars { color: var(--mustard, #F4B942); font-size: 10.5px; }
+
+  /* Best dish here — a rollup of dish_name across receipt-verified
+     ratings, the one comparison angle Google's per-restaurant star
+     rating can't offer at all. */
+  .dish-rollup-section { margin-bottom: 20px; }
+  .dish-rollup-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .dish-pill {
+      background: rgba(244, 185, 66, 0.12); border: 1px solid rgba(244, 185, 66, 0.35);
+      border-radius: 14px; padding: 6px 12px; font-size: 12.5px; color: var(--ink);
+    }
+  .dish-pill .dish-pill-stars { color: var(--mustard, #F4B942); margin-left: 5px; }
+
+  .credibility-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10.5px; font-weight: 700; color: var(--ink-soft);
+      background: var(--cream); border-radius: 8px; padding: 2px 7px;
+    }
+
   .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 24px; }
   .not-found-note { text-align: center; color: var(--ink-soft); font-size: 14px; padding: 60px 20px; }
 
@@ -397,6 +432,70 @@
     return '★★★★★'.slice(0, rounded) + '☆☆☆☆☆'.slice(0, 5 - rounded);
   }
 
+  // A rating from 2 years ago at a restaurant that's since changed
+  // chefs shouldn't count the same as one from last month — halves a
+  // rating's weight roughly every 18 months rather than dropping it,
+  // so the aggregate stays responsive without discarding history.
+  function recencyWeight(iso) {
+    const ageDays = (Date.now() - new Date(iso).getTime()) / 86400000;
+    return Math.pow(0.5, ageDays / 540);
+  }
+
+  function weightedAverage(ratings) {
+    let sumWeight = 0;
+    let sumWeightedRating = 0;
+    ratings.forEach((r) => {
+      const w = recencyWeight(r.created_at);
+      sumWeight += w;
+      sumWeightedRating += w * r.rating;
+    });
+    return sumWeight > 0 ? sumWeightedRating / sumWeight : 0;
+  }
+
+  // Which dish each rating was for is the one comparison angle a plain
+  // restaurant-level star rating (Google's, or a naive average of ours)
+  // can't offer — rolled up into "best dish here" from whoever bothered
+  // to say what they ordered.
+  function computeDishRollup(ratings) {
+    const byDish = {};
+    ratings.forEach((r) => {
+      const name = (r.dish_name || '').trim();
+      if (!name) return;
+      const key = name.toLowerCase();
+      if (!byDish[key]) byDish[key] = { name, total: 0, count: 0 };
+      byDish[key].total += r.rating;
+      byDish[key].count += 1;
+    });
+    return Object.values(byDish)
+      .map((d) => ({ name: d.name, avg: d.total / d.count, count: d.count }))
+      .sort((a, b) => b.avg - a.avg || b.count - a.count)
+      .slice(0, 5);
+  }
+
+  // Friends who've either left a receipt-verified rating here or tagged
+  // a Dining Out post here — the social proof Google Maps and Yelp
+  // structurally can't show, since neither has a real friend graph.
+  function computeFriendsHere(friendIds, posts, ratings) {
+    const friendSet = new Set(friendIds);
+    const byUser = {};
+    ratings.forEach((r) => {
+      if (friendSet.has(r.user_id)) byUser[r.user_id] = { userId: r.user_id, profiles: r.profiles, rating: r.rating };
+    });
+    posts.forEach((p) => {
+      if (friendSet.has(p.author_id) && !byUser[p.author_id]) {
+        byUser[p.author_id] = { userId: p.author_id, profiles: p.profiles, rating: null };
+      }
+    });
+    return Object.values(byUser);
+  }
+
+  function credibilityTier(score) {
+    if (score >= 30) return '🍽️⭐ Top Foodie';
+    if (score >= 15) return '🍽️ Trusted Foodie';
+    if (score >= 5) return 'Regular';
+    return null;
+  }
+
   function timeAgo(iso) {
     const diffMs = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diffMs / 60000);
@@ -414,7 +513,7 @@
     return div.innerHTML;
   }
 
-  function renderPage(restaurant, posts, ratings) {
+  function renderPage(restaurant, posts, ratings, credibilityMap, friendsHere) {
     const body = document.getElementById('pageBody');
 
     const photoPosts = posts.filter((p) => p.photo_path);
@@ -438,7 +537,34 @@
       : (restaurant.lat && restaurant.lng ? 'https://www.google.com/maps/search/?api=1&query=' + restaurant.lat + ',' + restaurant.lng : null);
 
     const ratingsCount = ratings.length;
-    const ratingsAvg = ratingsCount ? ratings.reduce((s, r) => s + r.rating, 0) / ratingsCount : 0;
+    const ratingsAvg = ratingsCount ? weightedAverage(ratings) : 0;
+
+    const friendsHtml = friendsHere.length === 0 ? '' :
+      '<div class="friends-here-section">' +
+        '<div class="section-label">👥 Friends who\'ve been here</div>' +
+        '<div class="friends-here-row">' +
+          friendsHere.slice(0, 8).map((f) => {
+            const name = (f.profiles && f.profiles.display_name) || 'Someone';
+            const initials = (f.profiles && f.profiles.initials) || '?';
+            return '<a class="friend-here-chip" href="cookzer-profile.html?id=' + f.userId + '">' +
+              '<span class="friend-here-avatar">' + escapeHtml(initials) + '</span>' +
+              escapeHtml(name) +
+              (f.rating ? '<span class="friend-here-stars">' + starString(f.rating) + '</span>' : '') +
+            '</a>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+
+    const dishRollup = computeDishRollup(ratings);
+    const dishRollupHtml = dishRollup.length === 0 ? '' :
+      '<div class="dish-rollup-section">' +
+        '<div class="section-label">🍴 Best dish here</div>' +
+        '<div class="dish-rollup-row">' +
+          dishRollup.map((d) =>
+            '<span class="dish-pill">' + escapeHtml(d.name) + '<span class="dish-pill-stars">' + d.avg.toFixed(1) + '★</span></span>'
+          ).join('') +
+        '</div>' +
+      '</div>';
 
     body.innerHTML =
       heroHtml +
@@ -447,6 +573,7 @@
         (mapsUrl ? '<a class="maps-link" href="' + mapsUrl + '" target="_blank" rel="noopener">📍 Open in Google Maps</a>' : '') +
       '</div>' +
       (restaurant.address ? '<div class="address-line">' + escapeHtml(restaurant.address) + '</div>' : '<div class="address-line">&nbsp;</div>') +
+      friendsHtml +
       '<div class="stat-row">' +
         '<div class="stat-tile">' +
           '<div class="stat-num">' + (restaurant.google_rating ? Number(restaurant.google_rating).toFixed(1) + '★' : '—') + '</div>' +
@@ -461,12 +588,15 @@
           '<div class="stat-sub">🔥 Dining Out tags</div>' +
         '</div>' +
       '</div>' +
+      dishRollupHtml +
       '<button class="cta-btn" id="rateBtn" type="button">⭐ Rate this restaurant</button>' +
       '<div class="rate-panel hidden" id="ratePanel">' +
         '<label>Your rating</label>' +
         '<div class="star-picker" id="starPicker">' +
           '<span class="star" data-value="1">★</span><span class="star" data-value="2">★</span><span class="star" data-value="3">★</span><span class="star" data-value="4">★</span><span class="star" data-value="5">★</span>' +
         '</div>' +
+        '<label>What did you order? (optional)</label>' +
+        '<input type="text" id="dishInput" maxlength="80" placeholder="e.g. Lamb ragu">' +
         '<label>Review (optional)</label>' +
         '<textarea id="reviewInput" rows="3" maxlength="500" placeholder="What did you have? Would you go back?"></textarea>' +
         '<label>Receipt or invoice — your proof</label>' +
@@ -489,7 +619,7 @@
       '<div class="tab-panel" id="tab-reviews"></div>';
 
     renderCommunityTab(posts);
-    renderReviewsTab(ratings);
+    renderReviewsTab(ratings, credibilityMap);
     wireRatePanel(restaurant);
 
     document.querySelectorAll('.tab').forEach((tab) => {
@@ -544,7 +674,7 @@
     panel.innerHTML = gridHtml + taggersHtml;
   }
 
-  function renderReviewsTab(ratings) {
+  function renderReviewsTab(ratings, credibilityMap) {
     const panel = document.getElementById('tab-reviews');
     if (ratings.length === 0) {
       panel.innerHTML = '<div class="empty-note">No receipt-verified ratings yet.</div>';
@@ -577,7 +707,22 @@
       top.appendChild(nameLink);
       top.appendChild(stars);
       top.appendChild(badge);
+      const tier = credibilityMap && credibilityTier(credibilityMap[r.user_id]);
+      if (tier) {
+        const credBadge = document.createElement('span');
+        credBadge.className = 'credibility-badge';
+        credBadge.textContent = tier;
+        top.appendChild(credBadge);
+      }
       bodyEl.appendChild(top);
+
+      if (r.dish_name) {
+        const dish = document.createElement('div');
+        dish.className = 'review-text';
+        dish.style.fontStyle = 'italic';
+        dish.textContent = 'Ordered: ' + r.dish_name;
+        bodyEl.appendChild(dish);
+      }
 
       if (r.review) {
         const text = document.createElement('div');
@@ -644,6 +789,7 @@
     document.getElementById('cancelRateBtn').addEventListener('click', () => {
       ratePanel.classList.add('hidden');
       document.getElementById('rateBtn').style.display = '';
+      document.getElementById('dishInput').value = '';
       document.getElementById('reviewInput').value = '';
       document.getElementById('receiptInput').value = '';
       document.getElementById('receiptPreview').hidden = true;
@@ -683,6 +829,7 @@
       }
 
       const review = document.getElementById('reviewInput').value.trim();
+      const dishName = document.getElementById('dishInput').value.trim();
       const { error: ratingErr } = await sb
         .from('restaurant_ratings')
         .upsert({
@@ -690,6 +837,7 @@
           user_id: currentUser.id,
           rating: selectedRatingValue,
           review: review || null,
+          dish_name: dishName || null,
           receipt_photo_path: receiptPath,
         }, { onConflict: 'restaurant_id,user_id' });
 
@@ -719,18 +867,29 @@
 
     document.title = restaurant.name + ' — Cookzer';
 
-    const [{ data: posts }, { data: ratings }] = await Promise.all([
+    const [{ data: posts }, { data: ratings }, { data: follows }, { data: credibility }] = await Promise.all([
       sb.from('posts')
         .select('id, author_id, caption, photo_path, created_at, profiles!posts_author_id_fkey(display_name, initials, avatar_url)')
         .eq('restaurant_id', restaurantId)
         .order('created_at', { ascending: false }),
       sb.from('restaurant_ratings')
-        .select('id, user_id, rating, review, receipt_photo_path, created_at, profiles(display_name, initials)')
+        .select('id, user_id, rating, review, dish_name, receipt_photo_path, created_at, profiles(display_name, initials)')
         .eq('restaurant_id', restaurantId)
         .order('created_at', { ascending: false }),
+      sb.from('follows')
+        .select('followee_id')
+        .eq('follower_id', currentUser.id),
+      sb.from('reviewer_credibility')
+        .select('user_id, foodie_score'),
     ]);
 
-    renderPage(restaurant, posts || [], ratings || []);
+    const credibilityMap = {};
+    (credibility || []).forEach((c) => { credibilityMap[c.user_id] = c.foodie_score; });
+
+    const friendIds = (follows || []).map((f) => f.followee_id);
+    const friendsHere = computeFriendsHere(friendIds, posts || [], ratings || []);
+
+    renderPage(restaurant, posts || [], ratings || [], credibilityMap, friendsHere);
   }
 
   (async function init() {
