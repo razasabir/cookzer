@@ -321,6 +321,40 @@
       background: var(--cream); border-radius: 8px; padding: 2px 7px;
     }
 
+  /* Claimed business profiles — a badge + contact block for an approved
+     claim, and the claim/edit flow that gets a listing there. */
+  .business-verified-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11.5px; font-weight: 700; color: var(--olive-dark);
+      background: rgba(46,143,92,0.10); border-radius: 10px; padding: 4px 10px;
+      margin-top: 6px;
+    }
+  .business-info-row { display: flex; flex-wrap: wrap; gap: 14px; margin: 4px 0 18px; }
+  .business-info-item {
+      font-size: 12.5px; color: var(--ink-soft); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+  a.business-info-item:hover { color: var(--olive-dark); }
+  .claim-link-btn {
+      background: none; border: none; padding: 0; margin: 6px 0 18px;
+      font: inherit; font-size: 12.5px; font-weight: 600; color: var(--olive-dark);
+      text-decoration: underline; cursor: pointer; display: block;
+    }
+  .claim-status-note {
+      font-size: 12.5px; color: var(--ink-soft); margin: 6px 0 18px;
+      display: flex; align-items: center; gap: 6px;
+    }
+  .edit-business-btn {
+      background: none; border: none; padding: 0; margin-left: 8px;
+      font: inherit; font-size: 11.5px; font-weight: 600; color: var(--olive-dark);
+      text-decoration: underline; cursor: pointer;
+    }
+  .claim-panel input[type="text"], .claim-panel input[type="email"], .claim-panel input[type="tel"], .claim-panel input[type="url"] {
+      width: 100%; padding: 10px 14px; background: var(--cream);
+      border: 1px solid var(--line); border-radius: 12px;
+      font-size: 14px; color: var(--ink); font-family: inherit;
+    }
+
   .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 24px; }
   .not-found-note { text-align: center; color: var(--ink-soft); font-size: 14px; padding: 60px 20px; }
 
@@ -420,6 +454,7 @@
   let currentUser = null;
   let selectedRatingValue = 0;
   let pendingReceiptFile = null;
+  let pendingClaimProofFile = null;
 
   function publicUrl(bucket, path) {
     if (!path) return null;
@@ -513,7 +548,15 @@
     return div.innerHTML;
   }
 
-  function renderPage(restaurant, posts, ratings, credibilityMap, friendsHere) {
+  // A claimed business supplies its own website/menu URL — rendered as a
+  // real link, so reject anything that isn't actually a web address
+  // (e.g. javascript:) rather than trusting it outright.
+  function safeUrl(u) {
+    if (!u) return null;
+    return /^https?:\/\//i.test(u) ? u : null;
+  }
+
+  function renderPage(restaurant, posts, ratings, credibilityMap, friendsHere, myClaim) {
     const body = document.getElementById('pageBody');
 
     const photoPosts = posts.filter((p) => p.photo_path);
@@ -566,6 +609,34 @@
         '</div>' +
       '</div>';
 
+    const isApprovedClaim = restaurant.claim_status === 'approved';
+    const isBusinessOwner = isApprovedClaim && currentUser && restaurant.claimed_by === currentUser.id;
+
+    const bizBadgeHtml = isApprovedClaim
+      ? '<div class="business-verified-badge">✓ Verified business' +
+          (isBusinessOwner ? '<button class="edit-business-btn" id="editBusinessBtn" type="button">Edit details</button>' : '') +
+        '</div>'
+      : '';
+
+    const bizInfoItems = [];
+    if (isApprovedClaim && restaurant.phone) bizInfoItems.push('<span class="business-info-item">📞 ' + escapeHtml(restaurant.phone) + '</span>');
+    const safeWebsite = isApprovedClaim ? safeUrl(restaurant.website) : null;
+    if (safeWebsite) bizInfoItems.push('<a class="business-info-item" href="' + escapeHtml(safeWebsite) + '" target="_blank" rel="noopener">🌐 Website</a>');
+    const safeMenu = isApprovedClaim ? safeUrl(restaurant.menu_url) : null;
+    if (safeMenu) bizInfoItems.push('<a class="business-info-item" href="' + escapeHtml(safeMenu) + '" target="_blank" rel="noopener">📋 Menu</a>');
+    const bizInfoHtml = bizInfoItems.length ? '<div class="business-info-row">' + bizInfoItems.join('') + '</div>' : '';
+
+    let claimPromptHtml = '';
+    if (!isApprovedClaim) {
+      if (restaurant.claim_status === 'pending') {
+        claimPromptHtml = (myClaim && myClaim.status === 'pending')
+          ? '<div class="claim-status-note">⏳ Your claim is under review.</div>'
+          : '<div class="claim-status-note">⏳ An ownership claim is under review for this listing.</div>';
+      } else if (currentUser) {
+        claimPromptHtml = '<button class="claim-link-btn" id="claimBtn" type="button">🏪 Is this your restaurant? Claim it</button>';
+      }
+    }
+
     body.innerHTML =
       heroHtml +
       '<div class="title-row">' +
@@ -573,6 +644,38 @@
         (mapsUrl ? '<a class="maps-link" href="' + mapsUrl + '" target="_blank" rel="noopener">📍 Open in Google Maps</a>' : '') +
       '</div>' +
       (restaurant.address ? '<div class="address-line">' + escapeHtml(restaurant.address) + '</div>' : '<div class="address-line">&nbsp;</div>') +
+      bizBadgeHtml +
+      bizInfoHtml +
+      claimPromptHtml +
+      '<div class="rate-panel claim-panel hidden" id="claimPanel">' +
+        '<label>Business email</label>' +
+        '<input type="email" id="claimEmailInput" placeholder="you@yourbusiness.com">' +
+        '<label>Business phone (optional)</label>' +
+        '<input type="tel" id="claimPhoneInput" placeholder="(555) 555-5555">' +
+        '<label>Proof of ownership — a business license, utility bill, or similar</label>' +
+        '<div class="receipt-input-row">' +
+          '<label class="receipt-upload-btn" for="claimProofInput">📎 Attach proof photo</label>' +
+          '<input type="file" id="claimProofInput" accept="image/*" hidden>' +
+          '<img id="claimProofPreview" class="receipt-preview-thumb" hidden>' +
+        '</div>' +
+        '<div class="receipt-note">Kept private — only visible to you and Cookzer\'s review team.</div>' +
+        '<div class="rate-panel-actions">' +
+          '<button class="rate-btn ghost" id="cancelClaimBtn" type="button">Cancel</button>' +
+          '<button class="rate-btn" id="submitClaimBtn" type="button">Submit claim</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="rate-panel claim-panel hidden" id="editBusinessPanel">' +
+        '<label>Phone</label>' +
+        '<input type="tel" id="bizPhoneInput" value="' + escapeHtml(restaurant.phone || '') + '" placeholder="(555) 555-5555">' +
+        '<label>Website</label>' +
+        '<input type="url" id="bizWebsiteInput" value="' + escapeHtml(restaurant.website || '') + '" placeholder="https://yourbusiness.com">' +
+        '<label>Menu link</label>' +
+        '<input type="url" id="bizMenuInput" value="' + escapeHtml(restaurant.menu_url || '') + '" placeholder="https://yourbusiness.com/menu">' +
+        '<div class="rate-panel-actions">' +
+          '<button class="rate-btn ghost" id="cancelEditBusinessBtn" type="button">Cancel</button>' +
+          '<button class="rate-btn" id="saveBusinessBtn" type="button">Save</button>' +
+        '</div>' +
+      '</div>' +
       friendsHtml +
       '<div class="stat-row">' +
         '<div class="stat-tile">' +
@@ -621,6 +724,7 @@
     renderCommunityTab(posts);
     renderReviewsTab(ratings, credibilityMap);
     wireRatePanel(restaurant);
+    wireClaimFlow(restaurant);
 
     document.querySelectorAll('.tab').forEach((tab) => {
       tab.addEventListener('click', () => {
@@ -853,10 +957,121 @@
     });
   }
 
+  async function uploadClaimProof(file) {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
+    const { error } = await sb.storage.from('restaurant-claim-proofs').upload(path, file);
+    if (error) {
+      await CookzerModal.alert('Proof upload failed: ' + error.message);
+      return null;
+    }
+    return path;
+  }
+
+  function wireClaimFlow(restaurant) {
+    pendingClaimProofFile = null;
+    const claimBtn = document.getElementById('claimBtn');
+    const claimPanel = document.getElementById('claimPanel');
+
+    if (claimBtn) {
+      claimBtn.addEventListener('click', () => {
+        claimPanel.classList.remove('hidden');
+        claimBtn.style.display = 'none';
+      });
+
+      document.getElementById('cancelClaimBtn').addEventListener('click', () => {
+        claimPanel.classList.add('hidden');
+        claimBtn.style.display = '';
+        document.getElementById('claimEmailInput').value = '';
+        document.getElementById('claimPhoneInput').value = '';
+        document.getElementById('claimProofInput').value = '';
+        document.getElementById('claimProofPreview').hidden = true;
+        pendingClaimProofFile = null;
+      });
+
+      document.getElementById('claimProofInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        pendingClaimProofFile = file;
+        const preview = document.getElementById('claimProofPreview');
+        preview.src = URL.createObjectURL(file);
+        preview.hidden = false;
+      });
+
+      document.getElementById('submitClaimBtn').addEventListener('click', async () => {
+        const email = document.getElementById('claimEmailInput').value.trim();
+        if (!email) { await CookzerModal.alert('A business email is required so we can follow up on your claim.'); return; }
+        if (!pendingClaimProofFile) { await CookzerModal.alert('Attach a proof photo — a business license, utility bill, or similar.'); return; }
+
+        const btn = document.getElementById('submitClaimBtn');
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+
+        const proofPath = await uploadClaimProof(pendingClaimProofFile);
+        if (!proofPath) {
+          btn.disabled = false; btn.textContent = 'Submit claim';
+          return;
+        }
+
+        const phone = document.getElementById('claimPhoneInput').value.trim();
+        const { error: claimErr } = await sb
+          .from('restaurant_claim_requests')
+          .insert({
+            restaurant_id: restaurant.id,
+            user_id: currentUser.id,
+            business_email: email,
+            business_phone: phone || null,
+            proof_photo_path: proofPath,
+          });
+
+        btn.disabled = false;
+        btn.textContent = 'Submit claim';
+
+        if (claimErr) {
+          await CookzerModal.alert('Could not submit claim: ' + claimErr.message);
+          return;
+        }
+
+        await CookzerModal.alert('Claim submitted — we\'ll review it and follow up at ' + email + '.');
+        await loadAndRender();
+      });
+    }
+
+    const editBtn = document.getElementById('editBusinessBtn');
+    if (editBtn) {
+      const editPanel = document.getElementById('editBusinessPanel');
+      editBtn.addEventListener('click', () => editPanel.classList.remove('hidden'));
+      document.getElementById('cancelEditBusinessBtn').addEventListener('click', () => editPanel.classList.add('hidden'));
+
+      document.getElementById('saveBusinessBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('saveBusinessBtn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        const { error } = await sb.rpc('update_restaurant_claimed_details', {
+          p_restaurant_id: restaurant.id,
+          p_phone: document.getElementById('bizPhoneInput').value.trim() || null,
+          p_website: document.getElementById('bizWebsiteInput').value.trim() || null,
+          p_menu_url: document.getElementById('bizMenuInput').value.trim() || null,
+        });
+
+        btn.disabled = false;
+        btn.textContent = 'Save';
+
+        if (error) {
+          await CookzerModal.alert('Could not save business details: ' + error.message);
+          return;
+        }
+
+        await loadAndRender();
+      });
+    }
+  }
+
   async function loadAndRender() {
     const { data: restaurant, error } = await sb
       .from('restaurants')
-      .select('id, name, address, lat, lng, google_place_id, google_rating, tag_count')
+      .select('id, name, address, lat, lng, google_place_id, google_rating, tag_count, claimed_by, claim_status, phone, website, menu_url')
       .eq('id', restaurantId)
       .single();
 
@@ -889,7 +1104,19 @@
     const friendIds = (follows || []).map((f) => f.followee_id);
     const friendsHere = computeFriendsHere(friendIds, posts || [], ratings || []);
 
-    renderPage(restaurant, posts || [], ratings || [], credibilityMap, friendsHere);
+    let myClaim = null;
+    if (restaurant.claim_status === 'pending') {
+      const { data: claims } = await sb
+        .from('restaurant_claim_requests')
+        .select('id, status')
+        .eq('restaurant_id', restaurantId)
+        .eq('user_id', currentUser.id)
+        .eq('status', 'pending')
+        .maybeSingle();
+      myClaim = claims;
+    }
+
+    renderPage(restaurant, posts || [], ratings || [], credibilityMap, friendsHere, myClaim);
   }
 
   (async function init() {

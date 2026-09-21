@@ -117,3 +117,67 @@ test.describe('Restaurant detail page', () => {
     await expect(page.locator('.not-found-note')).toContainText("couldn't be found");
   });
 });
+
+test.describe('Restaurant detail page — claimed business profiles', () => {
+  test('an unclaimed restaurant shows a "Claim this restaurant" link and no verified badge', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+    await expect(page.locator('#claimBtn')).toBeVisible();
+    await expect(page.locator('.business-verified-badge')).toHaveCount(0);
+  });
+
+  test('submitting a claim requires an email and a proof photo, then uploads the proof and inserts the claim request', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+
+    await page.click('#claimBtn');
+    await expect(page.locator('#claimPanel')).toBeVisible();
+
+    await page.click('#submitClaimBtn');
+    await expect(page.locator('.cz-modal-overlay')).toBeVisible();
+    await page.click('.cz-modal-btn');
+
+    await page.fill('#claimEmailInput', 'owner@marfabowl.com');
+    await page.click('#submitClaimBtn');
+    await expect(page.locator('.cz-modal-overlay')).toBeVisible();
+    await page.click('.cz-modal-btn');
+
+    await page.fill('#claimPhoneInput', '512-555-0199');
+    await page.locator('#claimProofInput').setInputFiles(path.join(__dirname, '..', 'icon-192.png'));
+    await page.click('#submitClaimBtn');
+    await expect(page.locator('.cz-modal-overlay')).toBeVisible();
+    await page.click('.cz-modal-btn');
+
+    expect(await page.evaluate(() => window.__CLAIM_PROOF_UPLOADS__.length)).toBe(1);
+    const insert = await page.evaluate(() => window.__CLAIM_INSERTS__[0]);
+    expect(insert).toMatchObject({ restaurant_id: 'rest-1', user_id: 'me-1', business_email: 'owner@marfabowl.com', business_phone: '512-555-0199' });
+  });
+
+  test('an approved, owned listing shows a verified badge, business contact links, and lets the owner edit them', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-2', 'restaurant-detail.js');
+
+    await expect(page.locator('.business-verified-badge')).toContainText('Verified business');
+    await expect(page.locator('.business-info-row')).toContainText('512-555-0100');
+    await expect(page.locator('.business-info-row a', { hasText: 'Website' })).toHaveAttribute('href', 'https://ownedeats.example');
+    await expect(page.locator('.business-info-row a', { hasText: 'Menu' })).toHaveAttribute('href', 'https://ownedeats.example/menu');
+
+    await page.click('#editBusinessBtn');
+    await expect(page.locator('#bizPhoneInput')).toHaveValue('512-555-0100');
+    await page.fill('#bizPhoneInput', '512-555-0111');
+    await page.click('#saveBusinessBtn');
+
+    await expect.poll(() => page.evaluate(() => window.__CLAIMED_DETAILS_RPCS__.length)).toBe(1);
+    const rpcArgs = await page.evaluate(() => window.__CLAIMED_DETAILS_RPCS__[0]);
+    expect(rpcArgs).toMatchObject({ p_restaurant_id: 'rest-2', p_phone: '512-555-0111' });
+    await expect(page.locator('.business-info-row')).toContainText('512-555-0111');
+  });
+
+  test('a listing with someone else\'s claim pending shows a generic under-review note, not the claim button', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-3', 'restaurant-detail.js');
+    await expect(page.locator('.claim-status-note')).toContainText('An ownership claim is under review');
+    await expect(page.locator('#claimBtn')).toHaveCount(0);
+  });
+
+  test('a listing with your own claim pending tells you it\'s under review', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-4', 'restaurant-detail.js');
+    await expect(page.locator('.claim-status-note')).toContainText('Your claim is under review');
+  });
+});
