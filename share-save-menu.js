@@ -1,11 +1,20 @@
-// Shared Share/Save action-sheet popups. Both Share and Save buttons
-// across the app used to go straight to one action (an external-share
-// dialog, or a plain bookmark toggle) — now each opens a real clickable
-// list of options first (the established .cz2-* picker pattern; see
-// CLAUDE.md — never a numbered-list prompt for choosing among several
-// things), and self-injects its own overlay/DOM on first use like
-// cookzer-modal.js and photo-lightbox.js, so no page markup changes are
-// needed beyond loading this file.
+// Shared Share/Save action lists. Both Share and Save buttons across the
+// app used to go straight to one action (an external-share dialog, or a
+// plain bookmark toggle) — now each opens a real clickable list of
+// options first (the established .cz2-* picker pattern; see CLAUDE.md —
+// never a numbered-list prompt for choosing among several things).
+//
+// Two render targets share the exact same option-building logic below,
+// switched via a small "surface" object:
+//   - open(opts): the original global overlay/modal popup (self-injects
+//     its own DOM on first use like cookzer-modal.js/photo-lightbox.js).
+//   - openInline(container, opts, onClose): renders the same rows
+//     directly into a caller-supplied container instead — e.g. an
+//     expanding inline panel under a feed post — and calls onClose()
+//     (in addition to clearing the container) once an action completes,
+//     so the caller can collapse its panel back down.
+// No page markup changes are needed for the modal path; the inline path
+// only requires the container element to already exist.
 (function () {
   let overlay = null;
   let modal = null;
@@ -70,34 +79,56 @@
     return r;
   }
 
-  function show(title, buildBody) {
-    ensureBuilt();
-    modal.innerHTML = '';
-    const h = document.createElement('h3');
-    h.textContent = title;
-    modal.appendChild(h);
-    buildBody(modal);
-    overlay.hidden = false;
+  function modalSurface() {
+    injectStyle();
+    return {
+      render(title, buildBody) {
+        ensureBuilt();
+        modal.innerHTML = '';
+        if (title) {
+          const h = document.createElement('h3');
+          h.textContent = title;
+          modal.appendChild(h);
+        }
+        buildBody(modal);
+        overlay.hidden = false;
+      },
+      close,
+    };
+  }
+
+  // No title element inline — the trigger icon that opened the panel
+  // already gives context, and a heading here would just cost vertical
+  // space in an already-tight card.
+  function inlineSurface(container, onClose) {
+    return {
+      render(title, buildBody) {
+        container.innerHTML = '';
+        buildBody(container);
+      },
+      close() {
+        container.innerHTML = '';
+        if (onClose) onClose();
+      },
+    };
   }
 
   // ---------------------------------------------------------------
   // Share menu: Reshare to your feed / Share on a group / Share externally
   // ---------------------------------------------------------------
 
-  function openShareMenu(opts) {
-    // opts: { sb, currentUserId, postFields: {shared_post_id?, recipe_id?,
-    //   shared_profile_id?, caption?}, externalShare: {title, text?, url},
-    //   onShared? }
-    show('Share', (body) => {
+  function openShareMenu(opts, surface) {
+    surface = surface || modalSurface();
+    surface.render('Share', (body) => {
       const list = document.createElement('div');
       list.className = 'cz2-list';
       list.appendChild(row('🔁', 'Reshare to your feed', async () => {
-        close();
+        surface.close();
         await doReshare(opts, null);
       }));
-      list.appendChild(row('👥', 'Share on a group', () => openGroupPicker(opts)));
+      list.appendChild(row('👥', 'Share on a group', () => openGroupPicker(opts, surface)));
       list.appendChild(row('🔗', 'Share externally', () => {
-        close();
+        surface.close();
         window.CookzerModal.share(opts.externalShare);
       }));
       body.appendChild(list);
@@ -127,8 +158,8 @@
     return '🔁 Shared a link';
   }
 
-  async function openGroupPicker(opts) {
-    show('Share to which group?', async (body) => {
+  async function openGroupPicker(opts, surface) {
+    surface.render('Share to which group?', async (body) => {
       const list = document.createElement('div');
       list.className = 'cz2-list';
       list.innerHTML = '<div class="cz2-empty">Loading your groups…</div>';
@@ -149,7 +180,7 @@
       } else {
         groups.forEach((g) => {
           list.appendChild(row('👥', g.name, async () => {
-            close();
+            surface.close();
             await doReshare(opts, g.id);
           }));
         });
@@ -161,7 +192,7 @@
       backBtn.type = 'button';
       backBtn.className = 'csm-btn';
       backBtn.textContent = '← Back';
-      backBtn.addEventListener('click', () => openShareMenu(opts));
+      backBtn.addEventListener('click', () => openShareMenu(opts, surface));
       actions.appendChild(backBtn);
       body.appendChild(actions);
     });
@@ -171,35 +202,42 @@
   // Save menu: Save as a Recipe / Save to Meal Planner / Save to Device
   // ---------------------------------------------------------------
 
-  function openSaveMenu(opts) {
-    // opts: { sb, currentUserId, recipeId, imageUrl?, deviceFilename?,
+  function openSaveMenu(opts, surface) {
+    // opts: { sb, currentUserId, recipeId?, imageUrl?, deviceFilename?,
     //   onSaveAsRecipe, saveAsRecipeLabel?, onSaveToMealPlanner?,
     //   householdId? — required unless onSaveToMealPlanner is passed,
     //   since the generic Meal Planner picker below queries/inserts
     //   meal_plan_entries by household, not by user, now that it's a
     //   shared plan (see household.js / migration 046) }
-    show('Save', (body) => {
+    // "Save as a Recipe" / "Save to Meal Planner" only make sense when
+    // there's a recipe to save — a plain photo post offers just
+    // "Save to Device". Whatever's left ends up empty only if the
+    // caller shouldn't have shown a Save trigger for this item at all.
+    surface = surface || modalSurface();
+    surface.render('Save', (body) => {
       const list = document.createElement('div');
       list.className = 'cz2-list';
-      list.appendChild(row('📖', opts.saveAsRecipeLabel || 'Save as a Recipe', () => {
-        close();
-        opts.onSaveAsRecipe();
-      }));
-      list.appendChild(row('📅', 'Save to Meal Planner', () => {
-        // A page that already has its own "add to meal planner" picker
-        // (e.g. the recipe page's week view with per-day conflicts) reuses
-        // that exact flow via this callback, rather than a second,
-        // slightly-different implementation living here too.
-        if (opts.onSaveToMealPlanner) {
-          close();
-          opts.onSaveToMealPlanner();
-        } else {
-          openMealPlannerStep(opts);
-        }
-      }));
+      if (opts.recipeId) {
+        list.appendChild(row('📖', opts.saveAsRecipeLabel || 'Save as a Recipe', () => {
+          surface.close();
+          opts.onSaveAsRecipe();
+        }));
+        list.appendChild(row('📅', 'Save to Meal Planner', () => {
+          // A page that already has its own "add to meal planner" picker
+          // (e.g. the recipe page's week view with per-day conflicts) reuses
+          // that exact flow via this callback, rather than a second,
+          // slightly-different implementation living here too.
+          if (opts.onSaveToMealPlanner) {
+            surface.close();
+            opts.onSaveToMealPlanner();
+          } else {
+            openMealPlannerStep(opts, surface);
+          }
+        }));
+      }
       if (opts.imageUrl) {
         list.appendChild(row('💾', 'Save to Device', () => {
-          close();
+          surface.close();
           downloadImage(opts.imageUrl, opts.deviceFilename || 'cookzer-photo.jpg');
         }));
       }
@@ -224,8 +262,8 @@
     });
   }
 
-  async function openMealPlannerStep(opts) {
-    show('Add to Meal Planner', async (body) => {
+  async function openMealPlannerStep(opts, surface) {
+    surface.render('Add to Meal Planner', async (body) => {
       const list = document.createElement('div');
       list.className = 'cz2-list';
       list.innerHTML = '<div class="cz2-empty">Loading your week…</div>';
@@ -253,7 +291,7 @@
           list.appendChild(r);
         } else {
           list.appendChild(row('📅', dateLabel, async () => {
-            close();
+            surface.close();
             const { error } = await opts.sb.from('meal_plan_entries').insert({
               user_id: opts.currentUserId,
               household_id: opts.householdId,
@@ -273,7 +311,7 @@
       backBtn.type = 'button';
       backBtn.className = 'csm-btn';
       backBtn.textContent = '← Back';
-      backBtn.addEventListener('click', () => openSaveMenu(opts));
+      backBtn.addEventListener('click', () => openSaveMenu(opts, surface));
       actions.appendChild(backBtn);
       body.appendChild(actions);
     });
@@ -296,6 +334,12 @@
     }
   }
 
-  window.CookzerShareMenu = { open: openShareMenu };
-  window.CookzerSaveMenu = { open: openSaveMenu };
+  window.CookzerShareMenu = {
+    open: (opts) => openShareMenu(opts),
+    openInline: (container, opts, onClose) => openShareMenu(opts, inlineSurface(container, onClose)),
+  };
+  window.CookzerSaveMenu = {
+    open: (opts) => openSaveMenu(opts),
+    openInline: (container, opts, onClose) => openSaveMenu(opts, inlineSurface(container, onClose)),
+  };
 })();
