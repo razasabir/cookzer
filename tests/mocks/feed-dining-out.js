@@ -24,10 +24,12 @@ if (window.__GEO_MODE__ !== 'unsupported') {
   });
 }
 
-// One existing restaurant already linked to a Google place, to exercise
-// the "reuse, don't re-create" branch.
+// One existing restaurant already linked to a Google place (verified +
+// featured, to exercise the search-result badges), to exercise the
+// "reuse, don't re-create" branch, plus a plain one with neither badge.
 let RESTAURANTS = [
-  { id: 'rest-existing', name: 'Casa Elote', google_place_id: 'gp-casa-elote', is_verified: true, featured_until: '2099-01-01T00:00:00Z' },
+  { id: 'rest-existing', name: 'Casa Elote', address: '1 Main St', google_place_id: 'gp-casa-elote', google_rating: 4.7, is_verified: true, featured_until: '2099-01-01T00:00:00Z' },
+  { id: 'rest-plain', name: 'Plain Diner', address: '9 Side St', google_place_id: null, google_rating: null, is_verified: false, featured_until: null },
 ];
 
 window.__PLACES_FETCH_MODE__ = 'success'; // 'success' | 'server-error'
@@ -56,9 +58,11 @@ window.fetch = (url, opts) => {
 
 function chain(table) {
   let eqArgs = [];
+  let likeArgs = [];
   const builder = {
     select() { return builder; },
     eq(col, val) { eqArgs.push([col, val]); return builder; },
+    ilike(col, val) { likeArgs.push([col, String(val).replace(/%/g, '').toLowerCase()]); return builder; },
     neq() { return builder; },
     order() { return builder; },
     limit() { return builder; },
@@ -82,7 +86,10 @@ function chain(table) {
       if (table === 'posts') result = POSTS;
       else if (table === 'hearts' || table === 'post_bookmarks' || table === 'comments' || table === 'challenge_entries' || table === 'follows') result = [];
       else if (table === 'profiles') result = [ME];
-      else if (table === 'restaurants') result = RESTAURANTS;
+      else if (table === 'restaurants') {
+        const nameLike = likeArgs.find((a) => a[0] === 'name');
+        result = nameLike ? RESTAURANTS.filter((r) => r.name.toLowerCase().includes(nameLike[1])) : RESTAURANTS;
+      }
       return Promise.resolve({ data: result, error: null }).then(resolve);
     },
     delete() { return { eq() { return Promise.resolve({ data: null, error: null }); } }; },

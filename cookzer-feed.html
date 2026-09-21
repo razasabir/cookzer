@@ -1279,7 +1279,12 @@
       </div>
       <div class="composer-active-chips" id="composerActiveChips"></div>
       <div id="restaurantPanel" hidden style="margin-top:10px; background:var(--cream); border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-size:13px;">
-        <div id="restaurantPanelBody">Finding nearby places…</div>
+        <input type="text" id="composerRestaurantSearchInput" placeholder="Search restaurants, or type a new name..." autocomplete="off" style="width:100%; padding:7px 10px; border:1px solid var(--line); border-radius:10px; font-family:inherit; box-sizing:border-box; font-size:13px;">
+        <div id="composerRestaurantSearchResults" style="margin-top:4px;"></div>
+        <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--line);">
+          <div id="composerUseLocationRow" style="padding:6px 8px; cursor:pointer; color:var(--olive-dark); font-weight:600; border-radius:8px;">📍 Use my current location instead</div>
+          <div id="composerLocationResults"></div>
+        </div>
       </div>
       <div id="restaurantTag" hidden style="margin-top:8px; display:flex; align-items:center; gap:8px; font-size:13px; color:#fff; font-weight:600;">
         📍 <span id="restaurantTagName"></span>
@@ -1997,55 +2002,6 @@
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  function showManualRestaurantEntry(message, showRetry) {
-    const body = document.getElementById('restaurantPanelBody');
-    body.innerHTML = '';
-    if (message) {
-      const note = document.createElement('div');
-      note.style.color = 'var(--ink-soft)';
-      note.style.marginBottom = '8px';
-      note.textContent = message;
-      body.appendChild(note);
-    }
-    if (showRetry) {
-      // Once a browser or OS denies location for a site, it won't
-      // prompt again on its own — the person has to go change that
-      // permission themselves, then come back. A full page reload
-      // isn't needed for the retry to see the new permission state,
-      // just asking again.
-      const retryBtn = document.createElement('div');
-      retryBtn.style.padding = '6px 8px';
-      retryBtn.style.marginBottom = '8px';
-      retryBtn.style.cursor = 'pointer';
-      retryBtn.style.color = 'var(--olive-dark)';
-      retryBtn.style.fontWeight = '600';
-      retryBtn.textContent = '🔄 Try again';
-      retryBtn.addEventListener('click', findNearbyPlaces);
-      body.appendChild(retryBtn);
-    }
-    const row = document.createElement('div');
-    row.style.display = 'flex';
-    row.style.gap = '8px';
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = 'Type the restaurant name...';
-    input.style.flex = '1';
-    input.style.padding = '7px 10px';
-    input.style.border = '1px solid var(--line)';
-    input.style.borderRadius = '10px';
-    input.style.fontFamily = 'inherit';
-    const useBtn = document.createElement('button');
-    useBtn.className = 'action-btn';
-    useBtn.textContent = 'Use this';
-    useBtn.addEventListener('click', () => {
-      if (!input.value.trim()) return;
-      applyRestaurantSelection({ name: input.value.trim() });
-    });
-    row.appendChild(input);
-    row.appendChild(useBtn);
-    body.appendChild(row);
-  }
-
   function applyRestaurantSelection(place) {
     selectedRestaurant = place;
     document.getElementById('restaurantPanel').hidden = true;
@@ -2058,13 +2014,68 @@
     document.getElementById('restaurantTag').hidden = true;
   });
 
+  // Typing a name is the primary path — it works for everyone regardless
+  // of whether their browser/OS ever grants location, which a meaningful
+  // share of visitors will never do (and once denied, no page can force
+  // a re-prompt). "Use my location" nearby-places lookup is an optional
+  // shortcut below it, not a gate a denied user has to fight through.
+  let composerRestaurantSearchDebounce = null;
+
+  function trustBadgesSuffix(r) {
+    const isFeatured = !!(r && r.featured_until && new Date(r.featured_until) > new Date());
+    return (r && r.is_verified ? ' 🏅' : '') + (isFeatured ? ' ⭐' : '');
+  }
+
+  document.getElementById('composerRestaurantSearchInput').addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    clearTimeout(composerRestaurantSearchDebounce);
+    const results = document.getElementById('composerRestaurantSearchResults');
+    if (!query) { results.innerHTML = ''; return; }
+    composerRestaurantSearchDebounce = setTimeout(async () => {
+      const { data: matches } = await sb
+        .from('restaurants')
+        .select('id, name, address, google_place_id, google_rating, is_verified, featured_until')
+        .ilike('name', '%' + query + '%')
+        .limit(6);
+
+      results.innerHTML = '';
+      const exact = (matches || []).some((m) => m.name.toLowerCase() === query.toLowerCase());
+
+      (matches || []).forEach((m) => {
+        const row = document.createElement('div');
+        row.style.padding = '6px 8px';
+        row.style.cursor = 'pointer';
+        row.style.borderRadius = '8px';
+        row.textContent = m.name + (m.address ? ' — ' + m.address : '') + (m.google_rating ? ' · ' + Number(m.google_rating).toFixed(1) + '★' : '') + trustBadgesSuffix(m);
+        row.addEventListener('mouseenter', () => { row.style.background = 'var(--card-bg)'; });
+        row.addEventListener('mouseleave', () => { row.style.background = ''; });
+        row.addEventListener('click', () => applyRestaurantSelection({ id: m.id, name: m.name, googlePlaceId: m.google_place_id }));
+        results.appendChild(row);
+      });
+
+      if (!exact) {
+        const addRow = document.createElement('div');
+        addRow.style.padding = '6px 8px';
+        addRow.style.cursor = 'pointer';
+        addRow.style.borderRadius = '8px';
+        addRow.style.color = 'var(--olive-dark)';
+        addRow.style.fontWeight = '600';
+        addRow.textContent = '+ Tag "' + query + '" (not in Cookzer yet)';
+        addRow.addEventListener('mouseenter', () => { addRow.style.background = 'var(--card-bg)'; });
+        addRow.addEventListener('mouseleave', () => { addRow.style.background = ''; });
+        addRow.addEventListener('click', () => applyRestaurantSelection({ name: query }));
+        results.appendChild(addRow);
+      }
+    }, 300);
+  });
+
   function findNearbyPlaces() {
-    const panel = document.getElementById('restaurantPanel');
-    panel.hidden = false;
-    document.getElementById('restaurantPanelBody').textContent = 'Finding nearby places…';
+    const results = document.getElementById('composerLocationResults');
+    results.textContent = 'Finding nearby places…';
+    results.style.color = 'var(--ink-soft)';
 
     if (!navigator.geolocation) {
-      showManualRestaurantEntry("This browser can't share your location — type the name instead.");
+      results.textContent = "This browser can't share your location — search or type a name above instead.";
       return;
     }
 
@@ -2093,12 +2104,12 @@
           // hiding it all behind one generic "couldn't reach" message
           // that gives no clue what's actually wrong.
           const reason = (e && e.message) || 'Places lookup failed';
-          showManualRestaurantEntry(reason + ' — type the name instead.');
+          results.textContent = reason + ' — search or type a name above instead.';
           return;
         }
 
         if (places.length === 0) {
-          showManualRestaurantEntry('No named places found nearby — type the name instead.');
+          results.textContent = 'No named places found nearby — search or type a name above instead.';
           return;
         }
 
@@ -2116,17 +2127,15 @@
           (known || []).forEach((r) => { badgesByPlaceId[r.google_place_id] = r; });
         }
 
-        const body = document.getElementById('restaurantPanelBody');
-        body.innerHTML = '';
+        results.innerHTML = '';
+        results.style.color = '';
         const label = document.createElement('div');
-        label.style.marginBottom = '8px';
+        label.style.margin = '4px 0 4px';
         label.style.color = 'var(--ink-soft)';
         label.textContent = 'You might be at:';
-        body.appendChild(label);
+        results.appendChild(label);
         places.forEach((p) => {
-          const known = badgesByPlaceId[p.googlePlaceId];
-          const isFeatured = !!(known && known.featured_until && new Date(known.featured_until) > new Date());
-          const badges = (known && known.is_verified ? ' 🏅' : '') + (isFeatured ? ' ⭐' : '');
+          const badges = trustBadgesSuffix(badgesByPlaceId[p.googlePlaceId]);
           const btn = document.createElement('div');
           btn.style.padding = '6px 8px';
           btn.style.cursor = 'pointer';
@@ -2135,42 +2144,46 @@
           btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--card-bg)'; });
           btn.addEventListener('mouseleave', () => { btn.style.background = ''; });
           btn.addEventListener('click', () => applyRestaurantSelection(p));
-          body.appendChild(btn);
+          results.appendChild(btn);
         });
-        const noneBtn = document.createElement('div');
-        noneBtn.style.padding = '6px 8px';
-        noneBtn.style.cursor = 'pointer';
-        noneBtn.style.color = 'var(--ink-soft)';
-        noneBtn.textContent = "None of these — let me type it";
-        noneBtn.addEventListener('click', () => showManualRestaurantEntry());
-        body.appendChild(noneBtn);
       },
       (error) => {
         // The browser's geolocation error only ever had one message shown
         // for it before, regardless of cause — misleading when the real
         // reason was a timeout or the device/OS being unable to get a fix
-        // at all, not the user actually denying the permission.
+        // at all, not the user actually denying the permission. Whatever
+        // the reason, the search box above already covers tagging a
+        // place — this just explains why the shortcut didn't work.
         const GEO_ERROR_MESSAGES = {
-          1: 'Location permission denied — allow location for this app in your device/browser settings, then try again.',
-          2: "Couldn't get your location — type the name instead.",
-          3: 'Location took too long to respond — type the name instead.',
+          1: 'Location permission denied for this device/browser — search or type a name above instead.',
+          2: "Couldn't get your location — search or type a name above instead.",
+          3: 'Location took too long to respond — search or type a name above instead.',
         };
         const code = error && error.code;
-        showManualRestaurantEntry((code && GEO_ERROR_MESSAGES[code]) || 'Could not get your location — type the name instead.', code === 1);
+        results.textContent = (code && GEO_ERROR_MESSAGES[code]) || 'Could not get your location — search or type a name above instead.';
       },
       { timeout: 8000 }
     );
   }
 
-  document.getElementById('composerRestaurantBtn').addEventListener('click', findNearbyPlaces);
+  document.getElementById('composerRestaurantBtn').addEventListener('click', () => {
+    const panel = document.getElementById('restaurantPanel');
+    panel.hidden = false;
+    document.getElementById('composerRestaurantSearchInput').focus();
+  });
 
-  // A Google-sourced selection gets its own stable restaurants row (create
-  // once, reuse forever via google_place_id) so its tag_count can actually
-  // add up across everyone who tags it — a manually-typed name has no
-  // stable id to dedupe against, so it stays a plain restaurant_name
-  // string with no linked row, same as before this change.
+  document.getElementById('composerUseLocationRow').addEventListener('click', findNearbyPlaces);
+
+  // A restaurant picked from the search box already carries Cookzer's own
+  // id — no lookup needed. A Google-sourced nearby-places selection gets
+  // its own stable restaurants row instead (create once, reuse forever
+  // via google_place_id) so its tag_count can actually add up across
+  // everyone who tags it. A manually-typed name has neither, so it stays
+  // a plain restaurant_name string with no linked row, same as before.
   async function resolveRestaurantId(place) {
-    if (!place || !place.googlePlaceId) return null;
+    if (!place) return null;
+    if (place.id) return place.id;
+    if (!place.googlePlaceId) return null;
 
     const { data: existing } = await sb
       .from('restaurants')
@@ -2251,6 +2264,9 @@
     setTipModifier(false);
     document.getElementById('restaurantTag').hidden = true;
     document.getElementById('restaurantPanel').hidden = true;
+    document.getElementById('composerRestaurantSearchInput').value = '';
+    document.getElementById('composerRestaurantSearchResults').innerHTML = '';
+    document.getElementById('composerLocationResults').innerHTML = '';
     selectedRestaurant = null;
     selectedMood = null;
 
