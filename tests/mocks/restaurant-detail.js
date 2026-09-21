@@ -21,7 +21,13 @@ const POSTS = [
 ];
 
 const RATINGS = [
-  { id: 'rating-1', user_id: 'u2', rating: 5, review: 'Best grain bowl in South Austin.', receipt_photo_path: 'u2/receipt1.jpg', created_at: '2026-09-15T12:00:00Z', profiles: { display_name: 'Rae H.', initials: 'RH' } },
+  { id: 'rating-1', user_id: 'u2', rating: 5, review: 'Best grain bowl in South Austin.', dish_name: 'Sunset Grain Bowl', receipt_photo_path: 'u2/receipt1.jpg', created_at: '2026-09-15T12:00:00Z', profiles: { display_name: 'Rae H.', initials: 'RH' } },
+  { id: 'rating-2', user_id: 'u1', rating: 4, review: '', dish_name: 'Sunset Grain Bowl', receipt_photo_path: 'u1/receipt2.jpg', created_at: '2026-09-10T12:00:00Z', profiles: { display_name: 'Jordan C.', initials: 'JC' } },
+];
+
+const FOLLOWS = [{ followee_id: 'u2' }];
+const CREDIBILITY = [
+  { user_id: 'u2', foodie_score: 18 },
 ];
 
 function chain(table) {
@@ -50,6 +56,10 @@ function chain(table) {
         result = restFilter && restFilter[1] === RESTAURANT.id ? RATINGS : [];
       } else if (table === 'profiles') {
         result = ME;
+      } else if (table === 'follows') {
+        result = FOLLOWS;
+      } else if (table === 'reviewer_credibility') {
+        result = CREDIBILITY;
       }
       return Promise.resolve({ data: result, error: null }).then(resolve);
     },
