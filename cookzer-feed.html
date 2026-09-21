@@ -1997,7 +1997,7 @@
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  function showManualRestaurantEntry(message) {
+  function showManualRestaurantEntry(message, showRetry) {
     const body = document.getElementById('restaurantPanelBody');
     body.innerHTML = '';
     if (message) {
@@ -2006,6 +2006,22 @@
       note.style.marginBottom = '8px';
       note.textContent = message;
       body.appendChild(note);
+    }
+    if (showRetry) {
+      // Once a browser or OS denies location for a site, it won't
+      // prompt again on its own — the person has to go change that
+      // permission themselves, then come back. A full page reload
+      // isn't needed for the retry to see the new permission state,
+      // just asking again.
+      const retryBtn = document.createElement('div');
+      retryBtn.style.padding = '6px 8px';
+      retryBtn.style.marginBottom = '8px';
+      retryBtn.style.cursor = 'pointer';
+      retryBtn.style.color = 'var(--olive-dark)';
+      retryBtn.style.fontWeight = '600';
+      retryBtn.textContent = '🔄 Try again';
+      retryBtn.addEventListener('click', findNearbyPlaces);
+      body.appendChild(retryBtn);
     }
     const row = document.createElement('div');
     row.style.display = 'flex';
@@ -2042,7 +2058,7 @@
     document.getElementById('restaurantTag').hidden = true;
   });
 
-  document.getElementById('composerRestaurantBtn').addEventListener('click', () => {
+  function findNearbyPlaces() {
     const panel = document.getElementById('restaurantPanel');
     panel.hidden = false;
     document.getElementById('restaurantPanelBody').textContent = 'Finding nearby places…';
@@ -2135,15 +2151,18 @@
         // reason was a timeout or the device/OS being unable to get a fix
         // at all, not the user actually denying the permission.
         const GEO_ERROR_MESSAGES = {
-          1: 'Location permission denied — allow location for this app in your device/browser settings, or type the name instead.',
+          1: 'Location permission denied — allow location for this app in your device/browser settings, then try again.',
           2: "Couldn't get your location — type the name instead.",
           3: 'Location took too long to respond — type the name instead.',
         };
-        showManualRestaurantEntry((error && GEO_ERROR_MESSAGES[error.code]) || 'Could not get your location — type the name instead.');
+        const code = error && error.code;
+        showManualRestaurantEntry((code && GEO_ERROR_MESSAGES[code]) || 'Could not get your location — type the name instead.', code === 1);
       },
       { timeout: 8000 }
     );
-  });
+  }
+
+  document.getElementById('composerRestaurantBtn').addEventListener('click', findNearbyPlaces);
 
   // A Google-sourced selection gets its own stable restaurants row (create
   // once, reuse forever via google_place_id) so its tag_count can actually

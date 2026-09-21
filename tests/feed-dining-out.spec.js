@@ -85,6 +85,29 @@ test.describe('Feed — Dining Out via Google Places', () => {
     expect(await page.evaluate(() => window.__RESTAURANT_UPSERTS__.length)).toBe(0);
   });
 
+  test('a denied-permission message shows a "Try again" button, since the browser won\'t re-prompt on its own', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-dining-out.js', "window.__GEO_MODE__ = 'denied';");
+    await page.click('#composerRestaurantBtn');
+    const body = page.locator('#restaurantPanelBody');
+    await expect(body).toContainText('Location permission denied');
+    const retryBtn = body.locator('div', { hasText: '🔄 Try again' });
+    await expect(retryBtn).toBeVisible();
+
+    // Simulate the person having fixed the permission in their
+    // browser/OS settings, then tapping Try again instead of reloading.
+    await page.evaluate(() => { window.__GEO_MODE__ = 'success'; });
+    await retryBtn.click();
+    await expect(body).toContainText('Casa Elote');
+  });
+
+  test('a non-permission location failure (unavailable/timeout) shows no "Try again" button', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-dining-out.js', "window.__GEO_MODE__ = 'unavailable';");
+    await page.click('#composerRestaurantBtn');
+    const body = page.locator('#restaurantPanelBody');
+    await expect(body).toContainText("Couldn't get your location");
+    await expect(body.locator('div', { hasText: '🔄 Try again' })).toHaveCount(0);
+  });
+
   test('when location is unavailable (not denied), the fallback message says so instead of blaming a denied permission', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-dining-out.js', "window.__GEO_MODE__ = 'unavailable';");
     await page.click('#composerRestaurantBtn');
