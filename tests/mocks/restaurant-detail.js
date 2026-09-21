@@ -5,6 +5,7 @@ window.__CLAIM_PROOF_UPLOADS__ = [];
 window.__CLAIMED_DETAILS_RPCS__ = [];
 window.__VERIFIED_RPCS__ = [];
 window.__FEATURED_RPCS__ = [];
+window.__REPORT_INSERTS__ = [];
 
 const ME = { display_name: 'Me Cook', initials: 'MC', avatar_url: null };
 
@@ -94,6 +95,23 @@ const RESTAURANTS = [
     is_verified: true,
     featured_until: '2026-12-31T00:00:00Z',
   },
+  {
+    id: 'rest-6',
+    name: 'Solo Review Spot',
+    address: '600 Solo Ln, Austin, TX',
+    lat: 30.31,
+    lng: -97.70,
+    google_place_id: 'gp-solo-review',
+    google_rating: 4.1,
+    tag_count: 0,
+    claimed_by: null,
+    claim_status: 'unclaimed',
+    phone: null,
+    website: null,
+    menu_url: null,
+    is_verified: false,
+    featured_until: null,
+  },
 ];
 
 const POSTS = [
@@ -105,6 +123,12 @@ const POSTS = [
 const RATINGS = [
   { id: 'rating-1', user_id: 'u2', rating: 5, review: 'Best grain bowl in South Austin.', dish_name: 'Sunset Grain Bowl', receipt_photo_path: 'u2/receipt1.jpg', created_at: '2026-09-15T12:00:00Z', profiles: { display_name: 'Rae H.', initials: 'RH' } },
   { id: 'rating-2', user_id: 'u1', rating: 4, review: '', dish_name: 'Sunset Grain Bowl', receipt_photo_path: 'u1/receipt2.jpg', created_at: '2026-09-10T12:00:00Z', profiles: { display_name: 'Jordan C.', initials: 'JC' } },
+];
+
+// rest-6's sole rating is the logged-in test user's own — used to confirm
+// the "🚩 Report" affordance never shows on your own review.
+const RATINGS_REST6 = [
+  { id: 'rating-3', user_id: 'me-1', rating: 5, review: 'My own review', dish_name: null, receipt_photo_path: null, created_at: '2026-09-14T12:00:00Z', profiles: { display_name: 'Me Cook', initials: 'MC' } },
 ];
 
 const FOLLOWS = [{ followee_id: 'u2' }];
@@ -161,7 +185,9 @@ function chain(table) {
         result = restFilter && restFilter[1] === 'rest-1' ? POSTS : [];
       } else if (table === 'restaurant_ratings') {
         const restFilter = eqArgs.find((a) => a[0] === 'restaurant_id');
-        result = restFilter && restFilter[1] === 'rest-1' ? RATINGS : [];
+        result = restFilter && restFilter[1] === 'rest-1' ? RATINGS
+          : restFilter && restFilter[1] === 'rest-6' ? RATINGS_REST6
+          : [];
       } else if (table === 'profiles') {
         result = ME;
       } else if (table === 'follows') {
@@ -178,6 +204,8 @@ function chain(table) {
     insert(payload) {
       if (table === 'restaurant_claim_requests') {
         window.__CLAIM_INSERTS__.push(payload);
+      } else if (table === 'reports') {
+        window.__REPORT_INSERTS__.push(payload);
       }
       return Promise.resolve({ data: null, error: null });
     },

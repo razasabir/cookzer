@@ -365,6 +365,11 @@
       width: 28px; height: 28px; border-radius: 6px; object-fit: cover;
       border: 1px solid var(--line);
     }
+  .rating-row-report-btn {
+      margin-left: auto; background: none; border: none; cursor: pointer;
+      font-size: 11px; color: var(--ink-faint); padding: 2px 4px; flex-shrink: 0;
+    }
+  .rating-row-report-btn:hover { color: var(--brick, #FF6B4A); }
 
   .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 24px; }
 
@@ -518,6 +523,10 @@
   </div>
 </div>
 
+<div class="cz2-overlay" id="pickerOverlay" hidden>
+  <div class="cz2-modal" id="pickerModal"></div>
+</div>
+
 <script>
   function toggleSidebar() {
     document.querySelector('.sidebar').classList.toggle('open');
@@ -530,6 +539,80 @@
   let selectedRatingValue = 0;
   let pendingReceiptFile = null;
   let searchDebounce = null;
+  const REPORT_REASON_PRESETS = ['Not a receipt', 'Fake or edited receipt', 'Wrong restaurant / unrelated purchase'];
+
+  function closePicker() {
+    document.getElementById('pickerOverlay').hidden = true;
+    document.getElementById('pickerModal').innerHTML = '';
+  }
+  document.getElementById('pickerOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'pickerOverlay') closePicker();
+  });
+
+  function cz2Button(label, primary) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = label;
+    btn.style.cssText = primary
+      ? 'padding:10px 20px; border-radius:12px; border:none; background:var(--olive); color:#fff; font-weight:600; font-size:14px; cursor:pointer;'
+      : 'padding:10px 20px; border-radius:12px; border:1px solid var(--line); background:var(--cream); color:var(--ink); font-weight:600; font-size:14px; cursor:pointer;';
+    return btn;
+  }
+
+  async function fileReportOnRating(ratingId, reason) {
+    const { error } = await sb.from('reports').insert({
+      reporter_id: currentUser.id,
+      target_type: 'restaurant_rating',
+      target_id: ratingId,
+      reason,
+    });
+    closePicker();
+    if (error) await CookzerModal.alert('Could not send report: ' + error.message);
+    else await CookzerModal.alert("Thanks — we'll take a look at this review.");
+  }
+
+  function openReportRatingModal(ratingId) {
+    const modal = document.getElementById('pickerModal');
+    modal.innerHTML = '';
+
+    const title = document.createElement('h3');
+    title.textContent = 'Report this review';
+    modal.appendChild(title);
+
+    const label = document.createElement('div');
+    label.className = 'cz2-label';
+    label.textContent = 'Pick a reason, or type your own below';
+    modal.appendChild(label);
+
+    const chipRow = document.createElement('div');
+    chipRow.className = 'cz2-chip-row';
+    REPORT_REASON_PRESETS.forEach((reason) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'cz2-chip';
+      chip.textContent = reason;
+      chip.addEventListener('click', () => fileReportOnRating(ratingId, reason));
+      chipRow.appendChild(chip);
+    });
+    modal.appendChild(chipRow);
+
+    const freeRow = document.createElement('div');
+    freeRow.className = 'cz2-free-row';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Other reason...';
+    const sendBtn = cz2Button('Send', true);
+    sendBtn.addEventListener('click', () => {
+      const reason = input.value.trim();
+      if (!reason) return;
+      fileReportOnRating(ratingId, reason);
+    });
+    freeRow.appendChild(input);
+    freeRow.appendChild(sendBtn);
+    modal.appendChild(freeRow);
+
+    document.getElementById('pickerOverlay').hidden = false;
+  }
 
   function publicUrl(bucket, path) {
     if (!path) return null;
@@ -655,6 +738,54 @@
     return path;
   }
 
+  function downscaleImageToBase64(file, maxDim) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let width = img.naturalWidth, height = img.naturalHeight;
+        if (width > maxDim || height > maxDim) {
+          const scale = maxDim / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read image')); };
+      img.src = url;
+    });
+  }
+
+  // Soft AI pre-check: is this photo actually a receipt/invoice? Any
+  // failure (network, auth, unconfigured, ambiguous) resolves to
+  // isReceipt: null — "can't tell" — never blocking the rating.
+  async function verifyReceiptLooksLikeReceipt(file) {
+    try {
+      const dataUrl = await downscaleImageToBase64(file, 1024);
+      const imageBase64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+      const { data: sess } = await sb.auth.getSession();
+      const token = sess && sess.session && sess.session.access_token;
+      if (!token) return { isReceipt: null };
+
+      const resp = await fetch('/api/verify-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ imageBase64, mediaType: 'image/jpeg' }),
+      });
+      if (!resp.ok) return { isReceipt: null };
+      const body = await resp.json();
+      if (!body.configured) return { isReceipt: null };
+      return { isReceipt: body.isReceipt, confidence: body.confidence, reason: body.reason };
+    } catch (e) {
+      return { isReceipt: null };
+    }
+  }
+
   document.getElementById('submitRatingBtn').addEventListener('click', async () => {
     if (!selectedRatingValue) { await CookzerModal.alert('Pick a star rating first.'); return; }
     if (!pendingReceiptFile) { await CookzerModal.alert('Attach a receipt or invoice photo — ratings need proof.'); return; }
@@ -678,6 +809,15 @@
       restaurantId = data.id;
     }
 
+    btn.textContent = 'Checking photo...';
+    const check = await verifyReceiptLooksLikeReceipt(pendingReceiptFile);
+    if (check.isReceipt === false && (check.confidence === 'high' || check.confidence === 'medium')) {
+      btn.disabled = false; btn.textContent = 'Submit rating';
+      await CookzerModal.alert("That photo doesn't look like a receipt or invoice" + (check.reason ? ' — ' + check.reason : '') + '. Please attach a photo of your receipt/invoice as proof of your visit.');
+      return;
+    }
+
+    btn.textContent = 'Submitting...';
     const receiptPath = await uploadReceipt(pendingReceiptFile);
     if (!receiptPath) {
       btn.disabled = false; btn.textContent = 'Submit rating';
@@ -749,6 +889,14 @@
       top.appendChild(nameLink);
       top.appendChild(stars);
       top.appendChild(rowTime);
+      if (currentUser && r.user_id !== currentUser.id) {
+        const reportBtn = document.createElement('button');
+        reportBtn.type = 'button';
+        reportBtn.className = 'rating-row-report-btn';
+        reportBtn.textContent = '🚩 Report';
+        reportBtn.addEventListener('click', () => openReportRatingModal(r.id));
+        top.appendChild(reportBtn);
+      }
       body.appendChild(top);
 
       if (r.review) {

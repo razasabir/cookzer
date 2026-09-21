@@ -182,6 +182,111 @@ test.describe('Restaurant detail page — claimed business profiles', () => {
   });
 });
 
+test.describe('Restaurant detail page — receipt vision-check + reporting (Phase 6)', () => {
+  test('a confident non-receipt photo blocks submission and does not upload or upsert', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+    await page.route('**/api/verify-receipt', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ configured: true, isReceipt: false, confidence: 'high', reason: 'This looks like a selfie, not a receipt.' }),
+    }));
+
+    await page.click('#rateBtn');
+    await page.locator('#starPicker .star[data-value="4"]').click();
+    await page.locator('#receiptInput').setInputFiles(path.join(__dirname, '..', 'icon-192.png'));
+    await page.click('#submitRatingBtn');
+
+    await expect(page.locator('.cz-modal-overlay')).toBeVisible();
+    await expect(page.locator('.cz-modal-overlay')).toContainText('selfie');
+    expect(await page.evaluate(() => window.__RECEIPT_UPLOADS__.length)).toBe(0);
+    expect(await page.evaluate(() => window.__RATING_UPSERTS__.length)).toBe(0);
+  });
+
+  test('a confident real-receipt photo does not block submission', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+    await page.route('**/api/verify-receipt', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ configured: true, isReceipt: true, confidence: 'high', reason: null }),
+    }));
+
+    await page.click('#rateBtn');
+    await page.locator('#starPicker .star[data-value="4"]').click();
+    await page.locator('#receiptInput').setInputFiles(path.join(__dirname, '..', 'icon-192.png'));
+    await page.click('#submitRatingBtn');
+
+    await expect.poll(() => page.evaluate(() => window.__RATING_UPSERTS__.length)).toBe(1);
+  });
+
+  test('an inconclusive check (e.g. the endpoint unconfigured) never blocks submission', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+    await page.route('**/api/verify-receipt', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ configured: false }),
+    }));
+
+    await page.click('#rateBtn');
+    await page.locator('#starPicker .star[data-value="4"]').click();
+    await page.locator('#receiptInput').setInputFiles(path.join(__dirname, '..', 'icon-192.png'));
+    await page.click('#submitRatingBtn');
+
+    await expect.poll(() => page.evaluate(() => window.__RATING_UPSERTS__.length)).toBe(1);
+  });
+
+  test('a low-confidence non-receipt verdict does not block submission', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+    await page.route('**/api/verify-receipt', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ configured: true, isReceipt: false, confidence: 'low', reason: 'Hard to tell.' }),
+    }));
+
+    await page.click('#rateBtn');
+    await page.locator('#starPicker .star[data-value="4"]').click();
+    await page.locator('#receiptInput').setInputFiles(path.join(__dirname, '..', 'icon-192.png'));
+    await page.click('#submitRatingBtn');
+
+    await expect.poll(() => page.evaluate(() => window.__RATING_UPSERTS__.length)).toBe(1);
+  });
+
+  test('reporting a review via a preset chip inserts into reports with target_type restaurant_rating and closes the picker', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+
+    await page.click('.tab-row .tab:has-text("Verified reviews")');
+    await page.locator('#tab-reviews .review-report-btn').first().click();
+
+    await expect(page.locator('#pickerOverlay')).toBeVisible();
+    await expect(page.locator('#pickerModal')).toContainText('Report this review');
+    await page.locator('#pickerModal .cz2-chip', { hasText: 'Not a receipt' }).click();
+
+    await expect.poll(() => page.evaluate(() => window.__REPORT_INSERTS__.length)).toBe(1);
+    const insert = await page.evaluate(() => window.__REPORT_INSERTS__[0]);
+    expect(insert).toMatchObject({ reporter_id: 'me-1', target_type: 'restaurant_rating', target_id: 'rating-1', reason: 'Not a receipt' });
+    await expect(page.locator('#pickerOverlay')).toBeHidden();
+  });
+
+  test('reporting a review with a free-text reason inserts it verbatim', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+
+    await page.click('.tab-row .tab:has-text("Verified reviews")');
+    await page.locator('#tab-reviews .review-report-btn').first().click();
+    await page.fill('#pickerModal .cz2-free-row input', 'This is someone elses receipt');
+    await page.click('#pickerModal .cz2-free-row button');
+
+    await expect.poll(() => page.evaluate(() => window.__REPORT_INSERTS__.length)).toBe(1);
+    const insert = await page.evaluate(() => window.__REPORT_INSERTS__[0]);
+    expect(insert).toMatchObject({ target_type: 'restaurant_rating', reason: 'This is someone elses receipt' });
+  });
+
+  test('your own review never shows the Report affordance', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-6', 'restaurant-detail.js');
+    await page.click('.tab-row .tab:has-text("Verified reviews")');
+    await expect(page.locator('#tab-reviews')).toContainText('My own review');
+    await expect(page.locator('#tab-reviews .review-report-btn')).toHaveCount(0);
+  });
+});
+
 test.describe('Restaurant detail page — Cookzer Verified + Featured (Phase 4)', () => {
   test('a non-admin viewer sees the Verified and Featured badges but no admin tools', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-5', 'restaurant-detail.js');

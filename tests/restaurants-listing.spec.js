@@ -75,3 +75,31 @@ test.describe('Restaurants listing — Trending and Cookzer vs Google tabs (Phas
     expect(names[0]).toBe('Boosted Bistro');
   });
 });
+
+test.describe('Restaurants listing — reporting a review (Phase 6)', () => {
+  test('reporting a review via a preset chip inserts into reports with target_type restaurant_rating', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurants.html', 'restaurants-listing.js');
+
+    const card = page.locator('.restaurant-card').filter({ has: page.locator('.restaurant-name', { hasText: 'Boosted Bistro' }) });
+    await card.locator('.restaurant-summary').click();
+    await card.locator('.rating-row-report-btn').first().click();
+
+    await expect(page.locator('#pickerOverlay')).toBeVisible();
+    await page.locator('#pickerModal .cz2-chip', { hasText: 'Fake or edited receipt' }).click();
+
+    await expect.poll(() => page.evaluate(() => window.__REPORT_INSERTS__.length)).toBe(1);
+    const insert = await page.evaluate(() => window.__REPORT_INSERTS__[0]);
+    expect(insert).toMatchObject({ reporter_id: 'me-1', target_type: 'restaurant_rating', target_id: 'rating-boosted-1', reason: 'Fake or edited receipt' });
+    await expect(page.locator('#pickerOverlay')).toBeHidden();
+  });
+
+  test('your own review never shows the Report affordance', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurants.html', 'restaurants-listing.js');
+
+    const card = page.locator('.restaurant-card').filter({ has: page.locator('.restaurant-name', { hasText: 'Trusted Kitchen' }) });
+    await card.locator('.restaurant-summary').click();
+    await expect(card).toContainText('My own take');
+    const ownRow = card.locator('.rating-row').filter({ hasText: 'My own take' });
+    await expect(ownRow.locator('.rating-row-report-btn')).toHaveCount(0);
+  });
+});
