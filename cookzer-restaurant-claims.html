@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#2E8F5C">
+  <title>Restaurant Claims — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="notifications-shared.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="push-notifications.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="friends-widget.js"></script>
+  <script src="cookzer-modal.js"></script>
+  <script src="theme.js"></script>
+  <script src="photo-lightbox.js"></script>
+  <script src="shortcuts.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  .brand-header {
+      font-size: 20px;
+      color: var(--olive-dark);
+      letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+    }
+
+  .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+
+  .main {
+      flex: 1;
+      margin-top: 60px;
+      overflow-y: auto;
+    }
+
+  .claims-content { max-width: 760px; margin: 0 auto; padding: 24px 24px 60px; }
+  .page-title { font-size: 24px; font-family: 'Fraunces', serif; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+  .page-subtitle { font-size: 13px; color: var(--ink-soft); margin-bottom: 26px; }
+
+  .claim-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 16px;
+    }
+  .claim-proof-thumb {
+      width: 64px; height: 64px; border-radius: 10px; object-fit: cover;
+      border: 1px solid var(--line); cursor: pointer; flex-shrink: 0; background: var(--cream);
+    }
+  .claim-body { flex: 1; min-width: 0; }
+  .claim-restaurant-name { font-size: 15px; font-weight: 700; color: var(--ink); text-decoration: none; }
+  .claim-restaurant-name:hover { color: var(--olive-dark); }
+  .claim-restaurant-address { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+  .claim-meta-row { font-size: 12.5px; color: var(--ink-soft); margin-top: 8px; }
+  .claim-meta-row a { color: var(--olive-dark); text-decoration: none; font-weight: 600; }
+  .claim-meta-row a:hover { text-decoration: underline; }
+  .claim-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .claim-btn {
+      padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      border: none; cursor: pointer; font-family: inherit;
+    }
+  .claim-btn.approve { background: var(--olive); color: #fff; }
+  .claim-btn.approve:hover { background: var(--olive-dark); }
+  .claim-btn.reject { background: var(--cream); color: var(--brick, #B44A3A); }
+  .claim-btn.reject:hover { background: var(--line); }
+
+  .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 40px 24px; }
+  .not-authorized-note { text-align: center; color: var(--ink-soft); font-size: 14px; padding: 60px 20px; }
+
+  @media (max-width: 1024px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        height: 100vh;
+        height: 100dvh;
+        z-index: 100;
+        transition: left 0.25s ease;
+      }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .search-bar { display: none; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+    }
+  @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+      .claims-content { padding: 20px 16px 48px; }
+      .claim-card { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
+
+  <a href="cookzer-feed.html" style="text-decoration: none;"><div class="sidebar-item icon feed">Feed</div></a>
+  <a href="cookzer-cookbook.html" style="text-decoration: none;"><div class="sidebar-item icon cookbook">My Recipes</div></a>
+  <a href="cookzer-planner.html" style="text-decoration: none;"><div class="sidebar-item icon planner">Meal Planner</div></a>
+  <a href="cookzer-challenges.html" style="text-decoration: none;"><div class="sidebar-item icon challenges">Challenges</div></a>
+  <a href="cookzer-groups.html" style="text-decoration: none;"><div class="sidebar-item icon groups">Groups</div></a>
+  <a href="cookzer-restaurants.html" style="text-decoration: none;"><div class="sidebar-item icon restaurants active">Restaurants</div></a>
+  <a href="cookzer-profile.html" style="text-decoration: none;"><div class="sidebar-item icon profile">Profile</div></a>
+  <a href="cookzer-messenger.html" style="text-decoration: none;"><div class="sidebar-item icon messenger">Messenger</div></a>
+  <a href="cookzer-convert.html" style="text-decoration: none;"><div class="sidebar-item icon convert">Measure &amp; Convert</div></a>
+  <a href="cookzer-feed.html?filter=tips" style="text-decoration: none;"><div class="sidebar-item icon tips">Tips &amp; Tricks</div></a>
+
+<div class="sidebar-plus">
+  <div class="sidebar-plus-label">Cookzer+</div>
+  <a href="cookzer-pantry.html" class="sidebar-plus-item pantry">Cooking Ideas</a>
+  <a href="cookzer-pantry.html?tab=leftovers" class="sidebar-plus-item leftovers">Leftover Help</a>
+  <a href="cookzer-health.html" class="sidebar-plus-item health">Health & Nutritions</a>
+</div>
+</div>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Header -->
+<div class="header">
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn" id="notifBellBtn">🔔</button>
+    <a href="cookzer-messenger.html" style="text-decoration: none;"><button class="icon-btn">💬</button></a>
+    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
+    <a href="cookzer-settings.html" style="text-decoration:none;"><button class="icon-btn" title="Settings" type="button">⚙️</button></a>
+    <div class="avatar">--</div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+  <div class="claims-content" id="claimsContent">
+    <div class="page-title">Restaurant Claims</div>
+    <div class="page-subtitle">Review pending ownership claims on restaurant listings.</div>
+    <div id="claimsBody">
+      <div class="empty-note">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.querySelector('.sidebar-overlay').classList.toggle('open');
+  }
+
+  let currentUser = null;
+
+  function escapeHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s || '';
+    return div.innerHTML;
+  }
+
+  function timeAgo(iso) {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + ' min' + (mins === 1 ? '' : 's') + ' ago';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + ' hour' + (hours === 1 ? '' : 's') + ' ago';
+    const days = Math.floor(hours / 24);
+    return days + ' day' + (days === 1 ? '' : 's') + ' ago';
+  }
+
+  async function loadAndRender() {
+    const body = document.getElementById('claimsBody');
+
+    const { data: claims, error } = await sb
+      .from('restaurant_claim_requests')
+      .select('id, restaurant_id, user_id, business_email, business_phone, proof_photo_path, created_at, restaurants(name, address), profiles(display_name, initials)')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      body.innerHTML = '<div class="empty-note">Could not load claims: ' + escapeHtml(error.message) + '</div>';
+      return;
+    }
+
+    if (!claims || claims.length === 0) {
+      body.innerHTML = '<div class="empty-note">No pending claims right now.</div>';
+      return;
+    }
+
+    body.innerHTML = '';
+    for (const claim of claims) {
+      const card = document.createElement('div');
+      card.className = 'claim-card';
+
+      const { data: signed } = await sb.storage.from('restaurant-claim-proofs').createSignedUrl(claim.proof_photo_path, 600);
+      const proofUrl = signed && signed.signedUrl;
+
+      const thumb = document.createElement('img');
+      thumb.className = 'claim-proof-thumb';
+      if (proofUrl) thumb.src = proofUrl;
+      thumb.addEventListener('click', () => {
+        if (!proofUrl) return;
+        CookzerLightbox.open({
+          imageUrl: proofUrl,
+          authorName: (claim.profiles && claim.profiles.display_name) || 'Someone',
+          authorInitials: (claim.profiles && claim.profiles.initials) || '??',
+          authorHref: 'cookzer-profile.html?id=' + claim.user_id,
+          timestamp: claim.created_at,
+          caption: 'Proof of ownership',
+          meta: [{ label: 'Business email', value: claim.business_email }],
+        });
+      });
+
+      const restaurantName = (claim.restaurants && claim.restaurants.name) || 'Unknown restaurant';
+      const restaurantAddress = (claim.restaurants && claim.restaurants.address) || '';
+      const claimantName = (claim.profiles && claim.profiles.display_name) || 'Someone';
+
+      const bodyEl = document.createElement('div');
+      bodyEl.className = 'claim-body';
+      bodyEl.innerHTML =
+        '<a class="claim-restaurant-name" href="cookzer-restaurant.html?id=' + claim.restaurant_id + '">' + escapeHtml(restaurantName) + '</a>' +
+        (restaurantAddress ? '<div class="claim-restaurant-address">' + escapeHtml(restaurantAddress) + '</div>' : '') +
+        '<div class="claim-meta-row">' +
+          'Claimed by <a href="cookzer-profile.html?id=' + claim.user_id + '">' + escapeHtml(claimantName) + '</a> · ' + timeAgo(claim.created_at) +
+        '</div>' +
+        '<div class="claim-meta-row">✉️ ' + escapeHtml(claim.business_email) + (claim.business_phone ? ' · 📞 ' + escapeHtml(claim.business_phone) : '') + '</div>';
+
+      const actions = document.createElement('div');
+      actions.className = 'claim-actions';
+
+      const approveBtn = document.createElement('button');
+      approveBtn.className = 'claim-btn approve';
+      approveBtn.type = 'button';
+      approveBtn.textContent = 'Approve';
+      approveBtn.addEventListener('click', async () => {
+        const ok = await CookzerModal.confirm('Approve this claim? ' + claimantName + ' will become the verified owner of ' + restaurantName + '.', { confirmLabel: 'Approve' });
+        if (!ok) return;
+        const { error: rpcErr } = await sb.rpc('review_restaurant_claim', { p_claim_id: claim.id, p_decision: 'approved', p_note: null });
+        if (rpcErr) { await CookzerModal.alert('Could not approve: ' + rpcErr.message); return; }
+        await loadAndRender();
+      });
+
+      const rejectBtn = document.createElement('button');
+      rejectBtn.className = 'claim-btn reject';
+      rejectBtn.type = 'button';
+      rejectBtn.textContent = 'Reject';
+      rejectBtn.addEventListener('click', async () => {
+        const note = await CookzerModal.prompt('Optional note for the claimant (why this was rejected):', '');
+        if (note === null) return;
+        const { error: rpcErr } = await sb.rpc('review_restaurant_claim', { p_claim_id: claim.id, p_decision: 'rejected', p_note: note || null });
+        if (rpcErr) { await CookzerModal.alert('Could not reject: ' + rpcErr.message); return; }
+        await loadAndRender();
+      });
+
+      actions.appendChild(approveBtn);
+      actions.appendChild(rejectBtn);
+      bodyEl.appendChild(actions);
+
+      card.appendChild(thumb);
+      card.appendChild(bodyEl);
+      body.appendChild(card);
+    }
+  }
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+
+    const { data: profile } = await sb.from('profiles').select('is_platform_admin').eq('id', user.id).single();
+    if (!profile || !profile.is_platform_admin) {
+      document.getElementById('claimsBody').innerHTML = '<div class="not-authorized-note">You don\'t have access to this page.</div>';
+      return;
+    }
+
+    await loadAndRender();
+  })();
+</script>
+</body>
+</html>
