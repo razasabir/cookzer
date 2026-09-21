@@ -680,16 +680,20 @@
 
   async function loadFamilyProfilesCache() {
     if (familyProfilesCache) return familyProfilesCache;
-    const { data } = await sb.from('family_profiles').select('id, name, avatar_emoji').eq('household_id', currentHousehold.id).order('created_at', { ascending: true });
+    const { data } = await sb.from('family_profiles').select('id, name, avatar_emoji, linked_user_id').eq('household_id', currentHousehold.id).order('created_at', { ascending: true });
     familyProfilesCache = data || [];
     return familyProfilesCache;
   }
 
-  // The planner's people columns: "You" + each named Family Profile,
-  // padded with "ghost" placeholder columns up to the household size set
-  // in Settings — so the column count reflects how many you actually
-  // cook for, not just how many you've gotten around to naming yet.
-  // Kid Mode collapses this to just the locked device's own profile.
+  // The planner's people columns: "You" + every other real household
+  // co-admin (anyone invited in Settings → Household — a spouse, say —
+  // gets their own column automatically, the same way "You" always
+  // has one, no separate family-profile step needed) + each named
+  // Family Profile, padded with "ghost" placeholder columns up to the
+  // household size set in Settings. A family profile linked to a
+  // co-admin's own account (via "Add a friend as a family member") is
+  // skipped here so they don't get two columns. Kid Mode collapses this
+  // to just the locked device's own profile.
   async function loadPlannerPeople() {
     const kidMode = window.CookzerKidMode && window.CookzerKidMode.get();
     if (kidMode && kidMode.enabled) {
@@ -698,11 +702,17 @@
     }
 
     const householdSize = currentHousehold.household_size || 4;
-    const familyProfiles = await loadFamilyProfilesCache();
+    const [members, familyProfiles] = await Promise.all([
+      CookzerHousehold.listMembers(sb, currentHousehold.id),
+      loadFamilyProfilesCache(),
+    ]);
+    const coMembers = members.filter((m) => m.user_id !== currentUser.id);
+    const coMemberIds = new Set(coMembers.map((m) => m.user_id));
 
     plannerPeople = [
       { kind: 'you', id: currentUser.id, name: 'You', emoji: '👤' },
-      ...familyProfiles.map((f) => ({ kind: 'family', id: f.id, name: f.name, emoji: f.avatar_emoji })),
+      ...coMembers.map((m) => ({ kind: 'member', id: m.user_id, name: (m.profiles && m.profiles.display_name) || 'Household member', emoji: '👤' })),
+      ...familyProfiles.filter((f) => !coMemberIds.has(f.linked_user_id)).map((f) => ({ kind: 'family', id: f.id, name: f.name, emoji: f.avatar_emoji })),
     ];
     for (let i = plannerPeople.length; i < householdSize; i++) {
       plannerPeople.push({ kind: 'ghost' });
@@ -730,7 +740,7 @@
 
   function findSuggestionFor(date, person) {
     const list = suggestionsByDate[date] || [];
-    if (person.kind === 'you') return list.find((s) => s.suggested_by_user_id === person.id) || null;
+    if (person.kind === 'you' || person.kind === 'member') return list.find((s) => s.suggested_by_user_id === person.id) || null;
     if (person.kind === 'family') return list.find((s) => s.suggested_by_family_profile_id === person.id) || null;
     return null;
   }
@@ -911,9 +921,9 @@
   // `existing` is passed when editing an already-made suggestion in
   // place, rather than adding a new one.
   async function openSuggestionModal(date, person, existing) {
-    const suggesterFields = person.kind === 'you'
-      ? { suggested_by_user_id: currentUser.id }
-      : { suggested_by_family_profile_id: person.id };
+    const suggesterFields = person.kind === 'family'
+      ? { suggested_by_family_profile_id: person.id }
+      : { suggested_by_user_id: person.id }; // 'you' or a co-admin 'member' — both real accounts
 
     const modal = document.getElementById('pickerModal');
     modal.innerHTML = '';

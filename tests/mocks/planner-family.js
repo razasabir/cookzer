@@ -4,7 +4,12 @@ window.__UPDATED_SUGGESTIONS__ = [];
 
 const MY_GROUPS = [{ group_id: 'group-1', groups: { id: 'group-1', name: 'The Smiths' } }];
 const HOUSEHOLD = { id: 'household-1', name: null, household_size: 3 };
-const FAMILY_PROFILES = [{ id: 'fam-1', name: 'Emma', avatar_emoji: '👧' }];
+const FAMILY_PROFILES = [{ id: 'fam-1', name: 'Emma', avatar_emoji: '👧', linked_user_id: null }];
+// Empty by default (no other existing test expects a real co-admin
+// column) — a dedicated test overrides this via
+// window.__TEST_HOUSEHOLD_MEMBERS__ (an extraInit script), including
+// the caller themselves as real backends do (get_or_create_my_household
+// inserts the creator too), which the planner is expected to filter out.
 const RECIPES = [
   { id: 'r1', title: 'Lemon Herb Chicken', tags: ['quick', 'weeknight'] },
   { id: 'r2', title: 'Spaghetti Carbonara', tags: ['comfort-food'] },
@@ -76,7 +81,9 @@ function chain(table) {
         const dates = (inArgs && inArgs[0] === 'suggestion_date') ? inArgs[1] : null;
         result = (suggestions || []).filter((s) => !dates || dates.includes(s.suggestion_date)).map(suggestionDisplay);
       } else if (table === 'family_profiles') {
-        result = FAMILY_PROFILES;
+        result = window.__TEST_LINKED_FAMILY_PROFILE__ ? FAMILY_PROFILES.concat([window.__TEST_LINKED_FAMILY_PROFILE__]) : FAMILY_PROFILES;
+      } else if (table === 'household_members') {
+        result = window.__TEST_HOUSEHOLD_MEMBERS__ || [];
       } else if (table === 'recipes') {
         result = RECIPES;
       }
