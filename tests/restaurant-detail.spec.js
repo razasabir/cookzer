@@ -182,14 +182,18 @@ test.describe('Restaurant detail page — claimed business profiles', () => {
   });
 });
 
+// Stubs the free, client-side OCR check (Tesseract.js) so tests never
+// load the real ~2MB library or depend on actual OCR accuracy — this
+// script defines window.Tesseract before the page's own scripts run, so
+// loadTesseract() in cookzer-restaurant.html sees it already present and
+// skips the real CDN fetch entirely.
+function mockTesseractText(text) {
+  return `window.Tesseract = { recognize: function () { return Promise.resolve({ data: { text: ${JSON.stringify(text)} } }); } };`;
+}
+
 test.describe('Restaurant detail page — receipt vision-check + reporting (Phase 6)', () => {
-  test('a confident non-receipt photo blocks submission and does not upload or upsert', async ({ page }) => {
-    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
-    await page.route('**/api/verify-receipt', (route) => route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ configured: true, isReceipt: false, confidence: 'high', reason: 'This looks like a selfie, not a receipt.' }),
-    }));
+  test('a photo with no receipt-like text prompts to confirm, and declining does not upload or upsert', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js', mockTesseractText('just a random photo, nothing here'));
 
     await page.click('#rateBtn');
     await page.locator('#starPicker .star[data-value="4"]').click();
@@ -197,18 +201,30 @@ test.describe('Restaurant detail page — receipt vision-check + reporting (Phas
     await page.click('#submitRatingBtn');
 
     await expect(page.locator('.cz-modal-overlay')).toBeVisible();
-    await expect(page.locator('.cz-modal-overlay')).toContainText('selfie');
+    await expect(page.locator('.cz-modal-overlay')).toContainText("doesn't look like it has a receipt");
+    await page.click('.cz-modal-btn.cz-ghost');
+
     expect(await page.evaluate(() => window.__RECEIPT_UPLOADS__.length)).toBe(0);
     expect(await page.evaluate(() => window.__RATING_UPSERTS__.length)).toBe(0);
   });
 
-  test('a confident real-receipt photo does not block submission', async ({ page }) => {
-    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
-    await page.route('**/api/verify-receipt', (route) => route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ configured: true, isReceipt: true, confidence: 'high', reason: null }),
-    }));
+  test('confirming the OCR nudge anyway still submits the rating', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js', mockTesseractText('just a random photo, nothing here'));
+
+    await page.click('#rateBtn');
+    await page.locator('#starPicker .star[data-value="4"]').click();
+    await page.locator('#receiptInput').setInputFiles(path.join(__dirname, '..', 'icon-192.png'));
+    await page.click('#submitRatingBtn');
+
+    await expect(page.locator('.cz-modal-overlay')).toBeVisible();
+    await page.click('.cz-modal-btn.cz-primary');
+
+    await expect.poll(() => page.evaluate(() => window.__RATING_UPSERTS__.length)).toBe(1);
+    expect(await page.evaluate(() => window.__RECEIPT_UPLOADS__.length)).toBe(1);
+  });
+
+  test('a photo with receipt-like text (total/tax) submits with no nudge at all', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js', mockTesseractText('Marfa Bowl Co.\nGrain Bowl   $12.00\nTax   $1.05\nTotal   $13.05'));
 
     await page.click('#rateBtn');
     await page.locator('#starPicker .star[data-value="4"]').click();
@@ -216,31 +232,14 @@ test.describe('Restaurant detail page — receipt vision-check + reporting (Phas
     await page.click('#submitRatingBtn');
 
     await expect.poll(() => page.evaluate(() => window.__RATING_UPSERTS__.length)).toBe(1);
+    await expect(page.locator('.cz-modal-overlay')).toHaveCount(0);
   });
 
-  test('an inconclusive check (e.g. the endpoint unconfigured) never blocks submission', async ({ page }) => {
+  test('OCR being unavailable (library fails to load) never blocks submission', async ({ page }) => {
+    // No Tesseract stub — the real CDN script load is blocked by
+    // blockExternalRequests, so loadTesseract() rejects and
+    // photoLooksLikeReceipt() resolves to null (inconclusive).
     await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
-    await page.route('**/api/verify-receipt', (route) => route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ configured: false }),
-    }));
-
-    await page.click('#rateBtn');
-    await page.locator('#starPicker .star[data-value="4"]').click();
-    await page.locator('#receiptInput').setInputFiles(path.join(__dirname, '..', 'icon-192.png'));
-    await page.click('#submitRatingBtn');
-
-    await expect.poll(() => page.evaluate(() => window.__RATING_UPSERTS__.length)).toBe(1);
-  });
-
-  test('a low-confidence non-receipt verdict does not block submission', async ({ page }) => {
-    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
-    await page.route('**/api/verify-receipt', (route) => route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ configured: true, isReceipt: false, confidence: 'low', reason: 'Hard to tell.' }),
-    }));
 
     await page.click('#rateBtn');
     await page.locator('#starPicker .star[data-value="4"]').click();

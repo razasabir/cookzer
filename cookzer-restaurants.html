@@ -738,51 +738,38 @@
     return path;
   }
 
-  function downscaleImageToBase64(file, maxDim) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        let width = img.naturalWidth, height = img.naturalHeight;
-        if (width > maxDim || height > maxDim) {
-          const scale = maxDim / Math.max(width, height);
-          width = Math.round(width * scale);
-          height = Math.round(height * scale);
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.82));
-      };
-      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read image')); };
-      img.src = url;
+  // Free, client-side receipt heuristic — runs entirely in the browser
+  // via Tesseract.js (OCR), so it costs nothing per check, unlike a
+  // vision-model API call. Only loaded when someone actually attaches a
+  // receipt photo. It's a soft nudge, not a hard block: OCR can miss a
+  // real receipt (bad lighting, unusual layout), so a "no receipt-like
+  // text found" result asks the user to confirm rather than refusing
+  // the upload outright. Any failure (library didn't load, OCR error)
+  // resolves to null — "can't tell" — and never blocks submission.
+  let tesseractLoadPromise = null;
+  function loadTesseract() {
+    if (window.Tesseract) return Promise.resolve();
+    if (tesseractLoadPromise) return tesseractLoadPromise;
+    tesseractLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Could not load OCR library'));
+      document.head.appendChild(script);
     });
+    return tesseractLoadPromise;
   }
 
-  // Soft AI pre-check: is this photo actually a receipt/invoice? Any
-  // failure (network, auth, unconfigured, ambiguous) resolves to
-  // isReceipt: null — "can't tell" — never blocking the rating.
-  async function verifyReceiptLooksLikeReceipt(file) {
-    try {
-      const dataUrl = await downscaleImageToBase64(file, 1024);
-      const imageBase64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
-      const { data: sess } = await sb.auth.getSession();
-      const token = sess && sess.session && sess.session.access_token;
-      if (!token) return { isReceipt: null };
+  const RECEIPT_TEXT_SIGNAL = /(\$\s?\d+[.,]\d{2}|\btotal\b|\bsubtotal\b|\bsub total\b|\btax\b|\bamount due\b|\bchange due\b)/i;
 
-      const resp = await fetch('/api/verify-receipt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ imageBase64, mediaType: 'image/jpeg' }),
-      });
-      if (!resp.ok) return { isReceipt: null };
-      const body = await resp.json();
-      if (!body.configured) return { isReceipt: null };
-      return { isReceipt: body.isReceipt, confidence: body.confidence, reason: body.reason };
+  async function photoLooksLikeReceipt(file) {
+    try {
+      await loadTesseract();
+      const { data } = await Tesseract.recognize(file, 'eng');
+      const text = (data && data.text) || '';
+      return RECEIPT_TEXT_SIGNAL.test(text);
     } catch (e) {
-      return { isReceipt: null };
+      return null;
     }
   }
 
@@ -810,11 +797,12 @@
     }
 
     btn.textContent = 'Checking photo...';
-    const check = await verifyReceiptLooksLikeReceipt(pendingReceiptFile);
-    if (check.isReceipt === false && (check.confidence === 'high' || check.confidence === 'medium')) {
+    const looksLikeReceipt = await photoLooksLikeReceipt(pendingReceiptFile);
+    if (looksLikeReceipt === false) {
       btn.disabled = false; btn.textContent = 'Submit rating';
-      await CookzerModal.alert("That photo doesn't look like a receipt or invoice" + (check.reason ? ' — ' + check.reason : '') + '. Please attach a photo of your receipt/invoice as proof of your visit.');
-      return;
+      const proceed = await CookzerModal.confirm("This photo doesn't look like it has a receipt or invoice on it — no total, tax, or itemized amount was detected. Attach it anyway?");
+      if (!proceed) return;
+      btn.disabled = true;
     }
 
     btn.textContent = 'Submitting...';
