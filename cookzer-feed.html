@@ -27,6 +27,7 @@
   <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
   <script src="theme.js"></script>
   <script src="photo-lightbox.js"></script>
+  <script src="pull-to-refresh.js"></script>
   <script src="pantry-match.js"></script>
   <script src="friends-widget.js"></script>
   <script src="people-you-may-know.js"></script>
@@ -3350,6 +3351,10 @@
       listEl.appendChild(item);
     });
     document.getElementById('pymkWidgetTitle').hidden = false;
+  }
+
+  if (window.CookzerPullToRefresh) {
+    CookzerPullToRefresh.attach(document.querySelector('.feed-container'), loadFeed);
   }
 
   (async function init() {
