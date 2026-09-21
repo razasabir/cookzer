@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minimal post actions — prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* ---- prototype shell (not part of the reusable component) ---- */
+  body {
+    display: flex;
+    justify-content: center;
+    padding: 28px 16px 80px;
+  }
+  .proto-wrap { width: 100%; max-width: 480px; }
+  .proto-note {
+    font-size: 12px; color: var(--ink-soft); text-align: center;
+    margin-bottom: 16px; line-height: 1.5;
+  }
+
+  /* ---- post card ---- */
+  .p-card {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .p-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+  .p-avatar {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+    color: #fff; font-weight: 600; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .p-head-body { flex: 1; min-width: 0; }
+  .p-name { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+  .p-time { font-size: 11.5px; color: var(--ink-soft); }
+  .p-more { color: var(--ink-soft); font-size: 18px; line-height: 1; padding: 4px 6px; }
+
+  .p-caption { padding: 0 14px 10px; font-size: 13.5px; color: var(--ink); line-height: 1.5; }
+  .p-caption b { font-weight: 600; }
+
+  .p-photo {
+    aspect-ratio: 4/3;
+    background: linear-gradient(135deg, var(--olive-dark), var(--olive));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px;
+  }
+
+  /* ---- minimalist action row: the actual component ---- */
+  .p-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 8px 14px;
+    border-top: 1px solid var(--line);
+  }
+  .p-act {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    padding: 4px 2px;
+    cursor: pointer;
+    color: var(--ink-soft);
+    font-family: inherit;
+  }
+  .p-act svg { width: 19px; height: 19px; display: block; transition: transform 0.12s ease; }
+  .p-act:active svg { transform: scale(0.86); }
+  .p-act-count { font-size: 12px; font-weight: 500; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+  .p-act.liked { color: var(--brick); }
+  .p-act.liked svg { fill: var(--brick); stroke: var(--brick); }
+  .p-act.liked .p-act-count { color: var(--brick); }
+
+  .p-act.panel-open { color: var(--olive-dark); }
+  .p-act.panel-open .p-act-count { color: var(--olive-dark); }
+
+  .p-act.saved svg { fill: var(--olive); stroke: var(--olive); }
+
+  .p-act-save { margin-left: auto; }
+
+  /* ---- inline expanding panel (the "mini feed") ---- */
+  .p-panel {
+    max-height: 0;
+    overflow: hidden;
+    border-top: 1px solid transparent;
+    transition: max-height 0.22s ease;
+  }
+  .p-panel.open { max-height: 420px; border-top-color: var(--line); }
+  .p-panel-inner { padding: 10px 14px 12px; }
+
+  /* comments */
+  .p-comments-list { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+  .p-comment { display: flex; gap: 8px; }
+  .p-comment-avatar {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    background: var(--cream); border: 1px solid var(--line);
+    color: var(--ink-soft); font-size: 10.5px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .p-comment-body { flex: 1; min-width: 0; }
+  .p-comment-text { font-size: 12.5px; line-height: 1.4; color: var(--ink); }
+  .p-comment-text b { font-weight: 600; margin-right: 4px; }
+  .p-comment-time { font-size: 10.5px; color: var(--ink-soft); margin-top: 2px; }
+
+  .p-comment-input-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line);
+  }
+  .p-comment-input {
+    flex: 1; min-width: 0; border: none; background: none;
+    font-family: inherit; font-size: 12.5px; color: var(--ink); padding: 4px 0;
+  }
+  .p-comment-input:focus { outline: none; }
+  .p-comment-input::placeholder { color: var(--ink-soft); }
+  .p-comment-post-btn {
+    background: none; border: none; font-family: inherit;
+    font-size: 12.5px; font-weight: 600; color: var(--olive-dark);
+    cursor: pointer; padding: 4px 2px; flex-shrink: 0;
+  }
+  .p-comment-post-btn:disabled { color: var(--ink-soft); cursor: default; }
+
+  /* share / save option rows — same minimal list pattern */
+  .p-opt-list { display: flex; flex-direction: column; }
+  .p-opt-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 2px; background: none; border: none; width: 100%;
+    text-align: left; font-family: inherit; font-size: 13px; color: var(--ink);
+    cursor: pointer; border-radius: 8px;
+  }
+  .p-opt-row:hover { background: var(--cream); }
+  .p-opt-row svg { width: 17px; height: 17px; color: var(--ink-soft); flex-shrink: 0; }
+  .p-opt-confirm {
+    font-size: 12px; color: var(--olive-dark); font-weight: 500;
+    padding: 6px 2px 0; display: none;
+  }
+  .p-opt-confirm.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="proto-wrap">
+  <div class="proto-note">Prototype only — dummy data, no backend. Reviewing the minimalist action row + inline mini-panels before wiring into the real feed.</div>
+
+  <div class="p-card">
+    <div class="p-head">
+      <div class="p-avatar">JC</div>
+      <div class="p-head-body">
+        <div class="p-name">Jordan C.</div>
+        <div class="p-time">3h ago</div>
+      </div>
+      <div class="p-more">⋯</div>
+    </div>
+    <div class="p-caption"><b>Sunday reset bowl</b> — roasted sweet potato, crispy chickpeas, tahini drizzle. Ten minutes of real effort, worth it every time.</div>
+    <div class="p-photo">🥗</div>
+
+    <div class="p-actions">
+      <button class="p-act" id="likeBtn" type="button" title="Like">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.6-10-9.2C.7 8.4 1.8 5 5 4a5 5 0 0 1 7 2 5 5 0 0 1 7-2c3.2 1 4.3 4.4 3 7.3-2.5 4.6-10 9.2-10 9.2Z"/></svg>
+        <span class="p-act-count" id="likeCount">24</span>
+      </button>
+
+      <button class="p-act" id="commentBtn" type="button" title="Comment">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H9l-4 4v-4H6.5A2.5 2.5 0 0 1 4 13.5v-8Z"/></svg>
+        <span class="p-act-count" id="commentCount">4</span>
+      </button>
+
+      <button class="p-act" id="shareBtn" type="button" title="Share">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13"/></svg>
+        <span class="p-act-count" id="shareCount">2</span>
+      </button>
+
+      <button class="p-act p-act-save" id="saveBtn" type="button" title="Save">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21l-6-4-6 4V4.5Z"/></svg>
+      </button>
+    </div>
+
+    <!-- Comment panel: a real mini feed — every old comment, plus a way to add one -->
+    <div class="p-panel" id="commentPanel">
+      <div class="p-panel-inner">
+        <div class="p-comments-list" id="commentsList"></div>
+        <div class="p-comment-input-row">
+          <input type="text" class="p-comment-input" id="commentInput" placeholder="Add a comment…" maxlength="300">
+          <button type="button" class="p-comment-post-btn" id="commentPostBtn" disabled>Post</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Share panel -->
+    <div class="p-panel" id="sharePanel">
+      <div class="p-panel-inner">
+        <div class="p-opt-list">
+          <button class="p-opt-row" data-share="feed" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 5v4h4"/></svg>
+            Reshare to your feed
+          </button>
+          <button class="p-opt-row" data-share="group" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/><path d="M16.5 6.5a3 3 0 0 1 0 5.9"/><path d="M22 20c0-2.8-2.2-5.1-5.2-5.8"/></svg>
+            Share to a group
+          </button>
+          <button class="p-opt-row" data-share="link" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 0 0 5.7.4l2.6-2.6a4 4 0 0 0-5.7-5.7L10 5.5"/><path d="M15 12a4 4 0 0 0-5.7-.4L6.7 14.2a4 4 0 0 0 5.7 5.7L14 18.5"/></svg>
+            Copy link
+          </button>
+        </div>
+        <div class="p-opt-confirm" id="shareConfirm"></div>
+      </div>
+    </div>
+
+    <!-- Save panel -->
+    <div class="p-panel" id="savePanel">
+      <div class="p-panel-inner">
+        <div class="p-opt-list">
+          <button class="p-opt-row" data-save="recipe" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h11a1 1 0 0 1 1 1v15l-6.5-3.5L5 20V5a1 1 0 0 1 1-1Z"/></svg>
+            Save as a Recipe
+          </button>
+          <button class="p-opt-row" data-save="planner" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17"/><path d="M8 3v3M16 3v3"/></svg>
+            Add to Meal Planner
+          </button>
+          <button class="p-opt-row" data-save="device" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7.5 11 12 15.5 16.5 11"/><path d="M4.5 18h15"/></svg>
+            Save to Device
+          </button>
+        </div>
+        <div class="p-opt-confirm" id="saveConfirm"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const DUMMY_COMMENTS = [
+    { name: 'Rae H.', initials: 'RH', text: "This is exactly what I needed to see, making it tonight.", time: '2h' },
+    { name: 'Priya S.', initials: 'PS', text: "Tahini drizzle changes everything honestly", time: '1h' },
+    { name: 'Marcus T.', initials: 'MT', text: "How long do you roast the sweet potato for?", time: '45m' },
+    { name: 'You', initials: 'ME', text: "@Marcus T. about 25 min at 425°F, cubed small", time: '30m' },
+  ];
+
+  let liked = false;
+  let likeCount = 24;
+  let commentCount = DUMMY_COMMENTS.length;
+  let shareCount = 2;
+  let saved = false;
+  let openPanel = null; // 'comment' | 'share' | 'save' | null
+
+  const likeBtn = document.getElementById('likeBtn');
+  const likeCountEl = document.getElementById('likeCount');
+  const commentBtn = document.getElementById('commentBtn');
+  const commentCountEl = document.getElementById('commentCount');
+  const shareBtn = document.getElementById('shareBtn');
+  const shareCountEl = document.getElementById('shareCount');
+  const saveBtn = document.getElementById('saveBtn');
+
+  const panels = {
+    comment: document.getElementById('commentPanel'),
+    share: document.getElementById('sharePanel'),
+    save: document.getElementById('savePanel'),
+  };
+  const triggers = { comment: commentBtn, share: shareBtn, save: saveBtn };
+
+  function setOpenPanel(name) {
+    if (openPanel === name) name = null; // clicking the same icon again closes it
+    Object.keys(panels).forEach((key) => {
+      panels[key].classList.toggle('open', key === name);
+      triggers[key].classList.toggle('panel-open', key === name);
+    });
+    openPanel = name;
+  }
+
+  likeBtn.addEventListener('click', () => {
+    liked = !liked;
+    likeCount += liked ? 1 : -1;
+    likeBtn.classList.toggle('liked', liked);
+    likeCountEl.textContent = likeCount;
+  });
+
+  commentBtn.addEventListener('click', () => setOpenPanel('comment'));
+  shareBtn.addEventListener('click', () => setOpenPanel('share'));
+  saveBtn.addEventListener('click', () => setOpenPanel('save'));
+
+  function renderComments() {
+    const list = document.getElementById('commentsList');
+    list.innerHTML = '';
+    DUMMY_COMMENTS.forEach((c) => {
+      const row = document.createElement('div');
+      row.className = 'p-comment';
+      row.innerHTML =
+        '<div class="p-comment-avatar">' + c.initials + '</div>' +
+        '<div class="p-comment-body">' +
+          '<div class="p-comment-text"><b>' + c.name + '</b>' + c.text + '</div>' +
+          '<div class="p-comment-time">' + c.time + '</div>' +
+        '</div>';
+      list.appendChild(row);
+    });
+  }
+  renderComments();
+
+  const commentInput = document.getElementById('commentInput');
+  const commentPostBtn = document.getElementById('commentPostBtn');
+  commentInput.addEventListener('input', () => {
+    commentPostBtn.disabled = !commentInput.value.trim();
+  });
+  function postComment() {
+    const text = commentInput.value.trim();
+    if (!text) return;
+    DUMMY_COMMENTS.push({ name: 'You', initials: 'ME', text, time: 'now' });
+    commentCount += 1;
+    commentCountEl.textContent = commentCount;
+    commentInput.value = '';
+    commentPostBtn.disabled = true;
+    renderComments();
+    const list = document.getElementById('commentsList');
+    list.scrollTop = list.scrollHeight;
+  }
+  commentPostBtn.addEventListener('click', postComment);
+  commentInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') postComment(); });
+
+  document.querySelectorAll('#sharePanel [data-share]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      shareCount += 1;
+      shareCountEl.textContent = shareCount;
+      const confirm = document.getElementById('shareConfirm');
+      const labels = { feed: 'Reshared to your feed.', group: 'Shared to the group.', link: 'Link copied.' };
+      confirm.textContent = '✓ ' + labels[btn.dataset.share];
+      confirm.classList.add('show');
+      setTimeout(() => setOpenPanel(null), 900);
+    });
+  });
+
+  document.querySelectorAll('#savePanel [data-save]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      saved = true;
+      saveBtn.classList.add('saved');
+      const confirm = document.getElementById('saveConfirm');
+      const labels = { recipe: 'Saved as a recipe.', planner: 'Added to Meal Planner.', device: 'Saved to your device.' };
+      confirm.textContent = '✓ ' + labels[btn.dataset.save];
+      confirm.classList.add('show');
+      setTimeout(() => setOpenPanel(null), 900);
+    });
+  });
+</script>
+</body>
+</html>
