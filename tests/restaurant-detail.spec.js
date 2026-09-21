@@ -182,6 +182,110 @@ test.describe('Restaurant detail page — claimed business profiles', () => {
   });
 });
 
+// Stubs the free, client-side OCR check (Tesseract.js) so tests never
+// load the real ~2MB library or depend on actual OCR accuracy — this
+// script defines window.Tesseract before the page's own scripts run, so
+// loadTesseract() in cookzer-restaurant.html sees it already present and
+// skips the real CDN fetch entirely.
+function mockTesseractText(text) {
+  return `window.Tesseract = { recognize: function () { return Promise.resolve({ data: { text: ${JSON.stringify(text)} } }); } };`;
+}
+
+test.describe('Restaurant detail page — receipt vision-check + reporting (Phase 6)', () => {
+  test('a photo with no receipt-like text prompts to confirm, and declining does not upload or upsert', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js', mockTesseractText('just a random photo, nothing here'));
+
+    await page.click('#rateBtn');
+    await page.locator('#starPicker .star[data-value="4"]').click();
+    await page.locator('#receiptInput').setInputFiles(path.join(__dirname, '..', 'icon-192.png'));
+    await page.click('#submitRatingBtn');
+
+    await expect(page.locator('.cz-modal-overlay')).toBeVisible();
+    await expect(page.locator('.cz-modal-overlay')).toContainText("doesn't look like it has a receipt");
+    await page.click('.cz-modal-btn.cz-ghost');
+
+    expect(await page.evaluate(() => window.__RECEIPT_UPLOADS__.length)).toBe(0);
+    expect(await page.evaluate(() => window.__RATING_UPSERTS__.length)).toBe(0);
+  });
+
+  test('confirming the OCR nudge anyway still submits the rating', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js', mockTesseractText('just a random photo, nothing here'));
+
+    await page.click('#rateBtn');
+    await page.locator('#starPicker .star[data-value="4"]').click();
+    await page.locator('#receiptInput').setInputFiles(path.join(__dirname, '..', 'icon-192.png'));
+    await page.click('#submitRatingBtn');
+
+    await expect(page.locator('.cz-modal-overlay')).toBeVisible();
+    await page.click('.cz-modal-btn.cz-primary');
+
+    await expect.poll(() => page.evaluate(() => window.__RATING_UPSERTS__.length)).toBe(1);
+    expect(await page.evaluate(() => window.__RECEIPT_UPLOADS__.length)).toBe(1);
+  });
+
+  test('a photo with receipt-like text (total/tax) submits with no nudge at all', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js', mockTesseractText('Marfa Bowl Co.\nGrain Bowl   $12.00\nTax   $1.05\nTotal   $13.05'));
+
+    await page.click('#rateBtn');
+    await page.locator('#starPicker .star[data-value="4"]').click();
+    await page.locator('#receiptInput').setInputFiles(path.join(__dirname, '..', 'icon-192.png'));
+    await page.click('#submitRatingBtn');
+
+    await expect.poll(() => page.evaluate(() => window.__RATING_UPSERTS__.length)).toBe(1);
+    await expect(page.locator('.cz-modal-overlay')).toHaveCount(0);
+  });
+
+  test('OCR being unavailable (library fails to load) never blocks submission', async ({ page }) => {
+    // No Tesseract stub — the real CDN script load is blocked by
+    // blockExternalRequests, so loadTesseract() rejects and
+    // photoLooksLikeReceipt() resolves to null (inconclusive).
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+
+    await page.click('#rateBtn');
+    await page.locator('#starPicker .star[data-value="4"]').click();
+    await page.locator('#receiptInput').setInputFiles(path.join(__dirname, '..', 'icon-192.png'));
+    await page.click('#submitRatingBtn');
+
+    await expect.poll(() => page.evaluate(() => window.__RATING_UPSERTS__.length)).toBe(1);
+  });
+
+  test('reporting a review via a preset chip inserts into reports with target_type restaurant_rating and closes the picker', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+
+    await page.click('.tab-row .tab:has-text("Verified reviews")');
+    await page.locator('#tab-reviews .review-report-btn').first().click();
+
+    await expect(page.locator('#pickerOverlay')).toBeVisible();
+    await expect(page.locator('#pickerModal')).toContainText('Report this review');
+    await page.locator('#pickerModal .cz2-chip', { hasText: 'Not a receipt' }).click();
+
+    await expect.poll(() => page.evaluate(() => window.__REPORT_INSERTS__.length)).toBe(1);
+    const insert = await page.evaluate(() => window.__REPORT_INSERTS__[0]);
+    expect(insert).toMatchObject({ reporter_id: 'me-1', target_type: 'restaurant_rating', target_id: 'rating-1', reason: 'Not a receipt' });
+    await expect(page.locator('#pickerOverlay')).toBeHidden();
+  });
+
+  test('reporting a review with a free-text reason inserts it verbatim', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-1', 'restaurant-detail.js');
+
+    await page.click('.tab-row .tab:has-text("Verified reviews")');
+    await page.locator('#tab-reviews .review-report-btn').first().click();
+    await page.fill('#pickerModal .cz2-free-row input', 'This is someone elses receipt');
+    await page.click('#pickerModal .cz2-free-row button');
+
+    await expect.poll(() => page.evaluate(() => window.__REPORT_INSERTS__.length)).toBe(1);
+    const insert = await page.evaluate(() => window.__REPORT_INSERTS__[0]);
+    expect(insert).toMatchObject({ target_type: 'restaurant_rating', reason: 'This is someone elses receipt' });
+  });
+
+  test('your own review never shows the Report affordance', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-6', 'restaurant-detail.js');
+    await page.click('.tab-row .tab:has-text("Verified reviews")');
+    await expect(page.locator('#tab-reviews')).toContainText('My own review');
+    await expect(page.locator('#tab-reviews .review-report-btn')).toHaveCount(0);
+  });
+});
+
 test.describe('Restaurant detail page — Cookzer Verified + Featured (Phase 4)', () => {
   test('a non-admin viewer sees the Verified and Featured badges but no admin tools', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-restaurant.html?id=rest-5', 'restaurant-detail.js');

@@ -11,13 +11,18 @@ const RESTAURANTS = [
 // Google score (avg 3.0 vs Google 4.9 — the biggest Cookzer-vs-Google
 // divergence, testing that "compare" sorts by |delta| regardless of
 // which restaurant is otherwise trending or featured).
+// The r-verified and r-featured entries below also carry the full row
+// shape (id/user_id/review/profiles) loadRatingsFor() selects, so tests
+// can expand those cards and exercise the review row + report picker —
+// one entry is the logged-in test user's own ('me-1'), to confirm the
+// Report affordance never shows on it.
 const RATINGS = [
   { restaurant_id: 'r-old', rating: 4, created_at: '2020-01-01T00:00:00Z' },
   { restaurant_id: 'r-old', rating: 5, created_at: '2020-01-02T00:00:00Z' },
-  { restaurant_id: 'r-verified', rating: 5, created_at: '2026-09-15T00:00:00Z' },
+  { id: 'rating-verified-own', restaurant_id: 'r-verified', rating: 5, created_at: '2026-09-15T00:00:00Z', user_id: 'me-1', review: 'My own take', profiles: { display_name: 'Me Cook', initials: 'MC' } },
   { restaurant_id: 'r-verified', rating: 5, created_at: '2026-09-10T00:00:00Z' },
   { restaurant_id: 'r-verified', rating: 5, created_at: '2026-09-05T00:00:00Z' },
-  { restaurant_id: 'r-featured', rating: 3, created_at: '2026-09-18T00:00:00Z' },
+  { id: 'rating-boosted-1', restaurant_id: 'r-featured', rating: 3, created_at: '2026-09-18T00:00:00Z', user_id: 'other-user', review: 'Overpriced and underwhelming.', receipt_photo_path: 'other-user/receipt.jpg', profiles: { display_name: 'Alex P.', initials: 'AP' } },
 ];
 
 // Recent Dining Out tags, contributing to Trending alongside ratings.
@@ -42,15 +47,22 @@ function chain(table) {
       if (table === 'restaurants') {
         result = RESTAURANTS;
       } else if (table === 'restaurant_ratings') {
-        result = RATINGS;
+        const restFilter = eqArgs.find((a) => a[0] === 'restaurant_id');
+        result = restFilter ? RATINGS.filter((r) => r.restaurant_id === restFilter[1]) : RATINGS;
       } else if (table === 'posts') {
         result = POSTS;
       }
       return Promise.resolve({ data: result, error: null }).then(resolve);
     },
+    insert(payload) {
+      if (table === 'reports') window.__REPORT_INSERTS__.push(payload);
+      return Promise.resolve({ data: null, error: null });
+    },
   };
   return builder;
 }
+
+window.__REPORT_INSERTS__ = [];
 
 window.supabase = {
   createClient: () => ({
