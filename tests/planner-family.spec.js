@@ -258,3 +258,60 @@ test.describe('Meal planner — Jump to a date calendar', () => {
     await expect(page.locator('#plannerWeekTitle')).toContainText("This week's plan");
   });
 });
+
+test.describe('Meal planner — household co-admins get an automatic column', () => {
+  test('a co-admin who joined the household (e.g. invited as a spouse in Settings) gets their own column automatically', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js', `
+      window.__TEST_HOUSEHOLD_MEMBERS__ = [
+        { user_id: 'me-1', joined_at: '2026-01-01T00:00:00Z', profiles: { display_name: 'Test Cook', initials: 'TC', avatar_url: null } },
+        { user_id: 'spouse-1', joined_at: '2026-01-02T00:00:00Z', profiles: { display_name: 'Sarah', initials: 'SC', avatar_url: null } },
+      ];
+    `);
+    const monday = page.locator('.planner-day-card').first();
+    const cols = monday.locator('.planner-person-col');
+    // You + Sarah (co-admin) + Emma (family profile) fill household_size 3 — no ghost left.
+    await expect(cols).toHaveCount(3);
+    await expect(cols.nth(0)).toContainText('You');
+    await expect(cols.nth(1)).toContainText('Sarah');
+    await expect(cols.nth(2)).toContainText('Emma');
+  });
+
+  test('the caller themselves never appears twice, even though household_members includes them', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js', `
+      window.__TEST_HOUSEHOLD_MEMBERS__ = [
+        { user_id: 'me-1', joined_at: '2026-01-01T00:00:00Z', profiles: { display_name: 'Test Cook', initials: 'TC', avatar_url: null } },
+      ];
+    `);
+    const monday = page.locator('.planner-day-card').first();
+    await expect(monday.locator('.planner-person-col', { hasText: 'You' })).toHaveCount(1);
+  });
+
+  test('a co-admin can be suggested a meal for, the same as any real column', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js', `
+      window.__TEST_HOUSEHOLD_MEMBERS__ = [
+        { user_id: 'me-1', joined_at: '2026-01-01T00:00:00Z', profiles: { display_name: 'Test Cook', initials: 'TC', avatar_url: null } },
+        { user_id: 'spouse-1', joined_at: '2026-01-02T00:00:00Z', profiles: { display_name: 'Sarah', initials: 'SC', avatar_url: null } },
+      ];
+    `);
+    const tuesday = page.locator('.planner-day-card').nth(1);
+    await tuesday.locator('.planner-person-col', { hasText: 'Sarah' }).locator('.planner-person-add-btn').click();
+    await page.fill('#pickerModal input[type="text"]', 'Pasta night');
+    await page.locator('#pickerModal button', { hasText: 'Suggest' }).click();
+
+    await expect.poll(() => page.evaluate(() => window.__INSERTED_SUGGESTIONS__.length)).toBe(1);
+    const inserted = await page.evaluate(() => window.__INSERTED_SUGGESTIONS__[0]);
+    expect(inserted).toMatchObject({ suggested_by_user_id: 'spouse-1', dish_text: 'Pasta night' });
+  });
+
+  test('a family profile linked to a co-admin\'s own account does not also get a duplicate column', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js', `
+      window.__TEST_HOUSEHOLD_MEMBERS__ = [
+        { user_id: 'me-1', joined_at: '2026-01-01T00:00:00Z', profiles: { display_name: 'Test Cook', initials: 'TC', avatar_url: null } },
+        { user_id: 'spouse-1', joined_at: '2026-01-02T00:00:00Z', profiles: { display_name: 'Sarah', initials: 'SC', avatar_url: null } },
+      ];
+      window.__TEST_LINKED_FAMILY_PROFILE__ = { id: 'fam-linked', name: 'Sarah', avatar_emoji: 'SC', linked_user_id: 'spouse-1' };
+    `);
+    const monday = page.locator('.planner-day-card').first();
+    await expect(monday.locator('.planner-person-col', { hasText: 'Sarah' })).toHaveCount(1);
+  });
+});
