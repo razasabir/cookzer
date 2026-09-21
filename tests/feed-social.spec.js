@@ -37,45 +37,59 @@ test.describe('Feed — recipe/tip borders', () => {
 });
 
 test.describe('Feed — action buttons', () => {
-  test('a post with no recipe and no photo shows exactly Heart, Share — no Comment icon, no Save, no Download', async ({ page }) => {
+  test('a post with no recipe and no photo shows exactly Heart, Comment, Share — no Save', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
     const actions = page.locator('#post-post-no-photo .action-btn');
-    await expect(actions).toHaveCount(2);
+    await expect(actions).toHaveCount(3);
     await expect(actions.nth(0)).toHaveAttribute('title', 'Heart');
-    await expect(actions.nth(1)).toHaveAttribute('title', 'Share');
-    // Icon only, no leftover label text next to it.
-    await expect(actions.nth(0)).toHaveText('❤️');
-    // The comment icon is gone entirely — commenting happens through the
-    // always-visible comment input, not a toggle button.
-    await expect(page.locator('#post-post-no-photo .action-btn[title="Comment"]')).toHaveCount(0);
+    await expect(actions.nth(1)).toHaveAttribute('title', 'Comment');
+    await expect(actions.nth(2)).toHaveAttribute('title', 'Share');
+    await expect(page.locator('#post-post-no-photo .action-btn[title="Save"]')).toHaveCount(0);
   });
 
-  test('a post with a photo shows a Download option', async ({ page }) => {
+  test('a post with a photo but no recipe shows a Save option (device save only)', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
     const actions = page.locator('#post-post-plain .action-btn');
-    await expect(actions).toHaveCount(3);
-    await expect(actions.nth(2)).toHaveAttribute('title', 'Download photo');
-    const svg = actions.nth(2).locator('svg');
-    await expect(svg).toHaveCount(1);
+    await expect(actions).toHaveCount(4);
+    await expect(actions.nth(3)).toHaveAttribute('title', 'Save');
   });
 
-  test('a recipe post shows a Save option, icon-only', async ({ page }) => {
+  test('a recipe post shows a Save option, icon-only, as a real SVG not an emoji', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
-    const actions = page.locator('#post-post-recipe .action-btn');
-    await expect(actions).toHaveCount(3);
-    await expect(actions.nth(2)).toHaveAttribute('title', 'Save');
-    await expect(actions.nth(2)).toHaveText('🔖');
+    const saveBtn = page.locator('#post-post-recipe .action-btn[title="Save"]');
+    await expect(saveBtn).toBeVisible();
+    await expect(saveBtn.locator('svg')).toHaveCount(1);
   });
 
-  test('the always-visible comment input replaces the old toggle — no separate hearts/comments count row', async ({ page }) => {
+  test('the comment panel is collapsed by default and opens only when the Comment icon is clicked', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
+    await expect(page.locator('#commentPanel-post-plain')).not.toHaveClass(/open/);
+    await expect(page.locator('#post-post-plain .card-comment-input')).not.toBeVisible();
+
+    await page.locator('#post-post-plain .action-btn[title="Comment"]').click();
+    await expect(page.locator('#commentPanel-post-plain')).toHaveClass(/open/);
     await expect(page.locator('#post-post-plain .card-comment-input')).toBeVisible();
     await expect(page.locator('#post-post-plain .card-comment-input')).toHaveAttribute('placeholder', 'Comment');
-    await expect(page.locator('#post-post-plain .card-stats')).toHaveCount(0);
+  });
+
+  test('opening the comment panel shows every old comment — a real mini feed, not just the input', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js'); // post-plain has 2 seeded comments
+    await page.locator('#post-post-plain .action-btn[title="Comment"]').click();
+    await expect(page.locator('#commentBox-post-plain .comment-row')).toHaveCount(2);
+  });
+
+  test('clicking the Comment icon again closes the panel', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
+    const commentBtn = page.locator('#post-post-plain .action-btn[title="Comment"]');
+    await commentBtn.click();
+    await expect(page.locator('#commentPanel-post-plain')).toHaveClass(/open/);
+    await commentBtn.click();
+    await expect(page.locator('#commentPanel-post-plain')).not.toHaveClass(/open/);
   });
 
   test('the comment input has a Send button beside it', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
+    await page.locator('#post-post-plain .action-btn[title="Comment"]').click();
     const sendBtn = page.locator('#post-post-plain .card-comment-send-btn');
     await expect(sendBtn).toHaveText('Send');
   });
@@ -87,56 +101,64 @@ test.describe('Feed — action buttons', () => {
     expect(Number(weight)).toBeGreaterThanOrEqual(700);
   });
 
-  test('hearts and comments counts show inline with the caption when there are any', async ({ page }) => {
+  test('heart and comment counts show inline beside their icons when there are any', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
-    await expect(page.locator('#post-post-plain .card-inline-stats')).toContainText('3');
-    await expect(page.locator('#post-post-plain .card-inline-stats')).toContainText('2');
+    await expect(page.locator('#heartCount-post-plain')).toHaveText('3');
+    await expect(page.locator('#commentCount-post-plain')).toHaveText('2');
   });
 
   test('the counts are left blank, not shown as 0, when a post has neither', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
-    const stats = page.locator('#post-post-no-photo .card-inline-stats');
-    await expect(stats).toHaveText('');
+    await expect(page.locator('#heartCount-post-no-photo')).toHaveText('');
+    await expect(page.locator('#commentCount-post-no-photo')).toHaveText('');
   });
 
-  test('the Share icon is the brand orange, not the default action color', async ({ page }) => {
+  test('the Share icon is a neutral color by default, not a fixed brand color', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
     const shareBtn = page.locator('#post-post-plain .action-btn[title="Share"]');
     const color = await shareBtn.evaluate((el) => getComputedStyle(el).color);
-    expect(color).toBe('rgb(255, 107, 74)'); // var(--brick)
+    expect(color).not.toBe('rgb(255, 107, 74)'); // not permanently var(--brick) anymore
   });
 
-  test('the Share icon is a real SVG icon, not a thin/hard-to-see text glyph', async ({ page }) => {
+  test('every action icon is a real stroked SVG, not emoji or a leftover text glyph', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
-    const shareBtn = page.locator('#post-post-plain .action-btn[title="Share"]');
-    await expect(shareBtn).toHaveText(''); // no leftover character alongside the icon
-    const svg = shareBtn.locator('svg');
-    await expect(svg).toHaveCount(1);
-    // A solid filled arrow, not just a thin outline — bold enough to hold
-    // its own next to the ❤️/💬 emoji beside it.
-    const filledPath = svg.locator('path[fill="currentColor"]');
-    await expect(filledPath).toHaveCount(1);
-    const strokedPath = svg.locator('path[stroke="currentColor"]');
-    const strokeWidth = await strokedPath.evaluate((el) => Number(el.getAttribute('stroke-width')));
-    expect(strokeWidth).toBeGreaterThanOrEqual(2);
-    const strokeColor = await svg.evaluate((el) => getComputedStyle(el).color);
-    expect(strokeColor).toBe('rgb(255, 107, 74)'); // currentColor picks up the brand orange
+    for (const title of ['Heart', 'Comment', 'Share']) {
+      const btn = page.locator(`#post-post-plain .action-btn[title="${title}"]`);
+      const svg = btn.locator('svg');
+      await expect(svg).toHaveCount(1);
+      await expect(svg).toHaveAttribute('stroke', 'currentColor');
+      const strokeWidth = await svg.evaluate((el) => Number(el.getAttribute('stroke-width')));
+      expect(strokeWidth).toBeGreaterThan(0);
+    }
   });
 
-  test('Heart icon renders larger than plain body text, matching the Share icon\'s size', async ({ page }) => {
+  test('Heart, Comment, and Share icons render at the same size', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
-    const heartBtn = page.locator('#post-post-plain .action-btn[title="Heart"]');
-    const heartSize = await heartBtn.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-    expect(heartSize).toBeGreaterThanOrEqual(20);
+    const sizes = [];
+    for (const title of ['Heart', 'Comment', 'Share']) {
+      const svg = page.locator(`#post-post-plain .action-btn[title="${title}"] svg`);
+      sizes.push(await svg.evaluate((el) => getComputedStyle(el).width));
+    }
+    expect(new Set(sizes).size).toBe(1);
+  });
+
+  test('clicking Heart calls toggleHeart directly, with no panel to open first', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
+    const heartBtn = page.locator('#post-post-no-photo .action-btn[title="Heart"]');
+    await heartBtn.click();
+    // No inline panel exists for Heart — verify none of the three panel
+    // ids got created/opened as a side effect of this click.
+    await expect(page.locator('#commentPanel-post-no-photo')).not.toHaveClass(/open/);
+    await expect(page.locator('#sharePanel-post-no-photo')).not.toHaveClass(/open/);
   });
 
   test('Share opens an in-app popup with the link, not the OS share sheet', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-feed.html', 'feed-social.js');
     await page.locator('#post-post-plain .action-btn[title="Share"]').click();
-    // Share now opens a Reshare/Group/External picker first, not the
-    // share-link popup directly — "Share externally" is the option that
-    // reaches the same in-app link popup as before.
-    await page.locator('.cz2-row', { hasText: 'Share externally' }).click();
+    // Share now opens a Reshare/Group/External inline panel first, not
+    // the share-link popup directly — "Share externally" is the option
+    // that reaches the same in-app link popup as before.
+    await page.locator('#sharePanelBody-post-plain .cz2-row', { hasText: 'Share externally' }).click();
     await expect(page.locator('.cz-share-link-row input')).toHaveValue(/post=post-plain/);
 
     await page.locator('.cz-share-copy-btn').click();

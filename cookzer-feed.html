@@ -685,27 +685,6 @@
 
   .mention-link:hover { text-decoration: underline; }
 
-  .card-inline-stats {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      color: var(--ink-soft);
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-  .card-inline-comments-btn {
-      background: none;
-      border: none;
-      padding: 0;
-      font: inherit;
-      color: inherit;
-      cursor: pointer;
-    }
-
-  .card-inline-comments-btn:hover { color: var(--olive-dark); }
-
   .mood-badge {
       display: inline-block;
       font-size: 12px;
@@ -733,85 +712,105 @@
       font-weight: 500;
     }
 
+  /* Minimalist action row — thin line icons, counts inline beside each
+     one, tight spacing, a single top border. No per-button background/
+     padding box like the old design; nothing here competes with the
+     post content above it for visual weight. */
+  .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 8px 0 0;
+      border-top: 1px solid var(--line);
+      margin-top: 10px;
+    }
+
+  .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: none;
+      padding: 4px 2px;
+      cursor: pointer;
+      color: var(--ink-soft);
+      font-family: inherit;
+    }
+
+  .action-btn svg { width: 20px; height: 20px; display: block; transition: transform 0.12s ease; }
+  .action-btn:active svg { transform: scale(0.86); }
+  .action-btn-count { font-size: 12px; font-weight: 500; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+  .action-btn.liked { color: var(--brick); }
+  .action-btn.liked svg { fill: var(--brick); stroke: var(--brick); }
+  .action-btn.liked .action-btn-count { color: var(--brick); }
+
+  .action-btn.panel-open { color: var(--olive-dark); }
+  .action-btn.panel-open .action-btn-count { color: var(--olive-dark); }
+
+  .action-btn.saved svg { fill: var(--olive); stroke: var(--olive); }
+
+  .action-btn-save { margin-left: auto; }
+
+  /* Inline expanding panel — the comment/share/save "mini feed" that
+     replaces a separate popup. Only one open per card at a time.
+     visibility (not just max-height/overflow) is toggled too — a closed
+     panel's comment input would otherwise still be reachable by Tab and
+     screen readers even while visually clipped to zero height. */
+  .card-panel {
+      max-height: 0;
+      overflow: hidden;
+      visibility: hidden;
+      border-top: 1px solid transparent;
+      transition: max-height 0.22s ease, visibility 0s linear 0.22s;
+    }
+
+  .card-panel.open {
+      max-height: 600px;
+      visibility: visible;
+      border-top-color: var(--line);
+      margin-top: 8px;
+      transition: max-height 0.22s ease, visibility 0s linear 0s;
+    }
+
+  .card-panel-inner { padding: 10px 0 2px; }
+
+  .card-comments-list { max-height: 260px; overflow-y: auto; }
+
   .card-comment-input-row {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-top: 10px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
     }
 
   .card-comment-input {
       flex: 1;
       min-width: 0;
-      padding: 9px 14px;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      font-size: 13px;
+      border: none;
+      background: none;
       font-family: inherit;
+      font-size: 13px;
       color: var(--ink);
-      background: var(--cream);
+      padding: 4px 0;
     }
 
+  .card-comment-input:focus { outline: none; }
   .card-comment-input::placeholder { color: var(--ink-soft); }
 
   .card-comment-send-btn {
       flex-shrink: 0;
-      padding: 9px 16px;
+      background: none;
       border: none;
-      border-radius: 18px;
-      background: var(--olive);
-      color: #fff;
+      font-family: inherit;
       font-size: 13px;
       font-weight: 600;
-      font-family: inherit;
+      color: var(--olive-dark);
       cursor: pointer;
+      padding: 4px 2px;
     }
-
-  .card-comment-send-btn:hover { background: var(--olive-dark); }
-
-  .card-actions {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 4px;
-      padding: 10px 0 0;
-    }
-
-  .card-actions .action-btn { flex: none; padding: 6px; }
-
-  .action-btn {
-      flex: 1;
-      padding: 8px;
-      border: none;
-      background: none;
-      cursor: pointer;
-      font-size: 13px;
-      color: var(--ink-soft);
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      border-radius: 10px;
-    }
-
-  .action-btn:hover {
-      background: var(--cream);
-      color: var(--olive);
-    }
-
-  .share-action-btn { color: var(--brick); }
-  .share-action-btn:hover { background: var(--cream); color: var(--brick); }
-  .share-action-btn svg { display: block; }
-
-  .download-action-btn { color: var(--olive); }
-  .download-action-btn:hover { background: var(--cream); color: var(--olive); }
-  .download-action-btn svg { display: block; }
-
-  /* Heart/Comment/Share carry no label anymore — just an icon — so each
-     one reads at a size that actually registers next to the others,
-     instead of inheriting the row's small 13px text size. */
-  .action-btn-icon-only { font-size: 22px; }
 
   /* Right sidebar */
     .right-sidebar {
@@ -1393,23 +1392,16 @@
   let videoUploadInProgress = false;
   let activeTusUpload = null;
 
-  // The "export" share icon (a solid upward arrow rising out of an open
-  // tray) — the glyph iOS standardized as Share and most apps now use for
-  // it, recognizable at a glance unlike a 3-node "network" icon (tried,
-  // and rejected as unclear/too faint). Drawn with a filled arrow, not a
-  // thin outline throughout, so it carries real visual weight next to the
-  // solid-colored ❤️/💬 emoji beside it rather than reading as a faint
-  // line-art leftover.
-  const SHARE_ICON_SVG = '<svg viewBox="0 0 24 24" width="23" height="23">'
-    + '<path d="M12 2 L7 8.5 H9.5 V15 H14.5 V8.5 H17 Z" fill="currentColor"/>'
-    + '<path d="M6 13 V18 C6 19.1 6.9 20 8 20 H16 C17.1 20 18 19.1 18 18 V13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>'
-    + '</svg>';
-  // Same arrow-plus-tray construction as SHARE_ICON_SVG, mirrored: the
-  // arrowhead points down into the tray instead of up out of it.
-  const DOWNLOAD_ICON_SVG = '<svg viewBox="0 0 24 24" width="23" height="23">'
-    + '<path d="M9.5 2 H14.5 V8.5 H17 L12 15 L7 8.5 H9.5 Z" fill="currentColor"/>'
-    + '<path d="M6 13 V18 C6 19.1 6.9 20 8 20 H16 C17.1 20 18 19.1 18 18 V13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>'
-    + '</svg>';
+  // One consistent thin-outline icon family for every action-row button —
+  // Heart/Comment/Share/Save all read as the same minimalist control,
+  // rather than a mix of emoji and a solid brand-colored glyph. Color is
+  // state (liked/panel-open/saved), not a fixed per-icon brand tint.
+  const ACTION_ICONS = {
+    heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.6-10-9.2C.7 8.4 1.8 5 5 4a5 5 0 0 1 7 2 5 5 0 0 1 7-2c3.2 1 4.3 4.4 3 7.3-2.5 4.6-10 9.2-10 9.2Z"/></svg>',
+    comment: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H9l-4 4v-4H6.5A2.5 2.5 0 0 1 4 13.5v-8Z"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13"/></svg>',
+    save: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21l-6-4-6 4V4.5Z"/></svg>',
+  };
   const MAX_VIDEO_SECONDS = 90;
 
   function timeAgo(iso) {
@@ -2399,40 +2391,78 @@
     challengeBadge.hidden = true;
     content.appendChild(challengeBadge);
 
-    // Caption on the left, hearts/comments counts on the right of the
-    // same line — blank on either side when there's nothing to show
-    // (no caption, or a fresh post with zero hearts/comments) rather
-    // than an empty "0 hearts" row.
-    const captionRow = document.createElement('div');
-    captionRow.className = 'card-caption-row';
     if (post.caption) {
+      const captionRow = document.createElement('div');
+      captionRow.className = 'card-caption-row';
       const desc = document.createElement('div');
       desc.className = 'card-description';
       appendTextWithMentions(desc, post.caption);
       captionRow.appendChild(desc);
+      content.appendChild(captionRow);
     }
-    const inlineStats = document.createElement('div');
-    inlineStats.className = 'card-inline-stats';
-    const inlineHearts = document.createElement('span');
-    inlineHearts.id = 'inlineHearts-' + post.id;
-    const inlineComments = document.createElement('button');
-    inlineComments.type = 'button';
-    inlineComments.className = 'card-inline-comments-btn';
-    inlineComments.id = 'inlineComments-' + post.id;
-    inlineComments.hidden = true;
-    inlineComments.addEventListener('click', () => toggleCommentsList(post.id, post.author_id));
-    inlineStats.appendChild(inlineHearts);
-    inlineStats.appendChild(inlineComments);
-    captionRow.appendChild(inlineStats);
-    content.appendChild(captionRow);
 
-    // Existing comments stay collapsed (revealed via the inline "💬 N"
-    // count above, or by posting a new one) rather than always rendered.
+    // Minimalist action row: Heart/Comment/Share/Save, thin line icons,
+    // a count inline beside Heart and Comment. Heart toggles instantly;
+    // Comment/Share/Save each open their own inline panel right below
+    // the row (a real mini feed for Comment — every old comment plus a
+    // way to add one — and a minimal option list for Share/Save), never
+    // a separate popup. Only one panel open per card at a time.
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+
+    const heartBtn = document.createElement('button');
+    heartBtn.type = 'button';
+    heartBtn.className = 'action-btn';
+    heartBtn.id = 'heartBtn-' + post.id;
+    heartBtn.title = 'Heart';
+    heartBtn.innerHTML = ACTION_ICONS.heart + '<span class="action-btn-count" id="heartCount-' + post.id + '"></span>';
+    heartBtn.addEventListener('click', () => toggleHeart(post.id));
+    actions.appendChild(heartBtn);
+
+    const commentBtn = document.createElement('button');
+    commentBtn.type = 'button';
+    commentBtn.className = 'action-btn';
+    commentBtn.id = 'commentBtn-' + post.id;
+    commentBtn.title = 'Comment';
+    commentBtn.innerHTML = ACTION_ICONS.comment + '<span class="action-btn-count" id="commentCount-' + post.id + '"></span>';
+    commentBtn.addEventListener('click', () => toggleCommentPanel(post.id, post.author_id));
+    actions.appendChild(commentBtn);
+
+    const shareBtn = document.createElement('button');
+    shareBtn.type = 'button';
+    shareBtn.className = 'action-btn';
+    shareBtn.id = 'shareBtn-' + post.id;
+    shareBtn.title = 'Share';
+    shareBtn.innerHTML = ACTION_ICONS.share;
+    shareBtn.addEventListener('click', () => toggleSharePanel(post.id));
+    actions.appendChild(shareBtn);
+
+    // Save covers both "save the recipe for later" and "save the photo
+    // to your device" — shown whenever either applies, with the inline
+    // panel offering only the option(s) that actually make sense here.
+    if (post.recipes || cardImageUrl) {
+      const saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'action-btn action-btn-save';
+      saveBtn.id = 'saveBtn-' + post.id;
+      saveBtn.title = 'Save';
+      saveBtn.innerHTML = ACTION_ICONS.save;
+      saveBtn.addEventListener('click', () => toggleSavePanel(post, cardImageUrl));
+      actions.appendChild(saveBtn);
+    }
+    content.appendChild(actions);
+
+    // Comment panel: existing comments (a real mini feed, lazy-loaded on
+    // first open) plus an input to add one.
+    const commentPanel = document.createElement('div');
+    commentPanel.className = 'card-panel';
+    commentPanel.id = 'commentPanel-' + post.id;
+    const commentPanelInner = document.createElement('div');
+    commentPanelInner.className = 'card-panel-inner';
     const commentsList = document.createElement('div');
     commentsList.id = 'commentBox-' + post.id;
-    commentsList.hidden = true;
-    commentsList.style.marginTop = '8px';
-    content.appendChild(commentsList);
+    commentsList.className = 'card-comments-list';
+    commentPanelInner.appendChild(commentsList);
 
     const commentInputRow = document.createElement('div');
     commentInputRow.className = 'card-comment-input-row mention-anchor';
@@ -2451,82 +2481,32 @@
     sendBtn.addEventListener('click', () => submitComment(post.id, commentInput, commentsList, post.author_id));
     commentInputRow.appendChild(commentInput);
     commentInputRow.appendChild(sendBtn);
-    content.appendChild(commentInputRow);
+    commentPanelInner.appendChild(commentInputRow);
+    commentPanel.appendChild(commentPanelInner);
+    content.appendChild(commentPanel);
 
-    // Every action here is icon-only (no "0 hearts"/"0 comments" counts,
-    // no text labels like "Save") and lives in one right-aligned row —
-    // see CLAUDE.md-adjacent design pass: matches the reference card.
-    const actions = document.createElement('div');
-    actions.className = 'card-actions';
-    const heartBtn = document.createElement('button');
-    heartBtn.className = 'action-btn action-btn-icon-only';
-    heartBtn.id = 'heartBtn-' + post.id;
-    heartBtn.title = 'Heart';
-    heartBtn.textContent = '❤️';
-    heartBtn.addEventListener('click', () => toggleHeart(post.id));
-    const shareBtn = document.createElement('button');
-    shareBtn.className = 'action-btn share-action-btn';
-    shareBtn.title = 'Share';
-    // An SVG icon, not an emoji or a plain text glyph — a color emoji is a
-    // fixed-color image CSS can't tint, and a lone Unicode arrow character
-    // reads as too thin/faint next to the bold ❤️ emoji beside it.
-    // stroke="currentColor" picks up .share-action-btn's brand-orange color.
-    shareBtn.innerHTML = SHARE_ICON_SVG;
-    shareBtn.addEventListener('click', () => sharePost(post.id));
-    actions.appendChild(heartBtn);
-    actions.appendChild(shareBtn);
-    // Nothing to download for a video post or a photo-less text/tip post.
-    if (cardImageUrl) {
-      const downloadBtn = document.createElement('button');
-      downloadBtn.className = 'action-btn download-action-btn';
-      downloadBtn.title = 'Download photo';
-      downloadBtn.innerHTML = DOWNLOAD_ICON_SVG;
-      downloadBtn.addEventListener('click', () => downloadPostImage(cardImageUrl));
-      actions.appendChild(downloadBtn);
-    }
-    // Save is a recipe-specific action — a plain post/tip/dining-out/
-    // challenge share has nothing to save for later the way a recipe does.
-    if (post.recipes) {
-      const bookmarkBtn = document.createElement('button');
-      bookmarkBtn.className = 'action-btn action-btn-icon-only';
-      bookmarkBtn.id = 'bookmarkBtn-' + post.id;
-      bookmarkBtn.title = 'Save';
-      bookmarkBtn.textContent = '🔖';
-      bookmarkBtn.addEventListener('click', async () => {
-        if (!currentHousehold) currentHousehold = await CookzerHousehold.getOrCreate(sb);
-        CookzerSaveMenu.open({
-          sb,
-          currentUserId: currentUser.id,
-          householdId: currentHousehold.id,
-          recipeId: post.recipe_id,
-          imageUrl: cardImageUrl,
-          deviceFilename: 'cookzer-photo.jpg',
-          onSaveAsRecipe: () => toggleBookmark(post.id),
-        });
-      });
-      actions.appendChild(bookmarkBtn);
-    }
-    content.appendChild(actions);
+    // Share panel: filled in by CookzerShareMenu.openInline() when opened.
+    const sharePanel = document.createElement('div');
+    sharePanel.className = 'card-panel';
+    sharePanel.id = 'sharePanel-' + post.id;
+    const sharePanelBody = document.createElement('div');
+    sharePanelBody.className = 'card-panel-inner';
+    sharePanelBody.id = 'sharePanelBody-' + post.id;
+    sharePanel.appendChild(sharePanelBody);
+    content.appendChild(sharePanel);
+
+    // Save panel: filled in by CookzerSaveMenu.openInline() when opened.
+    const savePanel = document.createElement('div');
+    savePanel.className = 'card-panel';
+    savePanel.id = 'savePanel-' + post.id;
+    const savePanelBody = document.createElement('div');
+    savePanelBody.className = 'card-panel-inner';
+    savePanelBody.id = 'savePanelBody-' + post.id;
+    savePanel.appendChild(savePanelBody);
+    content.appendChild(savePanel);
 
     card.appendChild(content);
     return card;
-  }
-
-  async function downloadPostImage(imageUrl) {
-    try {
-      const res = await fetch(imageUrl);
-      const blob = await res.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = objectUrl;
-      a.download = 'cookzer-photo.jpg';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(objectUrl);
-    } catch (err) {
-      await CookzerModal.alert('Could not download this photo.');
-    }
   }
 
   function openPostLightbox(post, imageUrl) {
@@ -2555,15 +2535,60 @@
     else await CookzerModal.alert('Thanks — this post has been reported for review.');
   }
 
-  function sharePost(postId) {
+  // Exactly one of the comment/share/save inline panels is open per card
+  // at a time — opening one closes whichever of the other two was open.
+  function closeCardPanel(postId, which) {
+    const panel = document.getElementById(which + 'Panel-' + postId);
+    const btn = document.getElementById(which + 'Btn-' + postId);
+    if (panel) panel.classList.remove('open');
+    if (btn) btn.classList.remove('panel-open');
+  }
+
+  function toggleCardPanel(postId, which) {
+    ['comment', 'share', 'save'].forEach((k) => { if (k !== which) closeCardPanel(postId, k); });
+    const panel = document.getElementById(which + 'Panel-' + postId);
+    const btn = document.getElementById(which + 'Btn-' + postId);
+    const nowOpen = !panel.classList.contains('open');
+    panel.classList.toggle('open', nowOpen);
+    btn.classList.toggle('panel-open', nowOpen);
+    return nowOpen;
+  }
+
+  async function toggleCommentPanel(postId, postAuthorId) {
+    const nowOpen = toggleCardPanel(postId, 'comment');
+    if (!nowOpen) return;
+    const box = document.getElementById('commentBox-' + postId);
+    await renderComments(postId, box, postAuthorId);
+  }
+
+  function toggleSharePanel(postId) {
+    const nowOpen = toggleCardPanel(postId, 'share');
+    if (!nowOpen) return;
     const url = location.origin + location.pathname.replace(/[^/]*$/, '') + 'cookzer-feed.html?post=' + postId;
-    CookzerShareMenu.open({
+    const container = document.getElementById('sharePanelBody-' + postId);
+    CookzerShareMenu.openInline(container, {
       sb,
       currentUserId: currentUser.id,
       postFields: { shared_post_id: postId },
       externalShare: { title: 'Cookzer', url },
       onShared: loadFeed,
-    });
+    }, () => closeCardPanel(postId, 'share'));
+  }
+
+  async function toggleSavePanel(post, cardImageUrl) {
+    const nowOpen = toggleCardPanel(post.id, 'save');
+    if (!nowOpen) return;
+    if (post.recipes && !currentHousehold) currentHousehold = await CookzerHousehold.getOrCreate(sb);
+    const container = document.getElementById('savePanelBody-' + post.id);
+    CookzerSaveMenu.openInline(container, {
+      sb,
+      currentUserId: currentUser.id,
+      householdId: currentHousehold ? currentHousehold.id : null,
+      recipeId: post.recipe_id,
+      imageUrl: cardImageUrl,
+      deviceFilename: 'cookzer-photo.jpg',
+      onSaveAsRecipe: () => toggleBookmark(post.id),
+    }, () => closeCardPanel(post.id, 'save'));
   }
 
   async function deletePost(postId, cardEl) {
@@ -2603,34 +2628,26 @@
       .maybeSingle();
 
     const heartBtn = document.getElementById('heartBtn-' + postId);
-    const bookmarkBtn = document.getElementById('bookmarkBtn-' + postId);
-    updateInlineStats(postId, heartCount || 0, commentCount || 0);
+    const saveBtn = document.getElementById('saveBtn-' + postId);
+    updateActionCounts(postId, heartCount || 0, commentCount || 0);
     if (heartBtn) {
       heartBtn.title = mine ? 'Hearted' : 'Heart';
-      heartBtn.style.color = mine ? 'var(--brick)' : '';
+      heartBtn.classList.toggle('liked', !!mine);
     }
-    if (bookmarkBtn) {
-      bookmarkBtn.title = bookmarked ? 'Saved' : 'Save';
-      bookmarkBtn.style.color = bookmarked ? 'var(--olive)' : '';
+    if (saveBtn) {
+      saveBtn.title = bookmarked ? 'Saved' : 'Save';
+      saveBtn.classList.toggle('saved', !!bookmarked);
     }
   }
 
-  // In line with the caption: a heart count and a comment count, each
-  // shown only once it's actually above zero — a fresh post with
-  // neither shows nothing rather than "0 hearts". The comment count
-  // doubles as the control that reveals the full comment list, so it
-  // stays a button rather than plain text.
-  function updateInlineStats(postId, heartCount, commentCount) {
-    const heartsEl = document.getElementById('inlineHearts-' + postId);
-    if (heartsEl) heartsEl.textContent = heartCount > 0 ? '❤️ ' + heartCount : '';
-    const commentsBtn = document.getElementById('inlineComments-' + postId);
-    if (!commentsBtn) return;
-    if (commentCount > 0) {
-      commentsBtn.hidden = false;
-      commentsBtn.textContent = '💬 ' + commentCount;
-    } else {
-      commentsBtn.hidden = true;
-    }
+  // Beside each icon, each count shown only once it's actually above
+  // zero — a fresh post with neither shows a blank count rather than
+  // "0" next to the icon.
+  function updateActionCounts(postId, heartCount, commentCount) {
+    const heartCountEl = document.getElementById('heartCount-' + postId);
+    if (heartCountEl) heartCountEl.textContent = heartCount > 0 ? heartCount : '';
+    const commentCountEl = document.getElementById('commentCount-' + postId);
+    if (commentCountEl) commentCountEl.textContent = commentCount > 0 ? commentCount : '';
   }
 
   async function toggleBookmark(postId) {
@@ -2663,16 +2680,6 @@
       await sb.from('hearts').insert({ post_id: postId, user_id: currentUser.id });
     }
     await refreshPostStats(postId);
-  }
-
-  async function toggleCommentsList(postId, postAuthorId) {
-    const box = document.getElementById('commentBox-' + postId);
-    if (!box.hidden) {
-      box.hidden = true;
-      return;
-    }
-    box.hidden = false;
-    await renderComments(postId, box, postAuthorId);
   }
 
   // Deleting a comment: the comment's own author can always remove it
@@ -2955,11 +2962,11 @@
 
     postIds.forEach((postId) => {
       const heartBtn = document.getElementById('heartBtn-' + postId);
-      updateInlineStats(postId, heartCounts[postId] || 0, commentCounts[postId] || 0);
+      updateActionCounts(postId, heartCounts[postId] || 0, commentCounts[postId] || 0);
       if (heartBtn) {
         const mine = myHearts.has(postId);
         heartBtn.title = mine ? 'Hearted' : 'Heart';
-        heartBtn.style.color = mine ? 'var(--brick)' : '';
+        heartBtn.classList.toggle('liked', mine);
       }
     });
   }
