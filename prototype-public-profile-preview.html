@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Public profile preview — prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* styles.css pins body to height:100vh/overflow:hidden site-wide, and
+     every real page scrolls its own inner container instead (e.g.
+     .feed-container) rather than fighting that with body-level scroll
+     overrides (html/body overflow propagation makes that unreliable) —
+     .pp-scroll follows the same established pattern here. */
+  body { display: flex; flex-direction: column; align-items: stretch; }
+  .pp-scroll {
+    flex: 1; overflow-y: auto; display: flex; flex-direction: column;
+    align-items: center; padding-bottom: 90px;
+  }
+  .proto-wrap { width: 100%; max-width: 620px; }
+  .proto-note {
+    font-size: 12px; color: var(--ink-soft); text-align: center;
+    padding: 10px 16px; line-height: 1.5; background: var(--cream);
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* ---- logged-out top bar ---- */
+  .pp-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 1px solid var(--line);
+    background: var(--card-bg);
+  }
+  .pp-logo { font-size: 20px; color: var(--olive-dark); letter-spacing: -0.5px; font-family: 'Fredoka', sans-serif; font-weight: 600; }
+  .pp-logo span { color: var(--brick); }
+  .pp-topbar-actions { display: flex; align-items: center; gap: 14px; }
+  .pp-login-link { font-size: 13px; font-weight: 600; color: var(--ink-soft); text-decoration: none; }
+  .pp-signup-btn {
+    background: var(--olive); color: #fff; border: none; border-radius: 10px;
+    padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .pp-signup-btn:hover { background: var(--olive-dark); }
+
+  /* ---- banner + avatar ---- */
+  .pp-banner {
+    height: 140px;
+    background: linear-gradient(135deg, #8A6BBE, #5C3E8A);
+    position: relative;
+  }
+  .pp-avatar-wrap { padding: 0 20px; margin-top: -44px; }
+  .pp-avatar {
+    width: 88px; height: 88px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+    border: 4px solid var(--cream);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 30px;
+    font-family: 'Fraunces', serif;
+  }
+
+  /* ---- identity block ---- */
+  .pp-identity { padding: 12px 20px 0; }
+  .pp-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .pp-name { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--ink); }
+  .pp-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 10.5px; font-weight: 700; color: var(--olive-dark);
+    background: rgba(46,143,92,0.10); border-radius: 8px; padding: 3px 8px;
+  }
+  .pp-badge.trophy { color: var(--mustard); background: rgba(244,185,66,0.14); }
+  .pp-bio { font-size: 13.5px; color: var(--ink); line-height: 1.5; margin-top: 8px; max-width: 480px; }
+  .pp-meta { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; display: flex; align-items: center; gap: 5px; }
+
+  .pp-stats { display: flex; gap: 22px; margin-top: 14px; }
+  .pp-stat-num { font-size: 16px; font-weight: 700; color: var(--ink); font-family: 'Fraunces', serif; }
+  .pp-stat-label { font-size: 11.5px; color: var(--ink-soft); }
+
+  .pp-cta-row { display: flex; gap: 10px; margin-top: 16px; }
+  .pp-follow-btn {
+    flex: 1; background: var(--olive); color: #fff; border: none; border-radius: 10px;
+    padding: 10px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .pp-follow-btn:hover { background: var(--olive-dark); }
+  .pp-message-btn {
+    flex: 1; background: var(--card-bg); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .pp-message-btn:hover { background: var(--cream); }
+
+  /* ---- section shell ---- */
+  .pp-section { padding: 22px 20px 0; }
+  .pp-section-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--ink-faint, #9A9D8E); margin-bottom: 10px;
+  }
+
+  /* ---- pinned recipe ---- */
+  .pp-pinned-card {
+    display: flex; gap: 12px; border: 1px solid var(--line); border-radius: 14px;
+    padding: 10px; background: var(--card-bg);
+  }
+  .pp-pinned-thumb {
+    width: 84px; height: 84px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--mustard), #D9902E);
+    display: flex; align-items: center; justify-content: center; font-size: 30px;
+  }
+  .pp-pinned-body { min-width: 0; }
+  .pp-pinned-label { font-size: 10.5px; font-weight: 700; color: var(--olive-dark); text-transform: uppercase; letter-spacing: 0.4px; }
+  .pp-pinned-title { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--ink); margin-top: 3px; }
+  .pp-pinned-meta { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+
+  /* ---- recipe grid + paywall tile ---- */
+  .pp-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 4px;
+  }
+  .pp-grid-tile {
+    aspect-ratio: 1; border-radius: 10px; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, var(--olive-dark), var(--olive));
+    display: flex; align-items: center; justify-content: center; font-size: 26px;
+  }
+  .pp-grid-tile.locked {
+    filter: blur(3px) brightness(0.6);
+  }
+  .pp-lock-overlay {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px;
+    background: rgba(20,20,16,0.45); color: #fff; font-size: 11px; font-weight: 700;
+  }
+  .pp-lock-overlay svg { width: 18px; height: 18px; }
+
+  .pp-more-note {
+    text-align: center; font-size: 12.5px; color: var(--ink-soft);
+    margin-top: 12px; margin-bottom: 24px;
+  }
+  .pp-more-note a { color: var(--olive-dark); font-weight: 600; text-decoration: none; }
+
+  /* ---- sticky bottom join bar ---- */
+  .pp-sticky-cta {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--card-bg); border-top: 1px solid var(--line);
+    padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.06);
+    max-width: 620px; margin: 0 auto;
+  }
+  .pp-sticky-text { flex: 1; font-size: 12.5px; color: var(--ink); line-height: 1.35; }
+  .pp-sticky-text b { display: block; font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--olive-dark); }
+  .pp-sticky-btn {
+    flex-shrink: 0; background: var(--olive); color: #fff; border: none; border-radius: 10px;
+    padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .pp-sticky-btn:hover { background: var(--olive-dark); }
+
+  /* ---- lightweight gate modal (self-contained, not cookzer-modal.js) ---- */
+  .pp-gate-overlay {
+    position: fixed; inset: 0; background: rgba(30,26,20,0.5);
+    display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;
+  }
+  .pp-gate-overlay.open { display: flex; }
+  .pp-gate-card {
+    background: var(--card-bg); border-radius: 18px; padding: 26px 22px; width: 100%; max-width: 340px;
+    text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .pp-gate-icon { font-size: 34px; margin-bottom: 8px; }
+  .pp-gate-title { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .pp-gate-desc { font-size: 13px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 18px; }
+  .pp-gate-actions { display: flex; flex-direction: column; gap: 8px; }
+  .pp-gate-primary {
+    background: var(--olive); color: #fff; border: none; border-radius: 10px;
+    padding: 11px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .pp-gate-secondary {
+    background: none; color: var(--ink-soft); border: none; padding: 6px;
+    font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+</style>
+</head>
+<body>
+
+<div class="pp-scroll">
+
+<div class="proto-note">Prototype only — dummy data, no Supabase wiring. This simulates what a logged-out visitor sees when they open a shared Cookzer profile link today (currently they just hit a login wall instead).</div>
+
+<div class="proto-wrap">
+  <div class="pp-topbar">
+    <div class="pp-logo">Cook<span>zer</span></div>
+    <div class="pp-topbar-actions">
+      <a href="cookzer-auth.html" class="pp-login-link">Log in</a>
+      <button class="pp-signup-btn" type="button" id="topSignupBtn">Sign up</button>
+    </div>
+  </div>
+
+  <div class="pp-banner"></div>
+  <div class="pp-avatar-wrap"><div class="pp-avatar">MC</div></div>
+
+  <div class="pp-identity">
+    <div class="pp-name-row">
+      <div class="pp-name">Maya Chen</div>
+      <span class="pp-badge">✓ Verified Creator</span>
+      <span class="pp-badge trophy">🏆 Challenge Winner</span>
+    </div>
+    <div class="pp-bio">Recipe developer &amp; weeknight-dinner evangelist. Sharing what actually gets made on a Tuesday, not just what photographs well.</div>
+    <div class="pp-meta">📍 Austin, TX</div>
+
+    <div class="pp-stats">
+      <div><span class="pp-stat-num">86</span> <span class="pp-stat-label">Recipes</span></div>
+      <div><span class="pp-stat-num">2,340</span> <span class="pp-stat-label">Followers</span></div>
+      <div><span class="pp-stat-num">412</span> <span class="pp-stat-label">Cook-ins</span></div>
+    </div>
+
+    <div class="pp-cta-row">
+      <button class="pp-follow-btn" type="button" data-gate="follow">+ Follow</button>
+      <button class="pp-message-btn" type="button" data-gate="message">Message</button>
+    </div>
+  </div>
+
+  <div class="pp-section">
+    <div class="pp-section-title">Pinned recipe</div>
+    <div class="pp-pinned-card">
+      <div class="pp-pinned-thumb">🍜</div>
+      <div class="pp-pinned-body">
+        <div class="pp-pinned-label">📖 Recipe</div>
+        <div class="pp-pinned-title">20-Minute Miso Ramen</div>
+        <div class="pp-pinned-meta">★★★★★ · 340 remade this</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pp-section">
+    <div class="pp-section-title">Recent recipes &amp; posts</div>
+    <div class="pp-grid" id="ppGrid">
+      <div class="pp-grid-tile">🥗</div>
+      <div class="pp-grid-tile">🍝</div>
+      <div class="pp-grid-tile">🥘</div>
+      <div class="pp-grid-tile">🍲</div>
+      <div class="pp-grid-tile">🥞</div>
+      <div class="pp-grid-tile locked">
+        🍛
+        <div class="pp-lock-overlay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
+          +81 more
+        </div>
+      </div>
+    </div>
+    <div class="pp-more-note">
+      <a href="#" data-gate="more">Sign up to see all 86 of Maya's recipes</a>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="pp-sticky-cta">
+  <div class="pp-sticky-text"><b>Join Cookzer</b>Follow Maya and see everything she cooks.</div>
+  <button class="pp-sticky-btn" type="button" data-gate="sticky">Sign Up</button>
+</div>
+
+<div class="pp-gate-overlay" id="gateOverlay">
+  <div class="pp-gate-card">
+    <div class="pp-gate-icon" id="gateIcon">🔒</div>
+    <div class="pp-gate-title" id="gateTitle">Join Cookzer to continue</div>
+    <div class="pp-gate-desc" id="gateDesc">Create a free account to follow Maya, send a message, and see her full recipe collection.</div>
+    <div class="pp-gate-actions">
+      <button class="pp-gate-primary" type="button" id="gateSignupBtn">Sign up — it's free</button>
+      <button class="pp-gate-secondary" type="button" id="gateCloseBtn">Not now</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const GATE_COPY = {
+    follow: { icon: '👋', title: 'Follow Maya on Cookzer', desc: "Create a free account to follow Maya and see her recipes in your own feed." },
+    message: { icon: '💬', title: 'Message Maya', desc: 'Sign up to send Maya a message — it only takes a few seconds.' },
+    more: { icon: '📖', title: "See all of Maya's recipes", desc: "Join Cookzer to unlock Maya's full recipe collection, cooking diary, and more." },
+    sticky: { icon: '🍳', title: 'Join Cookzer', desc: 'Create a free account to follow home cooks like Maya, save recipes, and start your own cooking diary.' },
+  };
+
+  const overlay = document.getElementById('gateOverlay');
+  function openGate(kind) {
+    const copy = GATE_COPY[kind] || GATE_COPY.sticky;
+    document.getElementById('gateIcon').textContent = copy.icon;
+    document.getElementById('gateTitle').textContent = copy.title;
+    document.getElementById('gateDesc').textContent = copy.desc;
+    overlay.classList.add('open');
+  }
+  function closeGate() { overlay.classList.remove('open'); }
+
+  document.querySelectorAll('[data-gate]').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      openGate(el.dataset.gate);
+    });
+  });
+  document.getElementById('topSignupBtn').addEventListener('click', () => openGate('sticky'));
+  document.getElementById('gateCloseBtn').addEventListener('click', closeGate);
+  document.getElementById('gateSignupBtn').addEventListener('click', () => { window.location.href = 'cookzer-auth.html'; });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeGate(); });
+</script>
+</body>
+</html>
