@@ -85,3 +85,15 @@ if [ "$applied_any" -eq 0 ]; then
 else
   echo "Done."
 fi
+
+# Supabase's REST/RPC layer (PostgREST) caches the database schema and
+# only picks up new tables/functions/columns on its own periodic reload
+# — running migrations by hand via psql (as this script does, rather
+# than through the Supabase dashboard) never tells it to refresh, so a
+# newly-migrated table or RPC can 500 from the client for a while after
+# a migration that applied cleanly. Sending this NOTIFY (Supabase's
+# documented mechanism for exactly this) makes PostgREST reload
+# immediately, every run — harmless, and worth it unconditionally since
+# it's what actually made this migration's own tables/RPCs usable.
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "NOTIFY pgrst, 'reload schema';"
+echo "Told PostgREST to reload its schema cache."
