@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__github__pull_request_read",
+      "Bash(git fetch *)",
+      "mcp__github__actions_list",
+      "mcp__github__subscribe_pr_activity",
+      "mcp__github__unsubscribe_pr_activity",
+      "mcp__github__get_job_logs",
+      "mcp__Claude_Code_Remote__unsubscribe_pr_activity",
+      "mcp__github__actions_get",
+      "mcp__github__get_file_contents",
+      "mcp__Claude_Code_Remote__subscribe_pr_activity",
+      "mcp__github__list_pull_requests",
+      "mcp__github__list_commits",
+      "Bash(pg_lsclusters)",
+      "mcp__github__get_release_by_tag"
+    ]
+  }
+}
