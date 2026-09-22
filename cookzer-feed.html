@@ -308,11 +308,17 @@
   /* Feed filter bar — chips for post kind (Recipes/Challenges/Dining
      out/Tips) plus dynamically-added recipe tag chips (see
      loadTrendingFeedTags()), all narrowing what loadMorePosts() fetches.
-     Wraps to a second line rather than scrolling, same reasoning as the
-     composer menu above. */
+     A single scrollable row rather than wrapping, so a long tag list
+     doesn't push the feed down. Needs its own width: 100% — .feed-container
+     is a column flex box with align-items: center, so without an explicit
+     width this bar would shrink-and-center to its own content instead of
+     the container, and once enough tag chips get appended to make it
+     wider than the container, centering pushes its start past the left
+     edge — visually indistinguishable from the whole bar going missing. */
   .feed-filter-bar {
       display: flex;
       gap: 6px;
+      width: 100%;
       margin-bottom: 16px;
       overflow-x: auto;
       scrollbar-width: none;
@@ -346,7 +352,7 @@
       background: var(--card-bg);
       border: 1px solid var(--line);
       border-radius: 18px;
-      margin-bottom: 24px;
+      margin-bottom: 14px;
       overflow: hidden;
       width: 100%;
       padding: 16px;
@@ -371,7 +377,7 @@
       background: var(--card-bg);
       border: 1px solid var(--line);
       border-radius: 18px;
-      margin-bottom: 24px;
+      margin-bottom: 14px;
       overflow: hidden;
       width: 100%;
     }
