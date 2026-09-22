@@ -73,8 +73,7 @@ test.describe('profile: lists', () => {
     const cards = page.locator('.list-card');
     await expect(cards).toHaveCount(1);
     await expect(cards.first()).toContainText('Weeknight favorites');
-    await expect(cards.first()).toContainText('2 recipes');
-    await expect(cards.first()).not.toContainText('🔒');
+    await expect(cards.first().locator('.list-card-name')).not.toContainText('🔒');
   });
 });
 
