@@ -273,6 +273,8 @@
       flex-wrap: wrap;
     }
 
+  .friend-action-wrap { display: flex; gap: 8px; }
+
   .btn {
       padding: 10px 20px;
       border-radius: 12px;
@@ -1497,6 +1499,12 @@
       actions.appendChild(followBtn);
       await refreshFollowButton();
 
+      const friendActionWrap = document.createElement('div');
+      friendActionWrap.className = 'friend-action-wrap';
+      friendActionWrap.id = 'friendActionWrap';
+      actions.appendChild(friendActionWrap);
+      await refreshFriendAction();
+
       const messageBtn = document.createElement('button');
       messageBtn.className = 'btn btn-secondary';
       messageBtn.id = 'messageBtn';
@@ -1650,16 +1658,96 @@
     };
   }
 
-  // Mutual friends: people you both follow — cheap client-side
-  // intersection of two small id sets, no new schema needed.
+  // friendships has no "friends of X" column to filter on directly (a
+  // friendship can have either user in user_id_1 or user_id_2, by the
+  // canonical least/greatest ordering respond_friend_request() writes) —
+  // two eq() queries plus a merge, same approach used everywhere else in
+  // this file's mocks/queries rather than reaching for .or().
+  async function getFriendIds(userId) {
+    const [{ data: asFirst }, { data: asSecond }] = await Promise.all([
+      sb.from('friendships').select('user_id_2').eq('user_id_1', userId),
+      sb.from('friendships').select('user_id_1').eq('user_id_2', userId),
+    ]);
+    return (asFirst || []).map((f) => f.user_id_2).concat((asSecond || []).map((f) => f.user_id_1));
+  }
+
+  async function refreshFriendAction() {
+    const wrap = document.getElementById('friendActionWrap');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    const loId = currentUser.id < viewedId ? currentUser.id : viewedId;
+    const hiId = currentUser.id < viewedId ? viewedId : currentUser.id;
+    const { data: friendship } = await sb
+      .from('friendships')
+      .select('user_id_1')
+      .eq('user_id_1', loId)
+      .eq('user_id_2', hiId)
+      .maybeSingle();
+
+    if (friendship) {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-secondary';
+      btn.textContent = 'Friends ✓';
+      btn.addEventListener('click', async () => {
+        if (!(await CookzerModal.confirm('Remove ' + (viewedProfile.display_name || 'this person') + ' as a friend?'))) return;
+        await sb.from('friendships').delete().eq('user_id_1', loId).eq('user_id_2', hiId);
+        await refreshFriendAction();
+      });
+      wrap.appendChild(btn);
+      return;
+    }
+
+    const [{ data: sent }, { data: received }] = await Promise.all([
+      sb.from('friend_requests').select('id').eq('sender_id', currentUser.id).eq('recipient_id', viewedId).eq('status', 'pending').maybeSingle(),
+      sb.from('friend_requests').select('id').eq('sender_id', viewedId).eq('recipient_id', currentUser.id).eq('status', 'pending').maybeSingle(),
+    ]);
+
+    if (received) {
+      const acceptBtn = document.createElement('button');
+      acceptBtn.className = 'btn btn-primary';
+      acceptBtn.textContent = 'Accept';
+      acceptBtn.addEventListener('click', async () => {
+        await sb.rpc('respond_friend_request', { p_request_id: received.id, p_accept: true });
+        await refreshFriendAction();
+      });
+      const declineBtn = document.createElement('button');
+      declineBtn.className = 'btn btn-secondary';
+      declineBtn.textContent = 'Decline';
+      declineBtn.addEventListener('click', async () => {
+        await sb.rpc('respond_friend_request', { p_request_id: received.id, p_accept: false });
+        await refreshFriendAction();
+      });
+      wrap.appendChild(acceptBtn);
+      wrap.appendChild(declineBtn);
+      return;
+    }
+
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-secondary';
+    if (sent) {
+      btn.textContent = 'Request Sent';
+      btn.addEventListener('click', async () => {
+        await sb.from('friend_requests').delete().eq('id', sent.id);
+        await refreshFriendAction();
+      });
+    } else {
+      btn.textContent = '+ Add Friend';
+      btn.addEventListener('click', async () => {
+        await sb.from('friend_requests').insert({ sender_id: currentUser.id, recipient_id: viewedId, status: 'pending' });
+        await refreshFriendAction();
+      });
+    }
+    wrap.appendChild(btn);
+  }
+
+  // Mutual friends: an actual bidirectional friendship intersection
+  // (migration 055), not the mutual-follow approximation this used before.
   async function loadMutualFriends() {
     const el = document.getElementById('mutualFriendsLine');
-    const [{ data: mine }, { data: theirs }] = await Promise.all([
-      sb.from('follows').select('followee_id').eq('follower_id', currentUser.id),
-      sb.from('follows').select('followee_id').eq('follower_id', viewedId),
-    ]);
-    const theirSet = new Set((theirs || []).map((f) => f.followee_id));
-    const mutualIds = (mine || []).map((f) => f.followee_id).filter((id) => theirSet.has(id) && id !== currentUser.id && id !== viewedId);
+    const [mine, theirs] = await Promise.all([getFriendIds(currentUser.id), getFriendIds(viewedId)]);
+    const theirSet = new Set(theirs);
+    const mutualIds = mine.filter((id) => theirSet.has(id) && id !== currentUser.id && id !== viewedId);
 
     if (mutualIds.length === 0) {
       el.hidden = true;
