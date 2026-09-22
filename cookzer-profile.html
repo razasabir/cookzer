@@ -51,9 +51,28 @@
       font-weight: 600;
     }
 
+  /* #loggedInApp (the public-preview carve-out's show/hide wrapper around
+     the sidebar/header/main shell — see the comment above the element
+     itself) is a plain block div with no layout rules of its own. Because
+     it sits between <body> (display:flex, the shell's real row container)
+     and .main, it was never a flex item that filled the row, so it fell
+     back to shrink-to-fit sizing driven by its widest child's min-content
+     — here, .badges-grid's 4 fixed-minimum columns below — leaving the
+     header (still correctly pinned to the real viewport width) narrower
+     than the content next to it. Re-declaring the row container here
+     restores the original (pre-carve-out) sizing contract, and min-width:
+     0 lets it actually shrink to the viewport instead of enforcing that
+     child's content width as a floor. */
+  #loggedInApp {
+      display: flex;
+      flex: 1;
+      min-width: 0;
+    }
+
   /* Main content */
     .main {
       flex: 1;
+      min-width: 0;
       margin-top: 60px;
       overflow-y: auto;
     }
@@ -799,6 +818,14 @@
       .brand-header { font-size: 18px; }
     }
 
+  /* .badges-grid's 4 columns each have a hard 100px minimum (minmax(100px,
+     1fr)) — below this width the 4-across layout can't fit and forces
+     the whole page shell wider than the viewport (see the #loggedInApp
+     comment above). Below it, drop to 2 columns, which stays comfortably
+     inside every phone width. */
+  @media (max-width: 520px) {
+      .badges-grid { grid-template-columns: repeat(2, 1fr); }
+    }
   @media (max-width: 480px) {
       .header { padding: 0 12px; }
       .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
