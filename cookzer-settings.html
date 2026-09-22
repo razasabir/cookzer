@@ -140,6 +140,30 @@
   .toggle-row-label { font-size: 14px; color: var(--ink); }
   .toggle-row-dek { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
 
+  .social-link-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .social-link-row label { width: 76px; flex-shrink: 0; font-size: 13px; color: var(--ink-soft); }
+  .social-link-row input { flex: 1; }
+
+  .tag-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .tag-chip {
+      padding: 7px 13px; border-radius: 16px; border: 1px solid var(--line);
+      background: var(--card-bg); font-size: 13px; color: var(--ink);
+      cursor: pointer; font-family: inherit;
+    }
+  .tag-chip.active { border-color: var(--olive); background: var(--plus-tint); color: var(--olive-dark); font-weight: 600; }
+
+  .pill-toggle {
+      display: inline-flex; border: 1px solid var(--line); border-radius: 10px;
+      overflow: hidden; margin-top: 8px;
+    }
+  .pill-toggle-btn {
+      border: none; background: var(--card-bg); color: var(--ink-soft);
+      font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+      padding: 8px 16px;
+    }
+  .pill-toggle-btn + .pill-toggle-btn { border-left: 1px solid var(--line); }
+  .pill-toggle-btn.active { background: var(--olive); color: #fff; }
+
   .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
   .switch input { opacity: 0; width: 0; height: 0; }
   .switch-slider {
@@ -325,6 +349,24 @@
     </div>
 
     <div class="settings-section">
+      <h2>Profile details</h2>
+      <div class="section-dek">Shown on your profile — help people find you and know what you cook.</div>
+      <div class="field">
+        <label>Social links</label>
+        <div class="social-link-row"><label for="socialInstagram">Instagram</label><input type="url" id="socialInstagram" placeholder="https://instagram.com/you"></div>
+        <div class="social-link-row"><label for="socialYoutube">YouTube</label><input type="url" id="socialYoutube" placeholder="https://youtube.com/@you"></div>
+        <div class="social-link-row"><label for="socialTiktok">TikTok</label><input type="url" id="socialTiktok" placeholder="https://tiktok.com/@you"></div>
+        <div class="social-link-row"><label for="socialWebsite">Website</label><input type="url" id="socialWebsite" placeholder="https://yoursite.com"></div>
+        <button class="settings-btn secondary" id="saveSocialLinksBtn" type="button">Save links</button>
+      </div>
+      <div class="field" style="margin-top:18px;">
+        <label>Dietary &amp; cuisine tags</label>
+        <div class="tag-chip-row" id="dietaryTagsRow"></div>
+      </div>
+      <div class="settings-status" id="profileDetailsStatus"></div>
+    </div>
+
+    <div class="settings-section">
       <h2>Household Co-Admins</h2>
       <div class="section-dek">Invite another adult in your household (e.g. your spouse) so you both have full access to the same Family Profiles and Meal Planner — either of you can add a dish for the kids, and you're both editing the same shared weekly plan, not separate copies.</div>
       <div id="householdMembersList"></div>
@@ -447,7 +489,15 @@
 
     <div class="settings-section">
       <h2>Privacy &amp; safety</h2>
-      <a class="settings-link-row" href="cookzer-friends.html">Manage blocked accounts →</a>
+      <div class="field">
+        <label>Who can see your profile</label>
+        <div class="pill-toggle" id="visibilityToggle">
+          <button class="pill-toggle-btn" type="button" data-value="public">Public</button>
+          <button class="pill-toggle-btn" type="button" data-value="followers">Followers only</button>
+        </div>
+        <div class="settings-status" id="visibilityStatus"></div>
+      </div>
+      <a class="settings-link-row" href="cookzer-friends.html" style="margin-top:14px;">Manage blocked accounts →</a>
       <div class="section-dek" style="margin-top:6px;">Report a post or profile from the "⋯" menu wherever you see it.</div>
     </div>
 
@@ -473,6 +523,28 @@
 
   let currentUser = null;
   let currentHousehold = null;
+  let currentDietaryTags = [];
+  const DIETARY_PRESETS = ['Vegan', 'Vegetarian', 'Pescatarian', 'Keto', 'Paleo', 'Gluten-Free', 'Dairy-Free', 'Halal', 'Kosher', 'Low-Carb'];
+
+  function renderDietaryTags() {
+    const row = document.getElementById('dietaryTagsRow');
+    row.innerHTML = '';
+    DIETARY_PRESETS.forEach((tag) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'tag-chip' + (currentDietaryTags.includes(tag) ? ' active' : '');
+      chip.textContent = tag;
+      chip.addEventListener('click', async () => {
+        currentDietaryTags = currentDietaryTags.includes(tag)
+          ? currentDietaryTags.filter((t) => t !== tag)
+          : currentDietaryTags.concat(tag);
+        renderDietaryTags();
+        const { error } = await sb.from('profiles').update({ dietary_tags: currentDietaryTags }).eq('id', currentUser.id);
+        document.getElementById('profileDetailsStatus').textContent = error ? 'Could not save: ' + error.message : 'Saved.';
+      });
+      row.appendChild(chip);
+    });
+  }
 
   async function loadHouseholdMembers() {
     const members = await CookzerHousehold.listMembers(sb, currentHousehold.id);
@@ -876,6 +948,27 @@
     status.textContent = error ? 'Could not save: ' + error.message : 'Saved.';
   });
 
+  document.querySelectorAll('#visibilityToggle .pill-toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      document.querySelectorAll('#visibilityToggle .pill-toggle-btn').forEach((b) => b.classList.toggle('active', b === btn));
+      const { error } = await sb.from('profiles').update({ profile_visibility: btn.dataset.value }).eq('id', currentUser.id);
+      document.getElementById('visibilityStatus').textContent = error
+        ? 'Could not save: ' + error.message
+        : (btn.dataset.value === 'public' ? 'Anyone can view your profile.' : 'Only your followers can view your profile.');
+    });
+  });
+
+  document.getElementById('saveSocialLinksBtn').addEventListener('click', async () => {
+    const social_links = {
+      instagram: document.getElementById('socialInstagram').value.trim() || null,
+      youtube: document.getElementById('socialYoutube').value.trim() || null,
+      tiktok: document.getElementById('socialTiktok').value.trim() || null,
+      website: document.getElementById('socialWebsite').value.trim() || null,
+    };
+    const { error } = await sb.from('profiles').update({ social_links }).eq('id', currentUser.id);
+    document.getElementById('profileDetailsStatus').textContent = error ? 'Could not save: ' + error.message : 'Saved.';
+  });
+
   document.getElementById('saveEmailBtn').addEventListener('click', async () => {
     const email = document.getElementById('emailInput').value.trim();
     const status = document.getElementById('accountStatus');
@@ -971,10 +1064,24 @@
 
     document.getElementById('emailInput').value = user.email || '';
 
-    const { data: profile } = await sb.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
+    const { data: profile } = await sb.from('profiles')
+      .select('display_name, profile_visibility, social_links, dietary_tags')
+      .eq('id', user.id).maybeSingle();
     if (profile) {
       document.getElementById('displayNameInput').value = profile.display_name || '';
+
+      const visibility = profile.profile_visibility || 'public';
+      document.querySelectorAll('#visibilityToggle .pill-toggle-btn').forEach((b) => b.classList.toggle('active', b.dataset.value === visibility));
+
+      const links = profile.social_links || {};
+      document.getElementById('socialInstagram').value = links.instagram || '';
+      document.getElementById('socialYoutube').value = links.youtube || '';
+      document.getElementById('socialTiktok').value = links.tiktok || '';
+      document.getElementById('socialWebsite').value = links.website || '';
+
+      currentDietaryTags = profile.dietary_tags || [];
     }
+    renderDietaryTags();
 
     currentHousehold = await CookzerHousehold.getOrCreate(sb);
     document.getElementById('householdSizeInput').value = currentHousehold.household_size || 4;

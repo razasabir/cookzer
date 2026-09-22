@@ -156,6 +156,26 @@
 
   .skill-chip.endorsed-by-me { border-color: var(--olive); background: var(--plus-tint); }
 
+  .tag-chip-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 6px 0 0; }
+  .tag-chip {
+      padding: 5px 12px; border-radius: 14px; border: 1px solid var(--line);
+      background: var(--card-bg); font-size: 12px; color: var(--ink-soft);
+    }
+  .social-links-row { display: flex; gap: 10px; justify-content: center; margin: 8px 0 0; }
+  .social-links-row a {
+      width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+      color: var(--ink-soft); text-decoration: none;
+    }
+  .social-links-row a:hover { border-color: var(--olive); color: var(--olive-dark); }
+  .completeness-nudge {
+      width: 100%; max-width: 480px; margin: 12px auto 0; background: var(--plus-tint);
+      border-radius: 12px; padding: 10px 14px; font-size: 12.5px; color: var(--olive-dark);
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+  .completeness-nudge-dismiss { background: none; border: none; color: var(--olive-dark); font-weight: 700; cursor: pointer; font-size: 14px; flex-shrink: 0; }
+  .tag-chip-row[hidden], .social-links-row[hidden], .completeness-nudge[hidden] { display: none; }
+
   .skill-chip .skill-remove {
       background: none;
       border: none;
@@ -533,26 +553,34 @@
     .lists-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 18px;
       width: 100%;
       max-width: 500px;
       margin-bottom: 32px;
     }
 
+  /* Highlights: Instagram-Stories-style circular covers over the same
+     public Lists data (recipe_lists / recipe_list_items) — a visual
+     restyle only, no schema or query change. */
   .list-card {
-      background: var(--card-bg);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
       text-decoration: none;
       color: var(--ink);
-      min-width: 150px;
-      transition: border-color 0.2s;
+      width: 76px;
+      transition: transform 0.15s;
     }
-
-  .list-card:hover { border-color: var(--mustard); }
-  .list-card .list-card-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
-  .list-card .list-card-meta { font-size: 12px; color: var(--ink-soft); }
+  .list-card:hover { transform: translateY(-2px); }
+  .list-card .list-card-name {
+      width: 68px; height: 68px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 22px;
+      border: 2px solid var(--card-bg); box-shadow: 0 0 0 2px var(--line);
+    }
+  .list-card .list-card-meta { font-size: 11.5px; color: var(--ink-soft); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 76px; }
 
   /* Tabs */
     .tabs {
@@ -1031,9 +1059,16 @@
     <div class="profile-header" style="position:relative;">
       <div class="profile-avatar" id="profileAvatar">--</div>
       <h1 class="profile-name" id="profileName">Loading…</h1>
+      <span id="verifiedCreatorBadge" title="Verified Creator" hidden style="display:inline-block; margin:-6px 0 2px; font-size:14px; color:var(--olive-dark); font-weight:700;">✓ Verified Creator</span>
       <span id="profileWinnerFlair" title="" hidden style="display:inline-block; margin: -8px 0 4px; font-size:13px; font-weight:700; color:var(--olive-dark);"></span>
       <p class="profile-bio" id="profileBio"></p>
       <p class="profile-location" id="profileLocation"></p>
+      <div class="tag-chip-row" id="dietaryTagsRow" hidden></div>
+      <div class="social-links-row" id="socialLinksRow" hidden></div>
+      <div id="completenessNudge" class="completeness-nudge" hidden>
+        <span id="completenessNudgeText"></span>
+        <button type="button" id="completenessNudgeDismiss" class="completeness-nudge-dismiss">✕</button>
+      </div>
       <div class="mutual-friends-line" id="mutualFriendsLine" hidden></div>
 
       <div class="profile-stats">
@@ -1125,9 +1160,10 @@
       <div class="streak-caption">Last 12 weeks of cook-ins</div>
     </div>
 
-    <!-- Lists: this person's public curatable recipe lists (all of them, on your own profile) -->
+    <!-- Highlights: this person's public curatable recipe lists (all of
+         them, on your own profile), shown as circular covers. -->
     <div class="profile-section" id="listsSection" hidden>
-      <h2 class="section-title">Lists</h2>
+      <h2 class="section-title">Highlights</h2>
       <div class="lists-row" id="listsRow"></div>
     </div>
 
@@ -1329,7 +1365,7 @@
 
     const { data: profile } = await sb
       .from('profiles')
-      .select('id, display_name, initials, bio, location, avatar_url, is_kitchen_cv, cv_title, cv_bio, open_to_work, cover_gradient, created_at, birthday_month, birthday_day, pinned_recipe_id, pinned_recipe:recipes!profiles_pinned_recipe_id_fkey(id, title, hero_photo_path, category)')
+      .select('id, display_name, initials, bio, location, avatar_url, is_kitchen_cv, cv_title, cv_bio, open_to_work, cover_gradient, created_at, birthday_month, birthday_day, pinned_recipe_id, dietary_tags, social_links, is_verified_creator, pinned_recipe:recipes!profiles_pinned_recipe_id_fkey(id, title, hero_photo_path, category)')
       .eq('id', viewedId)
       .single();
 
@@ -1351,6 +1387,34 @@
     const birthdayText = (profile.birthday_month && profile.birthday_day) ? ('🎂 ' + MONTH_NAMES[profile.birthday_month - 1] + ' ' + profile.birthday_day) : '';
     document.getElementById('profileLocation').textContent = [profile.location, 'Joined ' + joined, birthdayText].filter(Boolean).join(' • ');
 
+    document.getElementById('verifiedCreatorBadge').hidden = !profile.is_verified_creator;
+
+    const tagsRow = document.getElementById('dietaryTagsRow');
+    tagsRow.innerHTML = '';
+    const dietaryTags = profile.dietary_tags || [];
+    tagsRow.hidden = dietaryTags.length === 0;
+    dietaryTags.forEach((t) => {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.textContent = t;
+      tagsRow.appendChild(chip);
+    });
+
+    const SOCIAL_LINK_ICON = { instagram: '📷', youtube: '▶️', tiktok: '🎵', website: '🔗' };
+    const socialRow = document.getElementById('socialLinksRow');
+    socialRow.innerHTML = '';
+    const activeSocialLinks = Object.entries(profile.social_links || {}).filter(([, url]) => url);
+    socialRow.hidden = activeSocialLinks.length === 0;
+    activeSocialLinks.forEach(([platform, url]) => {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.title = platform.charAt(0).toUpperCase() + platform.slice(1);
+      a.textContent = SOCIAL_LINK_ICON[platform] || '🔗';
+      socialRow.appendChild(a);
+    });
+
     if (profile.is_kitchen_cv) {
       document.getElementById('kitchenCvPanel').hidden = false;
       document.getElementById('cvTitle').textContent = profile.cv_title || 'Kitchen professional';
@@ -1371,6 +1435,23 @@
     }
 
     const isOwn = viewedId === currentUser.id;
+
+    const nudgeEl = document.getElementById('completenessNudge');
+    const missing = [];
+    if (!profile.bio) missing.push('a bio');
+    if (!profile.avatar_url) missing.push('a profile photo');
+    if (!profile.location) missing.push('your location');
+    if (!profile.pinned_recipe_id) missing.push('a pinned recipe');
+    const nudgeDismissedKey = 'cz_completeness_nudge_dismissed';
+    if (isOwn && missing.length > 0 && sessionStorage.getItem(nudgeDismissedKey) !== '1') {
+      const pct = Math.round(((4 - missing.length) / 4) * 100);
+      nudgeEl.hidden = false;
+      document.getElementById('completenessNudgeText').textContent =
+        'Your profile is ' + pct + '% complete — add ' + missing[0] + ' to boost it.';
+    } else {
+      nudgeEl.hidden = true;
+    }
+
     setupBanner(isOwn, profile.cover_gradient);
     document.getElementById('savedTab').hidden = !isOwn;
     document.getElementById('bookmarksTab').hidden = !isOwn;
@@ -1474,15 +1555,15 @@
       const card = document.createElement('a');
       card.className = 'list-card';
       card.href = 'cookzer-list.html?id=' + list.id;
-      const count = (list.recipe_list_items || []).length;
-      const name = document.createElement('div');
-      name.className = 'list-card-name';
-      name.textContent = (list.is_public ? '' : '🔒 ') + list.name;
-      const meta = document.createElement('div');
-      meta.className = 'list-card-meta';
-      meta.textContent = count + ' recipe' + (count === 1 ? '' : 's') + (list.is_public ? ' · Public' : ' · Private');
-      card.appendChild(name);
-      card.appendChild(meta);
+      card.title = list.name;
+      const circle = document.createElement('div');
+      circle.className = 'list-card-name';
+      circle.textContent = list.is_public ? (list.name.trim().charAt(0).toUpperCase() || '📖') : '🔒';
+      const label = document.createElement('div');
+      label.className = 'list-card-meta';
+      label.textContent = list.name;
+      card.appendChild(circle);
+      card.appendChild(label);
       row.appendChild(card);
     });
   }
@@ -1863,6 +1944,20 @@
     document.getElementById('statFollowing').textContent = followingCount || 0;
     document.getElementById('statRemade').textContent = remadeCount;
     document.getElementById('badgeFollowersNum').textContent = followerCount || 0;
+
+    // Verified Creator is auto-computed, not manually granted — cheap
+    // threshold check against counts we already just fetched. Only
+    // writable on your own profile (RLS: update requires auth.uid() = id),
+    // so it's refreshed the next time the newly-qualifying person visits
+    // their own profile rather than whenever anyone views them.
+    const isOwnProfile = viewedId === currentUser.id;
+    if (isOwnProfile && viewedProfile && !viewedProfile.is_verified_creator && (followerCount || 0) >= 100 && (recipeCount || 0) >= 10) {
+      const { error } = await sb.from('profiles').update({ is_verified_creator: true }).eq('id', viewedId);
+      if (!error) {
+        viewedProfile.is_verified_creator = true;
+        document.getElementById('verifiedCreatorBadge').hidden = false;
+      }
+    }
 
     const { count: challengeWinCount } = await sb.from('challenges').select('*', { count: 'exact', head: true }).eq('winner_user_id', viewedId);
     const winnerFlair = document.getElementById('profileWinnerFlair');
@@ -2285,6 +2380,11 @@
     editModal.classList.add('open');
   }
   document.getElementById('editCancelBtn').addEventListener('click', () => editModal.classList.remove('open'));
+
+  document.getElementById('completenessNudgeDismiss').addEventListener('click', () => {
+    sessionStorage.setItem('cz_completeness_nudge_dismissed', '1');
+    document.getElementById('completenessNudge').hidden = true;
+  });
 
   document.getElementById('editAvatarBtn').addEventListener('click', () => {
     document.getElementById('editAvatarInput').click();
