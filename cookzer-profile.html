@@ -784,6 +784,194 @@
 </head>
 <body>
 
+<!-- Public logged-out profile preview: shown instead of the app shell
+     below when auth-guard.js finds no session but a ?id= is present
+     (see auth-guard.js's CookzerLoggedOutPreview carve-out). Ported from
+     prototype-public-profile-preview.html, wired to real data via the
+     get_public_profile_preview RPC instead of dummy data. -->
+<style>
+  #loggedOutPreview.pp-scroll {
+    position: fixed; inset: 0; overflow-y: auto; background: var(--cream);
+    z-index: 500; display: flex; flex-direction: column; align-items: center;
+    padding-bottom: 90px;
+  }
+  /* Author CSS beats the UA [hidden]{display:none} rule for any element
+     whose class also declares `display` (inline-flex/flex here) — without
+     these, toggling .hidden on these elements would do nothing visible. */
+  #loggedOutPreview[hidden],
+  .pp-badge[hidden],
+  .pp-sticky-cta[hidden] { display: none; }
+  .pp-wrap { width: 100%; max-width: 620px; }
+  .pp-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 1px solid var(--line);
+    background: var(--card-bg);
+  }
+  .pp-logo { font-size: 20px; color: var(--olive-dark); letter-spacing: -0.5px; font-family: 'Fredoka', sans-serif; font-weight: 600; }
+  .pp-logo span { color: var(--brick); }
+  .pp-topbar-actions { display: flex; align-items: center; gap: 14px; }
+  .pp-login-link { font-size: 13px; font-weight: 600; color: var(--ink-soft); text-decoration: none; }
+  .pp-signup-btn {
+    background: var(--olive); color: #fff; border: none; border-radius: 10px;
+    padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .pp-signup-btn:hover { background: var(--olive-dark); }
+  .pp-banner { height: 140px; background: linear-gradient(135deg, var(--olive), var(--olive-dark)); }
+  .pp-avatar-wrap { padding: 0 20px; margin-top: -44px; }
+  .pp-avatar {
+    width: 88px; height: 88px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+    border: 4px solid var(--cream); background-size: cover; background-position: center;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 30px; font-family: 'Fraunces', serif;
+  }
+  .pp-identity { padding: 12px 20px 0; }
+  .pp-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .pp-name { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--ink); }
+  .pp-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 10.5px; font-weight: 700; color: var(--olive-dark);
+    background: rgba(46,143,92,0.10); border-radius: 8px; padding: 3px 8px;
+  }
+  .pp-cv-line { font-size: 12.5px; color: var(--olive-dark); font-weight: 600; margin-top: 4px; }
+  .pp-bio { font-size: 13.5px; color: var(--ink); line-height: 1.5; margin-top: 8px; max-width: 480px; }
+  .pp-meta { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; }
+  .pp-stats { display: flex; gap: 22px; margin-top: 14px; }
+  .pp-stat-num { font-size: 16px; font-weight: 700; color: var(--ink); font-family: 'Fraunces', serif; }
+  .pp-stat-label { font-size: 11.5px; color: var(--ink-soft); }
+  .pp-cta-row { display: flex; gap: 10px; margin-top: 16px; }
+  .pp-follow-btn {
+    flex: 1; background: var(--olive); color: #fff; border: none; border-radius: 10px;
+    padding: 10px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .pp-follow-btn:hover { background: var(--olive-dark); }
+  .pp-message-btn {
+    flex: 1; background: var(--card-bg); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .pp-message-btn:hover { background: var(--cream); }
+  .pp-section { padding: 22px 20px 0; }
+  .pp-section-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--ink-faint, #9A9D8E); margin-bottom: 10px;
+  }
+  .pp-pinned-card {
+    display: flex; gap: 12px; border: 1px solid var(--line); border-radius: 14px;
+    padding: 10px; background: var(--card-bg);
+  }
+  .pp-pinned-thumb {
+    width: 84px; height: 84px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--mustard), #D9902E); background-size: cover; background-position: center;
+  }
+  .pp-pinned-body { min-width: 0; }
+  .pp-pinned-label { font-size: 10.5px; font-weight: 700; color: var(--olive-dark); text-transform: uppercase; letter-spacing: 0.4px; }
+  .pp-pinned-title { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--ink); margin-top: 3px; }
+  .pp-more-note { font-size: 12.5px; color: var(--ink-soft); margin-top: 12px; margin-bottom: 24px; }
+  .pp-more-note a { color: var(--olive-dark); font-weight: 600; text-decoration: none; }
+  .pp-sticky-cta {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--card-bg); border-top: 1px solid var(--line);
+    padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.06); max-width: 620px; margin: 0 auto; z-index: 501;
+  }
+  .pp-sticky-text { flex: 1; font-size: 12.5px; color: var(--ink); line-height: 1.35; }
+  .pp-sticky-text b { display: block; font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--olive-dark); }
+  .pp-sticky-btn {
+    flex-shrink: 0; background: var(--olive); color: #fff; border: none; border-radius: 10px;
+    padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .pp-gate-overlay {
+    position: fixed; inset: 0; background: rgba(30,26,20,0.5);
+    display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;
+  }
+  .pp-gate-overlay.open { display: flex; }
+  .pp-gate-card {
+    background: var(--card-bg); border-radius: 18px; padding: 26px 22px; width: 100%; max-width: 340px;
+    text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .pp-gate-icon { font-size: 34px; margin-bottom: 8px; }
+  .pp-gate-title { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .pp-gate-desc { font-size: 13px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 18px; }
+  .pp-gate-actions { display: flex; flex-direction: column; gap: 8px; }
+  .pp-gate-primary {
+    background: var(--olive); color: #fff; border: none; border-radius: 10px;
+    padding: 11px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .pp-gate-secondary { background: none; color: var(--ink-soft); border: none; padding: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+</style>
+<div id="loggedOutPreview" class="pp-scroll" hidden>
+  <div class="pp-wrap">
+    <div class="pp-topbar">
+      <div class="pp-logo">Cook<span>zer</span></div>
+      <div class="pp-topbar-actions">
+        <a href="cookzer-auth.html" class="pp-login-link">Log in</a>
+        <button class="pp-signup-btn" type="button" id="topSignupBtn">Sign up</button>
+      </div>
+    </div>
+
+    <div id="ppFound">
+      <div class="pp-banner"></div>
+      <div class="pp-avatar-wrap"><div class="pp-avatar" id="ppAvatar"></div></div>
+      <div class="pp-identity">
+        <div class="pp-name-row">
+          <div class="pp-name" id="ppName"></div>
+          <span class="pp-badge" id="ppVerifiedBadge" hidden>✓ Verified Creator</span>
+        </div>
+        <div class="pp-cv-line" id="ppCvLine" hidden></div>
+        <div class="pp-bio" id="ppBio" hidden></div>
+        <div class="pp-meta" id="ppLocation" hidden></div>
+        <div class="pp-stats">
+          <div><span class="pp-stat-num" id="ppStatRecipes">0</span> <span class="pp-stat-label">Recipes</span></div>
+          <div><span class="pp-stat-num" id="ppStatFollowers">0</span> <span class="pp-stat-label">Followers</span></div>
+        </div>
+        <div class="pp-cta-row">
+          <button class="pp-follow-btn" type="button" data-gate="follow">+ Follow</button>
+          <button class="pp-message-btn" type="button" data-gate="message">Message</button>
+        </div>
+      </div>
+
+      <div class="pp-section" id="ppPinnedSection" hidden>
+        <div class="pp-section-title">Pinned recipe</div>
+        <div class="pp-pinned-card">
+          <div class="pp-pinned-thumb" id="ppPinnedThumb"></div>
+          <div class="pp-pinned-body">
+            <div class="pp-pinned-label">📖 Recipe</div>
+            <div class="pp-pinned-title" id="ppPinnedTitle"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pp-section" id="ppMoreSection" hidden>
+        <div class="pp-more-note"><a href="#" data-gate="more" id="ppMoreLink"></a></div>
+      </div>
+    </div>
+
+    <div id="ppPrivate" hidden style="padding:60px 20px; text-align:center;">
+      <div style="font-size:34px; margin-bottom:8px;">🔒</div>
+      <div style="font-family:'Fraunces',serif; font-size:17px; font-weight:700; color:var(--ink); margin-bottom:6px;">This profile is private</div>
+      <div style="font-size:13px; color:var(--ink-soft); line-height:1.5;">Sign in to see it, if you're connected.</div>
+    </div>
+  </div>
+
+  <div class="pp-sticky-cta" id="ppStickyCta" hidden>
+    <div class="pp-sticky-text"><b>Join Cookzer</b><span id="ppStickyLine"></span></div>
+    <button class="pp-sticky-btn" type="button" data-gate="sticky">Sign Up</button>
+  </div>
+
+  <div class="pp-gate-overlay" id="gateOverlay">
+    <div class="pp-gate-card">
+      <div class="pp-gate-icon" id="gateIcon">🔒</div>
+      <div class="pp-gate-title" id="gateTitle">Join Cookzer to continue</div>
+      <div class="pp-gate-desc" id="gateDesc"></div>
+      <div class="pp-gate-actions">
+        <button class="pp-gate-primary" type="button" id="gateSignupBtn">Sign up — it's free</button>
+        <button class="pp-gate-secondary" type="button" id="gateCloseBtn">Not now</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="loggedInApp">
 <!-- Sidebar -->
 <div class="sidebar">
   <a href="cookzer-feed.html" style="text-decoration:none;"><div class="sidebar-brand">Cook<span>zer</span></div></a>
@@ -1031,6 +1219,8 @@
 <div class="cz2-overlay" id="pickerOverlay" hidden>
   <div class="cz2-modal" id="pickerModal"></div>
 </div>
+
+</div><!-- /#loggedInApp -->
 
 <script>
   function toggleSidebar() {
@@ -2153,7 +2343,83 @@
     await loadProfile();
   });
 
+  async function initLoggedOutPreview() {
+    document.getElementById('loggedInApp').hidden = true;
+    const preview = document.getElementById('loggedOutPreview');
+    preview.hidden = false;
+
+    const foundEl = document.getElementById('ppFound');
+    const privateEl = document.getElementById('ppPrivate');
+    const stickyEl = document.getElementById('ppStickyCta');
+
+    if (!viewedId) { foundEl.hidden = true; privateEl.hidden = false; return; }
+
+    const { data } = await sb.rpc('get_public_profile_preview', { p_id: viewedId });
+    const p = data && data[0];
+    if (!p) { foundEl.hidden = true; privateEl.hidden = false; return; }
+
+    const avatarEl = document.getElementById('ppAvatar');
+    if (p.avatar_url) { avatarEl.style.backgroundImage = "url('" + p.avatar_url + "')"; avatarEl.textContent = ''; }
+    else { avatarEl.textContent = p.initials || '??'; }
+
+    document.getElementById('ppName').textContent = p.display_name || 'A Cookzer member';
+    document.getElementById('ppVerifiedBadge').hidden = !p.is_verified_creator;
+
+    if (p.is_kitchen_cv && p.cv_title) {
+      document.getElementById('ppCvLine').hidden = false;
+      document.getElementById('ppCvLine').textContent = p.cv_title;
+    }
+    if (p.bio) { document.getElementById('ppBio').hidden = false; document.getElementById('ppBio').textContent = p.bio; }
+    if (p.location) { document.getElementById('ppLocation').hidden = false; document.getElementById('ppLocation').textContent = '📍 ' + p.location; }
+
+    document.getElementById('ppStatRecipes').textContent = p.recipe_count || 0;
+    document.getElementById('ppStatFollowers').textContent = p.follower_count || 0;
+
+    if (p.pinned_recipe_id && p.pinned_recipe_title) {
+      document.getElementById('ppPinnedSection').hidden = false;
+      document.getElementById('ppPinnedTitle').textContent = p.pinned_recipe_title;
+      if (p.pinned_recipe_hero_photo_path) {
+        document.getElementById('ppPinnedThumb').style.backgroundImage = "url('" + p.pinned_recipe_hero_photo_path + "')";
+      }
+    }
+
+    const name = p.display_name || 'this cook';
+    if ((p.recipe_count || 0) > 0) {
+      document.getElementById('ppMoreSection').hidden = false;
+      document.getElementById('ppMoreLink').textContent = 'Sign up to see all ' + p.recipe_count + " of " + name + "'s recipes";
+    }
+    stickyEl.hidden = false;
+    document.getElementById('ppStickyLine').textContent = 'Follow ' + name + ' and see everything they cook.';
+
+    const GATE_COPY = {
+      follow: { icon: '👋', title: 'Follow ' + name + ' on Cookzer', desc: 'Create a free account to follow ' + name + ' and see their recipes in your own feed.' },
+      message: { icon: '💬', title: 'Message ' + name, desc: 'Sign up to send ' + name + ' a message — it only takes a few seconds.' },
+      more: { icon: '📖', title: "See all of " + name + "'s recipes", desc: 'Join Cookzer to unlock ' + name + "'s full recipe collection, cooking diary, and more." },
+      sticky: { icon: '🍳', title: 'Join Cookzer', desc: 'Create a free account to follow home cooks like ' + name + ', save recipes, and start your own cooking diary.' },
+    };
+    const gateOverlay = document.getElementById('gateOverlay');
+    function openGate(kind) {
+      const copy = GATE_COPY[kind] || GATE_COPY.sticky;
+      document.getElementById('gateIcon').textContent = copy.icon;
+      document.getElementById('gateTitle').textContent = copy.title;
+      document.getElementById('gateDesc').textContent = copy.desc;
+      gateOverlay.classList.add('open');
+    }
+    function closeGate() { gateOverlay.classList.remove('open'); }
+    document.querySelectorAll('#loggedOutPreview [data-gate]').forEach((el) => {
+      el.addEventListener('click', (e) => { e.preventDefault(); openGate(el.dataset.gate); });
+    });
+    document.getElementById('topSignupBtn').addEventListener('click', () => openGate('sticky'));
+    document.getElementById('gateCloseBtn').addEventListener('click', closeGate);
+    document.getElementById('gateSignupBtn').addEventListener('click', () => { window.location.href = 'cookzer-auth.html'; });
+    gateOverlay.addEventListener('click', (e) => { if (e.target === gateOverlay) closeGate(); });
+  }
+
   (async function init() {
+    if (window.CookzerLoggedOutPreview) {
+      await initLoggedOutPreview();
+      return;
+    }
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
     currentUser = user;

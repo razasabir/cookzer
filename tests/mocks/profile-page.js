@@ -35,6 +35,38 @@ window.__STATE__ = {
 };
 let nextId = 1;
 
+// Mirrors public.get_public_profile_preview(p_id) from migration 053:
+// returns the same whitelisted columns + counts, only for a
+// profile_visibility === 'public' row, null/empty otherwise. Tests for
+// the logged-out preview call this through sb.rpc(), same as the real
+// page — see profile-page-logged-out.js for the no-session variant.
+window.__RPC_HANDLERS__ = {
+  get_public_profile_preview: (params) => {
+    const p = window.__STATE__.profiles.find((row) => row.id === params.p_id);
+    if (!p || (p.profile_visibility || 'public') !== 'public') return [];
+    const pinned = p.pinned_recipe_id
+      ? window.__STATE__.recipes.find((r) => r.id === p.pinned_recipe_id)
+      : null;
+    return [{
+      id: p.id,
+      display_name: p.display_name,
+      initials: p.initials,
+      avatar_url: p.avatar_url || null,
+      bio: p.bio || null,
+      location: p.location || null,
+      cover_gradient: p.cover_gradient || null,
+      is_kitchen_cv: !!p.is_kitchen_cv,
+      cv_title: p.cv_title || null,
+      is_verified_creator: !!p.is_verified_creator,
+      follower_count: window.__STATE__.follows.filter((f) => f.followee_id === p.id).length,
+      recipe_count: window.__STATE__.recipes.filter((r) => r.author_id === p.id).length,
+      pinned_recipe_id: p.pinned_recipe_id || null,
+      pinned_recipe_title: pinned ? pinned.title : null,
+      pinned_recipe_hero_photo_path: pinned ? pinned.hero_photo_path : null,
+    }];
+  },
+};
+
 function matches(row, filters) {
   return filters.every((f) => {
     const v = row[f.col];
@@ -135,6 +167,11 @@ window.supabase = {
       signOut: () => Promise.resolve({}),
     },
     from: (table) => chain(table),
+    rpc: (fnName, params) => {
+      window.__CALLS__.push({ op: 'rpc', fnName, params });
+      const handler = window.__RPC_HANDLERS__[fnName];
+      return Promise.resolve({ data: handler ? handler(params) : null, error: null });
+    },
     storage: {
       from: (bucket) => ({
         getPublicUrl: () => ({ data: { publicUrl: 'https://example.com/x.jpg' } }),
