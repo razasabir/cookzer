@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minimal composer — prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  body { display: flex; flex-direction: column; align-items: stretch; }
+  .mc-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-bottom: 40px; }
+  .proto-note {
+    font-size: 12px; color: var(--ink-soft); text-align: center;
+    padding: 10px 16px; line-height: 1.5; background: var(--cream);
+    border-bottom: 1px solid var(--line); width: 100%; box-sizing: border-box;
+  }
+  .mc-wrap { width: 100%; max-width: 640px; padding: 16px; box-sizing: border-box; }
+
+  /* ---- before/after label ---- */
+  .mc-section-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--ink-faint, var(--ink-soft)); margin: 22px 0 8px;
+  }
+  .mc-section-label:first-child { margin-top: 0; }
+
+  /* ==================== the redesigned composer ==================== */
+  .mc-composer {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px 14px;
+  }
+  .mc-row1 { display: flex; align-items: center; gap: 10px; }
+  .mc-avatar {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+    background-size: cover; background-position: center;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 12.5px;
+  }
+  .mc-input {
+    flex: 1; border: 1px solid var(--line); background: var(--cream);
+    border-radius: 18px; padding: 9px 14px; font-size: 13px;
+    font-family: inherit; color: var(--ink);
+  }
+  .mc-input::placeholder { color: var(--ink-soft); }
+  .mc-input:focus { outline: none; border-color: var(--olive); background: var(--card-bg); }
+
+  .mc-row2 { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+  .mc-actions { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+  .mc-action-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: none; border: none; cursor: pointer; font-family: inherit;
+    padding: 5px 7px; border-radius: 8px;
+    font-size: 12px; font-weight: 500; color: var(--ink-soft);
+    text-decoration: none; transition: background 0.15s, color 0.15s;
+  }
+  .mc-action-btn:hover { background: var(--cream); color: var(--olive-dark); }
+  .mc-action-btn.active { background: var(--plus-tint); color: var(--olive-dark); font-weight: 600; }
+  .mc-action-icon { font-size: 15px; line-height: 1; }
+  .mc-action-btn .mc-check { color: var(--olive-dark); font-weight: 700; }
+
+  .mc-post-btn {
+    flex-shrink: 0; background: var(--olive); color: #fff; border: none;
+    border-radius: 16px; padding: 7px 18px; font-size: 12.5px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .mc-post-btn:hover { background: var(--olive-dark); }
+
+  /* ---- minimalist filter/trending strip: one scrollable row, not a wrap ---- */
+  .mc-filter-strip {
+    display: flex; gap: 6px; margin-top: 14px;
+    overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
+  }
+  .mc-filter-strip::-webkit-scrollbar { display: none; }
+  .mc-filter-chip {
+    flex-shrink: 0; padding: 5px 12px; background: var(--card-bg);
+    border: 1px solid var(--line); border-radius: 14px;
+    font-size: 11.5px; font-weight: 500; color: var(--ink-soft);
+    font-family: inherit; cursor: pointer; white-space: nowrap;
+  }
+  .mc-filter-chip:hover { border-color: var(--olive); color: var(--olive-dark); }
+  .mc-filter-chip.active { background: var(--olive); color: #fff; border-color: var(--olive); font-weight: 600; }
+  .mc-filter-chip.tag { color: var(--brick); }
+  .mc-filter-chip.tag:hover { border-color: var(--brick); }
+
+  /* ==================== the current version, for comparison ==================== */
+  .mc-old-composer {
+    background: linear-gradient(135deg, var(--olive) 0%, var(--olive-dark) 55%, var(--mustard) 135%);
+    border-radius: 18px; padding: 18px; box-shadow: 0 10px 28px rgba(31, 122, 74, 0.28);
+  }
+  .mc-old-header { display: flex; gap: 12px; }
+  .mc-old-avatar {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center;
+    color: var(--olive-dark); font-weight: 700; font-size: 14px;
+  }
+  .mc-old-input {
+    flex: 1; padding: 11px 16px; background: rgba(255,255,255,0.94); border: none;
+    border-radius: 20px; font-size: 13px; color: var(--ink); font-family: inherit;
+  }
+  .mc-old-icons-row {
+    display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+    gap: 2px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.28);
+  }
+  .mc-old-icon-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px;
+    border-radius: 10px; font-size: 12.5px; font-weight: 600; color: #fff;
+  }
+  .mc-old-icon-btn .mc-old-icon { font-size: 19px; line-height: 1; }
+  .mc-old-filter-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; }
+  .mc-old-filter-chip {
+    padding: 7px 14px; background: var(--card-bg); border: 1px solid var(--line);
+    border-radius: 16px; font-size: 12.5px; font-weight: 500; color: var(--ink-soft); white-space: nowrap;
+  }
+  .mc-old-filter-chip.active { background: var(--olive); color: #fff; border-color: var(--olive); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="mc-scroll">
+  <div class="proto-note">Prototype only — dummy data, standalone page. Redesign of the feed composer + category/trending row: same content and actions, tighter spacing, no wrap-induced gaps. Not wired into the real feed yet.</div>
+
+  <div class="mc-wrap">
+    <div class="mc-section-label">New — minimalist</div>
+
+    <div class="mc-composer">
+      <div class="mc-row1">
+        <div class="mc-avatar">RZ</div>
+        <input class="mc-input" type="text" placeholder="Share what you cooked today...">
+      </div>
+      <div class="mc-row2">
+        <div class="mc-actions">
+          <button class="mc-action-btn" type="button"><span class="mc-action-icon">🖼️</span> Media</button>
+          <a class="mc-action-btn" href="#"><span class="mc-action-icon">📝</span> Recipe</a>
+          <button class="mc-action-btn" type="button"><span class="mc-action-icon">💡</span> Tip</button>
+          <button class="mc-action-btn" type="button"><span class="mc-action-icon">📍</span> Dining Out</button>
+          <button class="mc-action-btn active" type="button"><span class="mc-action-icon">🏆</span> Challenge<span class="mc-check">✓</span></button>
+        </div>
+        <button class="mc-post-btn" type="button">Post</button>
+      </div>
+    </div>
+
+    <div class="mc-filter-strip">
+      <button class="mc-filter-chip active" type="button">All</button>
+      <button class="mc-filter-chip" type="button">📖 Recipes</button>
+      <button class="mc-filter-chip" type="button">🏆 Challenges</button>
+      <button class="mc-filter-chip" type="button">📍 Dining out</button>
+      <button class="mc-filter-chip" type="button">💡 Tips</button>
+      <button class="mc-filter-chip tag" type="button">#biryani</button>
+      <button class="mc-filter-chip tag" type="button">#rice dish</button>
+      <button class="mc-filter-chip tag" type="button">#pastacravings</button>
+      <button class="mc-filter-chip tag" type="button">#dawatspecial</button>
+      <button class="mc-filter-chip tag" type="button">#creamypasta</button>
+      <button class="mc-filter-chip tag" type="button">#chickenkarahi</button>
+    </div>
+
+    <div class="mc-section-label">Current — for comparison</div>
+
+    <div class="mc-old-composer">
+      <div class="mc-old-header">
+        <div class="mc-old-avatar">RZ</div>
+        <input class="mc-old-input" type="text" placeholder="Share what you cooked today...">
+      </div>
+      <div class="mc-old-icons-row">
+        <div class="mc-old-icon-btn"><span class="mc-old-icon">🖼️</span> Media</div>
+        <div class="mc-old-icon-btn"><span class="mc-old-icon">📝</span> Recipe</div>
+        <div class="mc-old-icon-btn"><span class="mc-old-icon">💡</span> Tip</div>
+        <div class="mc-old-icon-btn"><span class="mc-old-icon">📍</span> Dining Out</div>
+        <div class="mc-old-icon-btn"><span class="mc-old-icon">🏆</span> Challenge</div>
+      </div>
+      <div style="display:flex; justify-content:center; margin-top:14px;">
+        <button style="background:linear-gradient(135deg, var(--mustard), var(--brick)); color:#fff; padding:10px 40px; font-size:13.5px; border-radius:22px; border:none; font-family:inherit; cursor:pointer;">Post</button>
+      </div>
+    </div>
+
+    <div class="mc-old-filter-bar">
+      <button class="mc-old-filter-chip active" type="button">All</button>
+      <button class="mc-old-filter-chip" type="button">📖 Recipes</button>
+      <button class="mc-old-filter-chip" type="button">🏆 Challenges</button>
+      <button class="mc-old-filter-chip" type="button">📍 Dining out</button>
+      <button class="mc-old-filter-chip" type="button">💡 Tips</button>
+      <button class="mc-old-filter-chip" type="button">#biryani</button>
+      <button class="mc-old-filter-chip" type="button">#rice dish</button>
+      <button class="mc-old-filter-chip" type="button">#pastacravings</button>
+      <button class="mc-old-filter-chip" type="button">#dawatspecial</button>
+      <button class="mc-old-filter-chip" type="button">#creamypasta</button>
+      <button class="mc-old-filter-chip" type="button">#chickenkarahi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.mc-action-btn').forEach((btn) => {
+    btn.addEventListener('click', () => btn.classList.toggle('active'));
+  });
+  document.querySelectorAll('.mc-filter-strip .mc-filter-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.mc-filter-strip .mc-filter-chip').forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
