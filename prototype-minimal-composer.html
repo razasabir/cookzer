@@ -24,28 +24,31 @@
   }
   .mc-section-label:first-child { margin-top: 0; }
 
-  /* ==================== the redesigned composer ==================== */
+  /* ==================== the redesigned composer ====================
+     Keeps the same green gradient surface as today — the request was
+     tighter spacing, not a different color treatment. */
   .mc-composer {
-    background: var(--card-bg);
-    border: 1px solid var(--line);
+    background: linear-gradient(135deg, var(--olive) 0%, var(--olive-dark) 55%, var(--mustard) 135%);
+    border: none;
     border-radius: 14px;
     padding: 12px 14px;
+    box-shadow: 0 10px 28px rgba(31, 122, 74, 0.28);
   }
   .mc-row1 { display: flex; align-items: center; gap: 10px; }
   .mc-avatar {
     width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
-    background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+    background: rgba(255, 255, 255, 0.9);
     background-size: cover; background-position: center;
     display: flex; align-items: center; justify-content: center;
-    color: #fff; font-weight: 700; font-size: 12.5px;
+    color: var(--olive-dark); font-weight: 700; font-size: 12.5px;
   }
   .mc-input {
-    flex: 1; border: 1px solid var(--line); background: var(--cream);
+    flex: 1; border: none; background: rgba(255, 255, 255, 0.94);
     border-radius: 18px; padding: 9px 14px; font-size: 13px;
     font-family: inherit; color: var(--ink);
   }
   .mc-input::placeholder { color: var(--ink-soft); }
-  .mc-input:focus { outline: none; border-color: var(--olive); background: var(--card-bg); }
+  .mc-input:focus { outline: none; background: #fff; }
 
   .mc-row2 { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
   .mc-actions { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
@@ -53,20 +56,20 @@
     display: inline-flex; align-items: center; gap: 5px;
     background: none; border: none; cursor: pointer; font-family: inherit;
     padding: 5px 7px; border-radius: 8px;
-    font-size: 12px; font-weight: 500; color: var(--ink-soft);
-    text-decoration: none; transition: background 0.15s, color 0.15s;
+    font-size: 12px; font-weight: 500; color: #fff;
+    text-decoration: none; transition: background 0.15s, transform 0.15s;
   }
-  .mc-action-btn:hover { background: var(--cream); color: var(--olive-dark); }
-  .mc-action-btn.active { background: var(--plus-tint); color: var(--olive-dark); font-weight: 600; }
+  .mc-action-btn:hover { background: rgba(255, 255, 255, 0.16); transform: translateY(-1px); }
+  .mc-action-btn.active { background: rgba(255, 255, 255, 0.26); }
   .mc-action-icon { font-size: 15px; line-height: 1; }
-  .mc-action-btn .mc-check { color: var(--olive-dark); font-weight: 700; }
+  .mc-action-btn .mc-check { color: #fff; font-weight: 700; }
 
   .mc-post-btn {
-    flex-shrink: 0; background: var(--olive); color: #fff; border: none;
-    border-radius: 16px; padding: 7px 18px; font-size: 12.5px; font-weight: 600;
+    flex-shrink: 0; background: rgba(255, 255, 255, 0.94); color: var(--olive-dark); border: none;
+    border-radius: 16px; padding: 7px 18px; font-size: 12.5px; font-weight: 700;
     cursor: pointer; font-family: inherit;
   }
-  .mc-post-btn:hover { background: var(--olive-dark); }
+  .mc-post-btn:hover { background: #fff; }
 
   /* ---- minimalist filter/trending strip: one scrollable row, not a wrap ---- */
   .mc-filter-strip {
