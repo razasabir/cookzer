@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
@@ -43,6 +43,7 @@
       flex: 1;
       margin-top: 60px;
       overflow-y: auto;
+      padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
     }
 
   .restaurants-content {
