@@ -80,6 +80,7 @@ body {
   background: var(--card-bg);
   border-right: 1px solid var(--line);
   padding: 20px 0;
+  padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
   flex-shrink: 0;
 }
