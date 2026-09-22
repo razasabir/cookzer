@@ -19,6 +19,7 @@
   <script src="cookzer-modal.js"></script>
   <script src="friends-widget.js"></script>
   <script src="theme.js"></script>
+  <script src="pull-to-refresh.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -1320,6 +1321,16 @@
     newMsgPanel.classList.remove('open');
     newMsgSearch.value = '';
     newMsgResults.innerHTML = '';
+  }
+
+  // The conversation list (not the open thread) is what "pull to
+  // refresh" maps to here — .msg-list is its own scroll container,
+  // independent of whichever thread is currently open in the other pane.
+  if (window.CookzerPullToRefresh) {
+    CookzerPullToRefresh.attach(document.querySelector('.msg-list'), async () => {
+      await loadConversations();
+      renderList();
+    });
   }
 
   (async function init() {

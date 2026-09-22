@@ -21,6 +21,7 @@
   <script src="photo-filters.js"></script>
   <script src="photo-cropper.js"></script>
   <script src="theme.js"></script>
+  <script src="pull-to-refresh.js"></script>
   <script src="photo-lightbox.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -1425,6 +1426,13 @@
         heartBtn.textContent = mine ? '❤️ Hearted' : '❤️ Heart';
         heartBtn.style.color = mine ? 'var(--brick)' : '';
       }
+    });
+  }
+
+  if (window.CookzerPullToRefresh) {
+    CookzerPullToRefresh.attach(document.querySelector('.main'), async () => {
+      await loadGroup();
+      await loadGroupFeed();
     });
   }
 

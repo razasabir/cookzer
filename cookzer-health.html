@@ -18,6 +18,7 @@
   <script src="auth-guard.js"></script>
   <script src="friends-widget.js"></script>
   <script src="theme.js"></script>
+  <script src="pull-to-refresh.js"></script>
 <script src="nutrition-data.js"></script>
 <script src="cookzer-modal.js"></script>
 <script src="ai-assistant-chat.js"></script>
@@ -307,6 +308,10 @@
         mealListEl.appendChild(row);
       });
     }
+  }
+
+  if (window.CookzerPullToRefresh) {
+    CookzerPullToRefresh.attach(document.querySelector('.main'), loadHealth);
   }
 
   (async function init() {

@@ -19,6 +19,7 @@
   <script src="cookzer-modal.js"></script>
   <script src="friends-widget.js"></script>
   <script src="theme.js"></script>
+  <script src="pull-to-refresh.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -196,75 +197,86 @@
     return days + ' day' + (days === 1 ? '' : 's') + ' ago';
   }
 
+  // Hoisted out of init() (rather than a closure-local render()) so pull-
+  // to-refresh below can call the same reload the page uses on load and
+  // after "mark all read" — currentUser stands in for the user variable
+  // that closure used to capture directly.
+  let currentUser = null;
+  const TYPE_EMOJI = { follow: '👋', heart: '❤️', comment: '💬', remake: '🍳', challenge_join: '🏆', message: '✉️', review: '⭐', group_join: '👥' };
+
+  async function loadNotifications() {
+    if (!currentUser) return;
+    const markAllBtn = document.getElementById('markAllReadBtn');
+    const items = await window.CookzerNotifications.fetchItems(currentUser.id, 30);
+    const listEl = document.getElementById('notifList');
+    listEl.innerHTML = '';
+    document.getElementById('notifEmpty').hidden = items.length > 0;
+    markAllBtn.hidden = !items.some((item) => !item.read_at);
+
+    items.forEach((item) => {
+      const row = document.createElement('div');
+      row.className = 'notif-row' + (item.read_at ? '' : ' unread');
+
+      const link = document.createElement('a');
+      link.className = 'notif-link';
+      link.href = item.linkUrl || ('cookzer-profile.html?id=' + item.actorId);
+
+      const avatar = document.createElement('div');
+      avatar.className = 'notif-avatar';
+      avatar.textContent = TYPE_EMOJI[item.type] || '🔔';
+
+      const body = document.createElement('div');
+      const text = document.createElement('div');
+      text.className = 'notif-text';
+      text.textContent = item.text;
+      const time = document.createElement('div');
+      time.className = 'notif-time';
+      time.textContent = timeAgo(item.created_at);
+      body.appendChild(text);
+      body.appendChild(time);
+
+      link.appendChild(avatar);
+      link.appendChild(body);
+      row.appendChild(link);
+
+      // A per-notification mark-read control, so clearing one doesn't
+      // require clicking into (navigating to) what it's about.
+      if (!item.read_at) {
+        const markBtn = document.createElement('button');
+        markBtn.type = 'button';
+        markBtn.className = 'notif-mark-read';
+        markBtn.title = 'Mark as read';
+        markBtn.setAttribute('aria-label', 'Mark as read');
+        markBtn.textContent = '✓';
+        markBtn.addEventListener('click', async () => {
+          markBtn.disabled = true;
+          await window.CookzerNotifications.markRead(currentUser.id, item.id);
+          row.classList.remove('unread');
+          markBtn.remove();
+          markAllBtn.hidden = !listEl.querySelector('.notif-row.unread');
+        });
+        row.appendChild(markBtn);
+      }
+
+      listEl.appendChild(row);
+    });
+  }
+
+  if (window.CookzerPullToRefresh) {
+    CookzerPullToRefresh.attach(document.querySelector('.main'), loadNotifications);
+  }
+
   (async function init() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
+    currentUser = user;
 
-    const TYPE_EMOJI = { follow: '👋', heart: '❤️', comment: '💬', remake: '🍳', challenge_join: '🏆', message: '✉️', review: '⭐', group_join: '👥' };
-    const markAllBtn = document.getElementById('markAllReadBtn');
-
-    async function render() {
-      const items = await window.CookzerNotifications.fetchItems(user.id, 30);
-      const listEl = document.getElementById('notifList');
-      listEl.innerHTML = '';
-      document.getElementById('notifEmpty').hidden = items.length > 0;
-      markAllBtn.hidden = !items.some((item) => !item.read_at);
-
-      items.forEach((item) => {
-        const row = document.createElement('div');
-        row.className = 'notif-row' + (item.read_at ? '' : ' unread');
-
-        const link = document.createElement('a');
-        link.className = 'notif-link';
-        link.href = item.linkUrl || ('cookzer-profile.html?id=' + item.actorId);
-
-        const avatar = document.createElement('div');
-        avatar.className = 'notif-avatar';
-        avatar.textContent = TYPE_EMOJI[item.type] || '🔔';
-
-        const body = document.createElement('div');
-        const text = document.createElement('div');
-        text.className = 'notif-text';
-        text.textContent = item.text;
-        const time = document.createElement('div');
-        time.className = 'notif-time';
-        time.textContent = timeAgo(item.created_at);
-        body.appendChild(text);
-        body.appendChild(time);
-
-        link.appendChild(avatar);
-        link.appendChild(body);
-        row.appendChild(link);
-
-        // A per-notification mark-read control, so clearing one doesn't
-        // require clicking into (navigating to) what it's about.
-        if (!item.read_at) {
-          const markBtn = document.createElement('button');
-          markBtn.type = 'button';
-          markBtn.className = 'notif-mark-read';
-          markBtn.title = 'Mark as read';
-          markBtn.setAttribute('aria-label', 'Mark as read');
-          markBtn.textContent = '✓';
-          markBtn.addEventListener('click', async () => {
-            markBtn.disabled = true;
-            await window.CookzerNotifications.markRead(user.id, item.id);
-            row.classList.remove('unread');
-            markBtn.remove();
-            markAllBtn.hidden = !listEl.querySelector('.notif-row.unread');
-          });
-          row.appendChild(markBtn);
-        }
-
-        listEl.appendChild(row);
-      });
-    }
-
-    markAllBtn.addEventListener('click', async () => {
-      await window.CookzerNotifications.markAllRead(user.id);
-      await render();
+    document.getElementById('markAllReadBtn').addEventListener('click', async () => {
+      await window.CookzerNotifications.markAllRead(currentUser.id);
+      await loadNotifications();
     });
 
-    await render();
+    await loadNotifications();
   })();
 </script>
 </body>

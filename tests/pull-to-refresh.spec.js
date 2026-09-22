@@ -130,3 +130,44 @@ test.describe('Pull-to-refresh (cookzer-feed.html)', () => {
     await expect(page.locator('.feed-container > .cz-ptr-indicator').first()).toBeAttached();
   });
 });
+
+// Every other authenticated content page gets the same treatment — this
+// just confirms attach() was actually called against each page's real
+// scroll container (the .cz-ptr-indicator it inserts is proof), not that
+// the touch-gesture mechanics themselves work (already covered above
+// against the shared module directly). Skipped: cookzer-auth.html and
+// cookzer-privacy.html (no data to refresh), index.html (unauthenticated
+// landing page), cookzer-recipe-new.html (a multi-step wizard — reloading
+// would discard whatever the author hasn't saved yet), cookzer-settings.html
+// (a big edit form with the same unsaved-changes risk), cookzer-pantry.html
+// (mounts an AI chat widget with no safe reload — remounting risks losing
+// the conversation), and cookzer-list.html (no test mock exists yet for it).
+test.describe('Pull-to-refresh — wired into every other content page', () => {
+  const pages = [
+    { url: 'cookzer-cookbook.html', mock: 'cookbook-tags.js', selector: '.main' },
+    { url: 'cookzer-group.html', mock: 'group-admin.js', selector: '.main', extraQuery: '?id=g1' },
+    { url: 'cookzer-friends.html', mock: 'friends-page.js', selector: '.main' },
+    { url: 'cookzer-recipe.html?id=r1', mock: 'recipe-page.js', selector: '.main' },
+    { url: 'cookzer-planner.html', mock: 'planner-family.js', selector: '.main' },
+    { url: 'cookzer-challenges.html', mock: 'challenges-page.js', selector: '.main' },
+    { url: 'cookzer-health.html', mock: 'ai-chat.js', selector: '.main' },
+    { url: 'cookzer-notifications.html', mock: 'notifications-page.js', selector: '.main' },
+    { url: 'cookzer-messenger.html', mock: 'profile-activity.js', selector: '.msg-list' },
+    { url: 'cookzer-restaurant.html?id=rest-1', mock: 'restaurant-detail.js', selector: '.main' },
+    { url: 'cookzer-restaurant-claims.html', mock: 'restaurant-claims-admin.js', selector: '.main' },
+    { url: 'cookzer-group-polls.html', mock: 'group-polls.js', selector: '.main', extraQuery: '?id=g1' },
+    { url: 'cookzer-group-events.html', mock: 'group-events.js', selector: '.main', extraQuery: '?id=g1' },
+    { url: 'cookzer-groups.html', mock: 'groups-private.js', selector: '.main' },
+    { url: 'cookzer-group-challenges.html', mock: 'group-challenges.js', selector: '.main', extraQuery: '?id=group-1' },
+    { url: 'cookzer-restaurants.html', mock: 'restaurants-listing.js', selector: '.main' },
+    { url: 'cookzer-profile.html', mock: 'profile-page.js', selector: '.main' },
+  ];
+
+  for (const { url, mock, selector, extraQuery } of pages) {
+    test(`${url} attaches pull-to-refresh to ${selector}`, async ({ page }) => {
+      await loadPageWithMock(page, url, mock);
+      if (extraQuery) await page.goto(page.url() + extraQuery);
+      await expect(page.locator(selector + ' > .cz-ptr-indicator').first()).toBeAttached();
+    });
+  }
+});
