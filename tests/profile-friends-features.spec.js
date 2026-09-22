@@ -53,7 +53,16 @@ test.describe('profile: birthday + skills', () => {
 
 test.describe('profile: viewing someone else', () => {
   test('shows mutual friends in common', async ({ page }) => {
-    await loadPageWithMock(page, 'cookzer-profile.html', 'profile-page.js');
+    // Migration 055: mutual friends now reads real friendships, not a
+    // mutual-follow approximation — me-1 and alice-1 are both friends
+    // with bob-1.
+    const extraInit = `
+      window.__STATE__.friendships.push(
+        { user_id_1: 'bob-1', user_id_2: 'me-1' },
+        { user_id_1: 'alice-1', user_id_2: 'bob-1' }
+      );
+    `;
+    await loadPageWithMock(page, 'cookzer-profile.html', 'profile-page.js', extraInit);
     await page.goto(page.url() + '?id=alice-1');
 
     await expect(page.locator('#mutualFriendsLine')).toBeVisible();

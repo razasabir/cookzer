@@ -191,6 +191,7 @@
     }
 
   .empty-note { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 24px; }
+  .list-subheading { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-faint, var(--ink-soft)); padding: 14px 4px 6px; }
 
   .section-block {
       width: 100%;
@@ -384,6 +385,8 @@
     <div class="tabs-row">
       <button class="tab-btn active" id="followingTab" type="button">Following</button>
       <button class="tab-btn" id="followersTab" type="button">Followers</button>
+      <button class="tab-btn" id="friendsTab" type="button">Friends</button>
+      <button class="tab-btn" id="requestsTab" type="button">Requests</button>
       <button class="tab-btn" id="blockedTab" type="button">Blocked</button>
     </div>
 
@@ -475,6 +478,86 @@
       loadList();
     });
     row.appendChild(btn);
+    return row;
+  }
+
+  function friendRow(person) {
+    const row = document.createElement('div');
+    row.className = 'person-row';
+    const link = document.createElement('a');
+    link.className = 'person-link';
+    link.href = 'cookzer-profile.html?id=' + person.id;
+    const avatar = document.createElement('div');
+    avatar.className = 'person-avatar';
+    avatar.textContent = person.initials || '??';
+    const name = document.createElement('div');
+    name.className = 'person-name';
+    name.textContent = person.display_name || 'Someone';
+    link.appendChild(avatar);
+    link.appendChild(name);
+    row.appendChild(link);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'follow-toggle-btn following';
+    btn.textContent = 'Friends ✓';
+    btn.addEventListener('click', async () => {
+      if (!(await CookzerModal.confirm('Remove ' + (person.display_name || 'this person') + ' as a friend?'))) return;
+      const loId = currentUser.id < person.id ? currentUser.id : person.id;
+      const hiId = currentUser.id < person.id ? person.id : currentUser.id;
+      await sb.from('friendships').delete().eq('user_id_1', loId).eq('user_id_2', hiId);
+      loadList();
+    });
+    row.appendChild(btn);
+    return row;
+  }
+
+  function requestRow(person, requestId, direction) {
+    const row = document.createElement('div');
+    row.className = 'person-row';
+    const link = document.createElement('a');
+    link.className = 'person-link';
+    link.href = 'cookzer-profile.html?id=' + person.id;
+    const avatar = document.createElement('div');
+    avatar.className = 'person-avatar';
+    avatar.textContent = person.initials || '??';
+    const name = document.createElement('div');
+    name.className = 'person-name';
+    name.textContent = person.display_name || 'Someone';
+    link.appendChild(avatar);
+    link.appendChild(name);
+    row.appendChild(link);
+
+    if (direction === 'incoming') {
+      const acceptBtn = document.createElement('button');
+      acceptBtn.type = 'button';
+      acceptBtn.className = 'follow-toggle-btn following';
+      acceptBtn.textContent = 'Accept';
+      acceptBtn.addEventListener('click', async () => {
+        await sb.rpc('respond_friend_request', { p_request_id: requestId, p_accept: true });
+        loadList();
+      });
+      const declineBtn = document.createElement('button');
+      declineBtn.type = 'button';
+      declineBtn.className = 'follow-toggle-btn';
+      declineBtn.textContent = 'Decline';
+      declineBtn.addEventListener('click', async () => {
+        await sb.rpc('respond_friend_request', { p_request_id: requestId, p_accept: false });
+        loadList();
+      });
+      row.appendChild(acceptBtn);
+      row.appendChild(declineBtn);
+    } else {
+      const cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'follow-toggle-btn';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', async () => {
+        await sb.from('friend_requests').delete().eq('id', requestId);
+        loadList();
+      });
+      row.appendChild(cancelBtn);
+    }
     return row;
   }
 
@@ -600,6 +683,42 @@
         return;
       }
       people.forEach((p) => listEl.appendChild(personRow(p, true)));
+    } else if (activeTab === 'friends') {
+      const [{ data: asFirst }, { data: asSecond }] = await Promise.all([
+        sb.from('friendships').select('user_id_2, profiles!friendships_user_id_2_fkey(id, display_name, initials)').eq('user_id_1', currentUser.id),
+        sb.from('friendships').select('user_id_1, profiles!friendships_user_id_1_fkey(id, display_name, initials)').eq('user_id_2', currentUser.id),
+      ]);
+      const people = (asFirst || []).map((f) => f.profiles).concat((asSecond || []).map((f) => f.profiles)).filter(Boolean);
+      listEl.innerHTML = '';
+      if (people.length === 0) {
+        listEl.innerHTML = '<div class="empty-note">No friends yet — send a friend request from someone\'s profile.</div>';
+        return;
+      }
+      people.forEach((p) => listEl.appendChild(friendRow(p)));
+    } else if (activeTab === 'requests') {
+      const [{ data: incoming }, { data: outgoing }] = await Promise.all([
+        sb.from('friend_requests').select('id, sender_id, profiles!friend_requests_sender_id_fkey(id, display_name, initials)').eq('recipient_id', currentUser.id).eq('status', 'pending'),
+        sb.from('friend_requests').select('id, recipient_id, profiles!friend_requests_recipient_id_fkey(id, display_name, initials)').eq('sender_id', currentUser.id).eq('status', 'pending'),
+      ]);
+      listEl.innerHTML = '';
+      if ((!incoming || incoming.length === 0) && (!outgoing || outgoing.length === 0)) {
+        listEl.innerHTML = '<div class="empty-note">No pending friend requests.</div>';
+        return;
+      }
+      if (incoming && incoming.length > 0) {
+        const heading = document.createElement('div');
+        heading.className = 'list-subheading';
+        heading.textContent = 'Requests to you';
+        listEl.appendChild(heading);
+        incoming.forEach((r) => r.profiles && listEl.appendChild(requestRow(r.profiles, r.id, 'incoming')));
+      }
+      if (outgoing && outgoing.length > 0) {
+        const heading = document.createElement('div');
+        heading.className = 'list-subheading';
+        heading.textContent = 'Sent requests';
+        listEl.appendChild(heading);
+        outgoing.forEach((r) => r.profiles && listEl.appendChild(requestRow(r.profiles, r.id, 'outgoing')));
+      }
     } else {
       const { data } = await sb
         .from('user_blocks')
@@ -616,28 +735,16 @@
     }
   }
 
-  document.getElementById('followingTab').addEventListener('click', () => {
-    activeTab = 'following';
-    document.getElementById('followingTab').classList.add('active');
-    document.getElementById('followersTab').classList.remove('active');
-    document.getElementById('blockedTab').classList.remove('active');
+  const TAB_IDS = { following: 'followingTab', followers: 'followersTab', friends: 'friendsTab', requests: 'requestsTab', blocked: 'blockedTab' };
+  function setActiveTab(tab) {
+    activeTab = tab;
+    Object.entries(TAB_IDS).forEach(([name, id]) => {
+      document.getElementById(id).classList.toggle('active', name === tab);
+    });
     loadList();
-  });
-
-  document.getElementById('followersTab').addEventListener('click', () => {
-    activeTab = 'followers';
-    document.getElementById('followersTab').classList.add('active');
-    document.getElementById('followingTab').classList.remove('active');
-    document.getElementById('blockedTab').classList.remove('active');
-    loadList();
-  });
-
-  document.getElementById('blockedTab').addEventListener('click', () => {
-    activeTab = 'blocked';
-    document.getElementById('blockedTab').classList.add('active');
-    document.getElementById('followingTab').classList.remove('active');
-    document.getElementById('followersTab').classList.remove('active');
-    loadList();
+  }
+  Object.entries(TAB_IDS).forEach(([name, id]) => {
+    document.getElementById(id).addEventListener('click', () => setActiveTab(name));
   });
 
   document.getElementById('friendsSearchInput').addEventListener('input', (e) => {

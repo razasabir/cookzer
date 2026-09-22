@@ -26,6 +26,8 @@ window.__STATE__ = {
   ],
   pymk_dismissals: [],
   user_blocks: [],
+  friendships: [],
+  friend_requests: [],
 };
 let nextId = 1;
 
@@ -70,6 +72,14 @@ function chain(table) {
         rows = rows.map((r) => Object.assign({}, r, { profiles: profileById(r.follower_id) }));
       } else if (table === 'user_blocks' && selectStr.indexOf('user_blocks_blocked_id_fkey') !== -1) {
         rows = rows.map((r) => Object.assign({}, r, { profiles: profileById(r.blocked_id) }));
+      } else if (table === 'friendships' && selectStr.indexOf('friendships_user_id_2_fkey') !== -1) {
+        rows = rows.map((r) => Object.assign({}, r, { profiles: profileById(r.user_id_2) }));
+      } else if (table === 'friendships' && selectStr.indexOf('friendships_user_id_1_fkey') !== -1) {
+        rows = rows.map((r) => Object.assign({}, r, { profiles: profileById(r.user_id_1) }));
+      } else if (table === 'friend_requests' && selectStr.indexOf('friend_requests_sender_id_fkey') !== -1) {
+        rows = rows.map((r) => Object.assign({}, r, { profiles: profileById(r.sender_id) }));
+      } else if (table === 'friend_requests' && selectStr.indexOf('friend_requests_recipient_id_fkey') !== -1) {
+        rows = rows.map((r) => Object.assign({}, r, { profiles: profileById(r.recipient_id) }));
       }
       return rows;
     },
@@ -124,6 +134,21 @@ window.supabase = {
       signOut: () => Promise.resolve({}),
     },
     from: (table) => chain(table),
+    rpc: (fn, params) => {
+      window.__CALLS__.push({ op: 'rpc', fn, params });
+      if (fn === 'respond_friend_request') {
+        const req = window.__STATE__.friend_requests.find((r) => r.id === params.p_request_id);
+        if (req && req.status === 'pending') {
+          req.status = params.p_accept ? 'accepted' : 'declined';
+          if (params.p_accept) {
+            const loId = req.sender_id < req.recipient_id ? req.sender_id : req.recipient_id;
+            const hiId = req.sender_id < req.recipient_id ? req.recipient_id : req.sender_id;
+            window.__STATE__.friendships.push({ user_id_1: loId, user_id_2: hiId });
+          }
+        }
+      }
+      return Promise.resolve({ data: null, error: null });
+    },
     storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: 'https://example.com/x.jpg' } }), upload: () => Promise.resolve({ data: {}, error: null }) }) },
     channel: () => ({ on: () => ({ subscribe: () => ({}) }), subscribe: () => ({}) }),
     removeChannel: () => {},

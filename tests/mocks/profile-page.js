@@ -33,6 +33,8 @@ window.__STATE__ = {
   ],
   post_bookmarks: [],
   profile_views: [],
+  friendships: [],
+  friend_requests: [],
 };
 let nextId = 1;
 
@@ -65,6 +67,20 @@ window.__RPC_HANDLERS__ = {
       pinned_recipe_title: pinned ? pinned.title : null,
       pinned_recipe_hero_photo_path: pinned ? pinned.hero_photo_path : null,
     }];
+  },
+  // Mirrors public.respond_friend_request() from migration 055: flips the
+  // request's status and, on accept, inserts the canonical friendships row.
+  respond_friend_request: (params) => {
+    const req = window.__STATE__.friend_requests.find((r) => r.id === params.p_request_id);
+    if (req && req.status === 'pending') {
+      req.status = params.p_accept ? 'accepted' : 'declined';
+      if (params.p_accept) {
+        const loId = req.sender_id < req.recipient_id ? req.sender_id : req.recipient_id;
+        const hiId = req.sender_id < req.recipient_id ? req.recipient_id : req.sender_id;
+        window.__STATE__.friendships.push({ user_id_1: loId, user_id_2: hiId });
+      }
+    }
+    return null;
   },
 };
 
