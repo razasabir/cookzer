@@ -13,7 +13,10 @@ const RECIPE = {
   servings: 4,
   spice_level: 'Mild',
   ingredients: [{ name: 'Spaghetti', qty: '400g' }, { name: 'Eggs', qty: '3' }],
-  steps: [{ text: 'Boil the pasta.', photo_path: 'me-1/step1.jpg' }, { text: 'Toss with egg and cheese.', photo_path: null }],
+  steps: [
+    { text: 'Boil the pasta.', photo_paths: ['me-1/step1.jpg', 'me-1/step1b.jpg'] },
+    { text: 'Toss with egg and cheese.', photo_paths: [] },
+  ],
   nutrition: { calories: 520, protein: 22 },
   cost_per_serve: 3.5,
   hero_photo_path: 'me-1/step1.jpg',

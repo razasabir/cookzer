@@ -42,9 +42,9 @@ test.describe('Recipe wizard — photo filters on step/extra photos', () => {
     await modal.locator('.pc-btn-primary').click();
     await expect(modal).toBeHidden();
 
-    const thumb = page.locator('#stepRows .step-row').first().locator('.step-photo-thumb');
-    await expect(thumb).toBeVisible();
-    await expect(page.locator('#stepRows .step-row').first().locator('.step-photo-btn')).toHaveText('📷 Change photo');
+    const tiles = page.locator('#stepRows .step-row').first().locator('.step-photo-tile');
+    await expect(tiles).toHaveCount(1);
+    await expect(tiles.locator('img')).toBeVisible();
   });
 
   test('a non-Original filter choice re-bakes the photo\'s pixels; Original leaves them as cropped', async ({ page }) => {
@@ -58,21 +58,24 @@ test.describe('Recipe wizard — photo filters on step/extra photos', () => {
     await goToStepsPanel(page);
 
     const stepPhotoInput = page.locator('#stepRows .step-row').first().locator('input[type="file"]');
-    const currentFileSize = () => page.evaluate(() => document.querySelector('#stepRows .step-row')._photoFile.size);
+    const lastPhotoFileSize = () => page.evaluate(() => {
+      const photos = document.querySelector('#stepRows .step-row')._photos;
+      return photos[photos.length - 1].file.size;
+    });
 
     await stepPhotoInput.setInputFiles(SAMPLE_IMAGE);
     await confirmCrop(page);
     await filterModal(page).locator('.pf-swatch', { hasText: 'Original' }).click();
     await filterModal(page).locator('.pc-btn-primary').click();
     await expect(filterModal(page)).toBeHidden();
-    const originalSize = await currentFileSize();
+    const originalSize = await lastPhotoFileSize();
 
     await stepPhotoInput.setInputFiles(SAMPLE_IMAGE);
     await confirmCrop(page);
     await filterModal(page).locator('.pf-swatch', { hasText: 'Vivid' }).click();
     await filterModal(page).locator('.pc-btn-primary').click();
     await expect(filterModal(page)).toBeHidden();
-    const vividSize = await currentFileSize();
+    const vividSize = await lastPhotoFileSize();
 
     expect(vividSize).not.toBe(originalSize);
   });
@@ -90,8 +93,30 @@ test.describe('Recipe wizard — photo filters on step/extra photos', () => {
     await modal.locator('.pc-btn:not(.pc-btn-primary)').click();
     await expect(modal).toBeHidden();
 
-    await expect(page.locator('#stepRows .step-row').first().locator('.step-photo-thumb')).toBeHidden();
-    await expect(page.locator('#stepRows .step-row').first().locator('.step-photo-btn')).toHaveText('📷 Add photo for this step');
+    await expect(page.locator('#stepRows .step-row').first().locator('.step-photo-tile')).toHaveCount(0);
+  });
+
+  test('a step can have more than one photo attached', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-recipe-new.html', 'photo-composer.js');
+    await goToStepsPanel(page);
+
+    const stepPhotoInput = page.locator('#stepRows .step-row').first().locator('input[type="file"]');
+
+    await stepPhotoInput.setInputFiles(SAMPLE_IMAGE);
+    await confirmCrop(page);
+    await filterModal(page).locator('.pc-btn-primary').click();
+    await expect(filterModal(page)).toBeHidden();
+
+    await stepPhotoInput.setInputFiles(SAMPLE_IMAGE);
+    await confirmCrop(page);
+    await filterModal(page).locator('.pc-btn-primary').click();
+    await expect(filterModal(page)).toBeHidden();
+
+    const tiles = page.locator('#stepRows .step-row').first().locator('.step-photo-tile');
+    await expect(tiles).toHaveCount(2);
+
+    await tiles.first().locator('.step-photo-remove').click();
+    await expect(tiles).toHaveCount(1);
   });
 
   test('an extra photo also goes through the filter picker before it\'s added', async ({ page }) => {

@@ -15,6 +15,42 @@ test.describe('Recipe page — search tags', () => {
   });
 });
 
+test.describe('Recipe page — step photos', () => {
+  test('a step with several photos renders all of them', async ({ page }) => {
+    const extraInit = `
+      window.RECIPE.steps = [
+        { text: 'Sear the chicken.', photo_paths: ['me-1/sear1.jpg', 'me-1/sear2.jpg', 'me-1/sear3.jpg'] },
+      ];
+    `;
+    await loadPageWithMock(page, 'cookzer-recipe.html?id=r1', 'recipe-page.js', extraInit);
+
+    const photos = page.locator('.step-photos .step-photo');
+    await expect(photos).toHaveCount(3);
+    await expect(photos.nth(0)).toHaveAttribute('src', /sear1\.jpg/);
+    await expect(photos.nth(2)).toHaveAttribute('src', /sear3\.jpg/);
+  });
+
+  test('a step saved before multi-photo support (singular photo_path) still shows its photo', async ({ page }) => {
+    const extraInit = `
+      window.RECIPE.steps = [
+        { text: 'Boil the pasta.', photo_path: 'me-1/legacy.jpg' },
+      ];
+    `;
+    await loadPageWithMock(page, 'cookzer-recipe.html?id=r1', 'recipe-page.js', extraInit);
+
+    const photos = page.locator('.step-photos .step-photo');
+    await expect(photos).toHaveCount(1);
+    await expect(photos).toHaveAttribute('src', /legacy\.jpg/);
+  });
+
+  test('a step with no photos shows none', async ({ page }) => {
+    const extraInit = `window.RECIPE.steps = [{ text: 'Plate and serve.', photo_paths: [] }];`;
+    await loadPageWithMock(page, 'cookzer-recipe.html?id=r1', 'recipe-page.js', extraInit);
+
+    await expect(page.locator('.step-photos')).toHaveCount(0);
+  });
+});
+
 test.describe('Recipe page — action buttons', () => {
   test('Edit, Share, Save, and Heart appear first, in that order, for the recipe\'s own author', async ({ page }) => {
     await load(page);
