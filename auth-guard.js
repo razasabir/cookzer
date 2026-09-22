@@ -145,6 +145,16 @@ function applyKidModeRestrictions(kidMode) {
   const { data: { session } } = await sb.auth.getSession();
 
   if (!session) {
+    // Carve-out for the public logged-out profile preview: a shared
+    // profile link (cookzer-profile.html?id=<uuid>) should show a growth
+    // funnel, not a login wall. Every other page, and a profile URL with
+    // no ?id, still redirects — this is the only public route in the app.
+    const currentPage = location.pathname.split('/').pop();
+    const params = new URLSearchParams(location.search);
+    if (currentPage === 'cookzer-profile.html' && params.get('id')) {
+      window.CookzerLoggedOutPreview = true;
+      return;
+    }
     window.location.href = 'cookzer-auth.html';
     return;
   }
