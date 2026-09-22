@@ -175,6 +175,7 @@
     }
   .completeness-nudge-dismiss { background: none; border: none; color: var(--olive-dark); font-weight: 700; cursor: pointer; font-size: 14px; flex-shrink: 0; }
   .tag-chip-row[hidden], .social-links-row[hidden], .completeness-nudge[hidden] { display: none; }
+  .profile-views-line { font-size: 12px; color: var(--ink-soft); margin-top: 6px; }
 
   .skill-chip .skill-remove {
       background: none;
@@ -1090,6 +1091,8 @@
         </div>
       </div>
 
+      <div class="profile-views-line" id="profileViewsLine" hidden></div>
+
       <div class="profile-actions" id="profileActions"></div>
     </div>
 
@@ -1460,6 +1463,13 @@
     document.getElementById('mutualFriendsLine').hidden = isOwn;
     if (!isOwn) await loadMutualFriends();
 
+    if (isOwn) {
+      await loadProfileViewsLine();
+    } else {
+      // Fire-and-forget — a visitor's own page render never waits on this.
+      sb.from('profile_views').insert({ viewer_id: currentUser.id, viewed_id: viewedId });
+    }
+
     document.getElementById('skillsSection').hidden = !profile.is_kitchen_cv;
     document.getElementById('recommendationsSection').hidden = !profile.is_kitchen_cv;
     if (profile.is_kitchen_cv) {
@@ -1660,6 +1670,20 @@
     const names = (people || []).map((p) => p.display_name).filter(Boolean);
     const extra = mutualIds.length - names.length;
     el.innerHTML = '🤝 <b>' + mutualIds.length + '</b> mutual ' + (mutualIds.length === 1 ? 'friend' : 'friends') + (names.length ? ': ' + names.join(', ') + (extra > 0 ? ' +' + extra + ' more' : '') : '');
+    el.hidden = false;
+  }
+
+  async function loadProfileViewsLine() {
+    const el = document.getElementById('profileViewsLine');
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: views } = await sb
+      .from('profile_views')
+      .select('viewer_id')
+      .eq('viewed_id', currentUser.id)
+      .gte('created_at', weekAgo);
+    const distinctViewers = new Set((views || []).map((v) => v.viewer_id)).size;
+    if (distinctViewers === 0) { el.hidden = true; return; }
+    el.textContent = '👀 ' + distinctViewers + ' ' + (distinctViewers === 1 ? 'person' : 'people') + ' viewed your profile this week';
     el.hidden = false;
   }
 

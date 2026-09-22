@@ -32,6 +32,7 @@ window.__STATE__ = {
     { id: 'rec-1', profile_id: 'me-1', author_id: 'alice-1', body: 'Great cook, always brings the best dishes to potlucks!', status: 'pending', created_at: '2024-02-01T00:00:00Z', profiles: { display_name: 'Alice Diaz', initials: 'AD' } },
   ],
   post_bookmarks: [],
+  profile_views: [],
 };
 let nextId = 1;
 
@@ -76,6 +77,7 @@ function matches(row, filters) {
     if (f.op === 'is') return f.val === null ? (v === null || v === undefined) : v === f.val;
     if (f.op === 'not_is_null') return v !== null && v !== undefined;
     if (f.op === 'ilike') return String(v || '').toLowerCase().includes(f.val);
+    if (f.op === 'gte') return v >= f.val;
     return true;
   });
 }
@@ -95,6 +97,7 @@ function chain(table) {
     is(col, val) { filters.push({ col, op: 'is', val }); return builder; },
     not(col, _op, val) { filters.push({ col, op: 'not_is_null', val }); return builder; },
     ilike(col, pattern) { filters.push({ col, op: 'ilike', val: String(pattern).replace(/%/g, '').toLowerCase() }); return builder; },
+    gte(col, val) { filters.push({ col, op: 'gte', val }); return builder; },
     order(col, opts) { orderSpec = { col, asc: !(opts && opts.ascending === false) }; return builder; },
     limit() { return builder; },
     rows() {
