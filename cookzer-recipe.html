@@ -23,6 +23,7 @@
   <script src="photo-filters.js"></script>
   <script src="photo-cropper.js"></script>
   <script src="theme.js"></script>
+  <script src="pull-to-refresh.js"></script>
 <script src="nutrition-data.js"></script>
   <script src="unit-convert.js"></script>
   <script src="photo-lightbox.js"></script>
@@ -1699,6 +1700,10 @@
     await loadGallery();
     closeModal();
   });
+
+  if (window.CookzerPullToRefresh) {
+    CookzerPullToRefresh.attach(document.querySelector('.main'), loadRecipe);
+  }
 
   (async function init() {
     const { data: { user } } = await sb.auth.getUser();

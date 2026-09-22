@@ -19,6 +19,7 @@
   <script src="friends-widget.js"></script>
   <script src="cookzer-modal.js"></script>
   <script src="theme.js"></script>
+  <script src="pull-to-refresh.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -416,6 +417,10 @@
     await sb.from('recipe_lists').delete().eq('id', listId);
     window.location.href = 'cookzer-cookbook.html';
   });
+
+  if (window.CookzerPullToRefresh) {
+    CookzerPullToRefresh.attach(document.querySelector('.main'), loadList);
+  }
 
   (async function init() {
     const { data: { user } } = await sb.auth.getUser();

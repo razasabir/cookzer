@@ -19,6 +19,7 @@
   <script src="friends-widget.js"></script>
   <script src="cookzer-modal.js"></script>
   <script src="theme.js"></script>
+  <script src="pull-to-refresh.js"></script>
   <script src="shortcuts.js"></script>
   <script src="countdown.js"></script>
   <script src="confetti.js"></script>
@@ -868,6 +869,14 @@
 
     await loadActiveChallenges();
     await CookzerModal.alert('New challenge live: "Trending: ' + ingredientName + '"');
+  }
+
+  if (window.CookzerPullToRefresh) {
+    CookzerPullToRefresh.attach(document.querySelector('.main'), async () => {
+      await loadActiveChallenges();
+      await loadTrendRadar();
+      await loadPastChallenges();
+    });
   }
 
   (async function init() {

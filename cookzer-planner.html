@@ -21,6 +21,7 @@
   <script src="cookzer-modal.js"></script>
   <script src="nutrition-data.js"></script>
   <script src="theme.js"></script>
+  <script src="pull-to-refresh.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -1430,6 +1431,10 @@
     box.innerHTML = '';
     box.appendChild(list);
   });
+
+  if (window.CookzerPullToRefresh) {
+    CookzerPullToRefresh.attach(document.querySelector('.main'), loadWeek);
+  }
 
   (async function init() {
     const { data: { user } } = await sb.auth.getUser();

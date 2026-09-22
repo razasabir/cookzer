@@ -22,6 +22,7 @@
   <script src="share-save-menu.js"></script>
   <script src="photo-cropper.js"></script>
   <script src="theme.js"></script>
+  <script src="pull-to-refresh.js"></script>
   <script src="photo-lightbox.js"></script>
   <script src="shortcuts.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -2651,6 +2652,14 @@
     document.getElementById('gateCloseBtn').addEventListener('click', closeGate);
     document.getElementById('gateSignupBtn').addEventListener('click', () => { window.location.href = 'cookzer-auth.html'; });
     gateOverlay.addEventListener('click', (e) => { if (e.target === gateOverlay) closeGate(); });
+  }
+
+  // Skipped for the logged-out public preview — that view has its own
+  // scroll container (#loggedOutPreview) and no interactive reload of
+  // its own; .main only exists (and only receives touch input at all)
+  // once the logged-in app shell is what's actually showing.
+  if (window.CookzerPullToRefresh && !window.CookzerLoggedOutPreview) {
+    CookzerPullToRefresh.attach(document.querySelector('.main'), loadProfile);
   }
 
   (async function init() {
