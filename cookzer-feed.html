@@ -176,22 +176,22 @@
     .composer {
       background: linear-gradient(135deg, var(--olive) 0%, var(--olive-dark) 55%, var(--mustard) 135%);
       border: none;
-      border-radius: 18px;
-      padding: 18px;
-      margin-bottom: 24px;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
       width: 100%;
       box-shadow: 0 10px 28px rgba(31, 122, 74, 0.28);
     }
 
   .composer-header {
       display: flex;
-      gap: 12px;
-      margin-bottom: 12px;
+      align-items: center;
+      gap: 10px;
     }
 
   .composer-avatar {
-      width: 40px;
-      height: 40px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.9);
       background-size: cover;
@@ -201,7 +201,7 @@
       justify-content: center;
       color: var(--olive-dark);
       font-weight: 700;
-      font-size: 14px;
+      font-size: 12.5px;
       flex-shrink: 0;
     }
 
@@ -211,10 +211,10 @@
 
   .composer-input input {
       width: 100%;
-      padding: 11px 16px;
+      padding: 9px 14px;
       background: rgba(255, 255, 255, 0.94);
       border: none;
-      border-radius: 20px;
+      border-radius: 18px;
       font-size: 13px;
       color: var(--ink);
       font-family: inherit;
@@ -226,29 +226,35 @@
 
   /* Icon row — every add-on is one tap away, styled as a plain icon +
      label (like a logo you click, not a button you press) rather than
-     chrome hidden behind a "+ Add to post" menu. */
+     chrome hidden behind a "+ Add to post" menu. Sits inline with the
+     Post button (.composer-row2) instead of its own bordered section,
+     so there's no dead vertical space between them. */
+  .composer-row2 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
   .composer-icons-row {
       display: flex;
       align-items: center;
-      justify-content: center;
       flex-wrap: wrap;
       gap: 2px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid rgba(255, 255, 255, 0.28);
     }
 
   .composer-icon-btn {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 7px 10px;
+      gap: 5px;
+      padding: 5px 7px;
       background: none;
       border: none;
-      border-radius: 10px;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 12.5px;
-      font-weight: 600;
+      font-size: 12px;
+      font-weight: 500;
       font-family: inherit;
       color: #fff;
       text-decoration: none;
@@ -256,11 +262,25 @@
     }
 
   .composer-icon-btn:hover { background: rgba(255, 255, 255, 0.16); transform: translateY(-1px); }
-  .composer-icon-btn .composer-icon { font-size: 19px; line-height: 1; }
+  .composer-icon-btn .composer-icon { font-size: 15px; line-height: 1; }
   .composer-icon-btn .check { color: #fff; font-weight: 700; }
   .composer-icon-btn.active-modifier { background: rgba(255, 255, 255, 0.26); }
 
-  .composer-active-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .composer-post-btn {
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--olive-dark);
+      border: none;
+      border-radius: 16px;
+      padding: 7px 18px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+  .composer-post-btn:hover { background: #fff; }
+
+  .composer-active-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 
   .composer-modifier-chip {
       display: inline-flex;
@@ -292,18 +312,21 @@
      composer menu above. */
   .feed-filter-bar {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 20px;
+      gap: 6px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 2px;
     }
+  .feed-filter-bar::-webkit-scrollbar { display: none; }
 
   .feed-filter-chip {
-      padding: 7px 14px;
+      flex-shrink: 0;
+      padding: 5px 12px;
       background: var(--card-bg);
       border: 1px solid var(--line);
-      border-radius: 16px;
-      font-size: 12.5px;
+      border-radius: 14px;
+      font-size: 11.5px;
       font-weight: 500;
       font-family: inherit;
       color: var(--ink-soft);
@@ -1270,12 +1293,15 @@
         <span id="videoUploadStatusText">Uploading…</span>
         <div class="upload-progress-track"><div class="upload-progress-fill" id="videoUploadProgressFill"></div></div>
       </div>
-      <div class="composer-icons-row" id="composerIconsRow">
-        <button class="composer-icon-btn" id="composerMediaBtn" type="button" title="Photo or video"><span class="composer-icon">🖼️</span> Media</button>
-        <a class="composer-icon-btn" href="cookzer-recipe-new.html?share=1" title="Recipe"><span class="composer-icon">📝</span> Recipe</a>
-        <button class="composer-icon-btn" id="composerTipBtn" type="button" title="Mark this as a Tips &amp; Tricks post"><span class="composer-icon">💡</span> Tip<span class="check" hidden>✓</span></button>
-        <button class="composer-icon-btn" id="composerRestaurantBtn" type="button" title="Dining out"><span class="composer-icon">📍</span> Dining Out</button>
-        <button class="composer-icon-btn" id="composerChallengeBtn" type="button" title="Challenge entry"><span class="composer-icon">🏆</span> Challenge<span class="check" hidden>✓</span></button>
+      <div class="composer-row2">
+        <div class="composer-icons-row" id="composerIconsRow">
+          <button class="composer-icon-btn" id="composerMediaBtn" type="button" title="Photo or video"><span class="composer-icon">🖼️</span> Media</button>
+          <a class="composer-icon-btn" href="cookzer-recipe-new.html?share=1" title="Recipe"><span class="composer-icon">📝</span> Recipe</a>
+          <button class="composer-icon-btn" id="composerTipBtn" type="button" title="Mark this as a Tips &amp; Tricks post"><span class="composer-icon">💡</span> Tip<span class="check" hidden>✓</span></button>
+          <button class="composer-icon-btn" id="composerRestaurantBtn" type="button" title="Dining out"><span class="composer-icon">📍</span> Dining Out</button>
+          <button class="composer-icon-btn" id="composerChallengeBtn" type="button" title="Challenge entry"><span class="composer-icon">🏆</span> Challenge<span class="check" hidden>✓</span></button>
+        </div>
+        <button class="composer-post-btn" id="composerPostBtn" type="button">Post</button>
       </div>
       <div class="composer-active-chips" id="composerActiveChips"></div>
       <div id="restaurantPanel" hidden style="margin-top:10px; background:var(--cream); border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-size:13px;">
@@ -1289,9 +1315,6 @@
       <div id="restaurantTag" hidden style="margin-top:8px; display:flex; align-items:center; gap:8px; font-size:13px; color:#fff; font-weight:600;">
         📍 <span id="restaurantTagName"></span>
         <button type="button" id="restaurantTagRemove" style="background:none; border:none; color:#fff; cursor:pointer; font-size:13px; opacity:0.85;">✕</button>
-      </div>
-      <div style="display:flex; justify-content:center; margin-top:14px;">
-        <button class="challenge-btn" id="composerPostBtn" type="button" style="background:linear-gradient(135deg, var(--mustard), var(--brick)); color:#fff; padding:10px 40px; font-size:13.5px; border-radius:22px;">Post</button>
       </div>
     </div>
 
