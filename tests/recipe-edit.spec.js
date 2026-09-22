@@ -43,11 +43,12 @@ test.describe('Recipe wizard — edit mode', () => {
     const stepRows = page.locator('#stepRows .step-row');
     await expect(stepRows).toHaveCount(2);
     await expect(stepRows.nth(0).locator('.step-text-input')).toHaveValue('Boil the pasta.');
-    await expect(stepRows.nth(0).locator('.step-photo-thumb')).toBeVisible();
-    await expect(stepRows.nth(0).locator('.step-photo-thumb')).toHaveAttribute('src', /step1\.jpg/);
-    await expect(stepRows.nth(0).locator('.step-photo-btn')).toHaveText('📷 Change photo');
+    const step1Tiles = stepRows.nth(0).locator('.step-photo-tile');
+    await expect(step1Tiles).toHaveCount(2);
+    await expect(step1Tiles.nth(0).locator('img')).toHaveAttribute('src', /step1\.jpg/);
+    await expect(step1Tiles.nth(1).locator('img')).toHaveAttribute('src', /step1b\.jpg/);
     await expect(stepRows.nth(1).locator('.step-text-input')).toHaveValue('Toss with egg and cheese.');
-    await expect(stepRows.nth(1).locator('.step-photo-btn')).toHaveText('📷 Add photo for this step');
+    await expect(stepRows.nth(1).locator('.step-photo-tile')).toHaveCount(0);
   });
 
   test('extra photos are pre-filled from the gallery, minus whatever is already shown as a step photo', async ({ page }) => {

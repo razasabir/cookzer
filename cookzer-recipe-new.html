@@ -71,18 +71,25 @@
     font-size: 13px; color: var(--olive); cursor: pointer;
   }
 
-  /* Step rows with per-step photo */
+  /* Step rows with per-step photos (any number, same tile-grid pattern
+     as the extra-photos grid below) */
   .step-row { display: flex; gap: 10px; margin-bottom: 14px; align-items: flex-start; }
   .step-num { font-family: 'Fraunces', serif; font-weight: 600; color: var(--rosso); font-size: 18px; min-width: 24px; padding-top: 8px; flex-shrink: 0; }
   .step-row-body { flex: 1; min-width: 0; }
   .step-row-body textarea { width: 100%; min-height: 50px; }
-  .step-photo-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
-  .step-photo-btn {
-    background: var(--cream); border: 1px dashed var(--line); border-radius: 10px; padding: 6px 12px;
-    font-size: 12px; color: var(--ink-soft); cursor: pointer; flex-shrink: 0;
+  .step-photo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+  .step-photo-tile { position: relative; width: 56px; height: 56px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); flex-shrink: 0; }
+  .step-photo-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .step-photo-remove {
+    position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(43,38,32,0.65); color: #fff; border: none; font-size: 11px; cursor: pointer; padding: 0;
+    display: flex; align-items: center; justify-content: center;
   }
-  .step-photo-thumb { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: 1px solid var(--line); display: none; }
-  .step-photo-remove { background: none; border: none; color: var(--brick); font-size: 12px; cursor: pointer; display: none; }
+  .step-add-photo-tile {
+    width: 56px; height: 56px; border-radius: 8px; border: 2px dashed var(--line); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--ink-soft); cursor: pointer;
+  }
+  .step-add-photo-tile:hover { border-color: var(--olive); color: var(--olive); }
 
   /* Extra photos */
   .extra-photos-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
@@ -569,12 +576,14 @@
     document.getElementById('ingredientRows').appendChild(row);
   }
 
-  function addStepRow(text = '', existingPhotoPath = null) {
+  function addStepRow(text = '', existingPhotoPaths = null) {
     stepIdCounter++;
     const stepId = stepIdCounter;
     const row = document.createElement('div');
     row.className = 'step-row';
     row.dataset.stepId = stepId;
+    row._photos = []; // [{id, file, existingPath, previewUrl}] — any number per step
+    row._photoIdCounter = 0;
 
     const num = document.createElement('div');
     num.className = 'step-num';
@@ -590,22 +599,18 @@
 
     const photoRow = document.createElement('div');
     photoRow.className = 'step-photo-row';
-    const photoBtn = document.createElement('button');
-    photoBtn.type = 'button';
-    photoBtn.className = 'step-photo-btn';
-    photoBtn.textContent = '📷 Add photo for this step';
     const photoInput = document.createElement('input');
     photoInput.type = 'file';
     photoInput.accept = 'image/*';
     photoInput.hidden = true;
-    const thumb = document.createElement('img');
-    thumb.className = 'step-photo-thumb';
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'step-photo-remove';
-    removeBtn.textContent = 'Remove';
+    const addTile = document.createElement('button');
+    addTile.type = 'button';
+    addTile.className = 'step-add-photo-tile';
+    addTile.textContent = '+';
+    addTile.title = 'Add a photo for this step';
+    addTile.setAttribute('aria-label', 'Add a photo for this step');
 
-    photoBtn.addEventListener('click', () => photoInput.click());
+    addTile.addEventListener('click', () => photoInput.click());
     photoInput.addEventListener('change', async () => {
       const file = photoInput.files[0];
       if (!file) return;
@@ -616,38 +621,20 @@
       if (!cropped) return;
       const filtered = await pickPhotoFilter(cropped);
       if (!filtered) return;
-      row._photoFile = filtered;
-      row._existingPhotoPath = null; // replaced, not kept as the already-uploaded one
-      row._photoPreviewUrl = URL.createObjectURL(filtered);
-      thumb.src = row._photoPreviewUrl;
-      thumb.style.display = 'block';
-      removeBtn.style.display = 'inline-block';
-      photoBtn.textContent = '📷 Change photo';
-    });
-    removeBtn.addEventListener('click', () => {
-      row._photoFile = null;
-      row._existingPhotoPath = null;
-      row._photoPreviewUrl = null;
-      photoInput.value = '';
-      thumb.style.display = 'none';
-      removeBtn.style.display = 'none';
-      photoBtn.textContent = '📷 Add photo for this step';
+      row._photoIdCounter++;
+      row._photos.push({ id: row._photoIdCounter, file: filtered, existingPath: null, previewUrl: URL.createObjectURL(filtered) });
+      renderStepPhotos(row, photoRow);
     });
 
-    if (existingPhotoPath) {
-      row._existingPhotoPath = existingPhotoPath;
-      row._photoPreviewUrl = publicUrl('recipe-photos', existingPhotoPath);
-      thumb.src = row._photoPreviewUrl;
-      thumb.style.display = 'block';
-      removeBtn.style.display = 'inline-block';
-      photoBtn.textContent = '📷 Change photo';
-    }
-
-    photoRow.appendChild(photoBtn);
     photoRow.appendChild(photoInput);
-    photoRow.appendChild(thumb);
-    photoRow.appendChild(removeBtn);
+    photoRow.appendChild(addTile);
     body.appendChild(photoRow);
+
+    (existingPhotoPaths || []).forEach((path) => {
+      row._photoIdCounter++;
+      row._photos.push({ id: row._photoIdCounter, file: null, existingPath: path, previewUrl: publicUrl('recipe-photos', path) });
+    });
+    renderStepPhotos(row, photoRow);
 
     const removeStepBtn = document.createElement('button');
     removeStepBtn.type = 'button';
@@ -665,6 +652,29 @@
   function renumberSteps() {
     document.querySelectorAll('#stepRows .step-row').forEach((row, i) => {
       row.querySelector('.step-num').textContent = (i + 1) + '.';
+    });
+  }
+
+  function renderStepPhotos(row, photoRow) {
+    photoRow.querySelectorAll('.step-photo-tile').forEach((el) => el.remove());
+    const addTile = photoRow.querySelector('.step-add-photo-tile');
+    row._photos.forEach((p) => {
+      const tile = document.createElement('div');
+      tile.className = 'step-photo-tile';
+      const img = document.createElement('img');
+      img.src = p.previewUrl;
+      const rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'step-photo-remove';
+      rm.textContent = '✕';
+      rm.setAttribute('aria-label', 'Remove this photo');
+      rm.addEventListener('click', () => {
+        row._photos = row._photos.filter((x) => x.id !== p.id);
+        renderStepPhotos(row, photoRow);
+      });
+      tile.appendChild(img);
+      tile.appendChild(rm);
+      photoRow.insertBefore(tile, addTile);
     });
   }
 
@@ -885,15 +895,16 @@
   function getAllPhotoCandidates() {
     const candidates = [];
     document.querySelectorAll('#stepRows .step-row').forEach((row, idx) => {
-      if (row._photoFile || row._existingPhotoPath) {
+      const photos = row._photos || [];
+      photos.forEach((p, photoIdx) => {
         candidates.push({
-          key: 'step-' + row.dataset.stepId,
-          file: row._photoFile || null,
-          existingPath: row._photoFile ? null : (row._existingPhotoPath || null),
-          previewUrl: row._photoPreviewUrl,
-          label: 'Step ' + (idx + 1),
+          key: 'step-' + row.dataset.stepId + '-' + p.id,
+          file: p.file || null,
+          existingPath: p.file ? null : (p.existingPath || null),
+          previewUrl: p.previewUrl,
+          label: 'Step ' + (idx + 1) + (photos.length > 1 ? ' (photo ' + (photoIdx + 1) + ')' : ''),
         });
-      }
+      });
     });
     extraPhotos.forEach((p) => {
       candidates.push({ key: 'extra-' + p.id, file: p.file || null, existingPath: p.existingPath || null, previewUrl: p.previewUrl, label: 'Extra photo' });
@@ -1032,8 +1043,10 @@
     const steps = Array.from(document.querySelectorAll('#stepRows .step-row')).map((row) => {
       const text = row.querySelector('.step-text-input').value.trim();
       if (!text) return null;
-      const key = 'step-' + row.dataset.stepId;
-      return { text, photo_path: stepPhotoByKey[key] || null };
+      const photoPaths = (row._photos || [])
+        .map((p) => stepPhotoByKey['step-' + row.dataset.stepId + '-' + p.id])
+        .filter(Boolean);
+      return { text, photo_paths: photoPaths };
     }).filter(Boolean);
 
     const coverCandidate = candidates.find((c) => c.key === selectedCoverKey);
@@ -1159,13 +1172,17 @@
     (recipeData.ingredients || []).forEach((ing) => addIngredientRow(ing.name, ing.qty));
     if ((recipeData.ingredients || []).length === 0) { addIngredientRow(); addIngredientRow(); }
 
+    // photo_paths is the current (array) shape; photo_path is a fallback
+    // for recipes saved before steps could carry more than one photo.
+    const stepPhotoPaths = (s) => s.photo_paths || (s.photo_path ? [s.photo_path] : []);
+
     document.getElementById('stepRows').innerHTML = '';
-    (recipeData.steps || []).forEach((s) => addStepRow(s.text, s.photo_path || null));
+    (recipeData.steps || []).forEach((s) => addStepRow(s.text, stepPhotoPaths(s)));
     if ((recipeData.steps || []).length === 0) addStepRow();
 
     // Extra photos — this author's own gallery uploads for this recipe,
     // minus whatever's already shown against a step above.
-    const usedStepPaths = new Set((recipeData.steps || []).map((s) => s.photo_path).filter(Boolean));
+    const usedStepPaths = new Set((recipeData.steps || []).flatMap(stepPhotoPaths));
     const { data: galleryPhotos } = await sb
       .from('recipe_photos')
       .select('id, storage_path')

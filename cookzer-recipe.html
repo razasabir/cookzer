@@ -289,14 +289,19 @@
 
   .step-body { flex: 1; min-width: 0; }
 
+  .step-photos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
   .step-photo {
-      margin-top: 10px;
-      max-width: 280px;
-      width: 100%;
+      width: 140px;
+      max-width: 45%;
       border-radius: 12px;
       display: block;
       cursor: zoom-in;
     }
+
+  /* A step with just one photo keeps the old, larger single-photo size
+     instead of shrinking to fit a grid that isn't there. */
+  .step-photos .step-photo:only-child { width: 100%; max-width: 280px; }
 
   .actions-row {
       display: flex;
@@ -1061,23 +1066,33 @@
         div.textContent = text;
         body.appendChild(div);
 
-        const photoPath = step && typeof step === 'object' ? step.photo_path : null;
-        if (photoPath) {
-          const url = publicUrl('recipe-photos', photoPath);
-          const img = document.createElement('img');
-          img.className = 'step-photo';
-          img.src = url;
-          img.alt = 'Photo for this step';
-          img.addEventListener('click', () => CookzerLightbox.open({
-            imageUrl: url,
-            authorName: recipe.profiles ? recipe.profiles.display_name : 'Cookzer community',
-            authorInitials: recipe.profiles ? recipe.profiles.initials : 'C',
-            authorHref: 'cookzer-profile.html?id=' + recipe.author_id,
-            timestamp: recipe.created_at,
-            caption: text,
-            meta: [{ label: 'From', value: recipe.title }],
-          }));
-          body.appendChild(img);
+        // photo_paths is the current (array) shape; photo_path is a
+        // fallback for recipes saved before a step could carry more than
+        // one photo.
+        const photoPaths = step && typeof step === 'object'
+          ? (step.photo_paths || (step.photo_path ? [step.photo_path] : []))
+          : [];
+        if (photoPaths.length > 0) {
+          const photosWrap = document.createElement('div');
+          photosWrap.className = 'step-photos';
+          photoPaths.forEach((photoPath) => {
+            const url = publicUrl('recipe-photos', photoPath);
+            const img = document.createElement('img');
+            img.className = 'step-photo';
+            img.src = url;
+            img.alt = 'Photo for this step';
+            img.addEventListener('click', () => CookzerLightbox.open({
+              imageUrl: url,
+              authorName: recipe.profiles ? recipe.profiles.display_name : 'Cookzer community',
+              authorInitials: recipe.profiles ? recipe.profiles.initials : 'C',
+              authorHref: 'cookzer-profile.html?id=' + recipe.author_id,
+              timestamp: recipe.created_at,
+              caption: text,
+              meta: [{ label: 'From', value: recipe.title }],
+            }));
+            photosWrap.appendChild(img);
+          });
+          body.appendChild(photosWrap);
         }
 
         li.appendChild(body);

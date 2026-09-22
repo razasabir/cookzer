@@ -4,7 +4,9 @@ window.__SAVED_UPSERTS__ = [];
 window.__INSERTED_PLANNER_ENTRIES__ = [];
 window.__INSERTED_POSTS__ = [];
 
-const RECIPE = {
+// Exposed on window (not a bare top-level const) so a test's extraInit —
+// injected as its own separate init script — can reach and mutate it.
+window.RECIPE = {
   id: 'r1',
   title: 'Spaghetti Carbonara',
   description: 'A classic.',
@@ -150,7 +152,7 @@ window.supabase = {
       if (fn === 'get_or_create_my_household') return Promise.resolve({ data: HOUSEHOLD.id, error: null });
       return Promise.resolve({ data: null, error: null });
     },
-    storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: '' } }), upload: () => Promise.resolve({ data: {}, error: null }) }) },
+    storage: { from: () => ({ getPublicUrl: (path) => ({ data: { publicUrl: 'https://example.test/' + path } }), upload: () => Promise.resolve({ data: {}, error: null }) }) },
     channel: () => ({ on: () => ({ subscribe: () => ({}) }), subscribe: () => ({}) }),
     removeChannel: () => {},
   }),
