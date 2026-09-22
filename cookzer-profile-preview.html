@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Profile (compact preview) — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ── Preview-only banner — not part of the redesign itself.
+       body is display:flex (row) in styles.css, so a plain block div
+       dropped in as a direct child becomes a flex sibling of .sidebar/
+       .main and wrecks their sizing — taken out of flow the same way
+       .header already is, instead. */
+    .preview-banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      min-height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--ink);
+      color: var(--cream);
+      font-size: 12px;
+      line-height: 1.4;
+      text-align: center;
+      padding: 5px 44px;
+      z-index: 1000;
+    }
+    .preview-banner b { color: var(--mustard); }
+
+    /* ── Shell (same nav pattern as the live page, offset by the banner) ── */
+    .sidebar { padding-top: 30px; }
+    .header { top: 30px; }
+    .main { flex: 1; margin-top: 90px; overflow-y: auto; padding-bottom: max(24px, env(safe-area-inset-bottom, 0px)); }
+    @media (max-width: 480px) {
+      .preview-banner { padding: 5px 10px; }
+      .header { top: 44px; }
+      .main { margin-top: 104px; }
+    }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+    .brand-header {
+      font-size: 20px; color: var(--olive-dark); letter-spacing: -0.5px;
+      font-family: 'Fredoka', sans-serif; font-weight: 600;
+    }
+
+    /* ══════════════════ Compact profile redesign ══════════════════
+       Everything below is new. Design intent: one dense identity card
+       instead of a tall stack of big centered blocks — avatar sits
+       inline with name/meta/stats/actions instead of each getting its
+       own full-width centered row, and every section below drops from
+       padded tiles to a single-line stat strip. Target: the whole
+       "above the fold" identity block (avatar → stats → actions) fits
+       in well under half the vertical space the live page uses for
+       it, and the two badge grids collapse from 8 tiles down to one
+       compact row + one line. */
+    .pc-content {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pc-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    /* Identity row: avatar + name/meta/stats inline, actions pinned right */
+    .pc-identity {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .pc-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      background-size: cover;
+      background-position: center;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; font-size: 20px;
+      font-family: 'Fraunces', serif;
+    }
+
+    .pc-identity-main { flex: 1; min-width: 0; }
+
+    .pc-name-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+    .pc-name { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; color: var(--olive-dark); line-height: 1.2; }
+    .pc-badge { font-size: 11px; font-weight: 700; color: var(--olive-dark); }
+
+    .pc-meta { font-size: 12.5px; color: var(--ink-soft); margin-top: 1px; }
+    .pc-bio { font-size: 13px; color: var(--ink); margin-top: 3px; line-height: 1.4; }
+
+    .pc-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .pc-btn {
+      padding: 6px 12px;
+      border-radius: 9px;
+      border: 1px solid var(--line);
+      background: var(--cream);
+      color: var(--olive-dark);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .pc-btn:hover { background: #f0e6d2; }
+    .pc-btn.primary { background: var(--olive); color: #fff; border-color: var(--olive); }
+    .pc-btn.primary:hover { background: var(--olive-dark); }
+
+    /* Single-line stat strip — replaces the big centered stat blocks */
+    .pc-stats {
+      display: flex;
+      gap: 0;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+    .pc-stat { flex: 1; text-align: center; }
+    .pc-stat-num { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--brick); }
+    .pc-stat-label { font-size: 10.5px; color: var(--ink-soft); margin-top: 1px; }
+
+    /* Profile-completeness nudge — condensed to one thin line */
+    .pc-nudge {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      background: var(--plus-tint); border-radius: 9px; padding: 6px 10px;
+      font-size: 12px; color: var(--olive-dark); margin-top: 10px;
+    }
+    .pc-nudge button { background: none; border: none; color: var(--olive-dark); font-weight: 700; cursor: pointer; font-size: 13px; }
+
+    /* Achievements + activity badges: one dense row of 4 instead of two
+       separate padded 2×2 grids */
+    .pc-section-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--ink-soft); margin-bottom: 6px;
+    }
+    .pc-chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pc-chip {
+      flex: 1;
+      min-width: 68px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 7px 4px;
+      text-align: center;
+    }
+    .pc-chip-num { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--olive-dark); }
+    .pc-chip-label { font-size: 9.5px; color: var(--ink-soft); line-height: 1.25; margin-top: 1px; }
+
+    /* Tabs — trimmed padding */
+    .pc-tabs {
+      display: flex; gap: 4px; border-bottom: 1px solid var(--line);
+    }
+    .pc-tab {
+      padding: 7px 10px; font-size: 13px; font-weight: 500; color: var(--ink-soft);
+      border-bottom: 2px solid transparent; cursor: pointer;
+    }
+    .pc-tab.active { color: var(--olive-dark); border-bottom-color: var(--olive); font-weight: 600; }
+
+    /* Activity — compact single-line rows instead of big padded cards */
+    .pc-activity-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 2px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+    .pc-activity-row:last-child { border-bottom: none; }
+    .pc-activity-icon {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: var(--plus-tint); display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+    }
+    .pc-activity-text { flex: 1; min-width: 0; color: var(--ink); }
+    .pc-activity-text b { color: var(--olive-dark); font-weight: 600; }
+    .pc-activity-time { font-size: 11px; color: var(--ink-soft); flex-shrink: 0; }
+
+    .pc-highlights { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 2px; }
+    .pc-highlight { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; width: 54px; }
+    .pc-highlight-circle {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 17px; font-weight: 700;
+      box-shadow: 0 0 0 2px var(--line);
+    }
+    .pc-highlight-label { font-size: 10px; color: var(--ink-soft); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 54px; }
+
+    @media (max-width: 1024px) {
+      .sidebar { position: fixed; top: 0; left: -280px; height: 100vh; height: 100dvh; z-index: 100; transition: left 0.25s ease; }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .menu-toggle { display: flex; }
+      .header { left: 0; padding: 0 16px; gap: 12px; }
+      .main { margin-left: 0; }
+      .brand-header { font-size: 18px; }
+    }
+    @media (max-width: 480px) {
+      .header { padding: 0 12px; }
+      .icon-btn, .avatar { width: 32px; height: 32px; font-size: 15px; }
+      .pc-identity { flex-wrap: wrap; }
+      .pc-actions { width: 100%; }
+      .pc-btn { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="preview-banner">🔍 <b>Design preview</b> — compact/minimalist redesign of the profile page. Not wired up, not linked from the app. Sample data only.</div>
+
+<div class="sidebar">
+  <div class="sidebar-brand">Cook<span>zer</span></div>
+  <div class="sidebar-item icon feed">Feed</div>
+  <div class="sidebar-item icon cookbook">My Recipes</div>
+  <div class="sidebar-item icon planner">Meal Planner</div>
+  <div class="sidebar-item icon challenges">Challenges</div>
+  <div class="sidebar-item icon groups">Groups</div>
+  <div class="sidebar-item icon restaurants">Restaurants</div>
+  <div class="sidebar-item icon profile active">Profile</div>
+  <div class="sidebar-item icon messenger">Messenger</div>
+  <div class="sidebar-item icon convert">Measure &amp; Convert</div>
+  <div class="sidebar-item icon tips">Tips &amp; Tricks</div>
+  <div class="sidebar-plus">
+    <div class="sidebar-plus-label">Cookzer+</div>
+    <div class="sidebar-plus-item pantry">Cooking Ideas</div>
+    <div class="sidebar-plus-item leftovers">Leftover Help</div>
+    <div class="sidebar-plus-item health">Health &amp; Nutritions</div>
+  </div>
+</div>
+
+<div class="sidebar-overlay"></div>
+
+<div class="header">
+  <button class="menu-toggle" aria-label="Open menu">☰</button>
+  <div class="brand-header">Cook<span>zer</span></div>
+  <div class="header-right">
+    <button class="icon-btn">🔔</button>
+    <button class="icon-btn">💬</button>
+    <button class="icon-btn theme-toggle-btn" title="Toggle dark mode" type="button">🌙</button>
+    <button class="icon-btn" title="Settings" type="button">⚙️</button>
+    <div class="avatar">RH</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="pc-content">
+
+    <!-- Identity card: avatar + name/meta/bio/stats/actions, all in one -->
+    <div class="pc-card">
+      <div class="pc-identity">
+        <div class="pc-avatar">RH</div>
+        <div class="pc-identity-main">
+          <div class="pc-name-row">
+            <span class="pc-name">RazaH</span>
+          </div>
+          <div class="pc-meta">Melb · Joined Sept 2026 · 🎂 Nov 24</div>
+          <div class="pc-bio">Nio</div>
+        </div>
+        <div class="pc-actions">
+          <button class="pc-btn">Edit</button>
+          <button class="pc-btn primary">Share</button>
+        </div>
+      </div>
+
+      <div class="pc-stats">
+        <div class="pc-stat"><div class="pc-stat-num">25</div><div class="pc-stat-label">Recipes</div></div>
+        <div class="pc-stat"><div class="pc-stat-num">3</div><div class="pc-stat-label">Followers</div></div>
+        <div class="pc-stat"><div class="pc-stat-num">5</div><div class="pc-stat-label">Following</div></div>
+        <div class="pc-stat"><div class="pc-stat-num">0</div><div class="pc-stat-label">Remade</div></div>
+      </div>
+
+      <div class="pc-nudge">
+        <span>Your profile is 75% complete — add a pinned recipe to boost it.</span>
+        <button type="button" aria-label="Dismiss">✕</button>
+      </div>
+    </div>
+
+    <!-- Achievements + activity — one compact row each, not two big grids -->
+    <div class="pc-card">
+      <div class="pc-section-title">Achievements</div>
+      <div class="pc-chip-row">
+        <div class="pc-chip"><div class="pc-chip-num">1</div><div class="pc-chip-label">cook-ins logged</div></div>
+        <div class="pc-chip"><div class="pc-chip-num">0</div><div class="pc-chip-label">day streak</div></div>
+        <div class="pc-chip"><div class="pc-chip-num">1</div><div class="pc-chip-label">challenges joined</div></div>
+        <div class="pc-chip"><div class="pc-chip-num">3</div><div class="pc-chip-label">followers</div></div>
+      </div>
+    </div>
+
+    <!-- Highlights (public Lists) -->
+    <div class="pc-card">
+      <div class="pc-section-title">Highlights</div>
+      <div class="pc-highlights">
+        <div class="pc-highlight">
+          <div class="pc-highlight-circle">🍝</div>
+          <div class="pc-highlight-label">Weeknight</div>
+        </div>
+        <div class="pc-highlight">
+          <div class="pc-highlight-circle">🎂</div>
+          <div class="pc-highlight-label">Baking</div>
+        </div>
+        <div class="pc-highlight">
+          <div class="pc-highlight-circle">🌶️</div>
+          <div class="pc-highlight-label">Spicy</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recipes / Activity — tabs + dense list -->
+    <div class="pc-card">
+      <div class="pc-tabs">
+        <div class="pc-tab active">Activity</div>
+        <div class="pc-tab">Grid</div>
+        <div class="pc-tab">List</div>
+        <div class="pc-tab">Saved</div>
+      </div>
+      <div style="margin-top: 6px;">
+        <div class="pc-activity-row">
+          <div class="pc-activity-icon">📖</div>
+          <div class="pc-activity-text"><b>Shared</b> Sample recipe</div>
+          <div class="pc-activity-time">18 Sept</div>
+        </div>
+        <div class="pc-activity-row">
+          <div class="pc-activity-icon">🍽️</div>
+          <div class="pc-activity-text"><b>Cooked</b> Loaded Nachos</div>
+          <div class="pc-activity-time">14 Sept</div>
+        </div>
+        <div class="pc-activity-row">
+          <div class="pc-activity-icon">📸</div>
+          <div class="pc-activity-text">Posted a photo from a picnic lunch</div>
+          <div class="pc-activity-time">14 Sept</div>
+        </div>
+        <div class="pc-activity-row">
+          <div class="pc-activity-icon">🧁</div>
+          <div class="pc-activity-text"><b>Added</b> Banana, oats and blackberry cupcakes</div>
+          <div class="pc-activity-time">12 Sept</div>
+        </div>
+        <div class="pc-activity-row">
+          <div class="pc-activity-icon">🏆</div>
+          <div class="pc-activity-text"><b>Joined</b> the Weeknight Dinners challenge</div>
+          <div class="pc-activity-time">9 Sept</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
