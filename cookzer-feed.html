@@ -314,9 +314,20 @@
      width this bar would shrink-and-center to its own content instead of
      the container, and once enough tag chips get appended to make it
      wider than the container, centering pushes its start past the left
-     edge — visually indistinguishable from the whole bar going missing. */
+     edge — visually indistinguishable from the whole bar going missing.
+     Also needs flex-shrink: 0 — setting overflow-x here makes the
+     browser compute this element's overflow-y as auto too (a real CSS
+     rule: a non-visible overflow-x forces a visible overflow-y to auto),
+     which zeroes out its automatic minimum height as a flex item. Once
+     the feed's total content is taller than .feed-container (any decent
+     number of posts), the column flexbox's default shrinking crushes
+     this bar down toward that zero minimum instead of leaving it at its
+     natural size — every chip in the row visibly squashed to a sliver
+     with none of its text showing, on any device, even though it's
+     otherwise laid out correctly. */
   .feed-filter-bar {
       display: flex;
+      flex-shrink: 0;
       gap: 6px;
       width: 100%;
       margin-bottom: 16px;
@@ -333,6 +344,7 @@
       border: 1px solid var(--line);
       border-radius: 14px;
       font-size: 11.5px;
+      line-height: 16px;
       font-weight: 500;
       font-family: inherit;
       color: var(--ink-soft);
