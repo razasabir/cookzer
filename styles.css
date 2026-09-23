@@ -85,21 +85,25 @@ body {
   flex-shrink: 0;
 }
 
-/* Belt-and-suspenders for the packaged Android/iOS app (theme.js stamps
-   data-native-app before first paint — never set on the real website).
-   The per-page env(safe-area-inset-bottom) fallbacks above assume the
-   WebView correctly reports the system nav bar's height through that
-   CSS variable; on a WebView where it doesn't, content still ends up
-   hidden behind the bar even with the padding-bottom rules in place.
-   These selectors are more specific than the plain single-class rules
-   each page declares for the same element (.main etc.), so they win
-   regardless of source order, without needing !important. */
-[data-native-app] .main,
-[data-native-app] .feed-container,
-[data-native-app] .msg-list,
-[data-native-app] .thread-messages,
-[data-native-app] .sidebar {
-  padding-bottom: max(72px, env(safe-area-inset-bottom, 0px));
+/* Real fix for the Android WebView bottom-cutoff bug, replacing an
+   earlier data-native-app-gated attempt (both signals it relied on —
+   window.Capacitor.isNativePlatform() and a WebView user-agent check —
+   turned out false on the actual reporting device, so it silently
+   never fired). --cz-viewport-inset-fix is set by theme.js from
+   window.visualViewport, which measures the genuinely-visible area
+   directly instead of assuming the browser's own env(safe-area-inset-*)
+   already accounts for the system nav bar; it resolves to 0px (and
+   changes nothing) everywhere that assumption happens to hold, no
+   environment detection required. !important because these need to
+   beat each page's own single-class .main rule regardless of source
+   order, and a plain selector here can't outrank it on specificity
+   alone the way the old attribute-qualified one did. */
+.main,
+.feed-container,
+.msg-list,
+.thread-messages,
+.sidebar {
+  padding-bottom: max(24px, env(safe-area-inset-bottom, 0px), var(--cz-viewport-inset-fix, 0px)) !important;
 }
 
 .sidebar-brand {
