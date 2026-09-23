@@ -48,40 +48,6 @@
   }
   applyViewportInsetFix();
 
-  // ---- TEMPORARY diagnostic banner — delete once root-caused. After the
-  // native edge-to-edge opt-out (PR #250) fixed the bottom-cutoff bug, the
-  // whole page started rendering visibly zoomed in (a fixed 28px heading
-  // taking up two lines at roughly 2x its spec'd size, header icons
-  // similarly oversized) — since .page-title's font-size is an absolute
-  // px value, not rem/em, the only way it renders larger on screen is if
-  // the browser is scaling the entire page up, i.e. a viewport-width/zoom
-  // miscalculation, not a CSS bug. Pinned to the very top of the
-  // viewport (position:fixed — see the profile-preview banner bug earlier
-  // this session for why a plain body child would break).
-  function renderZoomDebugBanner() {
-    var vv = window.visualViewport;
-    var titleEl = document.querySelector('.page-title, h1');
-    var titleFontSize = titleEl ? getComputedStyle(titleEl).fontSize : 'n/a';
-    var banner = document.createElement('div');
-    banner.id = 'czZoomDebugBanner';
-    banner.textContent =
-      'ZDBG innerW=' + window.innerWidth + ' outerW=' + window.outerWidth +
-      ' dpr=' + window.devicePixelRatio +
-      ' docClientW=' + document.documentElement.clientWidth +
-      ' | vvW=' + (vv ? Math.round(vv.width) : 'n/a') + ' vvScale=' + (vv ? vv.scale : 'n/a') +
-      ' | titleFontSize=' + titleFontSize;
-    banner.style.cssText =
-      'position:fixed; left:0; right:0; top:0; z-index:999999; ' +
-      'background:#000; color:#0f0; font:10px/1.4 monospace; ' +
-      'padding:4px 6px; white-space:pre-wrap; pointer-events:none;';
-    document.body.appendChild(banner);
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', renderZoomDebugBanner);
-  } else {
-    renderZoomDebugBanner();
-  }
-
   window.toggleTheme = function () {
     var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     if (isDark) {
