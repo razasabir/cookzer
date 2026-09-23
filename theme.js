@@ -11,6 +11,18 @@
     document.documentElement.setAttribute('data-theme', 'dark');
   }
 
+  // Flags the packaged Android/iOS app (never the real website) so
+  // styles.css can give scroll containers a much bigger safe-area
+  // fallback than the website needs — env(safe-area-inset-bottom) not
+  // resolving on a given WebView is exactly what left content stuck
+  // behind the system nav bar even after padding-bottom was added
+  // (see the .main / .feed-container rules in styles.css). Runs before
+  // first paint, same as the theme flag above, and before pull-to-refresh.js
+  // and the page's own layout script even parse.
+  if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+    document.documentElement.setAttribute('data-native-app', 'true');
+  }
+
   window.toggleTheme = function () {
     var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     if (isDark) {

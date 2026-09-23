@@ -85,6 +85,23 @@ body {
   flex-shrink: 0;
 }
 
+/* Belt-and-suspenders for the packaged Android/iOS app (theme.js stamps
+   data-native-app before first paint — never set on the real website).
+   The per-page env(safe-area-inset-bottom) fallbacks above assume the
+   WebView correctly reports the system nav bar's height through that
+   CSS variable; on a WebView where it doesn't, content still ends up
+   hidden behind the bar even with the padding-bottom rules in place.
+   These selectors are more specific than the plain single-class rules
+   each page declares for the same element (.main etc.), so they win
+   regardless of source order, without needing !important. */
+[data-native-app] .main,
+[data-native-app] .feed-container,
+[data-native-app] .msg-list,
+[data-native-app] .thread-messages,
+[data-native-app] .sidebar {
+  padding-bottom: max(72px, env(safe-area-inset-bottom, 0px));
+}
+
 .sidebar-brand {
   padding: 0 16px;
   margin-bottom: 20px;
