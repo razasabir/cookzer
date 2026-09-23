@@ -19,7 +19,21 @@
   // (see the .main / .feed-container rules in styles.css). Runs before
   // first paint, same as the theme flag above, and before pull-to-refresh.js
   // and the page's own layout script even parse.
-  if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+  //
+  // window.Capacitor.isNativePlatform() alone isn't reliable here: the
+  // app points at this live site (capacitor.config.json -> server.url)
+  // rather than bundled local assets, and whether that still gets the
+  // native bridge's JS injected into an externally-hosted page depends
+  // on the exact Capacitor/WebView version — nothing this page can
+  // verify for itself. Android's own embedded WebView always marks
+  // itself with a "wv" token in its user-agent (true for every app's
+  // WebView, Capacitor or not), which needs no bridge injection at all,
+  // so it's checked as an independent, more reliable signal alongside
+  // the Capacitor check rather than instead of it.
+  var ua = navigator.userAgent || '';
+  var isAndroidEmbeddedWebView = /Android/.test(ua) && /\bwv\b/.test(ua);
+  var isCapacitorNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  if (isCapacitorNative || isAndroidEmbeddedWebView) {
     document.documentElement.setAttribute('data-native-app', 'true');
   }
 
