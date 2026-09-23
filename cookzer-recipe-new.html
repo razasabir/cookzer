@@ -32,6 +32,19 @@
     display: flex; align-items: center; justify-content: center;
     color: #fff; font-weight: 600; cursor: pointer;
   }
+  .brand-header-link {
+    text-decoration: none;
+    display: inline-flex;
+  }
+  .brand-header {
+    font-size: 28px;
+    color: var(--olive-dark);
+    letter-spacing: -0.5px;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    transition: opacity 0.15s;
+  }
+  .brand-header-link:hover .brand-header { opacity: 0.85; }
   .main {
     flex: 1;
     margin-top: calc(60px + var(--cz-viewport-inset-fix-top, 0px));
@@ -152,7 +165,7 @@
     .menu-toggle { display: flex; }
     .header { left: 0; padding: 0 16px; gap: 12px; }
     .main { margin-left: 0; }
-    .brand-header { font-size: 18px; }
+    .brand-header { font-size: 22px; }
     .row-2 { flex-direction: column; gap: 0; }
   }
   @media (max-width: 480px) {
@@ -165,7 +178,7 @@
       .header-right { gap: 6px; }
       .menu-toggle { width: 30px; height: 30px; }
       .icon-btn, .avatar { width: 28px; height: 28px; font-size: 13px; }
-      .brand-header { font-size: 16px; }
+      .brand-header { font-size: 19px; }
     }
 </style>
 </head>
@@ -198,7 +211,7 @@
 
 <div class="header">
   <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
-  <div class="brand-header">Cook<span>zer</span></div>
+  <a href="cookzer-feed.html" class="brand-header-link" aria-label="Cookzer home"><div class="brand-header">Cook<span>zer</span></div></a>
   <div class="header-right">
     <a href="cookzer-feed.html" style="text-decoration: none;"><button class="icon-btn">✕</button></a>
     <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" type="button">🌙</button>
