@@ -60,6 +60,57 @@
   }
   applyViewportInsetFix();
 
+  // ---- TEMPORARY diagnostic banner — delete once root-caused. #253's
+  // top-inset fix (built on the same visualViewport mechanism that fixed
+  // the bottom-cutoff bug) reportedly did not fix the header/status-bar
+  // overlap on the reporting device. That fix's whole premise —
+  // visualViewport.offsetTop reporting the status-bar height — was
+  // inferred from how the bottom bug behaved, never confirmed for the
+  // top on a real device. Pinned to the very top of the viewport
+  // (position:fixed — see the profile-preview banner bug earlier this
+  // session for why a plain body child would break) so it sits exactly
+  // where the header does: if THIS banner is also covered by the status
+  // bar, or if its own numbers below don't match the header's actual
+  // computed box, that tells us which assumption is wrong. Re-reads on
+  // visualViewport resize and on a couple of delayed timers in case the
+  // WebView reports insets late, so a race isn't mistaken for a zero.
+  function renderStatusBarDebugBanner() {
+    var banner = document.createElement('div');
+    banner.id = 'czStatusBarDebugBanner';
+    banner.style.cssText =
+      'position:fixed; left:0; right:0; top:0; z-index:999999; ' +
+      'background:#000; color:#0f0; font:10px/1.4 monospace; ' +
+      'padding:4px 6px; white-space:pre-wrap; pointer-events:none;';
+    document.body.appendChild(banner);
+
+    function render() {
+      var vv = window.visualViewport;
+      var header = document.querySelector('.header');
+      var headerCs = header ? getComputedStyle(header) : null;
+      var headerRect = header ? header.getBoundingClientRect() : null;
+      var rootCs = getComputedStyle(document.documentElement);
+      banner.textContent =
+        'SBDBG vvOffsetTop=' + (vv ? vv.offsetTop : 'n/a') +
+        ' vvH=' + (vv ? Math.round(vv.height) : 'n/a') +
+        ' innerH=' + window.innerHeight +
+        ' | --top=' + rootCs.getPropertyValue('--cz-viewport-inset-fix-top').trim() +
+        ' --bottom=' + rootCs.getPropertyValue('--cz-viewport-inset-fix').trim() +
+        (headerCs ? ' | header h=' + headerCs.height + ' pt=' + headerCs.paddingTop : ' | no .header found') +
+        (headerRect ? ' rectTop=' + Math.round(headerRect.top) + ' rectBottom=' + Math.round(headerRect.bottom) : '') +
+        ' | ' + new Date().toLocaleTimeString();
+    }
+    render();
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', render);
+    setTimeout(render, 500);
+    setTimeout(render, 1500);
+    setTimeout(render, 3000);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderStatusBarDebugBanner);
+  } else {
+    renderStatusBarDebugBanner();
+  }
+
   window.toggleTheme = function () {
     var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     if (isDark) {
