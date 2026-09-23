@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#2E8F5C">
+  <title>Account Suspended — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="cookzer-modal.js"></script>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { display: flex; min-height: 100vh; align-items: center; justify-content: center; padding: 24px; }
+    .suspend-card {
+      max-width: 420px; width: 100%; background: var(--card-bg); border: 1px solid var(--line);
+      border-radius: 20px; padding: 36px 32px; text-align: center;
+    }
+    .suspend-icon { font-size: 40px; margin-bottom: 12px; }
+    .suspend-title { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+    .suspend-detail { font-size: 14px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 8px; }
+    .suspend-reason {
+      background: var(--cream); border-radius: 12px; padding: 14px 16px; margin: 18px 0;
+      font-size: 13.5px; color: var(--ink); text-align: left;
+    }
+    .suspend-reason-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); margin-bottom: 4px; }
+    .suspend-signout {
+      margin-top: 20px; padding: 10px 24px; border-radius: 12px; border: none;
+      background: var(--olive); color: #fff; font-weight: 600; font-size: 13.5px; cursor: pointer; font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+
+<div class="suspend-card" id="card" hidden>
+  <div class="suspend-icon">🚫</div>
+  <div class="suspend-title" id="title">Your account is suspended</div>
+  <div class="suspend-detail" id="detail"></div>
+  <div class="suspend-reason" id="reasonBox" hidden>
+    <div class="suspend-reason-label">Reason given</div>
+    <div id="reasonText"></div>
+  </div>
+  <button class="suspend-signout" id="signOutBtn" type="button">Sign out</button>
+</div>
+
+<script>
+  (async function () {
+    const { data: rows } = await sb.rpc('my_active_suspension');
+    const suspension = rows && rows[0];
+
+    if (!suspension) {
+      // No longer suspended (lifted, or expired since auth-guard's check) —
+      // don't strand them on a lockout screen with nothing wrong.
+      window.location.href = 'cookzer-feed.html';
+      return;
+    }
+
+    document.getElementById('title').textContent = suspension.type === 'ban' ? 'Your account has been banned' : 'Your account is suspended';
+    document.getElementById('detail').textContent = suspension.ends_at
+      ? 'You\'ll regain access on ' + new Date(suspension.ends_at).toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' }) + '.'
+      : 'This does not have an end date.';
+    if (suspension.reason) {
+      document.getElementById('reasonText').textContent = suspension.reason;
+      document.getElementById('reasonBox').hidden = false;
+    }
+    document.getElementById('card').hidden = false;
+
+    document.getElementById('signOutBtn').addEventListener('click', async () => {
+      await sb.auth.signOut();
+      window.location.href = 'cookzer-auth.html';
+    });
+  })();
+</script>
+</body>
+</html>

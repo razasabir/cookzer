@@ -23,7 +23,10 @@ async function clickAndReadRpcCall(page, selector) {
     document.querySelector(sel).click();
     await new Promise((r) => setTimeout(r, 0));
     await new Promise((r) => setTimeout(r, 0));
-    return window.__RPC_CALLS__[0];
+    // The most recent call, not the first — auth-guard.js's own
+    // on-load suspension check also calls rpc() and can land in this
+    // array before the click's call does.
+    return window.__RPC_CALLS__[window.__RPC_CALLS__.length - 1];
   }, selector);
 }
 
