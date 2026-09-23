@@ -148,6 +148,26 @@
   .week-nav-btn:hover:not(:disabled) { border-color: var(--olive); background: var(--cream); }
   .week-nav-btn:disabled { opacity: 0.35; cursor: default; }
 
+  /* Icon-only pill (jump-to-date) — reuses the same circular treatment
+     as .week-nav-btn instead of a wide text pill, so it takes a fixed
+     ~30px instead of competing for width with the other two toolbar
+     items at narrow widths / larger system text scale. */
+  .toolbar-icon-btn {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: var(--card-bg);
+      color: var(--olive-dark);
+      font-size: 13px;
+      cursor: pointer;
+    }
+  .toolbar-icon-btn:hover { border-color: var(--olive); background: var(--cream); }
+
   /* Planner grid */
     .planner-grid {
       width: 100%;
@@ -178,10 +198,23 @@
       padding-left: 13px;
     }
 
+  /* The dish label/name and the action button used to share this row
+     with the date chip, competing for ~260px — not enough for the full
+     label text on a narrow phone with the OS text-scale accessibility
+     setting bumped up, so it wrapped to 3 lines. .planner-day-header now
+     holds only the chip + dish column; the action button moved to its
+     own row below (.planner-day-action-row) so the info row gets almost
+     the full card width regardless of label length or text scale. */
   .planner-day-header {
       display: flex;
       align-items: center;
       gap: 14px;
+    }
+
+  .planner-day-action-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
     }
 
   /* Date "chip" — replaces the plain stacked weekday/date text with a
@@ -680,11 +713,11 @@
     </div>
 
     <div class="planner-toolbar-row">
-      <button type="button" id="jumpToDateBtn" class="toolbar-pill">📅 Jump to a date</button>
+      <button type="button" id="jumpToDateBtn" class="toolbar-icon-btn" title="Jump to a date" aria-label="Jump to a date">📅</button>
       <div class="toolbar-pill share-pill">
-        Sharing: <select id="shareGroupSelect"><option value="">Just me</option></select>
+        👥 <select id="shareGroupSelect" aria-label="Share this week with"><option value="">Just me</option></select>
       </div>
-      <button class="meal-add-btn toolbar-pill" id="copyLastWeekBtn" type="button">📋 Copy from previous week</button>
+      <button class="meal-add-btn toolbar-pill" id="copyLastWeekBtn" type="button">📋 Copy last week</button>
     </div>
     <button class="share-apply-link" id="shareApplyBtn" type="button" hidden>Also share this week's existing meals →</button>
 
@@ -1355,6 +1388,9 @@
       }
       slot.appendChild(slotLabelRow);
 
+      const actionRow = document.createElement('div');
+      actionRow.className = 'planner-day-action-row';
+
       if (entry) {
         const name = document.createElement('div');
         name.className = 'meal-name';
@@ -1382,7 +1418,7 @@
           await sb.from('meal_plan_entries').delete().eq('id', entry.id);
           await loadWeek();
         });
-        header.appendChild(removeBtn);
+        actionRow.appendChild(removeBtn);
       } else {
         const empty = document.createElement('div');
         empty.className = 'empty-meal';
@@ -1394,10 +1430,11 @@
         addBtn.className = 'meal-add-btn';
         addBtn.textContent = '+ Add meal';
         addBtn.addEventListener('click', () => openAddMeal(date));
-        header.appendChild(addBtn);
+        actionRow.appendChild(addBtn);
       }
 
       card.appendChild(header);
+      card.appendChild(actionRow);
       card.appendChild(renderPeopleRow(date));
       grid.appendChild(card);
     });
