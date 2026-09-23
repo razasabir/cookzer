@@ -37,11 +37,23 @@
   // ordinary browser (desktop, mobile Safari/Chrome, no WebView
   // mismatch) the two heights already match, so this resolves to 0 and
   // changes nothing there.
+  //
+  // The gap isn't necessarily all at the bottom (nav bar) — on some
+  // devices/OS versions part or all of it is the status bar at the top
+  // (reported after the bottom fix shipped: the status bar was still
+  // overlapping the header on a device where the native
+  // decorFitsSystemWindows fix didn't fully reserve that space).
+  // visualViewport.offsetTop gives the portion hidden at the top; the
+  // remainder of the innerHeight/visualViewport.height gap is the
+  // portion hidden at the bottom, same as before.
   function applyViewportInsetFix() {
     if (!window.visualViewport) return;
     function update() {
-      var gap = window.innerHeight - window.visualViewport.height;
-      document.documentElement.style.setProperty('--cz-viewport-inset-fix', Math.max(0, Math.round(gap)) + 'px');
+      var totalGap = Math.max(0, Math.round(window.innerHeight - window.visualViewport.height));
+      var topGap = Math.max(0, Math.round(window.visualViewport.offsetTop));
+      var bottomGap = Math.max(0, totalGap - topGap);
+      document.documentElement.style.setProperty('--cz-viewport-inset-fix', bottomGap + 'px');
+      document.documentElement.style.setProperty('--cz-viewport-inset-fix-top', topGap + 'px');
     }
     update();
     window.visualViewport.addEventListener('resize', update);
