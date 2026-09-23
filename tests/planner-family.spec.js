@@ -173,9 +173,9 @@ test.describe('Meal planner — week navigation', () => {
     await expect(page.locator('#nextWeekBtn')).toBeEnabled();
   });
 
-  test('the "Copy from previous week" button reflects the currently viewed week, not always the real current week', async ({ page }) => {
+  test('the "Copy last week" button reflects the currently viewed week, not always the real current week', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js');
-    await expect(page.locator('#copyLastWeekBtn')).toContainText('Copy from previous week');
+    await expect(page.locator('#copyLastWeekBtn')).toContainText('Copy last week');
     await page.locator('#nextWeekBtn').click();
     // Still present and functional after navigating — not tied to a
     // hardcoded "last week" that only makes sense on the default view.
