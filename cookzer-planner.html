@@ -80,7 +80,54 @@
       justify-content: center;
       gap: 14px;
       width: 100%;
-      margin-bottom: 24px;
+      margin-bottom: 6px;
+    }
+
+  /* Toolbar — jump-to-date, sharing, and copy-last-week used to each sit
+     on their own full-width row (jump left-aligned under the title, share
+     as a plain text row, copy right-aligned alone), reading as three
+     unrelated utility rows. Collapsed into one wrapping row of pills. */
+    .planner-toolbar-row {
+      width: 100%;
+      max-width: 700px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+  .toolbar-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: var(--card-bg);
+      color: var(--ink-soft);
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+  .toolbar-pill:hover { border-color: var(--olive); color: var(--olive-dark); }
+
+  .toolbar-pill.share-pill { cursor: default; color: var(--ink-soft); }
+  .toolbar-pill.share-pill:hover { border-color: var(--line); color: var(--ink-soft); }
+
+  .toolbar-pill select {
+      border: none;
+      background: none;
+      font: inherit;
+      font-weight: 600;
+      color: var(--ink);
+      padding: 0;
+      cursor: pointer;
     }
 
   .week-nav-btn {
@@ -108,10 +155,11 @@
     }
 
   .planner-day-card {
+      position: relative;
       background: var(--card-bg);
       border: 1px solid var(--line);
       border-radius: 18px;
-      padding: 16px;
+      padding: 14px 16px;
       margin-bottom: 12px;
       transition: all 0.2s;
     }
@@ -120,49 +168,73 @@
       border-color: var(--mustard);
     }
 
+  /* Today gets a real visual anchor instead of looking identical to
+     every other card in the week — a tinted ground, an accent stripe,
+     and (further down) a filled date chip + "Today" badge. */
+  .planner-day-card.today {
+      background: var(--today-tint, rgba(244, 185, 66, 0.08));
+      border-color: rgba(244, 185, 66, 0.5);
+      border-left: 4px solid var(--mustard);
+      padding-left: 13px;
+    }
+
   .planner-day-header {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
     }
 
+  /* Date "chip" — replaces the plain stacked weekday/date text with a
+     bordered tile, giving each card a scannable anchor point instead of
+     small text competing with everything else in the header row. */
   .day-label {
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
       min-width: 58px;
+      padding: 6px 8px;
+      border-radius: 12px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+    }
+
+  .planner-day-card.today .day-label {
+      background: var(--olive);
+      border-color: var(--olive);
     }
 
   .day-label-name {
-      font-weight: 600;
+      font-weight: 700;
       color: var(--brick);
-      font-size: 14px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
     }
+
+  .planner-day-card.today .day-label-name { color: rgba(255, 255, 255, 0.85); }
 
   .day-label-date {
-      font-weight: 500;
-      color: var(--ink-soft);
-      font-size: 11px;
-    }
-
-  .jump-to-date-btn {
-      background: none;
-      border: none;
-      color: var(--olive);
-      font-size: 12.5px;
+      font-family: 'Fraunces', serif;
       font-weight: 600;
-      cursor: pointer;
-      margin-top: 4px;
-      padding: 2px 6px;
-      border-radius: 8px;
+      color: var(--ink);
+      font-size: 13px;
+      margin-top: 1px;
     }
 
-  .jump-to-date-btn:hover {
-      background: var(--cream);
-      text-decoration: underline;
-    }
+  .planner-day-card.today .day-label-date { color: #fff; }
 
   .meal-slot {
       flex: 1;
+      min-width: 0;
+    }
+
+  .meal-slot-label-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 2px;
     }
 
   .meal-slot-label {
@@ -171,46 +243,78 @@
       text-transform: uppercase;
       letter-spacing: 0.4px;
       color: var(--ink-soft);
-      margin-bottom: 2px;
+    }
+
+  .today-badge {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: #fff;
+      background: var(--mustard);
+      padding: 1px 7px;
+      border-radius: 20px;
     }
 
   .meal-name {
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 14.5px;
+      font-weight: 600;
       color: var(--ink);
-      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
   .meal-source {
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--ink-soft);
     }
 
+  /* Rounded pill instead of a plain rectangle — also the base look for
+     the cz2 picker's secondary buttons (Cancel/Close/etc reuse this
+     class), so the pill shape reads consistently across the page. */
   .meal-add-btn {
-      padding: 8px 16px;
-      background: var(--cream);
-      border: 1px solid var(--line);
-      border-radius: 12px;
+      padding: 7px 16px;
+      background: rgba(46, 143, 92, 0.08);
+      border: 1px solid var(--olive);
+      border-radius: 20px;
       cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--olive);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--olive-dark);
+      white-space: nowrap;
       transition: all 0.2s;
     }
 
   .meal-add-btn:hover {
-      background: #f0e6d2;
-      border-color: var(--olive);
+      background: rgba(46, 143, 92, 0.16);
     }
 
   .empty-meal {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       color: var(--ink-soft);
       font-style: italic;
+      font-size: 13.5px;
     }
 
   .meal-remove-btn {
-      background: none; border: none; color: var(--ink-soft); font-size: 16px; cursor: pointer;
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      color: var(--ink-soft);
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+
+  .meal-remove-btn:hover { border-color: var(--brick); color: var(--brick); }
 
   .drag-handle {
       color: var(--ink-soft);
@@ -258,30 +362,15 @@
      default (meal_plan_entries.group_id is nullable); picking a group
      here just makes new/updated entries visible to that group's other
      members (migration 028's extra SELECT policy), it never lets them
-     edit your plan. */
-  .share-row {
+     edit your plan. Sharing + copy-last-week now live in
+     .planner-toolbar-row above as pills; this is just the rare
+     conditional follow-up link, so it stays its own quiet line. */
+  .share-apply-link {
+      display: block;
       width: 100%;
       max-width: 700px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-      font-size: 13px;
-      color: var(--ink-soft);
-    }
-
-  .share-row select {
-      padding: 7px 10px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: var(--cream);
-      color: var(--ink);
-      font-family: inherit;
-      font-size: 13px;
-    }
-
-  .share-apply-link {
+      text-align: center;
+      margin: 0 0 14px;
       background: none;
       border: none;
       color: var(--olive-dark);
@@ -296,22 +385,29 @@
      Settings → Family Profiles), so a suggestion is attributed to a
      specific column rather than picked from a generic pool of slots.
      A column beyond your named Family Profiles renders as a "ghost"
-     inviting you to go add one, up to your set household size. */
+     inviting you to go add one, up to your set household size.
+
+     A 2-column grid of full-size boxes used to dominate every card
+     (often taller than the actual meal info above it, all boxes the
+     same visual weight whether empty or not). Now a horizontally
+     scrolling strip of compact chips — same data, same click targets,
+     far less vertical weight. */
   .planner-people-row {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      overflow-x: auto;
       gap: 8px;
-      margin-top: 14px;
-      padding-top: 14px;
+      margin-top: 12px;
+      padding-top: 12px;
       border-top: 1px solid var(--line);
     }
 
   .planner-person-col {
-      flex: 1;
-      min-width: 108px;
+      flex: 0 0 92px;
+      min-width: 92px;
       background: var(--cream);
       border-radius: 12px;
-      padding: 8px 10px;
+      padding: 8px 6px;
       text-align: center;
     }
 
@@ -325,19 +421,57 @@
     }
 
   .planner-person-header {
-      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+
+  /* Small avatar bubble — the emoji used to sit inline with the name as
+     plain text; now it's its own circle, closer to how avatars read
+     everywhere else on the site (feed, profile). */
+  .planner-person-avatar {
+      position: relative;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+  /* A small dot badge marks whose avatar has a pending suggestion —
+     scannable at a glance without reading every chip's text. */
+  .planner-person-avatar.has-suggestion::after {
+      content: "";
+      position: absolute;
+      right: -1px;
+      bottom: -1px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--mustard);
+      border: 2px solid var(--cream);
+    }
+
+  .planner-person-name {
+      font-size: 10px;
       font-weight: 700;
       color: var(--ink-soft);
       text-transform: uppercase;
-      letter-spacing: 0.4px;
-      margin-bottom: 6px;
+      letter-spacing: 0.3px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 80px;
     }
 
   .planner-person-suggestion {
-      font-size: 12.5px;
+      font-size: 12px;
       color: var(--ink);
       margin-bottom: 4px;
       line-height: 1.3;
@@ -485,6 +619,10 @@
       .menu-toggle { width: 30px; height: 30px; }
       .icon-btn, .avatar { width: 28px; height: 28px; font-size: 13px; }
       .brand-header { font-size: 16px; }
+      .day-label { min-width: 48px; padding: 5px 6px; }
+      .day-label-date { font-size: 12px; }
+      .toolbar-pill { padding: 6px 11px; font-size: 12px; }
+      .planner-person-col { flex-basis: 80px; min-width: 80px; }
     }
   </style>
 </head>
@@ -537,20 +675,18 @@
         <h1 class="page-title" id="plannerWeekTitle">This week's plan
           <button type="button" id="plannerColumnsHint" class="hint-btn" title="What are these columns?" aria-label="What are these columns?">?</button>
         </h1>
-        <button type="button" id="jumpToDateBtn" class="jump-to-date-btn">📅 Jump to a date</button>
       </div>
       <button type="button" id="nextWeekBtn" class="week-nav-btn" aria-label="Next week">▶</button>
     </div>
 
-    <div class="share-row">
-      Share this week with:
-      <select id="shareGroupSelect"><option value="">Just me</option></select>
-      <button class="share-apply-link" id="shareApplyBtn" type="button" hidden>Also share this week's existing meals →</button>
+    <div class="planner-toolbar-row">
+      <button type="button" id="jumpToDateBtn" class="toolbar-pill">📅 Jump to a date</button>
+      <div class="toolbar-pill share-pill">
+        Sharing: <select id="shareGroupSelect"><option value="">Just me</option></select>
+      </div>
+      <button class="meal-add-btn toolbar-pill" id="copyLastWeekBtn" type="button">📋 Copy from previous week</button>
     </div>
-
-    <div style="width:100%; max-width:700px; display:flex; justify-content:flex-end; margin-bottom:12px;">
-      <button class="meal-add-btn" id="copyLastWeekBtn" type="button">📋 Copy from previous week</button>
-    </div>
+    <button class="share-apply-link" id="shareApplyBtn" type="button" hidden>Also share this week's existing meals →</button>
 
     <div class="planner-grid" id="plannerGrid"></div>
 
@@ -998,12 +1134,20 @@
       return col;
     }
 
+    const suggestion = findSuggestionFor(date, person);
+
     const header = document.createElement('div');
     header.className = 'planner-person-header';
-    header.textContent = person.emoji + ' ' + person.name;
+    const avatar = document.createElement('span');
+    avatar.className = 'planner-person-avatar' + (suggestion ? ' has-suggestion' : '');
+    avatar.textContent = person.emoji;
+    const nameEl = document.createElement('span');
+    nameEl.className = 'planner-person-name';
+    nameEl.textContent = person.name;
+    header.appendChild(avatar);
+    header.appendChild(nameEl);
     col.appendChild(header);
 
-    const suggestion = findSuggestionFor(date, person);
     if (suggestion) {
       const text = document.createElement('div');
       text.className = 'planner-person-suggestion';
@@ -1142,11 +1286,13 @@
   function renderWeek(dates) {
     const grid = document.getElementById('plannerGrid');
     grid.innerHTML = '';
+    const todayIso = new Date().toISOString().slice(0, 10);
 
     dates.forEach((date, i) => {
       const entry = entriesByDate[date];
+      const isToday = date === todayIso;
       const card = document.createElement('div');
-      card.className = 'planner-day-card';
+      card.className = 'planner-day-card' + (isToday ? ' today' : '');
       card.dataset.date = date;
 
       card.addEventListener('dragover', (e) => {
@@ -1195,10 +1341,19 @@
       const slot = document.createElement('div');
       slot.className = 'meal-slot';
 
+      const slotLabelRow = document.createElement('div');
+      slotLabelRow.className = 'meal-slot-label-row';
       const slotLabel = document.createElement('div');
       slotLabel.className = 'meal-slot-label';
       slotLabel.textContent = 'Final approved dish';
-      slot.appendChild(slotLabel);
+      slotLabelRow.appendChild(slotLabel);
+      if (isToday) {
+        const badge = document.createElement('span');
+        badge.className = 'today-badge';
+        badge.textContent = 'Today';
+        slotLabelRow.appendChild(badge);
+      }
+      slot.appendChild(slotLabelRow);
 
       if (entry) {
         const name = document.createElement('div');
@@ -1231,7 +1386,7 @@
       } else {
         const empty = document.createElement('div');
         empty.className = 'empty-meal';
-        empty.textContent = 'Not planned yet';
+        empty.innerHTML = '<span aria-hidden="true">🍽️</span> Not planned yet';
         slot.appendChild(empty);
         header.appendChild(slot);
 
