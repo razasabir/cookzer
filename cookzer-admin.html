@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#1C2321">
+  <title>Back Office — Cookzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Fredoka:wght@600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="notifications-shared.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="push-notifications.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="cookzer-modal.js"></script>
+  <script src="theme.js"></script>
+  <script src="shortcuts.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    :root {
+      --ab-rust: #B0432F;
+      --ab-rust-tint: #F7E6E1;
+      --ab-amber: #B4762A;
+      --ab-amber-tint: #F6ECDB;
+      --ab-sky: #35618C;
+      --ab-sky-tint: #E4ECF3;
+      --ab-moss-tint: #E7F0EA;
+      --ab-sidebar-bg: #1C2321;
+      --ab-sidebar-line: #313A34;
+      --ab-sidebar-text: #C7CEC7;
+      --ab-sidebar-text-dim: #7E887F;
+      --ab-sidebar-active: #2A342C;
+    }
+    [data-theme="dark"] {
+      --ab-rust: #E0836E;
+      --ab-rust-tint: #332019;
+      --ab-amber: #D99A4E;
+      --ab-amber-tint: #2E2618;
+      --ab-sky: #7DA6CC;
+      --ab-sky-tint: #1B2731;
+      --ab-moss-tint: #1E2E25;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'IBM Plex Sans', -apple-system, sans-serif; font-size: 14px; color: var(--ink); background: var(--cream); }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+
+    .ab-shell { display: flex; min-height: 100vh; }
+
+    .ab-sidebar {
+      width: 232px; flex-shrink: 0; background: var(--ab-sidebar-bg); color: var(--ab-sidebar-text);
+      display: flex; flex-direction: column; padding: 20px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .ab-brand { padding: 0 20px 20px; margin-bottom: 8px; border-bottom: 1px solid var(--ab-sidebar-line); }
+    .ab-brand-name { font-family: 'Fredoka', sans-serif; font-size: 19px; font-weight: 600; color: #fff; text-decoration: none; }
+    .ab-brand-name span { color: #FF7A5C; }
+    .ab-brand-tag { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ab-sidebar-text-dim); margin-top: 4px; }
+    .ab-group-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ab-sidebar-text-dim); padding: 14px 20px 6px; }
+    .ab-nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 8px 20px; border-left: 2px solid transparent;
+      cursor: pointer; font-size: 13px; color: var(--ab-sidebar-text); text-decoration: none; background: none; border-top: none; border-right: none; border-bottom: none; width: 100%; text-align: left; font-family: inherit;
+    }
+    .ab-nav-item:hover { background: rgba(255,255,255,0.04); }
+    .ab-nav-item.active { background: var(--ab-sidebar-active); border-left-color: var(--olive); color: #fff; font-weight: 500; }
+    .ab-nav-num { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--ab-sidebar-text-dim); width: 16px; flex-shrink: 0; }
+    .ab-nav-item.active .ab-nav-num { color: var(--olive); }
+    .ab-nav-badge { margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; background: var(--ab-rust); color: #fff; border-radius: 8px; padding: 1px 6px; }
+    .ab-sidebar-foot { margin-top: auto; padding: 14px 20px 0; border-top: 1px solid var(--ab-sidebar-line); display: flex; align-items: center; gap: 10px; }
+    .ab-staff-avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--olive), var(--olive-dark)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 12px; flex-shrink: 0; cursor: pointer; }
+    .ab-staff-name { font-size: 12.5px; color: #fff; font-weight: 500; }
+    .ab-staff-role { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--ab-sidebar-text-dim); }
+    .ab-back-link { display: block; padding: 10px 20px 0; font-size: 11.5px; color: var(--ab-sidebar-text-dim); text-decoration: none; }
+    .ab-back-link:hover { color: #fff; }
+
+    .ab-main { flex: 1; min-width: 0; }
+    .ab-topbar { display: flex; align-items: center; gap: 16px; padding: 14px 28px; background: var(--card-bg); border-bottom: 1px solid var(--line); }
+    .ab-topbar-title { font-size: 17px; font-weight: 600; }
+    .ab-topbar-sub { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--ink-soft); margin-top: 1px; }
+    .ab-content { padding: 26px 28px 60px; overflow-x: auto; max-width: 1100px; }
+
+    .ab-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+    .ab-kpi-tile { background: var(--card-bg); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+    .ab-kpi-label { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); margin-bottom: 8px; }
+    .ab-kpi-value { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
+    .ab-kpi-delta { font-family: 'IBM Plex Mono', monospace; font-size: 11px; margin-top: 6px; }
+    .ab-kpi-delta.warn { color: var(--ab-rust); }
+    .ab-kpi-delta.flat { color: var(--ink-soft); }
+
+    .ab-section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; gap: 10px; flex-wrap: wrap; }
+    .ab-section-title { font-size: 15px; font-weight: 600; }
+    .ab-section-link { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--olive-dark); text-decoration: none; background: none; border: none; cursor: pointer; padding: 0; }
+    .ab-panel { background: var(--card-bg); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 28px; }
+    .ab-empty { padding: 24px 18px; font-size: 13px; color: var(--ink-soft); text-align: center; }
+
+    table.ab-queue { width: 100%; border-collapse: collapse; min-width: 760px; }
+    table.ab-queue th { text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); font-weight: 500; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--cream); }
+    table.ab-queue td { padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; font-size: 13px; }
+    table.ab-queue tr:last-child td { border-bottom: none; }
+
+    .ab-pill { display: inline-flex; align-items: center; gap: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 500; padding: 3px 9px; border-radius: 10px; white-space: nowrap; }
+    .ab-pill-rust { background: var(--ab-rust-tint); color: var(--ab-rust); }
+    .ab-pill-amber { background: var(--ab-amber-tint); color: var(--ab-amber); }
+    .ab-pill-sky { background: var(--ab-sky-tint); color: var(--ab-sky); }
+    .ab-pill-moss { background: var(--ab-moss-tint); color: var(--olive-dark); }
+    .ab-pill-slate { background: var(--cream); color: var(--ink-soft); }
+
+    .ab-target-type { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-soft); }
+    .ab-who { color: var(--ink-soft); font-size: 12.5px; }
+    .ab-age { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); }
+    .ab-age.overdue { color: var(--ab-rust); font-weight: 600; }
+    .ab-row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .ab-btn-mini { font-family: 'IBM Plex Sans', sans-serif; font-size: 11.5px; font-weight: 500; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--card-bg); color: var(--ink); cursor: pointer; }
+    .ab-btn-mini.primary { background: var(--olive); border-color: var(--olive); color: #fff; }
+    .ab-btn-mini.danger { background: var(--card-bg); border-color: var(--ab-rust); color: var(--ab-rust); }
+    .ab-btn-mini:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .ab-tl-item { display: flex; gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--line); }
+    .ab-tl-item:last-child { border-bottom: none; }
+    .ab-tl-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; background: var(--ink-soft); }
+    .ab-tl-dot.rust { background: var(--ab-rust); }
+    .ab-tl-dot.amber { background: var(--ab-amber); }
+    .ab-tl-dot.sky { background: var(--ab-sky); }
+    .ab-tl-dot.moss { background: var(--olive); }
+    .ab-tl-body { flex: 1; min-width: 0; }
+    .ab-tl-text { font-size: 13px; }
+    .ab-tl-time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+
+    .ab-search-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .ab-search-row input { flex: 1; padding: 9px 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 13.5px; background: var(--card-bg); color: var(--ink); font-family: inherit; }
+    .ab-search-row button { font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--olive); background: var(--olive); color: #fff; cursor: pointer; }
+
+    .ab-user-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .ab-user-row:last-child { border-bottom: none; }
+    .ab-user-row:hover { background: var(--cream); }
+    .ab-user-row-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--olive), var(--olive-dark)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 12px; flex-shrink: 0; }
+    .ab-user-row-name { font-weight: 600; font-size: 13.5px; }
+    .ab-user-row-meta { font-size: 11.5px; color: var(--ink-soft); }
+
+    .ab-detail-grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
+    .ab-user-card { background: var(--card-bg); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+    .ab-user-card-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--olive), var(--olive-dark)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 20px; margin-bottom: 12px; }
+    .ab-user-card-name { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+    .ab-user-card-handle { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); margin-bottom: 14px; }
+    .ab-stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid var(--line); font-size: 12.5px; }
+    .ab-stat-row:first-of-type { border-top: none; }
+    .ab-stat-label { color: var(--ink-soft); }
+    .ab-stat-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    .ab-status-box { border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; border: 1px solid var(--line); }
+    .ab-status-box.active-suspend { background: var(--ab-rust-tint); border-color: var(--ab-rust); }
+    .ab-status-box-label { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; color: var(--ab-rust); }
+    .ab-status-box p { margin: 0 0 8px; font-size: 12.5px; color: var(--ink); }
+
+    .ab-chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+    .ab-chip { font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--card-bg); color: var(--ink); cursor: pointer; }
+    .ab-chip.selected { background: var(--olive); border-color: var(--olive); color: #fff; }
+
+    .ab-action-form { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .ab-action-form textarea, .ab-action-form input[type="number"] {
+      width: 100%; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; font-family: inherit;
+      background: var(--cream); color: var(--ink); margin-top: 6px; resize: vertical;
+    }
+    .ab-field-label { font-size: 11.5px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 10px; display: block; }
+    .ab-submit-btn { margin-top: 12px; width: 100%; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 10px; border-radius: 8px; border: none; background: var(--ab-rust); color: #fff; cursor: pointer; }
+    .ab-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .ab-claim-row { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+    .ab-claim-row:last-child { border-bottom: none; }
+    .ab-claim-name { font-weight: 600; font-size: 13.5px; }
+    .ab-claim-meta { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+    .ab-not-authorized { max-width: 480px; margin: 80px auto; text-align: center; padding: 0 20px; }
+    .ab-not-authorized h1 { font-size: 20px; }
+    .ab-not-authorized p { color: var(--ink-soft); font-size: 14px; }
+    .ab-not-authorized a { color: var(--olive-dark); }
+
+    @media (max-width: 900px) {
+      .ab-shell { flex-direction: column; }
+      .ab-sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 10px 0; position: static; height: auto; }
+      .ab-brand, .ab-sidebar-foot, .ab-group-label, .ab-back-link { display: none; }
+      .ab-nav-item { flex-shrink: 0; border-left: none; border-bottom: 2px solid transparent; width: auto; }
+      .ab-nav-item.active { border-left: none; border-bottom-color: var(--olive); }
+      .ab-kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .ab-detail-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="notAuthorized" class="ab-not-authorized" hidden>
+  <h1>You don't have access to this page.</h1>
+  <p>The Cookzer back office is limited to platform admins.</p>
+  <p><a href="cookzer-feed.html">&larr; Back to the feed</a></p>
+</div>
+
+<div class="ab-shell" id="shell" hidden>
+  <div class="ab-sidebar">
+    <div class="ab-brand">
+      <span class="ab-brand-name">Cook<span>zer</span></span>
+      <div class="ab-brand-tag">Back Office</div>
+    </div>
+
+    <div class="ab-group-label">Overview</div>
+    <button class="ab-nav-item" data-view="dashboard"><span class="ab-nav-num">00</span> Dashboard</button>
+
+    <div class="ab-group-label">Operate</div>
+    <button class="ab-nav-item" data-view="moderation"><span class="ab-nav-num">02</span> Trust &amp; Safety<span class="ab-nav-badge" id="modBadge" hidden></span></button>
+    <button class="ab-nav-item" data-view="users"><span class="ab-nav-num">01</span> Users</button>
+    <button class="ab-nav-item" data-view="commercial"><span class="ab-nav-num">03</span> Commercial<span class="ab-nav-badge" id="claimBadge" hidden></span></button>
+
+    <a class="ab-back-link" href="cookzer-feed.html">&larr; Back to Cookzer</a>
+
+    <div class="ab-sidebar-foot">
+      <div class="ab-staff-avatar avatar" id="staffAvatar">--</div>
+      <div>
+        <div class="ab-staff-name" id="staffName">&nbsp;</div>
+        <div class="ab-staff-role" id="staffRole">&nbsp;</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ab-main">
+    <div class="ab-topbar">
+      <div>
+        <div class="ab-topbar-title" id="topbarTitle">Dashboard</div>
+        <div class="ab-topbar-sub" id="topbarSub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="ab-content" id="content"></div>
+  </div>
+</div>
+
+<script>
+  let currentUser = null;
+  let adminProfile = null;
+  const ROLE_LABELS = {
+    super_admin: 'Super Admin', trust_safety: 'Trust & Safety', support: 'Support',
+    finance: 'Finance', content_marketing: 'Content & Marketing', analyst: 'Analyst',
+  };
+
+  function escapeHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s == null ? '' : String(s);
+    return div.innerHTML;
+  }
+
+  function timeAgo(iso) {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + ' min' + (mins === 1 ? '' : 's') + ' ago';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + ' hour' + (hours === 1 ? '' : 's') + ' ago';
+    const days = Math.floor(hours / 24);
+    return days + ' day' + (days === 1 ? '' : 's') + ' ago';
+  }
+
+  function hoursAgo(iso) {
+    return (Date.now() - new Date(iso).getTime()) / 3600000;
+  }
+
+  function fmtDate(iso) {
+    return new Date(iso).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  // ===================== Routing =====================
+
+  const VIEWS = {
+    dashboard: { title: 'Dashboard', render: renderDashboard },
+    moderation: { title: 'Trust & Safety — Moderation Queue', render: renderModeration },
+    users: { title: 'Users', render: renderUsersDirectory },
+    commercial: { title: 'Commercial', render: renderCommercial },
+  };
+
+  async function route() {
+    const hash = location.hash.replace(/^#/, '');
+    const [view, param] = hash.split('/');
+
+    if (view === 'users' && param) {
+      document.querySelectorAll('.ab-nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === 'users'));
+      document.getElementById('topbarTitle').textContent = 'Users';
+      document.getElementById('topbarSub').textContent = 'Viewing a user profile';
+      await renderUserDetail(param);
+      return;
+    }
+
+    const def = VIEWS[view] || VIEWS.dashboard;
+    const key = VIEWS[view] ? view : 'dashboard';
+    document.querySelectorAll('.ab-nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === key));
+    document.getElementById('topbarTitle').textContent = def.title;
+    document.getElementById('topbarSub').textContent = '';
+    await def.render();
+  }
+
+  document.querySelectorAll('.ab-nav-item').forEach((item) => {
+    item.addEventListener('click', () => { location.hash = item.dataset.view; });
+  });
+  window.addEventListener('hashchange', route);
+
+  function setContent(html) {
+    document.getElementById('content').innerHTML = html;
+  }
+
+  // ===================== Dashboard =====================
+
+  async function renderDashboard() {
+    setContent('<div class="ab-empty">Loading…</div>');
+
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+    const weekStart = new Date(Date.now() - 7 * 86400000);
+
+    const [openReports, signupsToday, signupsWeek, pendingClaims, needsAttention, recentActions] = await Promise.all([
+      sb.from('reports').select('id, created_at').eq('status', 'open'),
+      sb.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', todayStart.toISOString()),
+      sb.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', weekStart.toISOString()),
+      sb.from('restaurant_claim_requests').select('id, created_at, restaurants(name)').eq('status', 'pending').order('created_at', { ascending: true }),
+      sb.from('reports').select('id, reason, target_type, created_at').eq('status', 'open').order('created_at', { ascending: true }).limit(3),
+      sb.from('admin_actions').select('id, action_type, target_type, target_label, created_at, profiles!admin_actions_actor_id_fkey(display_name)').order('created_at', { ascending: false }).limit(6),
+    ]);
+
+    const openList = openReports.data || [];
+    const overdueCount = openList.filter((r) => hoursAgo(r.created_at) > 24).length;
+    const claimsList = pendingClaims.data || [];
+
+    let html = '<div class="ab-kpi-row">';
+    html += kpiTile('Open reports', openList.length, overdueCount > 0 ? overdueCount + ' past 24h SLA' : 'none overdue', overdueCount > 0 ? 'warn' : 'flat');
+    html += kpiTile('New signups today', signupsToday.count || 0, 'since midnight', 'flat');
+    html += kpiTile('New signups this week', signupsWeek.count || 0, 'trailing 7 days', 'flat');
+    html += kpiTile('Pending restaurant claims', claimsList.length, claimsList.length ? 'oldest: ' + timeAgo(claimsList[0].created_at) : 'none pending', claimsList.length ? 'warn' : 'flat');
+    html += '</div>';
+
+    html += '<div class="ab-section-head"><div class="ab-section-title">Needs attention</div></div>';
+    const attention = (needsAttention.data || []).map((r) => ({
+      dot: hoursAgo(r.created_at) > 24 ? 'rust' : 'amber',
+      text: '<b>' + escapeHtml(r.reason) + '</b> report on a ' + escapeHtml(r.target_type) + ' — open ' + timeAgo(r.created_at) + (hoursAgo(r.created_at) > 24 ? ', past the 24h SLA' : ''),
+      time: 'Trust &amp; Safety',
+    }));
+    if (claimsList[0]) {
+      attention.push({
+        dot: 'amber',
+        text: '<b>' + escapeHtml((claimsList[0].restaurants && claimsList[0].restaurants.name) || 'A restaurant') + '</b> claim is still pending — submitted ' + timeAgo(claimsList[0].created_at) + '.',
+        time: 'Commercial',
+      });
+    }
+    html += panelOrEmpty(attention.map((a) =>
+      '<div class="ab-tl-item"><div class="ab-tl-dot ' + a.dot + '"></div><div class="ab-tl-body"><div class="ab-tl-text">' + a.text + '</div><div class="ab-tl-time">' + a.time + '</div></div></div>'
+    ).join(''), 'Nothing needs attention right now.');
+
+    html += '<div class="ab-section-head"><div class="ab-section-title">Recent staff actions</div></div>';
+    const actions = (recentActions.data || []).map((a) => {
+      const actor = (a.profiles && a.profiles.display_name) || 'Someone';
+      const label = a.target_label ? ' — ' + escapeHtml(a.target_label) : '';
+      return '<div class="ab-tl-item"><div class="ab-tl-dot moss"></div><div class="ab-tl-body"><div class="ab-tl-text"><b>' + escapeHtml(actor) + '</b> ' + escapeHtml(a.action_type.replace(/_/g, ' ')) + label + '</div><div class="ab-tl-time">' + timeAgo(a.created_at) + '</div></div></div>';
+    });
+    html += panelOrEmpty(actions.join(''), 'No staff actions logged yet.');
+
+    setContent(html);
+    updateBadges(openList.length, claimsList.length);
+  }
+
+  function kpiTile(label, value, delta, cls) {
+    return '<div class="ab-kpi-tile"><div class="ab-kpi-label">' + escapeHtml(label) + '</div>' +
+      '<div class="ab-kpi-value">' + value + '</div>' +
+      '<div class="ab-kpi-delta ' + cls + '">' + escapeHtml(delta) + '</div></div>';
+  }
+
+  function panelOrEmpty(innerHtml, emptyMsg) {
+    if (!innerHtml) return '<div class="ab-panel"><div class="ab-empty">' + escapeHtml(emptyMsg) + '</div></div>';
+    return '<div class="ab-panel">' + innerHtml + '</div>';
+  }
+
+  // Either count can be null — the caller only knows the count for the
+  // view it just rendered, and null means "leave that badge as it was."
+  function updateBadges(openCount, claimCount) {
+    const modBadge = document.getElementById('modBadge');
+    const claimBadge = document.getElementById('claimBadge');
+    if (openCount != null) { modBadge.textContent = openCount; modBadge.hidden = openCount === 0; }
+    if (claimCount != null) { claimBadge.textContent = claimCount; claimBadge.hidden = claimCount === 0; }
+  }
+
+  // ===================== Trust & Safety: Moderation =====================
+
+  async function targetLabel(type, id) {
+    try {
+      if (type === 'comment') {
+        const { data } = await sb.from('comments').select('text').eq('id', id).maybeSingle();
+        return data ? data.text.slice(0, 60) : '(comment deleted)';
+      }
+      if (type === 'post') {
+        const { data } = await sb.from('posts').select('caption').eq('id', id).maybeSingle();
+        return data ? (data.caption ? data.caption.slice(0, 60) : '(photo post, no caption)') : '(post deleted)';
+      }
+      if (type === 'recipe') {
+        const { data } = await sb.from('recipes').select('title').eq('id', id).maybeSingle();
+        return data ? data.title : '(recipe deleted)';
+      }
+      if (type === 'user') {
+        const { data } = await sb.from('profiles').select('display_name').eq('id', id).maybeSingle();
+        return data ? data.display_name : '(user not found)';
+      }
+      if (type === 'restaurant_rating') {
+        const { data } = await sb.from('restaurant_ratings').select('review, restaurants(name)').eq('id', id).maybeSingle();
+        return data ? ((data.restaurants && data.restaurants.name) || 'a restaurant') + ' review' : '(review deleted)';
+      }
+    } catch (e) { /* fall through */ }
+    return '(' + type + ')';
+  }
+
+  async function renderModeration() {
+    setContent('<div class="ab-empty">Loading…</div>');
+
+    const { data: reports, error } = await sb
+      .from('reports')
+      .select('id, target_type, target_id, reason, severity, status, created_at, assigned_to, reporter:profiles!reports_reporter_id_fkey(display_name), assignee:profiles!reports_assigned_to_fkey(display_name)')
+      .eq('status', 'open')
+      .order('created_at', { ascending: true });
+
+    if (error) { setContent('<div class="ab-empty">Could not load reports: ' + escapeHtml(error.message) + '</div>'); return; }
+
+    if (!reports || reports.length === 0) {
+      setContent('<div class="ab-section-head"><div class="ab-section-title">Open reports — 0</div></div><div class="ab-panel"><div class="ab-empty">No open reports right now.</div></div>');
+      updateBadges(0, null);
+      return;
+    }
+
+    const labels = await Promise.all(reports.map((r) => targetLabel(r.target_type, r.target_id)));
+
+    let rows = '';
+    reports.forEach((r, i) => {
+      const overdue = hoursAgo(r.created_at) > 24;
+      const canRemove = r.target_type === 'post' || r.target_type === 'comment';
+      const assigneeLabel = r.assignee ? escapeHtml(r.assignee.display_name) : '<span class="ab-pill ab-pill-slate">Unassigned</span>';
+      rows += '<tr>' +
+        '<td><span class="ab-target-type">' + escapeHtml(r.target_type) + '</span><br><span class="ab-who">' + escapeHtml(labels[i]) + '</span></td>' +
+        '<td>' + escapeHtml(r.reason) + '</td>' +
+        '<td><span class="ab-who">' + escapeHtml((r.reporter && r.reporter.display_name) || 'Unknown') + '</span></td>' +
+        '<td><span class="ab-age' + (overdue ? ' overdue' : '') + '">' + Math.round(hoursAgo(r.created_at)) + 'h</span></td>' +
+        '<td>' + assigneeLabel + '</td>' +
+        '<td><div class="ab-row-actions">' +
+          (canRemove ? '<button class="ab-btn-mini danger" data-act="remove" data-id="' + r.id + '">Remove</button>' : '') +
+          '<button class="ab-btn-mini" data-act="dismiss" data-id="' + r.id + '">Dismiss</button>' +
+          (r.assigned_to === currentUser.id ? '' : '<button class="ab-btn-mini" data-act="assign" data-id="' + r.id + '">Assign to me</button>') +
+          '<button class="ab-btn-mini primary" data-act="resolve" data-id="' + r.id + '">Resolve</button>' +
+        '</div></td>' +
+      '</tr>';
+    });
+
+    setContent(
+      '<div class="ab-section-head"><div class="ab-section-title">Open reports — ' + reports.length + '</div></div>' +
+      '<div class="ab-panel"><table class="ab-queue"><thead><tr><th>Target</th><th>Reason</th><th>Reported by</th><th>Age</th><th>Assigned</th><th></th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>'
+    );
+    updateBadges(reports.length, null);
+
+    document.querySelectorAll('#content [data-act]').forEach((btn) => {
+      btn.addEventListener('click', () => handleReportAction(btn.dataset.act, btn.dataset.id));
+    });
+  }
+
+  async function handleReportAction(action, reportId) {
+    if (action === 'assign') {
+      const { error } = await sb.rpc('admin_assign_report', { p_report_id: reportId, p_assignee: currentUser.id });
+      if (error) { await CookzerModal.alert('Could not assign: ' + error.message); return; }
+      await renderModeration();
+      return;
+    }
+    if (action === 'remove') {
+      const ok = await CookzerModal.confirm('Remove this content? This deletes it immediately and cannot be undone.', { confirmLabel: 'Remove', danger: true });
+      if (!ok) return;
+      const reason = await CookzerModal.prompt('Reason (for the audit log):', '');
+      if (reason === null) return;
+      const { error } = await sb.rpc('admin_remove_content', { p_report_id: reportId, p_reason: reason || null });
+      if (error) { await CookzerModal.alert('Could not remove: ' + error.message); return; }
+      await renderModeration();
+      return;
+    }
+    if (action === 'dismiss' || action === 'resolve') {
+      const note = await CookzerModal.prompt(action === 'dismiss' ? 'Optional note — why is this dismissed?' : 'Optional resolution note:', '');
+      if (note === null) return;
+      const { error } = await sb.rpc('admin_resolve_report', { p_report_id: reportId, p_decision: action === 'dismiss' ? 'dismissed' : 'reviewed', p_note: note || null });
+      if (error) { await CookzerModal.alert('Could not resolve: ' + error.message); return; }
+      await renderModeration();
+    }
+  }
+
+  // ===================== Users =====================
+
+  async function renderUsersDirectory() {
+    setContent(
+      '<div class="ab-search-row"><input type="text" id="userSearchInput" placeholder="Search users by name…"><button id="userSearchBtn" type="button">Search</button></div>' +
+      '<div class="ab-panel" id="userSearchResults"><div class="ab-empty">Search for a user by display name.</div></div>'
+    );
+
+    async function runSearch() {
+      const q = document.getElementById('userSearchInput').value.trim();
+      const resultsEl = document.getElementById('userSearchResults');
+      if (!q) { resultsEl.innerHTML = '<div class="ab-empty">Search for a user by display name.</div>'; return; }
+      resultsEl.innerHTML = '<div class="ab-empty">Searching…</div>';
+
+      const { data, error } = await sb.from('profiles').select('id, display_name, initials, platform_role, is_verified_creator').ilike('display_name', '%' + q + '%').limit(25);
+      if (error) { resultsEl.innerHTML = '<div class="ab-empty">' + escapeHtml(error.message) + '</div>'; return; }
+      if (!data || data.length === 0) { resultsEl.innerHTML = '<div class="ab-empty">No one found by that name.</div>'; return; }
+
+      resultsEl.innerHTML = data.map((p) =>
+        '<div class="ab-user-row" data-id="' + p.id + '">' +
+          '<div class="ab-user-row-avatar">' + escapeHtml(p.initials || '??') + '</div>' +
+          '<div><div class="ab-user-row-name">' + escapeHtml(p.display_name) + (p.platform_role ? ' <span class="ab-pill ab-pill-moss">' + escapeHtml(ROLE_LABELS[p.platform_role] || p.platform_role) + '</span>' : '') + '</div>' +
+          '<div class="ab-user-row-meta">' + (p.is_verified_creator ? 'Verified creator' : '') + '</div></div>' +
+        '</div>'
+      ).join('');
+      resultsEl.querySelectorAll('.ab-user-row').forEach((row) => {
+        row.addEventListener('click', () => { location.hash = 'users/' + row.dataset.id; });
+      });
+    }
+
+    document.getElementById('userSearchBtn').addEventListener('click', runSearch);
+    document.getElementById('userSearchInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
+  }
+
+  const SUSPENSION_TYPES = [
+    { type: 'warn', label: 'Warn' },
+    { type: 'mute', label: 'Mute' },
+    { type: 'suspend', label: 'Suspend' },
+    { type: 'ban', label: 'Ban' },
+  ];
+
+  async function renderUserDetail(userId) {
+    setContent('<div class="ab-empty">Loading…</div>');
+
+    const [profileRes, strikesRes, suspensionsRes, postsRes, commentsRes, reportsFiledRes, reportsAboutRes, recipesRes] = await Promise.all([
+      sb.from('profiles').select('id, display_name, initials, platform_role, is_verified_creator, created_at').eq('id', userId).maybeSingle(),
+      sb.from('user_strikes').select('id, reason, severity, created_at').eq('user_id', userId).order('created_at', { ascending: false }),
+      sb.from('user_suspensions').select('id, type, reason, ends_at, revoked_at, created_at').eq('user_id', userId).order('created_at', { ascending: false }),
+      sb.from('posts').select('id, caption, created_at').eq('author_id', userId).order('created_at', { ascending: false }).limit(5),
+      sb.from('comments').select('id, text, created_at').eq('author_id', userId).order('created_at', { ascending: false }).limit(5),
+      sb.from('reports').select('id', { count: 'exact', head: true }).eq('reporter_id', userId),
+      sb.from('reports').select('id', { count: 'exact', head: true }).eq('target_type', 'user').eq('target_id', userId),
+      sb.from('recipes').select('id', { count: 'exact', head: true }).eq('author_id', userId),
+    ]);
+
+    const profile = profileRes.data;
+    if (!profile) { setContent('<div class="ab-empty">User not found.</div>'); return; }
+
+    document.getElementById('topbarTitle').textContent = 'Users — ' + profile.display_name;
+
+    const suspensions = suspensionsRes.data || [];
+    const activeSuspension = suspensions.find((s) => (s.type === 'suspend' || s.type === 'ban') && !s.revoked_at && (!s.ends_at || new Date(s.ends_at) > new Date()));
+    const strikes = strikesRes.data || [];
+
+    let card = '<div class="ab-user-card">';
+    card += '<div class="ab-user-card-avatar">' + escapeHtml(profile.initials || '??') + '</div>';
+    card += '<div class="ab-user-card-name">' + escapeHtml(profile.display_name) + '</div>';
+    card += '<div class="ab-user-card-handle">joined ' + fmtDate(profile.created_at) + (profile.platform_role ? ' · ' + escapeHtml(ROLE_LABELS[profile.platform_role] || profile.platform_role) : '') + '</div>';
+
+    if (activeSuspension) {
+      card += '<div class="ab-status-box active-suspend"><div class="ab-status-box-label">' + escapeHtml(activeSuspension.type) + (activeSuspension.type === 'suspend' ? 'ed' : 'ned') + '</div>' +
+        '<p>' + escapeHtml(activeSuspension.reason) + (activeSuspension.ends_at ? ' — until ' + fmtDate(activeSuspension.ends_at) : ' — indefinite') + '</p>' +
+        '<button class="ab-btn-mini" id="revokeBtn" data-id="' + activeSuspension.id + '">Lift this ' + escapeHtml(activeSuspension.type) + '</button></div>';
+    }
+    if (strikes.length > 0) {
+      card += '<div class="ab-status-box"><div class="ab-status-box-label" style="color:var(--ab-amber)">' + strikes.length + ' strike' + (strikes.length === 1 ? '' : 's') + '</div>' +
+        '<p>' + strikes.slice(0, 3).map((s) => escapeHtml(s.reason) + ' (' + fmtDate(s.created_at) + ')').join(' · ') + '</p></div>';
+    }
+
+    card += statRow('Recipes posted', recipesRes.count || 0);
+    card += statRow('Reports filed', reportsFiledRes.count || 0);
+    card += statRow('Reports naming this user', reportsAboutRes.count || 0);
+    card += statRow('Active strikes', strikes.length);
+
+    if (userId !== currentUser.id) {
+      card += '<div class="ab-action-form" id="actionForm">' +
+        '<span class="ab-field-label">Take action</span>' +
+        '<div class="ab-chip-row" id="actionChips">' + SUSPENSION_TYPES.map((t) => '<button type="button" class="ab-chip" data-type="' + t.type + '">' + t.label + '</button>').join('') + '</div>' +
+        '<div id="actionDetails" hidden>' +
+          '<span class="ab-field-label">Reason</span>' +
+          '<textarea id="actionReason" rows="2" placeholder="Why?"></textarea>' +
+          '<div id="durationField" hidden><span class="ab-field-label">Duration (days, blank = indefinite)</span><input type="number" id="actionDuration" min="1" placeholder="7"></div>' +
+          '<button class="ab-submit-btn" id="actionSubmit" disabled>Confirm</button>' +
+        '</div></div>';
+    } else {
+      card += '<div class="ab-action-form"><p style="color:var(--ink-soft); font-size:12.5px; margin:0;">This is your own account — no actions available.</p></div>';
+    }
+    card += '</div>';
+
+    const timelineItems = [];
+    (postsRes.data || []).forEach((p) => timelineItems.push({ dot: 'sky', text: 'Posted: ' + escapeHtml(p.caption ? p.caption.slice(0, 60) : '(photo, no caption)'), time: p.created_at }));
+    (commentsRes.data || []).forEach((c) => timelineItems.push({ dot: 'sky', text: 'Commented: ' + escapeHtml(c.text.slice(0, 60)), time: c.created_at }));
+    strikes.forEach((s) => timelineItems.push({ dot: 'amber', text: 'Strike issued (' + escapeHtml(s.severity) + '): ' + escapeHtml(s.reason), time: s.created_at }));
+    suspensions.forEach((s) => timelineItems.push({ dot: 'rust', text: escapeHtml(s.type) + ': ' + escapeHtml(s.reason) + (s.revoked_at ? ' (revoked)' : ''), time: s.created_at }));
+    timelineItems.push({ dot: 'moss', text: 'Account created', time: profile.created_at });
+    timelineItems.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+    const timelineHtml = timelineItems.map((t) =>
+      '<div class="ab-tl-item"><div class="ab-tl-dot ' + t.dot + '"></div><div class="ab-tl-body"><div class="ab-tl-text">' + t.text + '</div><div class="ab-tl-time">' + fmtDate(t.time) + ' · ' + timeAgo(t.time) + '</div></div></div>'
+    ).join('');
+
+    setContent(
+      '<div class="ab-section-head"><div class="ab-section-title">User · ' + escapeHtml(profile.display_name) + '</div><a class="ab-section-link" href="cookzer-profile.html?id=' + userId + '" target="_blank" rel="noopener">View public profile &rarr;</a></div>' +
+      '<div class="ab-detail-grid">' + card + panelOrEmpty(timelineHtml, 'No recorded activity yet.') + '</div>'
+    );
+
+    if (activeSuspension) {
+      document.getElementById('revokeBtn').addEventListener('click', async () => {
+        const ok = await CookzerModal.confirm('Lift this ' + activeSuspension.type + '? They will regain access immediately.', { confirmLabel: 'Lift it' });
+        if (!ok) return;
+        const { error } = await sb.rpc('admin_revoke_suspension', { p_suspension_id: activeSuspension.id });
+        if (error) { await CookzerModal.alert('Could not revoke: ' + error.message); return; }
+        await renderUserDetail(userId);
+      });
+    }
+
+    if (userId !== currentUser.id) {
+      let selectedType = null;
+      document.querySelectorAll('#actionChips .ab-chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+          selectedType = chip.dataset.type;
+          document.querySelectorAll('#actionChips .ab-chip').forEach((c) => c.classList.toggle('selected', c === chip));
+          document.getElementById('actionDetails').hidden = false;
+          document.getElementById('durationField').hidden = !(selectedType === 'suspend');
+          document.getElementById('actionSubmit').disabled = false;
+          document.getElementById('actionSubmit').textContent = SUSPENSION_TYPES.find((t) => t.type === selectedType).label + ' this user';
+        });
+      });
+      document.getElementById('actionSubmit').addEventListener('click', async () => {
+        const reason = document.getElementById('actionReason').value.trim();
+        if (!reason) { await CookzerModal.alert('A reason is required.'); return; }
+        const durationInput = document.getElementById('actionDuration');
+        const duration = selectedType === 'suspend' && durationInput.value ? parseInt(durationInput.value, 10) : null;
+        if (selectedType === 'suspend' || selectedType === 'ban') {
+          const ok = await CookzerModal.confirm('Confirm: ' + selectedType + ' ' + profile.display_name + '? They will lose access immediately' + (duration ? ' for ' + duration + ' days.' : selectedType === 'suspend' ? ' until lifted.' : ' permanently.'), { confirmLabel: 'Confirm', danger: true });
+          if (!ok) return;
+        }
+        const { error } = await sb.rpc('admin_set_suspension', { p_user_id: userId, p_type: selectedType, p_reason: reason, p_duration_days: duration });
+        if (error) { await CookzerModal.alert('Could not take action: ' + error.message); return; }
+        await renderUserDetail(userId);
+      });
+    }
+  }
+
+  function statRow(label, value) {
+    return '<div class="ab-stat-row"><span class="ab-stat-label">' + escapeHtml(label) + '</span><span class="ab-stat-value">' + value + '</span></div>';
+  }
+
+  // ===================== Commercial =====================
+
+  async function renderCommercial() {
+    setContent('<div class="ab-empty">Loading…</div>');
+
+    const [pendingClaims, featured] = await Promise.all([
+      sb.from('restaurant_claim_requests').select('id, created_at, restaurants(name)').eq('status', 'pending').order('created_at', { ascending: true }),
+      sb.from('restaurants').select('id, name, is_verified, featured_until').gt('featured_until', new Date().toISOString()).order('featured_until', { ascending: true }),
+    ]);
+
+    const claimsList = pendingClaims.data || [];
+    const featuredList = featured.data || [];
+
+    let html = '<div class="ab-section-head"><div class="ab-section-title">Restaurant claims — ' + claimsList.length + ' pending</div>' +
+      '<a class="ab-section-link" href="cookzer-restaurant-claims.html" target="_blank" rel="noopener">Review claims &rarr;</a></div>';
+
+    if (claimsList.length === 0) {
+      html += '<div class="ab-panel"><div class="ab-empty">No pending claims right now.</div></div>';
+    } else {
+      html += '<div class="ab-panel">' + claimsList.map((c) =>
+        '<div class="ab-claim-row"><div><div class="ab-claim-name">' + escapeHtml((c.restaurants && c.restaurants.name) || 'Unknown restaurant') + '</div>' +
+        '<div class="ab-claim-meta">submitted ' + timeAgo(c.created_at) + '</div></div>' +
+        '<a class="ab-btn-mini primary" href="cookzer-restaurant-claims.html" target="_blank" rel="noopener" style="text-decoration:none;">Review</a></div>'
+      ).join('') + '</div>';
+    }
+
+    html += '<div class="ab-section-head"><div class="ab-section-title">Featured placement — active</div></div>';
+    if (featuredList.length === 0) {
+      html += '<div class="ab-panel"><div class="ab-empty">No restaurant is currently featured.</div></div>';
+    } else {
+      html += '<div class="ab-panel"><table class="ab-queue"><thead><tr><th>Restaurant</th><th>Featured until</th><th>Verified</th><th></th></tr></thead><tbody>' +
+        featuredList.map((r) =>
+          '<tr><td>' + escapeHtml(r.name) + '</td><td class="mono">' + fmtDate(r.featured_until) + '</td>' +
+          '<td>' + (r.is_verified ? '<span class="ab-pill ab-pill-moss">Verified</span>' : '<span class="ab-pill ab-pill-slate">Not verified</span>') + '</td>' +
+          '<td><a class="ab-btn-mini" href="cookzer-restaurant.html?id=' + r.id + '" target="_blank" rel="noopener" style="text-decoration:none;">Manage</a></td></tr>'
+        ).join('') + '</tbody></table></div>';
+    }
+
+    html += '<div class="ab-section-head"><div class="ab-section-title">Find a restaurant</div></div>' +
+      '<div class="ab-search-row"><input type="text" id="restSearchInput" placeholder="Search restaurants by name…"><button id="restSearchBtn" type="button">Search</button></div>' +
+      '<div class="ab-panel" id="restSearchResults"><div class="ab-empty">Search to manage a restaurant\'s Verified badge or Featured placement.</div></div>';
+
+    setContent(html);
+    updateBadges(null, claimsList.length);
+
+    document.getElementById('restSearchBtn').addEventListener('click', async () => {
+      const q = document.getElementById('restSearchInput').value.trim();
+      const resultsEl = document.getElementById('restSearchResults');
+      if (!q) return;
+      resultsEl.innerHTML = '<div class="ab-empty">Searching…</div>';
+      const { data, error } = await sb.from('restaurants').select('id, name, address, is_verified, featured_until').ilike('name', '%' + q + '%').limit(20);
+      if (error) { resultsEl.innerHTML = '<div class="ab-empty">' + escapeHtml(error.message) + '</div>'; return; }
+      if (!data || data.length === 0) { resultsEl.innerHTML = '<div class="ab-empty">No restaurants found.</div>'; return; }
+      resultsEl.innerHTML = data.map((r) =>
+        '<div class="ab-claim-row"><div><div class="ab-claim-name">' + escapeHtml(r.name) + '</div>' +
+        '<div class="ab-claim-meta">' + escapeHtml(r.address || '') + '</div></div>' +
+        '<a class="ab-btn-mini" href="cookzer-restaurant.html?id=' + r.id + '" target="_blank" rel="noopener" style="text-decoration:none;">Manage &rarr;</a></div>'
+      ).join('');
+    });
+  }
+
+  // ===================== Init =====================
+
+  (async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    currentUser = user;
+
+    const { data: profile } = await sb.from('profiles').select('display_name, initials, is_platform_admin, platform_role').eq('id', user.id).single();
+    if (!profile || !profile.is_platform_admin) {
+      document.getElementById('notAuthorized').hidden = false;
+      return;
+    }
+    adminProfile = profile;
+
+    document.getElementById('shell').hidden = false;
+    document.getElementById('staffAvatar').textContent = profile.initials || '??';
+    document.getElementById('staffName').textContent = profile.display_name;
+    document.getElementById('staffRole').textContent = ROLE_LABELS[profile.platform_role] || 'Platform Admin';
+
+    await route();
+  })();
+</script>
+</body>
+</html>

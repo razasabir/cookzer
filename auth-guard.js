@@ -159,6 +159,26 @@ function applyKidModeRestrictions(kidMode) {
     return;
   }
 
+  // A suspended or banned account is locked out of every page except the
+  // lockout page itself — checked before Kid Mode's own redirect since a
+  // suspension is the more severe restriction. This is the one real
+  // enforcement point for public.user_suspensions: 'warn' and 'mute'
+  // don't reach here (my_active_suspension() only returns 'suspend' and
+  // 'ban' rows), and aren't blocked anywhere yet.
+  const currentPageForSuspension = location.pathname.split('/').pop();
+  if (currentPageForSuspension !== 'cookzer-suspended.html' && currentPageForSuspension !== 'cookzer-auth.html') {
+    try {
+      const { data: activeSuspension } = await sb.rpc('my_active_suspension');
+      if (activeSuspension && activeSuspension.length) {
+        window.location.href = 'cookzer-suspended.html';
+        return;
+      }
+    } catch (e) {
+      // Fails open — a broken or unavailable check should never lock
+      // every signed-in user out of the whole site.
+    }
+  }
+
   const kidMode = getKidMode();
   if (kidMode && kidMode.enabled) {
     const currentPage = location.pathname.split('/').pop();
@@ -305,6 +325,7 @@ function applyKidModeRestrictions(kidMode) {
 
     menuLink('👤', 'Profile', 'cookzer-profile.html');
     menuLink('⚙️', 'Settings', 'cookzer-settings.html');
+    if (person.isPlatformAdmin) menuLink('🛠️', 'Back Office', 'cookzer-admin.html');
 
     // Cookzer+ AI usage — the same monthly cap/count ai-assistant-chat.js
     // enforces (500 messages/month across Cooking Ideas, Leftover Help,
@@ -364,7 +385,7 @@ function applyKidModeRestrictions(kidMode) {
 
   const { data: profile } = await sb
     .from('profiles')
-    .select('display_name, initials, avatar_url')
+    .select('display_name, initials, avatar_url, is_platform_admin')
     .eq('id', session.user.id)
     .single();
 
@@ -374,8 +395,9 @@ function applyKidModeRestrictions(kidMode) {
       display_name: session.user.email,
       initials: (session.user.email || '??').slice(0, 2).toUpperCase(),
       avatar_url: null,
+      is_platform_admin: false,
     },
-    { email: session.user.email }
+    { email: session.user.email, isPlatformAdmin: !!(profile && profile.is_platform_admin) }
   );
 
   function timeAgo(iso) {
