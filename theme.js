@@ -37,6 +37,42 @@
     document.documentElement.setAttribute('data-native-app', 'true');
   }
 
+  // ---- TEMPORARY diagnostic banner — delete once the Android bottom-
+  // cutoff bug is root-caused. Three rounds of fixes based on the
+  // safe-area/edge-to-edge theory produced zero visible change on the
+  // reporting device, even though other unrelated site changes (pull-to-
+  // refresh, the profile redesign) reach it fine — so the theory itself,
+  // or this detection, needs real evidence instead of another guess.
+  // Pinned to the very bottom of the viewport (position:fixed, so it's
+  // safe to append as a plain body child despite body being a flex
+  // row — see the cookzer-profile-preview.html banner bug earlier this
+  // session for what goes wrong without that). If THIS banner also gets
+  // clipped by the system nav bar, the WebView really is rendering
+  // behind it and env()/UA detection isn't compensating; if it's fully
+  // visible, .main is being truncated by something else entirely.
+  function renderDebugBanner() {
+    var main = document.querySelector('.main') || document.querySelector('.feed-container');
+    var mainInfo = main
+      ? 'pb=' + getComputedStyle(main).paddingBottom + ' scrollH=' + main.scrollHeight + ' clientH=' + main.clientHeight
+      : 'no .main/.feed-container found';
+    var banner = document.createElement('div');
+    banner.id = 'czDebugBanner';
+    banner.textContent =
+      'DBG native=' + document.documentElement.hasAttribute('data-native-app') +
+      ' cap=' + isCapacitorNative + ' wv=' + isAndroidEmbeddedWebView +
+      ' | ' + mainInfo + ' | winH=' + window.innerHeight;
+    banner.style.cssText =
+      'position:fixed; left:0; right:0; bottom:0; z-index:999999; ' +
+      'background:#000; color:#0f0; font:10px/1.4 monospace; ' +
+      'padding:4px 6px; white-space:pre-wrap; pointer-events:none;';
+    document.body.appendChild(banner);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderDebugBanner);
+  } else {
+    renderDebugBanner();
+  }
+
   window.toggleTheme = function () {
     var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     if (isDark) {
