@@ -289,7 +289,7 @@
       align-items: center;
       gap: 12px;
       padding: 12px 20px;
-      background: var(--olive);
+      background: linear-gradient(135deg, var(--olive), var(--olive-dark));
       flex-shrink: 0;
     }
 
@@ -308,11 +308,55 @@
       flex-shrink: 0;
     }
 
+  .thread-header-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--mustard), #E8A62E);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #4a3200;
+      font-weight: 700;
+      font-size: 13px;
+      flex-shrink: 0;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+    }
+
+  .thread-head-meta {
+      flex: 1;
+      min-width: 0;
+    }
+
   .thread-name {
       font-family: 'Fraunces', serif;
       font-weight: 600;
       font-size: 15px;
       color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+  .thread-block-btn {
+      margin-left: auto;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+  .thread-block-btn:hover,
+    .thread-block-btn.is-blocked {
+      background: rgba(255, 255, 255, 0.26);
     }
 
   .thread-messages {
@@ -322,10 +366,25 @@
       padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
       display: flex;
       flex-direction: column;
-      gap: 10px;
       background-color: var(--cream);
-      background-image: radial-gradient(var(--line) 1px, transparent 1px);
+      background-image: radial-gradient(rgba(46, 143, 92, 0.08) 1px, transparent 1px);
       background-size: 20px 20px;
+    }
+
+  .day-chip-row {
+      display: flex;
+      justify-content: center;
+      margin: 10px 0 14px;
+    }
+
+  .day-chip {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid var(--line);
+      padding: 4px 12px;
+      border-radius: 12px;
     }
 
   .typing-indicator {
@@ -339,11 +398,32 @@
 
   .bubble-row {
       display: flex;
+      gap: 8px;
+      margin-top: 12px;
     }
+
+  .bubble-row.grouped { margin-top: 3px; }
 
   .bubble-row.sent { justify-content: flex-end; }
 
   .bubble-row.received { justify-content: flex-start; }
+
+  .row-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 2px;
+      background: linear-gradient(135deg, var(--mustard), #E8A62E);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #4a3200;
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+  .bubble-row.received.grouped .row-avatar { visibility: hidden; }
 
   .bubble-wrap {
       max-width: 70%;
@@ -357,7 +437,7 @@
 
   .bubble {
       padding: 10px 14px;
-      border-radius: 20px;
+      border-radius: 18px;
       font-size: 14px;
       line-height: 1.4;
       overflow-wrap: break-word;
@@ -368,24 +448,47 @@
       background: var(--card-bg);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
       color: var(--ink);
-      border-bottom-left-radius: 4px;
+      border-bottom-left-radius: 5px;
     }
+
+  .bubble-row.received.grouped .bubble { border-top-left-radius: 6px; }
 
   .bubble-row.sent .bubble {
-      background: var(--bubble-sent-bg, #D9FDD3);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      background: var(--bubble-sent-bg, #FCE8B8);
+      border: 1px solid var(--bubble-sent-border, rgba(244, 185, 66, 0.55));
       color: var(--ink);
-      border-bottom-right-radius: 4px;
+      border-bottom-right-radius: 5px;
     }
 
+  .bubble-row.sent.grouped .bubble { border-top-right-radius: 6px; }
+
   [data-theme="dark"] {
-      --bubble-sent-bg: #005C4B;
+      --bubble-sent-bg: #4A3712;
+      --bubble-sent-border: rgba(244, 185, 66, 0.35);
+    }
+
+  .img-bubble {
+      padding: 4px;
+      background: var(--card-bg);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      border-radius: 16px;
+    }
+
+  .bubble-row.received .img-bubble { border-bottom-left-radius: 5px; }
+
+  .bubble-row.sent .img-bubble { border-bottom-right-radius: 5px; }
+
+  .img-bubble img {
+      width: 100%;
+      max-width: 220px;
+      display: block;
+      border-radius: 13px;
     }
 
   .bubble-time {
-      font-size: 10px;
+      font-size: 10.5px;
       color: var(--ink-soft);
-      margin-top: 4px;
+      margin-top: 5px;
       text-align: right;
     }
 
@@ -394,6 +497,41 @@
   .bubble-check { margin-left: 3px; color: var(--ink-soft); }
 
   .bubble-check.seen { color: #34B7F1; }
+
+  .reactions-row {
+      display: flex;
+      gap: 5px;
+      margin-top: 5px;
+      flex-wrap: wrap;
+    }
+
+  .reaction-add-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1px dashed var(--line);
+      background: rgba(255, 255, 255, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      line-height: 1;
+      color: var(--ink-soft);
+      cursor: pointer;
+      padding: 0;
+    }
+
+  .reaction-pill {
+      font-size: 11px;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 2px 7px;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+  .reaction-pill.mine { border-color: var(--olive); background: rgba(46, 143, 92, 0.08); }
 
   .thread-empty {
       flex: 1;
@@ -721,21 +859,54 @@
 
   const REACTION_EMOJIS = ['❤️', '😂', '👍', '😮', '😢'];
 
-  function appendBubble(messagesEl, msg) {
+  // Messages from the same sender within this window, with no day break
+  // between them, are visually grouped (shared avatar, tighter spacing).
+  const GROUP_WINDOW_MS = 5 * 60 * 1000;
+
+  function appendBubble(messagesEl, msg, conv) {
+    const created = new Date(msg.created_at);
+    const dateKey = created.toDateString();
+    if (dateKey !== messagesEl.dataset.lastDate) {
+      const chipRow = document.createElement('div');
+      chipRow.className = 'day-chip-row';
+      const chip = document.createElement('div');
+      chip.className = 'day-chip';
+      chip.textContent = created.toLocaleDateString([], { day: 'numeric', month: 'long' });
+      chipRow.appendChild(chip);
+      messagesEl.appendChild(chipRow);
+      messagesEl.dataset.lastSender = '';
+    }
+    messagesEl.dataset.lastDate = dateKey;
+
+    const lastTime = messagesEl.dataset.lastTime ? parseInt(messagesEl.dataset.lastTime, 10) : 0;
+    const grouped = messagesEl.dataset.lastSender === msg.sender_id
+      && (created.getTime() - lastTime) < GROUP_WINDOW_MS;
+
+    const isSent = msg.sender_id === currentUser.id;
     const row = document.createElement('div');
-    row.className = 'bubble-row ' + (msg.sender_id === currentUser.id ? 'sent' : 'received');
+    row.className = 'bubble-row ' + (isSent ? 'sent' : 'received') + (grouped ? ' grouped' : '');
     row.dataset.createdAt = msg.created_at;
     row.dataset.messageId = msg.id || '';
+
+    if (!isSent && conv) {
+      const rowAvatar = document.createElement('div');
+      rowAvatar.className = 'row-avatar';
+      rowAvatar.textContent = conv.isGroup
+        ? ((conv.participants.find((p) => p.id === msg.sender_id) || {}).initials || '??')
+        : conv.initials;
+      row.appendChild(rowAvatar);
+    }
+
     const bubbleWrap = document.createElement('div');
     bubbleWrap.className = 'bubble-wrap';
 
     if (msg.attachment_path) {
+      const imgWrap = document.createElement('div');
+      imgWrap.className = 'img-bubble';
       const img = document.createElement('img');
       img.src = publicUrl('message-attachments', msg.attachment_path);
-      img.style.maxWidth = '220px';
-      img.style.borderRadius = '16px';
-      img.style.display = 'block';
-      bubbleWrap.appendChild(img);
+      imgWrap.appendChild(img);
+      bubbleWrap.appendChild(imgWrap);
     }
 
     if (msg.text) {
@@ -760,19 +931,12 @@
       const reactionsRow = document.createElement('div');
       reactionsRow.className = 'reactions-row';
       reactionsRow.id = 'reactions-' + msg.id;
-      reactionsRow.style.display = 'flex';
-      reactionsRow.style.gap = '4px';
-      reactionsRow.style.marginTop = '2px';
-      reactionsRow.style.flexWrap = 'wrap';
 
       const addBtn = document.createElement('button');
-      addBtn.textContent = '🙂+';
+      addBtn.className = 'reaction-add-btn';
+      addBtn.textContent = '+';
       addBtn.type = 'button';
-      addBtn.style.background = 'none';
-      addBtn.style.border = 'none';
-      addBtn.style.cursor = 'pointer';
-      addBtn.style.fontSize = '11px';
-      addBtn.style.color = 'var(--ink-soft)';
+      addBtn.title = 'Add a reaction';
       addBtn.addEventListener('click', () => toggleReactionPicker(msg.id, reactionsRow));
       reactionsRow.appendChild(addBtn);
       bubbleWrap.appendChild(reactionsRow);
@@ -781,6 +945,9 @@
     row.appendChild(bubbleWrap);
     messagesEl.appendChild(row);
     messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    messagesEl.dataset.lastSender = msg.sender_id;
+    messagesEl.dataset.lastTime = String(created.getTime());
   }
 
   async function loadReactions(messageIds) {
@@ -810,15 +977,8 @@
 
     Object.entries(counts).forEach(([emoji, count]) => {
       const pill = document.createElement('span');
-      pill.className = 'reaction-pill';
+      pill.className = 'reaction-pill' + (mine && mine.emoji === emoji ? ' mine' : '');
       pill.textContent = emoji + ' ' + count;
-      pill.style.fontSize = '11px';
-      pill.style.background = 'var(--cream)';
-      pill.style.border = '1px solid var(--line)';
-      pill.style.borderRadius = '10px';
-      pill.style.padding = '1px 6px';
-      pill.style.cursor = 'pointer';
-      if (mine && mine.emoji === emoji) pill.style.borderColor = 'var(--olive)';
       pill.addEventListener('click', () => setReaction(messageId, mine && mine.emoji === emoji ? null : emoji));
       row.insertBefore(pill, row.firstChild);
     });
@@ -923,15 +1083,22 @@
     back.textContent = '←';
     back.addEventListener('click', closeThread);
 
+    const headAvatar = document.createElement('div');
+    headAvatar.className = 'thread-header-avatar';
+    headAvatar.textContent = conv.initials;
+
+    const headMeta = document.createElement('div');
+    headMeta.className = 'thread-head-meta';
     const nameEl = document.createElement('div');
     nameEl.className = 'thread-name';
     nameEl.textContent = conv.name;
+    headMeta.appendChild(nameEl);
 
     const blockToggle = document.createElement('button');
     blockToggle.type = 'button';
+    blockToggle.className = 'thread-block-btn' + (isBlockedThread ? ' is-blocked' : '');
     blockToggle.title = isBlockedThread ? 'Unblock ' + conv.name : 'Block ' + conv.name;
-    blockToggle.textContent = isBlockedThread ? 'Unblock' : '🚫';
-    blockToggle.style.cssText = 'margin-left:auto; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); border-radius:10px; padding:4px 10px; font-size:12px; color:#fff; cursor:pointer; flex-shrink:0;';
+    blockToggle.textContent = isBlockedThread ? '🔓' : '🚫';
     blockToggle.addEventListener('click', async () => {
       if (isBlockedThread) {
         await sb.from('user_blocks').delete().eq('blocker_id', currentUser.id).eq('blocked_id', conv.otherId);
@@ -947,7 +1114,8 @@
     });
 
     header.appendChild(back);
-    header.appendChild(nameEl);
+    header.appendChild(headAvatar);
+    header.appendChild(headMeta);
     if (!conv.isGroup) header.appendChild(blockToggle);
 
     const messagesEl = document.createElement('div');
@@ -1029,7 +1197,7 @@
       .eq('conversation_id', activeId)
       .order('created_at', { ascending: true });
 
-    (messages || []).forEach((m) => appendBubble(messagesEl, m));
+    (messages || []).forEach((m) => appendBubble(messagesEl, m, conv));
     messagesEl.scrollTop = messagesEl.scrollHeight;
     await markSeenReceipt(messagesEl, conv);
     await loadReactions((messages || []).map((m) => m.id));
@@ -1043,7 +1211,7 @@
         { event: 'INSERT', schema: 'public', table: 'messages', filter: 'conversation_id=eq.' + activeId },
         (payload) => {
           const el = document.getElementById('threadMessages');
-          if (el) appendBubble(el, payload.new);
+          if (el) appendBubble(el, payload.new, conv);
         }
       )
       .on('broadcast', { event: 'typing' }, ({ payload }) => {
