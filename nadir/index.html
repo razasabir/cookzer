@@ -291,6 +291,40 @@
     section.hero { padding: 48px 0 40px; }
     section.block { padding: 48px 0; }
   }
+
+  /* ---------- Feature map (appended) ---------- */
+  .feat-nav { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 32px; }
+  .feat-nav a {
+    font-size: 12px; font-weight: 600; color: var(--ink-soft); text-decoration: none;
+    padding: 6px 12px; border-radius: 20px; border: 1px solid var(--line); background: var(--paper);
+  }
+  .feat-nav a:hover { border-color: var(--green); color: var(--green-deep); }
+  .feat-module {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 18px;
+    padding: 22px 24px; margin-bottom: 16px; scroll-margin-top: 20px;
+  }
+  .feat-module-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .feat-module-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; }
+  .feat-module-path { font-size: 11px; color: var(--ink-faint); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .feat-module-desc { font-size: 13px; color: var(--ink-soft); margin: 4px 0 14px; }
+  .feat-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px) { .feat-cols { grid-template-columns: 1fr; } }
+  .feat-col-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;
+  }
+  .feat-col-label.today { color: var(--green-deep); }
+  .feat-col-label.next { color: var(--gold); }
+  ul.feat-ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  ul.feat-ul li { font-size: 13px; color: var(--ink-soft); padding-left: 18px; position: relative; line-height: 1.5; }
+  .feat-today li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; font-size: 11px; }
+  .feat-next { background: var(--gold-tint); border: 1px dashed var(--line); border-radius: 12px; padding: 12px 14px; }
+  .feat-next li::before { content: "→"; position: absolute; left: 0; color: var(--gold); font-weight: 700; font-size: 11px; }
+  .feat-parked { border-style: dashed; }
+  .feat-parked ul.feat-ul li::before { content: "⏸"; position: absolute; left: 0; color: var(--ink-faint); font-size: 10px; }
+  .feat-parked-note {
+    font-size: 12.5px; color: var(--ink-soft); background: var(--cream); border-radius: 10px;
+    padding: 10px 12px; margin-bottom: 14px; line-height: 1.55;
+  }
 </style>
 </head>
 <body>
@@ -697,6 +731,371 @@
     <div class="foot-meta">Cookzer — a social network for cooks. Shared privately, not for public distribution.</div>
   </div>
 </footer>
+
+<section class="block" id="features">
+  <div class="wrap">
+    <div class="section-kicker">Appendix</div>
+    <h2 class="section-head">Feature map — every module, read straight from the codebase.</h2>
+    <p class="section-dek">Not a pitch summary — the actual current state of every part of the product, module by module, plus the near-term "next" for each. Generated from a direct codebase survey (26 app pages, 55 Supabase migrations, ~140 Playwright test files), not from an old planning doc.</p>
+
+    <div class="feat-nav">
+      <a href="#feat-feed">Feed</a>
+      <a href="#feat-recipes">Recipes &amp; Cookbook</a>
+      <a href="#feat-planner">Meal Planner</a>
+      <a href="#feat-challenges">Challenges</a>
+      <a href="#feat-groups">Groups</a>
+      <a href="#feat-restaurants">Restaurants</a>
+      <a href="#feat-profile">Profile</a>
+      <a href="#feat-friends">Friends</a>
+      <a href="#feat-messenger">Messenger</a>
+      <a href="#feat-convert">Measure &amp; Convert</a>
+      <a href="#feat-pantry">Pantry &amp; Leftovers</a>
+      <a href="#feat-health">Health &amp; Nutrition</a>
+      <a href="#feat-ai">AI Assistant</a>
+      <a href="#feat-lists">Lists</a>
+      <a href="#feat-settings">Settings</a>
+      <a href="#feat-notifications">Notifications</a>
+      <a href="#feat-auth">Sign up &amp; Login</a>
+      <a href="#feat-native">Native app</a>
+      <a href="#feat-landing">Landing page</a>
+      <a href="#feat-parked">Parked ideas</a>
+    </div>
+
+    <div class="feat-module" id="feat-feed">
+      <div class="feat-module-head"><span class="feat-module-title">Feed</span><span class="feat-module-path">cookzer-feed.html</span></div>
+      <p class="feat-module-desc">The main social surface — post, react, discover what the community is cooking this week.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Composer: caption with @mention autocomplete, photo or video upload with filters/vignette, Tip / Dining Out / Challenge-entry toggles, recipe shortcut</li>
+          <li>Six post kinds rendered distinctly: plain, recipe, tip, cook-in, reshare, dining-out</li>
+          <li>Heart, comments with @mentions, Share (reshare / to a group / external link), Save (as recipe / to planner / to device)</li>
+          <li>Filter bar (All/Recipes/Challenges/Dining out/Tips) + auto-generated tag chips, URL-addressable</li>
+          <li>Sidebar: live weekly Challenge banner, leaderboard, Top Recipes, Trending Ingredients, Top Contributors, birthdays, People You May Know, pantry search</li>
+          <li>Pull-to-refresh, first-visit welcome modal</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Threaded replies to comments, not just flat @mentions</li>
+          <li>Multi-photo carousel posts</li>
+          <li>Live countdown on the challenge banner</li>
+          <li>Post editing after publish, not just delete</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-recipes">
+      <div class="feat-module-head"><span class="feat-module-title">Recipes &amp; Cookbook</span><span class="feat-module-path">cookzer-cookbook.html · cookzer-recipe.html · cookzer-recipe-new.html</span></div>
+      <p class="feat-module-desc">Where a dish becomes a real, structured object — written, saved, scaled, and cooked from.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Cookbook: curatable Lists, saved recipes with personal notes + tags</li>
+          <li>5-step creation wizard incl. import-from-URL (parses schema.org recipe data)</li>
+          <li>Every photo cropped + filter/vignette picker with an auto-suggested filter</li>
+          <li>Auto tag suggestion from time/spice/ingredients/steps</li>
+          <li>Serving-size scaling live-multiplies every ingredient quantity</li>
+          <li>Inline unit converter popover on any quantity</li>
+          <li>Nutrition + cost-per-serving estimate; heart/save/comments/share; "Remake &amp; post"; print; add to planner</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Full-screen "cook mode" — step-by-step, screen-wake-lock</li>
+          <li>Star ratings/reviews on a recipe itself, separate from a Remake</li>
+          <li>Collaborative Lists co-curated with friends</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-planner">
+      <div class="feat-module-head"><span class="feat-module-title">Meal Planner</span><span class="feat-module-path">cookzer-planner.html</span></div>
+      <p class="feat-module-desc">The household's shared weekly plan — one plan per household, not per person.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Weekly grid, branded jump-to-date calendar, copy last week, drag-and-drop reordering</li>
+          <li>Per-person suggestion columns: You + household co-admins + Family Profiles</li>
+          <li>Shared household plan; Kid Mode integration; share a week to a group</li>
+          <li>Shopping list generator with estimated per-item cost; weekly nutrition summary</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Auto-fill a week from AI Assistant / pantry-aware suggestions</li>
+          <li>Recurring templates ("Taco Tuesday every week")</li>
+          <li>Calendar export (iCal)</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-challenges">
+      <div class="feat-module-head"><span class="feat-module-title">Challenges</span><span class="feat-module-path">cookzer-challenges.html</span></div>
+      <p class="feat-module-desc">Weekly, low-stakes competition — the thing that gives the feed a reason to check back.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Sitewide weekly challenge auto-seeded from 6 rotating themes, keyed by ISO week</li>
+          <li>User-created challenges; join + expandable heart-ranked leaderboard</li>
+          <li>Auto winner finalization; Past Challenges archive</li>
+          <li>Challenges can be scoped to a group</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Live "Ends in Xd Xh" countdown on cards</li>
+          <li>Streak/series challenges across consecutive weeks</li>
+          <li>Sponsored/branded challenges — needs a sales motion</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-groups">
+      <div class="feat-module-head"><span class="feat-module-title">Groups</span><span class="feat-module-path">cookzer-groups.html + group-*.html</span></div>
+      <p class="feat-module-desc">Smaller communities inside Cookzer — a cuisine, a diet, a household.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Create groups; private groups gated by an 8-char invite code</li>
+          <li>Creator + admin roles; own mini-feed scoped to the group; pin a post; transfer ownership</li>
+          <li>Events with 3-state RSVP; single-choice Polls with live vote bars</li>
+          <li>Group-scoped Challenges reusing the sitewide engine</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Group-level shared shopping list / meal plan</li>
+          <li>Group recipe collections</li>
+          <li>Recurring events</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-restaurants">
+      <div class="feat-module-head"><span class="feat-module-title">Restaurants</span><span class="feat-module-path">cookzer-restaurants.html · cookzer-restaurant.html · cookzer-restaurant-claims.html</span></div>
+      <p class="feat-module-desc">Cookzer's most built-out module — dining out, not just cooking in.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Recent / 🔥 Trending / ⚖️ Cookzer-vs-Google sort tabs</li>
+          <li>Cookzer Verified badge and time-boxed Featured placement</li>
+          <li>Dish-level star ratings with required receipt photo + client-side OCR sanity check</li>
+          <li>Foodie Score credibility badge; report a review</li>
+          <li>Claimed business profiles with an admin approval queue</li>
+          <li>Dining-out check-in via Cookzer's own listings or Google Places nearby search</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Real billing for Featured placement — schema &amp; UI exist, no processor yet</li>
+          <li>Menu-item level browsing</li>
+          <li>Reservation/booking integration</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-profile">
+      <div class="feat-module-head"><span class="feat-module-title">Profile</span><span class="feat-module-path">cookzer-profile.html · cookzer-profile-preview.html</span></div>
+      <p class="feat-module-desc">Identity — a home cook's page, or a chef's portfolio, on the same profile.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Raw stat tiles (deliberately not one composite score); cooking-streak heatmap</li>
+          <li>Pinned/featured recipe; Kitchen CV mode with endorsable skills + recommendations</li>
+          <li>Mutual friends, challenge-winner flair, mood-tag badges on posts</li>
+          <li>Profile-view analytics; public/logged-out preview with sign-up-gated actions</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>A real, persisted achievement/badge system beyond current stat tiles</li>
+          <li>Export Kitchen CV mode as a shareable PDF résumé</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-friends">
+      <div class="feat-module-head"><span class="feat-module-title">Friends</span><span class="feat-module-path">cookzer-friends.html</span></div>
+      <p class="feat-module-desc">Two relationship systems, on purpose: a lightweight follow graph and a mutual friend system.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Five tabs: Following, Followers, Friends, Requests, Blocked</li>
+          <li>Follow graph + separate mutual friend-request system</li>
+          <li>People You May Know, ranked by group overlap then 2nd-degree follows</li>
+          <li>Personal invite link with join-attribution and auto-follow</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Interest-based PYMK, not just graph proximity</li>
+          <li>A periodic friend-activity digest</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-messenger">
+      <div class="feat-module-head"><span class="feat-module-title">Messenger</span><span class="feat-module-path">cookzer-messenger.html</span></div>
+      <p class="feat-module-desc">Real-time, not a mock — the header's message icon actually goes somewhere.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Real-time 1:1 and group conversations over Supabase Realtime</li>
+          <li>Image attachments, 5-emoji reactions, typing indicator</li>
+          <li>Read receipts on 1:1 threads; deep-link from a profile's Message button</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Voice messages</li>
+          <li>Search within a conversation</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-convert">
+      <div class="feat-module-head"><span class="feat-module-title">Measure &amp; Convert</span><span class="feat-module-path">cookzer-convert.html</span></div>
+      <p class="feat-module-desc">A standalone kitchen-math utility — no account or recipe needed.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Unit converter with density-aware mass↔volume conversion, visual fill graphic</li>
+          <li>Pan/dish converter across 6 shapes with true-volume math</li>
+          <li>Oven temperature reference with live °F↔°C conversion</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Save favorite/custom conversions</li>
+          <li>Deep link from a recipe's scaled ingredient straight into the converter</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-pantry">
+      <div class="feat-module-head"><span class="feat-module-title">Pantry &amp; Leftovers</span><span class="feat-module-path">cookzer-pantry.html — Cookzer+</span></div>
+      <p class="feat-module-desc">"What can I make with what I already have" — matched against the real recipe database.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Pantry Challenge tab: ranks existing recipes by ingredient-list coverage</li>
+          <li>Leftovers tab: same engine, strips filler words ("leftover", "half-used")</li>
+          <li>Embeds the Cookzer+ AI Assistant</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>A persisted pantry inventory, not re-typed every visit</li>
+          <li>Barcode/receipt scan to populate it</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-health">
+      <div class="feat-module-head"><span class="feat-module-title">Health &amp; Nutrition</span><span class="feat-module-path">cookzer-health.html — Cookzer+</span></div>
+      <p class="feat-module-desc">A personal nutrition dashboard built entirely from your own cook-in history.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>7-day / 30-day range toggle; calories/protein/carbs/fat stat tiles</li>
+          <li>Sums from your own cook-in posts' recipes; calories-per-day chart</li>
+          <li>Embeds the Cookzer+ AI Assistant, scoped to nutrition Q&amp;A</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Real nutrition-database lookups (USDA/Edamam) instead of estimates</li>
+          <li>Calorie/macro goal-setting with progress vs. goal</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-ai">
+      <div class="feat-module-head"><span class="feat-module-title">AI Assistant</span><span class="feat-module-path">ai-assistant-chat.js · api/ai-chat.js — Cookzer+</span></div>
+      <p class="feat-module-desc">A real Claude-backed chat, not a waitlist teaser — embedded on Pantry and Health.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Server-side chat on Claude Haiku 4.5, page-specific pitch per surface</li>
+          <li>Capped at 500 messages/month per user, enforced server-side, free for every logged-in user</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Draft a full meal-planner week, not just answer one question</li>
+          <li>A higher cap on a future paid tier</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-lists">
+      <div class="feat-module-head"><span class="feat-module-title">Lists</span><span class="feat-module-path">cookzer-list.html</span></div>
+      <p class="feat-module-desc">Curatable, shareable recipe collections — identity through taste, Letterboxd-style.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>One named list, public or private</li>
+          <li>Owner: rename, delete, toggle visibility, search-to-add / remove recipes</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Follow another user's public List and get notified when it updates</li>
+          <li>Multi-owner collaborative Lists</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-settings">
+      <div class="feat-module-head"><span class="feat-module-title">Settings</span><span class="feat-module-path">cookzer-settings.html</span></div>
+      <p class="feat-module-desc">Account, household, and the controls that make Kid Mode and co-parenting a plan possible.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Household Co-Admins share Family Profiles + the Meal Planner</li>
+          <li>Kid Mode: per-profile PIN lock, restricts the device to Meal Planner only</li>
+          <li>8 notification-category toggles + email + push</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Self-service data export / account deletion</li>
+          <li>Two-factor authentication</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-notifications">
+      <div class="feat-module-head"><span class="feat-module-title">Notifications</span><span class="feat-module-path">cookzer-notifications.html</span></div>
+      <p class="feat-module-desc">Three real delivery channels behind one preferences page.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Full list + header-bell dropdown, non-destructive to read</li>
+          <li>Delivered via in-app, email (Resend), and push (Firebase) — off one Postgres webhook</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Grouped notifications ("Sarah and 4 others liked your post")</li>
+          <li>Daily/weekly digest mode</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-auth">
+      <div class="feat-module-head"><span class="feat-module-title">Sign up &amp; Login</span><span class="feat-module-path">cookzer-auth.html</span></div>
+      <p class="feat-module-desc">Getting in — on the web and inside the native app shell.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Email/password, plus Google and Facebook OAuth</li>
+          <li>Native-app OAuth opens the system browser and returns via a deep link</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Sign in with Apple</li>
+          <li>Passkey / WebAuthn support</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-native">
+      <div class="feat-module-head"><span class="feat-module-title">Native app</span><span class="feat-module-path">android/ · ios/ — Capacitor shell</span></div>
+      <p class="feat-module-desc">Wraps the live website — not a bundled offline copy — as a real installable app.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Android: sideloadable APK, downloadable from the homepage, auto-rebuilt on native-shell changes</li>
+          <li>Native push notifications sharing one FCM registration with web-push</li>
+          <li>Native OAuth handoff; WebView-specific status/nav-bar inset fixes</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Google Play Store listing (currently sideload-only)</li>
+          <li>Apple App Store submission</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-landing">
+      <div class="feat-module-head"><span class="feat-module-title">Landing page</span><span class="feat-module-path">index.html</span></div>
+      <p class="feat-module-desc">The public front door — signed-out visitors and the Android download.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Hero, 3 audience segments, feature grid, auto-scrolling photo marquee</li>
+          <li>Direct APK download with an install-troubleshooting guide</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Real app-store badges once listed</li>
+          <li>A live activity strip instead of a static feature grid</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module feat-parked" id="feat-parked">
+      <div class="feat-module-head"><span class="feat-module-title">Parked — needs a business decision first</span></div>
+      <p class="feat-parked-note">Not a build-effort question. Each needs a call from the user before any implementation work starts — payments, a sales motion, or a pricing decision.</p>
+      <ul class="feat-ul">
+        <li>Home-cook marketplace — needs payments + delivery logistics</li>
+        <li>Sponsored/branded challenges — needs a sales motion</li>
+        <li>Real billing for Restaurants' Featured placement — schema/UI exist, no processor wired up</li>
+        <li>A premium/Pro tier — no pricing model decided</li>
+      </ul>
+    </div>
+
+    <p class="growth-note">Generated from a direct codebase survey on 2026-09-23. "Next" items are product judgment, not commitments.</p>
+  </div>
+</section>
 
 </body>
 </html>
