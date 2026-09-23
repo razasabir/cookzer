@@ -16,14 +16,14 @@ const { loadPageWithMock } = require('./helpers/loadPage');
 // window.visualViewport.height, so it's mocked here via an init script —
 // window.visualViewport is read-only in real browsers, hence
 // Object.defineProperty rather than a plain assignment.
-function mockViewportGap(gapPx) {
+function mockViewportGap(gapPx, offsetTopPx) {
   return `
     Object.defineProperty(window, 'visualViewport', {
       configurable: true,
       value: Object.assign(Object.create(EventTarget.prototype), {
         height: window.innerHeight - ${gapPx},
         width: window.innerWidth,
-        offsetTop: 0,
+        offsetTop: ${offsetTopPx || 0},
         addEventListener: () => {},
         removeEventListener: () => {},
       }),
@@ -75,5 +75,32 @@ test.describe('visualViewport-based safe-area fix', () => {
       return { scrollTop: main.scrollTop, scrollHeight: main.scrollHeight, clientHeight: main.clientHeight };
     });
     expect(info.scrollTop + info.clientHeight).toBeGreaterThanOrEqual(info.scrollHeight - 1);
+  });
+
+  test('a gap that is actually a status-bar overlap at the top (visualViewport.offsetTop > 0) grows .header instead of .main padding-bottom', async ({ page }) => {
+    // Reported after the nav-bar fix shipped: on one device the status bar
+    // still overlapped the header, even though the native
+    // decorFitsSystemWindows fix was supposed to reserve that space too.
+    // A pure top overlap reports the same innerHeight/visualViewport.height
+    // gap as the nav-bar case, but visualViewport.offsetTop says where it
+    // actually is — here, entirely at the top.
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js', mockViewportGap(32, 32));
+    const topVar = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cz-viewport-inset-fix-top').trim());
+    expect(topVar).toBe('32px');
+    const bottomVar = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cz-viewport-inset-fix').trim());
+    expect(bottomVar).toBe('0px');
+    const header = await page.evaluate(() => getComputedStyle(document.querySelector('.header')));
+    expect(header.height).toBe('92px');
+    expect(header.paddingTop).toBe('32px');
+    const mainMarginTop = await page.evaluate(() => getComputedStyle(document.querySelector('.main')).marginTop);
+    expect(mainMarginTop).toBe('92px');
+  });
+
+  test('a gap split between top and bottom (status bar and nav bar both overlapping) attributes each portion correctly', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-planner.html', 'planner-family.js', mockViewportGap(48, 20));
+    const topVar = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cz-viewport-inset-fix-top').trim());
+    expect(topVar).toBe('20px');
+    const bottomVar = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cz-viewport-inset-fix').trim());
+    expect(bottomVar).toBe('28px');
   });
 });

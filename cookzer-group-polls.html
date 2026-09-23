@@ -40,7 +40,7 @@
 
   .main {
       flex: 1;
-      margin-top: 60px;
+      margin-top: calc(60px + var(--cz-viewport-inset-fix-top, 0px));
       overflow-y: auto;
       padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
     }

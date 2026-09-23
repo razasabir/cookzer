@@ -74,12 +74,17 @@ body {
   position: relative;
 }
 
-/* Sidebar */
+/* Sidebar — padding-top also covers the mobile drawer variant (each
+   page's own media query makes it position: fixed; top: 0 as a
+   full-height overlay), which sits under the status bar the same way
+   .header does; --cz-viewport-inset-fix-top is 0px everywhere this
+   doesn't apply, so it's harmless to include unconditionally. */
 .sidebar {
   width: 280px;
   background: var(--card-bg);
   border-right: 1px solid var(--line);
   padding: 20px 0;
+  padding-top: calc(20px + var(--cz-viewport-inset-fix-top, 0px));
   padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
   flex-shrink: 0;
@@ -258,18 +263,27 @@ body {
   margin-left: auto;
 }
 
-/* Header */
+/* Header — extends up to the true top of the screen (top: 0) and paints
+   its own background through the status-bar area, rather than leaving a
+   gap; the row of icons/logo is pushed down out of that area via
+   padding-top instead, so the header's own height grows to match
+   (box-sizing: border-box is set globally above). --cz-viewport-inset-fix-top
+   is set by theme.js the same way --cz-viewport-inset-fix is for the
+   bottom nav-bar overlap (see .main etc. below) — it's usually 0px (an
+   ordinary browser, or a native app where the OS already reserves status
+   bar space) and only engages on a device where it doesn't. */
 .header {
   position: absolute;
   top: 0;
   left: 280px;
   right: 0;
-  height: 60px;
+  height: calc(60px + var(--cz-viewport-inset-fix-top, 0px));
   background: var(--card-bg);
   border-bottom: 1px solid var(--line);
   display: flex;
   align-items: center;
   padding: 0 24px;
+  padding-top: var(--cz-viewport-inset-fix-top, 0px);
   justify-content: space-between;
   z-index: 10;
 }

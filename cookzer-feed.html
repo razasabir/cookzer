@@ -153,7 +153,7 @@
      middle column, and a right rail flush against the frame's edge. */
     .main {
       flex: 1;
-      margin-top: 60px;
+      margin-top: calc(60px + var(--cz-viewport-inset-fix-top, 0px));
       display: flex;
       overflow: hidden;
     }
