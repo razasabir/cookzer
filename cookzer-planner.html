@@ -57,8 +57,13 @@
       align-items: center;
     }
 
+  /* clamp() instead of a flat 28px: "This week's plan" sits between two
+     32px arrow buttons, so on a narrow phone (or with the OS text-size
+     accessibility setting bumped up) a fixed 28px doesn't leave enough
+     room and wraps to two oversized lines. Scales down smoothly with
+     viewport width instead of jumping at a breakpoint. */
   .page-title {
-      font-size: 28px;
+      font-size: clamp(20px, 6vw, 28px);
       font-family: 'Fraunces', serif;
       font-weight: 600;
       color: var(--olive-dark);
