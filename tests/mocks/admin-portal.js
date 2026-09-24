@@ -202,7 +202,7 @@ function findReport(id) { return window.__STATE__.reports.find((r) => r.id === i
 window.supabase = {
   createClient: () => ({
     auth: {
-      getSession: () => Promise.resolve({ data: { session: { user: { id: ADMIN_ID } } } }),
+      getSession: () => Promise.resolve({ data: { session: { user: { id: ADMIN_ID }, access_token: 'mock-admin-access-token' } } }),
       getUser: () => Promise.resolve({ data: { user: { id: ADMIN_ID, email: 'admin@example.com' } } }),
       onAuthStateChange: () => {},
       signOut: () => Promise.resolve({}),

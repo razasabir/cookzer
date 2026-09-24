@@ -113,6 +113,41 @@ test.describe('Admin portal: Users', () => {
     await expect(page.locator('#revokeBtn')).toBeVisible();
   });
 
+  test('logging in as a user calls the impersonation endpoint and opens the returned link', async ({ page, context }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.route('**/api/admin-impersonate', (route) => {
+      const body = JSON.parse(route.request().postData());
+      expect(body.targetUserId).toBe('bob-1');
+      expect(route.request().headers()['authorization']).toContain('Bearer ');
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ actionLink: 'https://cookzer.com/auth/verify?token=abc' }) });
+    });
+    // The popup navigates to a real external URL — stub it too, since this
+    // suite runs with no real network access.
+    await context.route('https://cookzer.com/**', (route) => {
+      route.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>Signed in</body></html>' });
+    });
+    await page.goto(page.url().split('#')[0] + '#users/bob-1');
+
+    await page.click('#impersonateBtn');
+    await page.locator('.cz-modal-overlay .cz-modal-btn.cz-danger').click();
+    const [popup] = await Promise.all([
+      context.waitForEvent('page'),
+    ]);
+    expect(popup.url()).toBe('https://cookzer.com/auth/verify?token=abc');
+  });
+
+  test('a failed impersonation call surfaces the server error, not a native alert', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.route('**/api/admin-impersonate', (route) => {
+      route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: 'Only a platform admin can impersonate a user' }) });
+    });
+    await page.goto(page.url().split('#')[0] + '#users/bob-1');
+
+    await page.click('#impersonateBtn');
+    await page.locator('.cz-modal-overlay .cz-modal-btn.cz-danger').click();
+    await expect(page.locator('.cz-modal-overlay .cz-modal-message')).toContainText('Only a platform admin can impersonate a user');
+  });
+
   test('a user cannot take an action on their own account', async ({ page }) => {
     await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
     await page.goto(page.url().split('#')[0] + '#users/admin-1');

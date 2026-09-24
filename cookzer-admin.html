@@ -598,6 +598,7 @@
     card += statRow('Active strikes', strikes.length);
 
     if (userId !== currentUser.id) {
+      card += '<div class="ab-action-form"><button class="ab-btn-mini" id="impersonateBtn" style="width:100%;">Log in as this user</button></div>';
       card += '<div class="ab-action-form" id="actionForm">' +
         '<span class="ab-field-label">Take action</span>' +
         '<div class="ab-chip-row" id="actionChips">' + SUSPENSION_TYPES.map((t) => '<button type="button" class="ab-chip" data-type="' + t.type + '">' + t.label + '</button>').join('') + '</div>' +
@@ -636,6 +637,26 @@
         const { error } = await sb.rpc('admin_revoke_suspension', { p_suspension_id: activeSuspension.id });
         if (error) { await CookzerModal.alert('Could not revoke: ' + error.message); return; }
         await renderUserDetail(userId);
+      });
+    }
+
+    if (userId !== currentUser.id) {
+      document.getElementById('impersonateBtn').addEventListener('click', async () => {
+        const ok = await CookzerModal.confirm('Log in as ' + profile.display_name + '? A new tab will open signed in as them — remember to sign out of it when you\'re done helping them.', { confirmLabel: 'Log in as this user', danger: true });
+        if (!ok) return;
+        const { data: { session } } = await sb.auth.getSession();
+        try {
+          const resp = await fetch('/api/admin-impersonate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+            body: JSON.stringify({ targetUserId: userId }),
+          });
+          const result = await resp.json();
+          if (!resp.ok) { await CookzerModal.alert('Could not log in as this user: ' + (result.error || resp.statusText)); return; }
+          window.open(result.actionLink, '_blank', 'noopener');
+        } catch (e) {
+          await CookzerModal.alert('Could not reach the impersonation service: ' + e.message);
+        }
       });
     }
 
