@@ -139,3 +139,162 @@ test.describe('Admin portal: Commercial', () => {
     await expect(link).toHaveAttribute('href', 'cookzer-restaurant.html?id=rest-1');
   });
 });
+
+test.describe('Admin portal: Governance & Policy', () => {
+  test('shows the current policy version, DSAR queue, and an active legal hold', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.click('.ab-nav-item[data-view="governance"]');
+    await expect(page.locator('.ab-content')).toContainText('Terms of Service');
+    await expect(page.locator('.ab-content')).toContainText('v1');
+    await expect(page.locator('.ab-content')).toContainText('Alice Diaz');
+    await expect(page.locator('.ab-content')).toContainText('Copyright dispute');
+    await expect(page.locator('#dsarBadge')).toHaveText('1');
+  });
+
+  test('publishing a new policy version calls admin_publish_policy with the new content', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.click('.ab-nav-item[data-view="governance"]');
+    await page.click('[data-act="publish-policy"][data-type="terms"]');
+    await page.fill('#policyContent-terms', 'Updated terms text');
+    await page.click('[data-act="submit-policy"][data-type="terms"]');
+    await page.waitForFunction(() => window.__RPC_CALLS__.some((c) => c.fn === 'admin_publish_policy'));
+    const call = await page.evaluate(() => window.__RPC_CALLS__.find((c) => c.fn === 'admin_publish_policy'));
+    expect(call.args.p_type).toBe('terms');
+    expect(call.args.p_content).toBe('Updated terms text');
+  });
+
+  test('fulfilling a deletion request confirms then calls admin_fulfill_deletion_request', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.evaluate(() => {
+      window.__STATE__.dsar_requests.push({ id: 'dsar-2', user_id: 'bob-1', type: 'delete', status: 'pending', note: null, created_at: new Date().toISOString() });
+    });
+    await page.click('.ab-nav-item[data-view="governance"]');
+    await page.click('[data-act="dsar-delete"][data-id="dsar-2"]');
+    await page.locator('.cz-modal-overlay .cz-modal-btn.cz-danger').click();
+    await page.waitForFunction(() => window.__RPC_CALLS__.some((c) => c.fn === 'admin_fulfill_deletion_request'));
+    const call = await page.evaluate(() => window.__RPC_CALLS__.find((c) => c.fn === 'admin_fulfill_deletion_request'));
+    expect(call.args.p_request_id).toBe('dsar-2');
+  });
+
+  test('placing a legal hold requires a target type chip, then calls admin_place_legal_hold', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.click('.ab-nav-item[data-view="governance"]');
+    await page.click('#holdTargetChips .ab-chip[data-type="user"]');
+    await page.fill('#holdTargetId', 'bob-1');
+    await page.fill('#holdReason', 'fraud investigation');
+    await page.click('#placeHoldBtn');
+    await page.waitForFunction(() => window.__RPC_CALLS__.some((c) => c.fn === 'admin_place_legal_hold'));
+    const call = await page.evaluate(() => window.__RPC_CALLS__.find((c) => c.fn === 'admin_place_legal_hold'));
+    expect(call.args.p_target_type).toBe('user');
+    expect(call.args.p_target_id).toBe('bob-1');
+  });
+
+  test('the CSAM queue is explicit that detection is not automated', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.click('.ab-nav-item[data-view="governance"]');
+    await expect(page.locator('.ab-content')).toContainText('does not perform automated hash-matching');
+  });
+});
+
+test.describe('Admin portal: Platform Ops', () => {
+  test('toggling a feature flag off calls admin_set_feature_flag with enabled=false', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.click('.ab-nav-item[data-view="platform-ops"]');
+    await expect(page.locator('.ab-content')).toContainText('new_composer');
+    await page.click('[data-act="toggle-flag"][data-key="new_composer"]');
+    await page.waitForFunction(() => window.__RPC_CALLS__.some((c) => c.fn === 'admin_set_feature_flag'));
+    const call = await page.evaluate(() => window.__RPC_CALLS__.find((c) => c.fn === 'admin_set_feature_flag'));
+    expect(call.args.p_key).toBe('new_composer');
+    expect(call.args.p_enabled).toBe(false);
+  });
+
+  test('deactivating an announcement calls admin_deactivate_announcement', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.click('.ab-nav-item[data-view="platform-ops"]');
+    await expect(page.locator('.ab-content')).toContainText('Scheduled maintenance tonight');
+    await page.click('[data-act="deactivate-announcement"]');
+    await page.locator('.cz-modal-overlay .cz-modal-btn.cz-primary').click();
+    await page.waitForFunction(() => window.__RPC_CALLS__.some((c) => c.fn === 'admin_deactivate_announcement'));
+  });
+
+  test('sending a broadcast confirms (danger) then reports the recipient count', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.click('.ab-nav-item[data-view="platform-ops"]');
+    await page.fill('#broadcastMessage', 'Cookzer 2.0 is here');
+    await page.click('#sendBroadcastBtn');
+    await page.locator('.cz-modal-overlay .cz-modal-btn.cz-danger').click();
+    await page.waitForFunction(() => window.__RPC_CALLS__.some((c) => c.fn === 'admin_broadcast_notification'));
+    await expect(page.locator('.cz-modal-overlay .cz-modal-message')).toContainText('Sent to');
+  });
+
+  test('rate-limit editor is explicit that limits are not enforced yet', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.click('.ab-nav-item[data-view="platform-ops"]');
+    await expect(page.locator('.ab-content')).toContainText('nothing in the app enforces these limits yet');
+  });
+});
+
+test.describe('Admin portal: Support Tooling', () => {
+  test('the ticket queue defaults to open tickets and a row opens the detail view', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.click('.ab-nav-item[data-view="support"]');
+    await expect(page.locator('table.ab-queue')).toContainText('Cannot upload photo');
+    await expect(page.locator('#ticketBadge')).toHaveText('1');
+    await page.click('tr[data-id="ticket-1"]');
+    await expect(page).toHaveURL(/#support\/ticket-1/);
+    await expect(page.locator('.ab-user-card-name')).toHaveText('Cannot upload photo');
+    await expect(page.locator('.ab-detail-grid')).toContainText('Getting a 500 error every time');
+  });
+
+  test('replying, assigning to self, and resolving all call the right RPCs', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.goto(page.url().split('#')[0] + '#support/ticket-1');
+
+    await page.fill('#ticketReply', 'Can you share a screenshot?');
+    await page.click('#sendReplyBtn');
+    await page.waitForFunction(() => window.__RPC_CALLS__.some((c) => c.fn === 'post_ticket_message'));
+
+    await page.click('#assignToMeBtn');
+    await page.waitForFunction(() => window.__RPC_CALLS__.some((c) => c.fn === 'admin_assign_ticket'));
+    const assignCall = await page.evaluate(() => window.__RPC_CALLS__.find((c) => c.fn === 'admin_assign_ticket'));
+    expect(assignCall.args.p_assignee).toBe('admin-1');
+
+    await page.click('#resolveTicketBtn');
+    await page.waitForFunction(() => window.__RPC_CALLS__.some((c) => c.fn === 'admin_resolve_ticket'));
+    await expect(page.locator('.ab-detail-grid')).toContainText('resolved');
+  });
+});
+
+test.describe('Admin portal: Audit Log', () => {
+  test('lists the seeded audit-log entry and the actor name', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.click('.ab-nav-item[data-view="audit-log"]');
+    await expect(page.locator('table.ab-queue')).toContainText('restaurant_verified');
+    await expect(page.locator('table.ab-queue')).toContainText('Raza');
+  });
+
+  test('filtering by action type re-queries and narrows the results', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.click('.ab-nav-item[data-view="audit-log"]');
+    await page.fill('#auditSearchInput', 'nonexistent_action');
+    await page.click('#auditSearchBtn');
+    await expect(page.locator('.ab-content')).toContainText('No matching actions.');
+  });
+});
+
+test.describe('Admin portal: Analytics', () => {
+  test('shows headline KPI totals computed from the mock data', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.click('.ab-nav-item[data-view="analytics"]');
+    await expect(page.locator('.ab-kpi-tile', { hasText: 'Total users' }).locator('.ab-kpi-value')).toHaveText('3');
+    await expect(page.locator('.ab-kpi-tile', { hasText: 'Total posts' }).locator('.ab-kpi-value')).toHaveText('1');
+    await expect(page.locator('.ab-kpi-tile', { hasText: 'Total recipes' }).locator('.ab-kpi-value')).toHaveText('1');
+  });
+
+  test('the top-posts leaderboard shows the seeded post with its heart count', async ({ page }) => {
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
+    await page.click('.ab-nav-item[data-view="analytics"]');
+    await expect(page.locator('.ab-content')).toContainText('Spammy promo post');
+    await expect(page.locator('.ab-content')).toContainText('1 ♥');
+  });
+});
