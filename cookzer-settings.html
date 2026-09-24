@@ -507,6 +507,16 @@
     </div>
 
     <div class="settings-section">
+      <h2>Your data</h2>
+      <div class="section-dek">Download a copy of everything tied to your account, or ask us to delete it. Both are handled by a real person on our team — you'll see the request's status below.</div>
+      <div class="field-row">
+        <button class="settings-btn secondary" id="exportDataBtn" type="button">Download my data</button>
+        <button class="settings-btn danger" id="deleteAccountBtn" type="button">Delete my account</button>
+      </div>
+      <div class="settings-status" id="dataRequestStatus"></div>
+    </div>
+
+    <div class="settings-section">
       <h2>Sign out</h2>
       <button class="settings-btn danger" id="signOutBtn" type="button">Sign out of Cookzer</button>
     </div>
@@ -1060,6 +1070,22 @@
     if (!(await CookzerModal.confirm('Sign out of Cookzer?'))) return;
     await sb.auth.signOut();
     window.location.href = 'cookzer-auth.html';
+  });
+
+  document.getElementById('exportDataBtn').addEventListener('click', async () => {
+    const statusEl = document.getElementById('dataRequestStatus');
+    const { error } = await sb.rpc('file_dsar_request', { p_type: 'export' });
+    if (error) { statusEl.textContent = error.message; return; }
+    statusEl.textContent = 'Request received — we\'ll email your data export shortly.';
+  });
+
+  document.getElementById('deleteAccountBtn').addEventListener('click', async () => {
+    const statusEl = document.getElementById('dataRequestStatus');
+    const ok = await CookzerModal.confirm('Delete your Cookzer account? This is permanent once it\'s processed — your recipes, posts, and comments will be removed. We\'ll review the request first, not act on it instantly.', { confirmLabel: 'Request deletion', danger: true });
+    if (!ok) return;
+    const { error } = await sb.rpc('file_dsar_request', { p_type: 'delete' });
+    if (error) { statusEl.textContent = error.message; return; }
+    statusEl.textContent = 'Deletion requested — our team will process it and you\'ll be signed out once it\'s done.';
   });
 
   (async function init() {
