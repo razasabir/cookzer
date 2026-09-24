@@ -113,34 +113,57 @@ test.describe('Admin portal: Users', () => {
     await expect(page.locator('#revokeBtn')).toBeVisible();
   });
 
-  test('logging in as a user calls the impersonation endpoint and opens the returned link', async ({ page, context }) => {
-    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
-    await page.route('**/api/admin-impersonate', (route) => {
-      const body = JSON.parse(route.request().postData());
-      expect(body.targetUserId).toBe('bob-1');
-      expect(route.request().headers()['authorization']).toContain('Bearer ');
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ actionLink: 'https://cookzer.com/auth/verify?token=abc' }) });
-    });
-    // The popup navigates to a real external URL — stub it too, since this
-    // suite runs with no real network access.
-    await context.route('https://cookzer.com/**', (route) => {
-      route.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>Signed in</body></html>' });
-    });
+  test('logging in as a user calls the impersonation endpoint and opens the returned link', async ({ page }) => {
+    // Patches window.fetch directly (same pattern as tests/mocks/ai-chat.js
+    // and feed-dining-out.js for their serverless-function calls) rather
+    // than Playwright's page.route — a real fetch() from a page loaded over
+    // file:// isn't reliably interceptable that way across browsers/CI.
+    // window.open is stubbed the same way — it would otherwise try to
+    // really navigate a new tab to an external URL, which this suite has
+    // no network access for (and shouldn't be hitting the real site anyway).
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js', `
+      window.__IMPERSONATE_CALLS__ = [];
+      window.__OPEN_CALLS__ = [];
+      window.open = (url) => { window.__OPEN_CALLS__.push(url); return null; };
+      const REAL_FETCH = window.fetch.bind(window);
+      window.fetch = (url, opts) => {
+        if (typeof url === 'string' && url.indexOf('/api/admin-impersonate') === 0) {
+          window.__IMPERSONATE_CALLS__.push({ url, opts, body: opts && opts.body ? JSON.parse(opts.body) : null });
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ actionLink: 'https://cookzer.com/auth/verify?token=abc' }),
+          });
+        }
+        return REAL_FETCH(url, opts);
+      };
+    `);
     await page.goto(page.url().split('#')[0] + '#users/bob-1');
 
     await page.click('#impersonateBtn');
     await page.locator('.cz-modal-overlay .cz-modal-btn.cz-danger').click();
-    const [popup] = await Promise.all([
-      context.waitForEvent('page'),
-    ]);
-    expect(popup.url()).toBe('https://cookzer.com/auth/verify?token=abc');
+    await page.waitForFunction(() => window.__IMPERSONATE_CALLS__.length > 0);
+
+    const call = await page.evaluate(() => window.__IMPERSONATE_CALLS__[0]);
+    expect(call.body.targetUserId).toBe('bob-1');
+    expect(call.opts.headers.Authorization).toContain('Bearer ');
+    await page.waitForFunction(() => window.__OPEN_CALLS__.length > 0);
+    const openedUrl = await page.evaluate(() => window.__OPEN_CALLS__[0]);
+    expect(openedUrl).toBe('https://cookzer.com/auth/verify?token=abc');
   });
 
   test('a failed impersonation call surfaces the server error, not a native alert', async ({ page }) => {
-    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js');
-    await page.route('**/api/admin-impersonate', (route) => {
-      route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: 'Only a platform admin can impersonate a user' }) });
-    });
+    await loadPageWithMock(page, 'cookzer-admin.html', 'admin-portal.js', `
+      const REAL_FETCH = window.fetch.bind(window);
+      window.fetch = (url, opts) => {
+        if (typeof url === 'string' && url.indexOf('/api/admin-impersonate') === 0) {
+          return Promise.resolve({
+            ok: false,
+            json: () => Promise.resolve({ error: 'Only a platform admin can impersonate a user' }),
+          });
+        }
+        return REAL_FETCH(url, opts);
+      };
+    `);
     await page.goto(page.url().split('#')[0] + '#users/bob-1');
 
     await page.click('#impersonateBtn');
