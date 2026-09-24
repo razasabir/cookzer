@@ -211,6 +211,15 @@
     <button class="ab-nav-item" data-view="moderation"><span class="ab-nav-num">02</span> Trust &amp; Safety<span class="ab-nav-badge" id="modBadge" hidden></span></button>
     <button class="ab-nav-item" data-view="users"><span class="ab-nav-num">01</span> Users</button>
     <button class="ab-nav-item" data-view="commercial"><span class="ab-nav-num">03</span> Commercial<span class="ab-nav-badge" id="claimBadge" hidden></span></button>
+    <button class="ab-nav-item" data-view="support"><span class="ab-nav-num">04</span> Support<span class="ab-nav-badge" id="ticketBadge" hidden></span></button>
+
+    <div class="ab-group-label">Govern</div>
+    <button class="ab-nav-item" data-view="governance"><span class="ab-nav-num">05</span> Governance &amp; Policy<span class="ab-nav-badge" id="dsarBadge" hidden></span></button>
+    <button class="ab-nav-item" data-view="platform-ops"><span class="ab-nav-num">06</span> Platform Ops</button>
+
+    <div class="ab-group-label">Insights</div>
+    <button class="ab-nav-item" data-view="analytics"><span class="ab-nav-num">07</span> Analytics</button>
+    <button class="ab-nav-item" data-view="audit-log"><span class="ab-nav-num">08</span> Audit Log</button>
 
     <a class="ab-back-link" href="cookzer-feed.html">&larr; Back to Cookzer</a>
 
@@ -274,6 +283,11 @@
     moderation: { title: 'Trust & Safety — Moderation Queue', render: renderModeration },
     users: { title: 'Users', render: renderUsersDirectory },
     commercial: { title: 'Commercial', render: renderCommercial },
+    support: { title: 'Support Tooling', render: renderSupport },
+    governance: { title: 'Governance & Policy', render: renderGovernance },
+    'platform-ops': { title: 'Platform Ops', render: renderPlatformOps },
+    analytics: { title: 'Analytics & Reporting', render: renderAnalytics },
+    'audit-log': { title: 'Audit Log', render: renderAuditLog },
   };
 
   async function route() {
@@ -285,6 +299,14 @@
       document.getElementById('topbarTitle').textContent = 'Users';
       document.getElementById('topbarSub').textContent = 'Viewing a user profile';
       await renderUserDetail(param);
+      return;
+    }
+
+    if (view === 'support' && param) {
+      document.querySelectorAll('.ab-nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === 'support'));
+      document.getElementById('topbarTitle').textContent = 'Support Tooling';
+      document.getElementById('topbarSub').textContent = 'Viewing a ticket';
+      await renderTicketDetail(param);
       return;
     }
 
@@ -373,13 +395,17 @@
     return '<div class="ab-panel">' + innerHtml + '</div>';
   }
 
-  // Either count can be null — the caller only knows the count for the
+  // Any count can be null — the caller only knows the count for the
   // view it just rendered, and null means "leave that badge as it was."
-  function updateBadges(openCount, claimCount) {
+  function updateBadges(openCount, claimCount, ticketCount, dsarCount) {
     const modBadge = document.getElementById('modBadge');
     const claimBadge = document.getElementById('claimBadge');
+    const ticketBadge = document.getElementById('ticketBadge');
+    const dsarBadge = document.getElementById('dsarBadge');
     if (openCount != null) { modBadge.textContent = openCount; modBadge.hidden = openCount === 0; }
     if (claimCount != null) { claimBadge.textContent = claimCount; claimBadge.hidden = claimCount === 0; }
+    if (ticketCount != null) { ticketBadge.textContent = ticketCount; ticketBadge.hidden = ticketCount === 0; }
+    if (dsarCount != null) { dsarBadge.textContent = dsarCount; dsarBadge.hidden = dsarCount === 0; }
   }
 
   // ===================== Trust & Safety: Moderation =====================
@@ -432,7 +458,7 @@
     let rows = '';
     reports.forEach((r, i) => {
       const overdue = hoursAgo(r.created_at) > 24;
-      const canRemove = r.target_type === 'post' || r.target_type === 'comment';
+      const canRemove = ['post', 'comment', 'recipe', 'restaurant_rating'].includes(r.target_type);
       const assigneeLabel = r.assignee ? escapeHtml(r.assignee.display_name) : '<span class="ab-pill ab-pill-slate">Unassigned</span>';
       rows += '<tr>' +
         '<td><span class="ab-target-type">' + escapeHtml(r.target_type) + '</span><br><span class="ab-who">' + escapeHtml(labels[i]) + '</span></td>' +
@@ -572,6 +598,7 @@
     card += statRow('Active strikes', strikes.length);
 
     if (userId !== currentUser.id) {
+      card += '<div class="ab-action-form"><button class="ab-btn-mini" id="impersonateBtn" style="width:100%;">Log in as this user</button></div>';
       card += '<div class="ab-action-form" id="actionForm">' +
         '<span class="ab-field-label">Take action</span>' +
         '<div class="ab-chip-row" id="actionChips">' + SUSPENSION_TYPES.map((t) => '<button type="button" class="ab-chip" data-type="' + t.type + '">' + t.label + '</button>').join('') + '</div>' +
@@ -610,6 +637,26 @@
         const { error } = await sb.rpc('admin_revoke_suspension', { p_suspension_id: activeSuspension.id });
         if (error) { await CookzerModal.alert('Could not revoke: ' + error.message); return; }
         await renderUserDetail(userId);
+      });
+    }
+
+    if (userId !== currentUser.id) {
+      document.getElementById('impersonateBtn').addEventListener('click', async () => {
+        const ok = await CookzerModal.confirm('Log in as ' + profile.display_name + '? A new tab will open signed in as them — remember to sign out of it when you\'re done helping them.', { confirmLabel: 'Log in as this user', danger: true });
+        if (!ok) return;
+        const { data: { session } } = await sb.auth.getSession();
+        try {
+          const resp = await fetch('/api/admin-impersonate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+            body: JSON.stringify({ targetUserId: userId }),
+          });
+          const result = await resp.json();
+          if (!resp.ok) { await CookzerModal.alert('Could not log in as this user: ' + (result.error || resp.statusText)); return; }
+          window.open(result.actionLink, '_blank', 'noopener');
+        } catch (e) {
+          await CookzerModal.alert('Could not reach the impersonation service: ' + e.message);
+        }
       });
     }
 
@@ -704,6 +751,587 @@
         '<a class="ab-btn-mini" href="cookzer-restaurant.html?id=' + r.id + '" target="_blank" rel="noopener" style="text-decoration:none;">Manage &rarr;</a></div>'
       ).join('');
     });
+  }
+
+  // ===================== Governance & Policy =====================
+
+  const POLICY_TYPES = [
+    { type: 'terms', label: 'Terms of Service' },
+    { type: 'privacy', label: 'Privacy Policy' },
+    { type: 'community_guidelines', label: 'Community Guidelines' },
+  ];
+  const LEGAL_HOLD_TARGETS = ['user', 'post', 'recipe'];
+  const CSAM_STATUSES = ['flagged', 'escalated', 'reported_to_ncmec', 'cleared'];
+
+  async function renderGovernance() {
+    setContent('<div class="ab-empty">Loading…</div>');
+
+    const [policiesRes, dsarRes, holdsRes, csamRes] = await Promise.all([
+      sb.from('policy_documents').select('type, version, published_at').eq('is_current', true),
+      sb.from('dsar_requests').select('id, type, status, note, created_at, user:profiles!dsar_requests_user_id_fkey(display_name)').in('status', ['pending', 'processing']).order('created_at', { ascending: true }),
+      sb.from('legal_holds').select('id, target_type, target_id, reason, placed_at').is('released_at', null).order('placed_at', { ascending: false }),
+      sb.from('csam_reports').select('id, content_type, content_id, status, notes, created_at').order('created_at', { ascending: false }).limit(20),
+    ]);
+
+    const currentByType = {};
+    (policiesRes.data || []).forEach((p) => { currentByType[p.type] = p; });
+    const dsarList = dsarRes.data || [];
+    const holdsList = holdsRes.data || [];
+    const csamList = csamRes.data || [];
+
+    let html = '<div class="ab-section-head"><div class="ab-section-title">Policy documents</div></div>';
+    html += '<div class="ab-panel">' + POLICY_TYPES.map((pt) => {
+      const cur = currentByType[pt.type];
+      return '<div class="ab-claim-row"><div><div class="ab-claim-name">' + escapeHtml(pt.label) + '</div>' +
+        '<div class="ab-claim-meta">' + (cur ? 'v' + cur.version + ' — published ' + fmtDate(cur.published_at) : 'no version published yet') + '</div></div>' +
+        '<button class="ab-btn-mini" data-act="publish-policy" data-type="' + pt.type + '">Publish new version</button></div>' +
+        '<div class="ab-action-form" id="policyForm-' + pt.type + '" hidden style="padding:0 18px 16px;">' +
+          '<span class="ab-field-label">New content for ' + escapeHtml(pt.label) + '</span>' +
+          '<textarea rows="5" id="policyContent-' + pt.type + '" placeholder="Full text of the new version…"></textarea>' +
+          '<button class="ab-submit-btn" data-act="submit-policy" data-type="' + pt.type + '" style="background:var(--olive);">Publish v' + ((cur ? cur.version : 0) + 1) + '</button>' +
+        '</div>';
+    }).join('') + '</div>';
+
+    html += '<div class="ab-section-head"><div class="ab-section-title">Data requests (DSAR) — ' + dsarList.length + ' open</div></div>';
+    if (dsarList.length === 0) {
+      html += '<div class="ab-panel"><div class="ab-empty">No pending export or deletion requests.</div></div>';
+    } else {
+      html += '<div class="ab-panel"><table class="ab-queue"><thead><tr><th>User</th><th>Type</th><th>Status</th><th>Filed</th><th></th></tr></thead><tbody>' +
+        dsarList.map((r) =>
+          '<tr><td>' + escapeHtml((r.user && r.user.display_name) || 'Unknown') + '</td>' +
+          '<td><span class="ab-pill ab-pill-sky">' + escapeHtml(r.type) + '</span></td>' +
+          '<td><span class="ab-pill ab-pill-amber">' + escapeHtml(r.status) + '</span></td>' +
+          '<td class="ab-age">' + timeAgo(r.created_at) + '</td>' +
+          '<td><div class="ab-row-actions">' +
+            (r.status === 'pending' ? '<button class="ab-btn-mini" data-act="dsar-processing" data-id="' + r.id + '">Start processing</button>' : '') +
+            (r.type === 'export' ? '<button class="ab-btn-mini primary" data-act="dsar-export" data-id="' + r.id + '">Export &amp; complete</button>' : '<button class="ab-btn-mini danger" data-act="dsar-delete" data-id="' + r.id + '">Fulfill deletion</button>') +
+            '<button class="ab-btn-mini" data-act="dsar-reject" data-id="' + r.id + '">Reject</button>' +
+          '</div></td></tr>'
+        ).join('') + '</tbody></table></div>';
+    }
+
+    html += '<div class="ab-section-head"><div class="ab-section-title">Legal holds — ' + holdsList.length + ' active</div></div>';
+    html += '<div class="ab-panel">' +
+      (holdsList.length === 0 ? '<div class="ab-empty">No active legal holds.</div>' :
+        '<table class="ab-queue"><thead><tr><th>Target</th><th>Reason</th><th>Placed</th><th></th></tr></thead><tbody>' +
+        holdsList.map((h) =>
+          '<tr><td><span class="ab-target-type">' + escapeHtml(h.target_type) + '</span><br><span class="ab-who mono">' + h.target_id.slice(0, 8) + '…</span></td>' +
+          '<td>' + escapeHtml(h.reason) + '</td><td class="ab-age">' + timeAgo(h.placed_at) + '</td>' +
+          '<td><button class="ab-btn-mini" data-act="release-hold" data-id="' + h.id + '">Release</button></td></tr>'
+        ).join('') + '</tbody></table>') +
+      '<div class="ab-action-form" style="padding:16px 18px;"><span class="ab-field-label">Place a new hold</span>' +
+        '<div class="ab-chip-row" id="holdTargetChips">' + LEGAL_HOLD_TARGETS.map((t) => '<button type="button" class="ab-chip" data-type="' + t + '">' + t + '</button>').join('') + '</div>' +
+        '<span class="ab-field-label">Target ID (UUID)</span><input type="text" id="holdTargetId" placeholder="00000000-0000-0000-0000-000000000000" style="width:100%; padding:8px 12px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; margin-top:6px; background:var(--cream); color:var(--ink);">' +
+        '<span class="ab-field-label">Reason</span><textarea rows="2" id="holdReason" placeholder="Why is this on hold?"></textarea>' +
+        '<button class="ab-submit-btn" id="placeHoldBtn" style="background:var(--olive);">Place hold</button>' +
+      '</div></div>';
+
+    html += '<div class="ab-section-head"><div class="ab-section-title">CSAM escalation queue</div></div>' +
+      '<div class="ab-panel"><div class="ab-empty" style="text-align:left;">Tracking and escalation only — this queue does not perform automated hash-matching detection. Wiring a real scanner (e.g. PhotoDNA/Thorn) needs a vendor account and API credentials, which is a deliberate follow-up, not something faked here.</div></div>';
+    html += '<div class="ab-panel">' +
+      (csamList.length === 0 ? '<div class="ab-empty">No CSAM reports logged.</div>' :
+        '<table class="ab-queue"><thead><tr><th>Content</th><th>Status</th><th>Flagged</th><th></th></tr></thead><tbody>' +
+        csamList.map((c) =>
+          '<tr><td><span class="ab-target-type">' + escapeHtml(c.content_type) + '</span><br><span class="ab-who mono">' + (c.content_id ? c.content_id.slice(0, 8) + '…' : '—') + '</span></td>' +
+          '<td><span class="ab-pill ab-pill-rust">' + escapeHtml(c.status) + '</span></td>' +
+          '<td class="ab-age">' + timeAgo(c.created_at) + '</td>' +
+          '<td><div class="ab-row-actions">' + CSAM_STATUSES.filter((s) => s !== c.status).map((s) =>
+            '<button class="ab-btn-mini" data-act="csam-status" data-id="' + c.id + '" data-status="' + s + '">' + s.replace(/_/g, ' ') + '</button>'
+          ).join('') + '</div></td></tr>'
+        ).join('') + '</tbody></table>') +
+      '</div>';
+
+    setContent(html);
+    updateBadges(null, null, null, dsarList.length);
+    wireGovernanceActions();
+  }
+
+  function wireGovernanceActions() {
+    document.querySelectorAll('[data-act="publish-policy"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const form = document.getElementById('policyForm-' + btn.dataset.type);
+        form.hidden = !form.hidden;
+      });
+    });
+    document.querySelectorAll('[data-act="submit-policy"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const content = document.getElementById('policyContent-' + btn.dataset.type).value.trim();
+        if (!content) { await CookzerModal.alert('Enter the new content first.'); return; }
+        const { error } = await sb.rpc('admin_publish_policy', { p_type: btn.dataset.type, p_content: content });
+        if (error) { await CookzerModal.alert('Could not publish: ' + error.message); return; }
+        await renderGovernance();
+      });
+    });
+    document.querySelectorAll('[data-act="dsar-processing"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const { error } = await sb.rpc('admin_update_dsar_status', { p_request_id: btn.dataset.id, p_status: 'processing' });
+        if (error) { await CookzerModal.alert('Could not update: ' + error.message); return; }
+        await renderGovernance();
+      });
+    });
+    document.querySelectorAll('[data-act="dsar-reject"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const note = await CookzerModal.prompt('Optional note — why is this request rejected?', '');
+        if (note === null) return;
+        const { error } = await sb.rpc('admin_update_dsar_status', { p_request_id: btn.dataset.id, p_status: 'rejected', p_note: note || null });
+        if (error) { await CookzerModal.alert('Could not update: ' + error.message); return; }
+        await renderGovernance();
+      });
+    });
+    document.querySelectorAll('[data-act="dsar-export"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const ok = await CookzerModal.confirm('Mark this export as fulfilled? This does not download anything from here — it just records that the data was sent to the user.', { confirmLabel: 'Mark complete' });
+        if (!ok) return;
+        const { error } = await sb.rpc('admin_update_dsar_status', { p_request_id: btn.dataset.id, p_status: 'completed', p_note: 'Exported and sent to the user.' });
+        if (error) { await CookzerModal.alert('Could not update: ' + error.message); return; }
+        await renderGovernance();
+      });
+    });
+    document.querySelectorAll('[data-act="dsar-delete"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const ok = await CookzerModal.confirm('Permanently delete this user\'s account? This cannot be undone and is blocked automatically if there is an active legal hold on the account.', { confirmLabel: 'Delete account', danger: true });
+        if (!ok) return;
+        const { error } = await sb.rpc('admin_fulfill_deletion_request', { p_request_id: btn.dataset.id });
+        if (error) { await CookzerModal.alert('Could not delete: ' + error.message); return; }
+        await renderGovernance();
+      });
+    });
+    document.querySelectorAll('[data-act="release-hold"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const ok = await CookzerModal.confirm('Release this legal hold? The content or account it protects can be removed/deleted again once released.', { confirmLabel: 'Release' });
+        if (!ok) return;
+        const { error } = await sb.rpc('admin_release_legal_hold', { p_hold_id: btn.dataset.id });
+        if (error) { await CookzerModal.alert('Could not release: ' + error.message); return; }
+        await renderGovernance();
+      });
+    });
+    document.querySelectorAll('[data-act="csam-status"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const note = await CookzerModal.prompt('Optional note for this status change:', '');
+        if (note === null) return;
+        const { error } = await sb.rpc('admin_update_csam_status', { p_report_id: btn.dataset.id, p_status: btn.dataset.status, p_notes: note || null });
+        if (error) { await CookzerModal.alert('Could not update: ' + error.message); return; }
+        await renderGovernance();
+      });
+    });
+
+    let holdTarget = null;
+    document.querySelectorAll('#holdTargetChips .ab-chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        holdTarget = chip.dataset.type;
+        document.querySelectorAll('#holdTargetChips .ab-chip').forEach((c) => c.classList.toggle('selected', c === chip));
+      });
+    });
+    const placeHoldBtn = document.getElementById('placeHoldBtn');
+    if (placeHoldBtn) {
+      placeHoldBtn.addEventListener('click', async () => {
+        const targetId = document.getElementById('holdTargetId').value.trim();
+        const reason = document.getElementById('holdReason').value.trim();
+        if (!holdTarget) { await CookzerModal.alert('Pick a target type first.'); return; }
+        if (!targetId || !reason) { await CookzerModal.alert('Target ID and reason are both required.'); return; }
+        const { error } = await sb.rpc('admin_place_legal_hold', { p_target_type: holdTarget, p_target_id: targetId, p_reason: reason });
+        if (error) { await CookzerModal.alert('Could not place hold: ' + error.message); return; }
+        await renderGovernance();
+      });
+    }
+  }
+
+  // ===================== Platform Ops =====================
+
+  const ANNOUNCEMENT_LEVELS = ['info', 'warning', 'critical'];
+  const LEVEL_PILL = { info: 'ab-pill-sky', warning: 'ab-pill-amber', critical: 'ab-pill-rust' };
+
+  async function renderPlatformOps() {
+    setContent('<div class="ab-empty">Loading…</div>');
+
+    const [flagsRes, announceRes, limitsRes] = await Promise.all([
+      sb.from('feature_flags').select('key, enabled, description, rollout_percent, updated_at').order('key'),
+      sb.from('site_announcements').select('id, message, level, active, starts_at, ends_at, created_at').order('created_at', { ascending: false }).limit(20),
+      sb.from('rate_limit_config').select('key, limit_per_hour, description, updated_at').order('key'),
+    ]);
+
+    const flags = flagsRes.data || [];
+    const announcements = announceRes.data || [];
+    const limits = limitsRes.data || [];
+
+    let html = '<div class="ab-section-head"><div class="ab-section-title">Feature flags — ' + flags.length + '</div></div>';
+    html += '<div class="ab-panel">' +
+      (flags.length === 0 ? '<div class="ab-empty">No feature flags yet.</div>' :
+        '<table class="ab-queue"><thead><tr><th>Key</th><th>Description</th><th>Rollout</th><th>Status</th><th></th></tr></thead><tbody>' +
+        flags.map((f) =>
+          '<tr><td class="mono">' + escapeHtml(f.key) + '</td><td>' + escapeHtml(f.description || '') + '</td>' +
+          '<td class="mono">' + f.rollout_percent + '%</td>' +
+          '<td>' + (f.enabled ? '<span class="ab-pill ab-pill-moss">On</span>' : '<span class="ab-pill ab-pill-slate">Off</span>') + '</td>' +
+          '<td><button class="ab-btn-mini" data-act="toggle-flag" data-key="' + escapeHtml(f.key) + '" data-enabled="' + f.enabled + '" data-rollout="' + f.rollout_percent + '">' + (f.enabled ? 'Turn off' : 'Turn on') + '</button></td></tr>'
+        ).join('') + '</tbody></table>') +
+      '<div class="ab-action-form" style="padding:16px 18px;"><span class="ab-field-label">Set a flag</span>' +
+        '<input type="text" id="flagKey" placeholder="flag_key" style="width:100%; padding:8px 12px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; margin-top:6px; background:var(--cream); color:var(--ink);">' +
+        '<textarea rows="1" id="flagDescription" placeholder="Description (optional)"></textarea>' +
+        '<span class="ab-field-label">Rollout %</span><input type="number" id="flagRollout" min="0" max="100" value="100">' +
+        '<div class="ab-chip-row" id="flagEnabledChips"><button type="button" class="ab-chip selected" data-val="true">Enabled</button><button type="button" class="ab-chip" data-val="false">Disabled</button></div>' +
+        '<button class="ab-submit-btn" id="saveFlagBtn" style="background:var(--olive);">Save flag</button>' +
+      '</div></div>';
+
+    html += '<div class="ab-section-head"><div class="ab-section-title">Site announcements</div></div>';
+    html += '<div class="ab-panel">' +
+      (announcements.length === 0 ? '<div class="ab-empty">No announcements posted yet.</div>' :
+        announcements.map((a) =>
+          '<div class="ab-claim-row"><div><div class="ab-claim-name"><span class="ab-pill ' + (LEVEL_PILL[a.level] || 'ab-pill-slate') + '">' + escapeHtml(a.level) + '</span> ' + escapeHtml(a.message) + '</div>' +
+          '<div class="ab-claim-meta">' + (a.active ? 'active' : 'inactive') + ' · posted ' + timeAgo(a.created_at) + (a.ends_at ? ' · ends ' + fmtDate(a.ends_at) : '') + '</div></div>' +
+          (a.active ? '<button class="ab-btn-mini danger" data-act="deactivate-announcement" data-id="' + a.id + '">Take down</button>' : '') + '</div>'
+        ).join('')) +
+      '<div class="ab-action-form" style="padding:16px 18px;"><span class="ab-field-label">Post an announcement</span>' +
+        '<textarea rows="2" id="announceMessage" placeholder="Message shown to every signed-in user…"></textarea>' +
+        '<div class="ab-chip-row" id="announceLevelChips">' + ANNOUNCEMENT_LEVELS.map((l, i) => '<button type="button" class="ab-chip' + (i === 0 ? ' selected' : '') + '" data-level="' + l + '">' + l + '</button>').join('') + '</div>' +
+        '<span class="ab-field-label">Ends at (optional)</span><input type="datetime-local" id="announceEndsAt">' +
+        '<button class="ab-submit-btn" id="postAnnounceBtn" style="background:var(--olive);">Post announcement</button>' +
+      '</div></div>';
+
+    html += '<div class="ab-section-head"><div class="ab-section-title">Rate-limit configuration</div></div>' +
+      '<div class="ab-panel"><div class="ab-empty" style="text-align:left;">Storage and an editor only — nothing in the app enforces these limits yet. Wiring signup/report/message velocity checks to read this table is fast-follow work.</div></div>';
+    html += '<div class="ab-panel">' +
+      (limits.length === 0 ? '' :
+        '<table class="ab-queue"><thead><tr><th>Key</th><th>Limit / hour</th><th>Description</th></tr></thead><tbody>' +
+        limits.map((r) => '<tr><td class="mono">' + escapeHtml(r.key) + '</td><td class="mono">' + r.limit_per_hour + '</td><td>' + escapeHtml(r.description || '') + '</td></tr>').join('') +
+        '</tbody></table>') +
+      '<div class="ab-action-form" style="padding:16px 18px;"><span class="ab-field-label">Set a limit</span>' +
+        '<input type="text" id="limitKey" placeholder="signup_per_ip" style="width:100%; padding:8px 12px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; margin-top:6px; background:var(--cream); color:var(--ink);">' +
+        '<span class="ab-field-label">Limit per hour</span><input type="number" id="limitValue" min="1" placeholder="10">' +
+        '<textarea rows="1" id="limitDescription" placeholder="Description (optional)"></textarea>' +
+        '<button class="ab-submit-btn" id="saveLimitBtn" style="background:var(--olive);">Save limit</button>' +
+      '</div></div>';
+
+    html += '<div class="ab-section-head"><div class="ab-section-title">Broadcast a notification</div></div>' +
+      '<div class="ab-panel"><div class="ab-action-form" style="padding:16px 18px; margin-top:0; border-top:none;">' +
+        '<span class="ab-field-label">Message</span><textarea rows="2" id="broadcastMessage" placeholder="Sent as a notification to every signed-in user except you…"></textarea>' +
+        '<span class="ab-field-label">Link (optional)</span><input type="text" id="broadcastLink" placeholder="/whats-new" style="width:100%; padding:8px 12px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; margin-top:6px; background:var(--cream); color:var(--ink);">' +
+        '<button class="ab-submit-btn" id="sendBroadcastBtn" style="background:var(--ab-rust);">Send to everyone</button>' +
+      '</div></div>';
+
+    setContent(html);
+    wirePlatformOpsActions();
+  }
+
+  function wirePlatformOpsActions() {
+    document.querySelectorAll('[data-act="toggle-flag"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const { error } = await sb.rpc('admin_set_feature_flag', { p_key: btn.dataset.key, p_enabled: btn.dataset.enabled !== 'true', p_rollout_percent: parseInt(btn.dataset.rollout, 10) });
+        if (error) { await CookzerModal.alert('Could not update flag: ' + error.message); return; }
+        await renderPlatformOps();
+      });
+    });
+    let flagEnabled = true;
+    document.querySelectorAll('#flagEnabledChips .ab-chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        flagEnabled = chip.dataset.val === 'true';
+        document.querySelectorAll('#flagEnabledChips .ab-chip').forEach((c) => c.classList.toggle('selected', c === chip));
+      });
+    });
+    const saveFlagBtn = document.getElementById('saveFlagBtn');
+    if (saveFlagBtn) saveFlagBtn.addEventListener('click', async () => {
+      const key = document.getElementById('flagKey').value.trim();
+      if (!key) { await CookzerModal.alert('A flag key is required.'); return; }
+      const description = document.getElementById('flagDescription').value.trim();
+      const rollout = parseInt(document.getElementById('flagRollout').value, 10) || 0;
+      const { error } = await sb.rpc('admin_set_feature_flag', { p_key: key, p_enabled: flagEnabled, p_description: description || null, p_rollout_percent: rollout });
+      if (error) { await CookzerModal.alert('Could not save flag: ' + error.message); return; }
+      await renderPlatformOps();
+    });
+
+    document.querySelectorAll('[data-act="deactivate-announcement"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const ok = await CookzerModal.confirm('Take this announcement down?', { confirmLabel: 'Take down' });
+        if (!ok) return;
+        const { error } = await sb.rpc('admin_deactivate_announcement', { p_id: btn.dataset.id });
+        if (error) { await CookzerModal.alert('Could not deactivate: ' + error.message); return; }
+        await renderPlatformOps();
+      });
+    });
+    let announceLevel = ANNOUNCEMENT_LEVELS[0];
+    document.querySelectorAll('#announceLevelChips .ab-chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        announceLevel = chip.dataset.level;
+        document.querySelectorAll('#announceLevelChips .ab-chip').forEach((c) => c.classList.toggle('selected', c === chip));
+      });
+    });
+    const postAnnounceBtn = document.getElementById('postAnnounceBtn');
+    if (postAnnounceBtn) postAnnounceBtn.addEventListener('click', async () => {
+      const message = document.getElementById('announceMessage').value.trim();
+      if (!message) { await CookzerModal.alert('Enter a message first.'); return; }
+      const endsAtInput = document.getElementById('announceEndsAt').value;
+      const endsAt = endsAtInput ? new Date(endsAtInput).toISOString() : null;
+      const { error } = await sb.rpc('admin_create_announcement', { p_message: message, p_level: announceLevel, p_ends_at: endsAt });
+      if (error) { await CookzerModal.alert('Could not post: ' + error.message); return; }
+      await renderPlatformOps();
+    });
+
+    const saveLimitBtn = document.getElementById('saveLimitBtn');
+    if (saveLimitBtn) saveLimitBtn.addEventListener('click', async () => {
+      const key = document.getElementById('limitKey').value.trim();
+      const limit = parseInt(document.getElementById('limitValue').value, 10);
+      if (!key || !limit || limit < 1) { await CookzerModal.alert('A key and a limit of at least 1 are required.'); return; }
+      const description = document.getElementById('limitDescription').value.trim();
+      const { error } = await sb.rpc('admin_set_rate_limit', { p_key: key, p_limit_per_hour: limit, p_description: description || null });
+      if (error) { await CookzerModal.alert('Could not save limit: ' + error.message); return; }
+      await renderPlatformOps();
+    });
+
+    const sendBroadcastBtn = document.getElementById('sendBroadcastBtn');
+    if (sendBroadcastBtn) sendBroadcastBtn.addEventListener('click', async () => {
+      const message = document.getElementById('broadcastMessage').value.trim();
+      if (!message) { await CookzerModal.alert('Enter a message first.'); return; }
+      const link = document.getElementById('broadcastLink').value.trim();
+      const ok = await CookzerModal.confirm('Send this notification to every signed-in user right now? This cannot be recalled once sent.', { confirmLabel: 'Send to everyone', danger: true });
+      if (!ok) return;
+      const { data, error } = await sb.rpc('admin_broadcast_notification', { p_message: message, p_link_url: link || null });
+      if (error) { await CookzerModal.alert('Could not send: ' + error.message); return; }
+      await CookzerModal.alert('Sent to ' + data + ' ' + (data === 1 ? 'person' : 'people') + '.');
+      document.getElementById('broadcastMessage').value = '';
+      document.getElementById('broadcastLink').value = '';
+    });
+  }
+
+  // ===================== Support Tooling =====================
+
+  const TICKET_STATUS_PILL = { open: 'ab-pill-rust', pending: 'ab-pill-amber', resolved: 'ab-pill-moss' };
+  let supportFilter = 'open';
+
+  async function renderSupport() {
+    setContent('<div class="ab-empty">Loading…</div>');
+
+    const [ticketsRes, openCountRes] = await Promise.all([
+      supportFilter === 'all'
+        ? sb.from('support_tickets').select('id, subject, status, priority, created_at, updated_at, user:profiles!support_tickets_user_id_fkey(display_name), assignee:profiles!support_tickets_assigned_to_fkey(display_name)').order('updated_at', { ascending: false }).limit(50)
+        : sb.from('support_tickets').select('id, subject, status, priority, created_at, updated_at, user:profiles!support_tickets_user_id_fkey(display_name), assignee:profiles!support_tickets_assigned_to_fkey(display_name)').eq('status', supportFilter).order('updated_at', { ascending: false }).limit(50),
+      sb.from('support_tickets').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+    ]);
+
+    const tickets = ticketsRes.data || [];
+
+    let html = '<div class="ab-section-head"><div class="ab-section-title">Tickets</div></div>';
+    html += '<div class="ab-chip-row" id="supportFilterChips">' +
+      ['open', 'pending', 'resolved', 'all'].map((s) => '<button type="button" class="ab-chip' + (s === supportFilter ? ' selected' : '') + '" data-filter="' + s + '">' + s + '</button>').join('') +
+      '</div>';
+
+    if (tickets.length === 0) {
+      html += '<div class="ab-panel"><div class="ab-empty">No tickets here.</div></div>';
+    } else {
+      html += '<div class="ab-panel"><table class="ab-queue"><thead><tr><th>Subject</th><th>From</th><th>Status</th><th>Priority</th><th>Assigned</th><th>Updated</th></tr></thead><tbody>' +
+        tickets.map((t) =>
+          '<tr class="ab-user-row" data-id="' + t.id + '" style="cursor:pointer;"><td>' + escapeHtml(t.subject) + '</td>' +
+          '<td class="ab-who">' + escapeHtml((t.user && t.user.display_name) || 'Unknown') + '</td>' +
+          '<td><span class="ab-pill ' + (TICKET_STATUS_PILL[t.status] || 'ab-pill-slate') + '">' + escapeHtml(t.status) + '</span></td>' +
+          '<td class="ab-who">' + escapeHtml(t.priority) + '</td>' +
+          '<td class="ab-who">' + (t.assignee ? escapeHtml(t.assignee.display_name) : '—') + '</td>' +
+          '<td class="ab-age">' + timeAgo(t.updated_at) + '</td></tr>'
+        ).join('') + '</tbody></table></div>';
+    }
+
+    setContent(html);
+    updateBadges(null, null, openCountRes.count || 0, null);
+
+    document.querySelectorAll('#supportFilterChips .ab-chip').forEach((chip) => {
+      chip.addEventListener('click', () => { supportFilter = chip.dataset.filter; renderSupport(); });
+    });
+    document.querySelectorAll('#content tr[data-id]').forEach((row) => {
+      row.addEventListener('click', () => { location.hash = 'support/' + row.dataset.id; });
+    });
+  }
+
+  async function renderTicketDetail(ticketId) {
+    setContent('<div class="ab-empty">Loading…</div>');
+
+    const [ticketRes, messagesRes] = await Promise.all([
+      sb.from('support_tickets').select('id, subject, status, priority, user_id, assigned_to, created_at, user:profiles!support_tickets_user_id_fkey(display_name), assignee:profiles!support_tickets_assigned_to_fkey(display_name)').eq('id', ticketId).maybeSingle(),
+      sb.from('support_ticket_messages').select('id, is_staff, body, created_at, author:profiles!support_ticket_messages_author_id_fkey(display_name)').eq('ticket_id', ticketId).order('created_at', { ascending: true }),
+    ]);
+
+    const ticket = ticketRes.data;
+    if (!ticket) { setContent('<div class="ab-empty">Ticket not found.</div>'); return; }
+    document.getElementById('topbarTitle').textContent = 'Support — ' + ticket.subject;
+
+    const messages = messagesRes.data || [];
+    const thread = messages.map((m) =>
+      '<div class="ab-tl-item"><div class="ab-tl-dot ' + (m.is_staff ? 'moss' : 'sky') + '"></div><div class="ab-tl-body">' +
+      '<div class="ab-tl-text"><b>' + escapeHtml((m.author && m.author.display_name) || 'Someone') + (m.is_staff ? ' (staff)' : '') + '</b> ' + escapeHtml(m.body) + '</div>' +
+      '<div class="ab-tl-time">' + timeAgo(m.created_at) + '</div></div></div>'
+    ).join('');
+
+    let card = '<div class="ab-user-card">';
+    card += '<div class="ab-user-card-name">' + escapeHtml(ticket.subject) + '</div>';
+    card += '<div class="ab-user-card-handle">from ' + escapeHtml((ticket.user && ticket.user.display_name) || 'Unknown') + ' · opened ' + fmtDate(ticket.created_at) + '</div>';
+    card += statRow('Status', '<span class="ab-pill ' + (TICKET_STATUS_PILL[ticket.status] || 'ab-pill-slate') + '">' + escapeHtml(ticket.status) + '</span>');
+    card += statRow('Priority', escapeHtml(ticket.priority));
+    card += statRow('Assigned to', ticket.assignee ? escapeHtml(ticket.assignee.display_name) : '—');
+    card += '<div class="ab-action-form">';
+    if (ticket.status !== 'resolved') {
+      card += '<button class="ab-btn-mini" id="assignToMeBtn" style="width:100%; margin-bottom:8px;">Assign to me</button>';
+      card += '<button class="ab-btn-mini primary" id="resolveTicketBtn" style="width:100%;">Mark resolved</button>';
+    } else {
+      card += '<p style="color:var(--ink-soft); font-size:12.5px; margin:0;">This ticket is resolved.</p>';
+    }
+    card += '</div></div>';
+
+    setContent(
+      '<div class="ab-section-head"><div class="ab-section-title">Ticket</div><a class="ab-section-link" href="#support">&larr; All tickets</a></div>' +
+      '<div class="ab-detail-grid">' + card + panelOrEmpty(thread, 'No messages yet.') + '</div>' +
+      '<div class="ab-action-form" style="max-width:100%;"><span class="ab-field-label">Reply</span>' +
+        '<textarea rows="2" id="ticketReply" placeholder="Write a reply…"></textarea>' +
+        '<button class="ab-submit-btn" id="sendReplyBtn" style="background:var(--olive); max-width:220px;">Send reply</button></div>'
+    );
+
+    const sendReplyBtn = document.getElementById('sendReplyBtn');
+    sendReplyBtn.addEventListener('click', async () => {
+      const body = document.getElementById('ticketReply').value.trim();
+      if (!body) return;
+      const { error } = await sb.rpc('post_ticket_message', { p_ticket_id: ticketId, p_body: body });
+      if (error) { await CookzerModal.alert('Could not send: ' + error.message); return; }
+      await renderTicketDetail(ticketId);
+    });
+
+    const assignToMeBtn = document.getElementById('assignToMeBtn');
+    if (assignToMeBtn) assignToMeBtn.addEventListener('click', async () => {
+      const { error } = await sb.rpc('admin_assign_ticket', { p_ticket_id: ticketId, p_assignee: currentUser.id });
+      if (error) { await CookzerModal.alert('Could not assign: ' + error.message); return; }
+      await renderTicketDetail(ticketId);
+    });
+    const resolveTicketBtn = document.getElementById('resolveTicketBtn');
+    if (resolveTicketBtn) resolveTicketBtn.addEventListener('click', async () => {
+      const { error } = await sb.rpc('admin_resolve_ticket', { p_ticket_id: ticketId });
+      if (error) { await CookzerModal.alert('Could not resolve: ' + error.message); return; }
+      await renderTicketDetail(ticketId);
+    });
+  }
+
+  // ===================== Audit Log =====================
+
+  let auditOffset = 0;
+  let auditSearch = '';
+  const AUDIT_PAGE_SIZE = 50;
+
+  async function renderAuditLog(resetOffset) {
+    if (resetOffset) auditOffset = 0;
+    setContent('<div class="ab-empty">Loading…</div>');
+
+    let query = sb.from('admin_actions')
+      .select('id, action_type, target_type, target_label, reason, created_at, actor:profiles!admin_actions_actor_id_fkey(display_name)')
+      .order('created_at', { ascending: false })
+      .range(auditOffset, auditOffset + AUDIT_PAGE_SIZE - 1);
+    if (auditSearch) query = query.ilike('action_type', '%' + auditSearch + '%');
+
+    const { data, error } = await query;
+    if (error) { setContent('<div class="ab-empty">Could not load the audit log: ' + escapeHtml(error.message) + '</div>'); return; }
+
+    const rows = data || [];
+    let html = '<div class="ab-section-head"><div class="ab-section-title">Every staff action</div></div>';
+    html += '<div class="ab-search-row"><input type="text" id="auditSearchInput" placeholder="Filter by action type, e.g. suspension…" value="' + escapeHtml(auditSearch) + '"><button id="auditSearchBtn" type="button">Filter</button></div>';
+
+    if (rows.length === 0) {
+      html += '<div class="ab-panel"><div class="ab-empty">No matching actions.</div></div>';
+    } else {
+      html += '<div class="ab-panel"><table class="ab-queue"><thead><tr><th>When</th><th>Staff member</th><th>Action</th><th>Target</th><th>Note</th></tr></thead><tbody>' +
+        rows.map((a) =>
+          '<tr><td class="ab-age">' + fmtDate(a.created_at) + '<br>' + timeAgo(a.created_at) + '</td>' +
+          '<td class="ab-who">' + escapeHtml((a.actor && a.actor.display_name) || 'Unknown') + '</td>' +
+          '<td class="mono">' + escapeHtml(a.action_type) + '</td>' +
+          '<td><span class="ab-target-type">' + escapeHtml(a.target_type) + '</span>' + (a.target_label ? '<br><span class="ab-who">' + escapeHtml(a.target_label) + '</span>' : '') + '</td>' +
+          '<td class="ab-who">' + escapeHtml(a.reason || '') + '</td></tr>'
+        ).join('') + '</tbody></table></div>';
+      if (rows.length === AUDIT_PAGE_SIZE) {
+        html += '<button class="ab-btn-mini" id="auditLoadMoreBtn">Load more</button>';
+      }
+    }
+
+    setContent(html);
+    document.getElementById('auditSearchBtn').addEventListener('click', () => {
+      auditSearch = document.getElementById('auditSearchInput').value.trim();
+      renderAuditLog(true);
+    });
+    document.getElementById('auditSearchInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { auditSearch = e.target.value.trim(); renderAuditLog(true); }
+    });
+    const loadMoreBtn = document.getElementById('auditLoadMoreBtn');
+    if (loadMoreBtn) loadMoreBtn.addEventListener('click', () => { auditOffset += AUDIT_PAGE_SIZE; renderAuditLog(false); });
+  }
+
+  // ===================== Analytics & Reporting =====================
+
+  async function renderAnalytics() {
+    setContent('<div class="ab-empty">Loading…</div>');
+
+    const now = new Date();
+    const weekAgo = new Date(Date.now() - 7 * 86400000);
+    const twoWeeksAgo = new Date(Date.now() - 14 * 86400000);
+    const monthAgo = new Date(Date.now() - 30 * 86400000);
+
+    const [usersRes, postsRes, recipesRes, commentsRes, signupsWeekRes, signupsPrevWeekRes, signupsMonthRes, topPostsRes, dailySignupsRes] = await Promise.all([
+      sb.from('profiles').select('id', { count: 'exact', head: true }),
+      sb.from('posts').select('id', { count: 'exact', head: true }),
+      sb.from('recipes').select('id', { count: 'exact', head: true }),
+      sb.from('comments').select('id', { count: 'exact', head: true }),
+      sb.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', weekAgo.toISOString()),
+      sb.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', twoWeeksAgo.toISOString()).lt('created_at', weekAgo.toISOString()),
+      sb.from('profiles').select('id, created_at').gte('created_at', monthAgo.toISOString()),
+      sb.from('posts').select('id, caption, created_at, author:profiles!posts_author_id_fkey(display_name), hearts(count)').order('created_at', { ascending: false }).limit(200),
+      null,
+    ]);
+
+    const totalUsers = usersRes.count || 0;
+    const totalPosts = postsRes.count || 0;
+    const totalRecipes = recipesRes.count || 0;
+    const totalComments = commentsRes.count || 0;
+    const signupsWeek = signupsWeekRes.count || 0;
+    const signupsPrevWeek = signupsPrevWeekRes.count || 0;
+    const weekDelta = signupsPrevWeek === 0 ? (signupsWeek > 0 ? '+100% vs prior week' : 'flat vs prior week') :
+      (signupsWeek >= signupsPrevWeek ? '+' : '') + Math.round(((signupsWeek - signupsPrevWeek) / signupsPrevWeek) * 100) + '% vs prior week';
+
+    let html = '<div class="ab-kpi-row">';
+    html += kpiTile('Total users', totalUsers, 'all time', 'flat');
+    html += kpiTile('Total posts', totalPosts, 'all time', 'flat');
+    html += kpiTile('Total recipes', totalRecipes, 'all time', 'flat');
+    html += kpiTile('Total comments', totalComments, 'all time', 'flat');
+    html += '</div>';
+
+    html += '<div class="ab-section-head"><div class="ab-section-title">Growth — signups by day, last 30 days</div></div>';
+    const byDay = {};
+    (signupsMonthRes.data || []).forEach((p) => {
+      const day = p.created_at.slice(0, 10);
+      byDay[day] = (byDay[day] || 0) + 1;
+    });
+    const days = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000);
+      days.push(d.toISOString().slice(0, 10));
+    }
+    const maxDay = Math.max(1, ...days.map((d) => byDay[d] || 0));
+    html += '<div class="ab-panel" style="padding:18px; display:flex; align-items:flex-end; gap:2px; height:120px;">' +
+      days.map((d) => {
+        const v = byDay[d] || 0;
+        const h = Math.max(2, Math.round((v / maxDay) * 96));
+        return '<div title="' + d + ': ' + v + ' signup' + (v === 1 ? '' : 's') + '" style="flex:1; height:' + h + 'px; background:var(--olive); border-radius:2px 2px 0 0;"></div>';
+      }).join('') + '</div>';
+    html += '<div class="ab-kpi-row" style="grid-template-columns:repeat(2,1fr); margin-top:14px;">' +
+      kpiTile('Signups this week', signupsWeek, weekDelta, signupsWeek >= signupsPrevWeek ? 'flat' : 'warn') +
+      kpiTile('Signups prior week', signupsPrevWeek, 'trailing 7 days before that', 'flat') +
+      '</div>';
+
+    html += '<div class="ab-section-head"><div class="ab-section-title">Top posts by hearts — last 200 posts</div></div>';
+    const topPosts = (topPostsRes.data || [])
+      .map((p) => ({ ...p, heartCount: (p.hearts && p.hearts[0] && p.hearts[0].count) || 0 }))
+      .sort((a, b) => b.heartCount - a.heartCount)
+      .slice(0, 10);
+    html += panelOrEmpty(
+      topPosts.map((p) =>
+        '<div class="ab-tl-item"><div class="ab-tl-dot moss"></div><div class="ab-tl-body">' +
+        '<div class="ab-tl-text"><b>' + (p.heartCount) + ' &hearts;</b> — ' + escapeHtml(p.caption ? p.caption.slice(0, 70) : '(photo post, no caption)') + '</div>' +
+        '<div class="ab-tl-time">by ' + escapeHtml((p.author && p.author.display_name) || 'Unknown') + ' · ' + timeAgo(p.created_at) + '</div></div></div>'
+      ).join(''),
+      'No posts yet.'
+    );
+
+    html += '<div class="ab-panel"><div class="ab-empty" style="text-align:left;">Deeper cohort/retention analysis and saved custom reports aren\'t built yet — this view covers headline totals, 30-day growth, and a content leaderboard computed from existing tables, with no new schema.</div></div>';
+
+    setContent(html);
   }
 
   // ===================== Init =====================

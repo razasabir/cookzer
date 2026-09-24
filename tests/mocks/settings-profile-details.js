@@ -1,6 +1,9 @@
 // Focused mock for the Settings page's Privacy/Profile-details section
-// (profile_visibility toggle, social links, dietary tags — migration 053).
+// (profile_visibility toggle, social links, dietary tags — migration 053),
+// also reused for the self-service DSAR buttons (migration 057) since it
+// already has a working auth/profile init flow.
 window.__PROFILE_UPDATES__ = [];
+window.__RPC_CALLS__ = [];
 
 const PROFILE = {
   id: 'me-1',
@@ -54,8 +57,10 @@ window.supabase = {
       signOut: () => Promise.resolve({}),
     },
     from: (table) => chain(table),
-    rpc: (fn) => {
+    rpc: (fn, args) => {
+      window.__RPC_CALLS__.push({ fn, args });
       if (fn === 'get_or_create_my_household') return Promise.resolve({ data: HOUSEHOLD.id, error: null });
+      if (fn === 'file_dsar_request') return Promise.resolve({ data: 'dsar-request-1', error: null });
       return Promise.resolve({ data: null, error: null });
     },
     storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: '' } }) }) },

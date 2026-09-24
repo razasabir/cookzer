@@ -347,6 +347,29 @@
     }
     .footer-app-link:hover { text-decoration: underline; }
 
+    /* ---------- Cookie consent banner ---------- */
+    .cookie-banner {
+      position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 500;
+      max-width: 640px; margin: 0 auto;
+      background: var(--card-bg); border: 1px solid var(--line); border-radius: 14px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.16);
+      padding: 16px 18px;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .cookie-banner p { flex: 1; min-width: 220px; font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; }
+    .cookie-banner p a { color: var(--olive-dark); font-weight: 600; }
+    .cookie-banner button {
+      font-family: 'Work Sans', sans-serif; font-size: 13.5px; font-weight: 600;
+      padding: 9px 18px; border-radius: 8px; border: none; background: var(--olive); color: #fff; cursor: pointer;
+      flex-shrink: 0;
+    }
+    .cookie-banner button:hover { background: var(--olive-dark); }
+    .cookie-banner[hidden] { display: none; }
+    @media (max-width: 480px) {
+      .cookie-banner { flex-direction: column; align-items: stretch; }
+      .cookie-banner button { width: 100%; }
+    }
+
     /* ---------- Responsive ---------- */
     @media (max-width: 860px) {
       .audience-grid, .feature-grid { grid-template-columns: 1fr; }
@@ -483,8 +506,13 @@
     <div>
       <a class="footer-app-link" href="https://github.com/razasabir/cookzer/releases/download/android-latest/Cookzer.apk">📱 Free download for Android (beta)</a>
     </div>
-    <div style="margin-top:12px;"><a href="cookzer-privacy.html" style="color:var(--ink-soft); text-decoration:none; font-size:13px;">Privacy Policy</a></div>
+    <div style="margin-top:12px;"><a href="cookzer-privacy.html" style="color:var(--ink-soft); text-decoration:none; font-size:13px;">Privacy Policy</a> <span style="color:var(--line);">·</span> <a href="cookzer-terms.html" style="color:var(--ink-soft); text-decoration:none; font-size:13px;">Terms of Service</a></div>
   </footer>
+
+  <div class="cookie-banner" id="cookieBanner" hidden>
+    <p>We use cookies to keep you signed in and remember your preferences. See our <a href="cookzer-privacy.html">Privacy Policy</a> for details.</p>
+    <button type="button" id="cookieAcceptBtn">Got it</button>
+  </div>
 
   <script>
     const DISH_PHOTOS = [
@@ -513,6 +541,21 @@
 
     fillMarquee('marqueeTop', DISH_PHOTOS);
     fillMarquee('marqueeBottom', DISH_PHOTOS.slice().reverse());
+
+    // Pure client-side, localStorage-based — no schema, no RPC. A signed-in
+    // visitor gets redirected below before ever seeing this page, so this
+    // only needs to run for logged-out visitors.
+    (function initCookieBanner() {
+      let alreadyConsented = false;
+      try { alreadyConsented = localStorage.getItem('cookzer-cookie-consent') === '1'; } catch (e) { /* private mode — just show it each visit */ }
+      if (alreadyConsented) return;
+      const banner = document.getElementById('cookieBanner');
+      banner.hidden = false;
+      document.getElementById('cookieAcceptBtn').addEventListener('click', () => {
+        try { localStorage.setItem('cookzer-cookie-consent', '1'); } catch (e) { /* nothing to persist to — just hide for this visit */ }
+        banner.hidden = true;
+      });
+    })();
 
     // Signed-in visitors go straight to their feed instead of the pitch.
     (async function redirectIfSignedIn() {

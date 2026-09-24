@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta name="theme-color" content="#2E8F5C">
+  <title>Terms of Service — Cookzer</title>
+  <meta name="description" content="The terms that govern using Cookzer.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="theme.js"></script>
+  <style>
+    :root {
+      --cream: #FAFAF5;
+      --card-bg: #FFFFFF;
+      --ink: #26251F;
+      --ink-soft: #66695C;
+      --olive: #2E8F5C;
+      --olive-dark: #1F7A4A;
+      --brick: #FF6B4A;
+      --line: #E3E6DC;
+    }
+    [data-theme="dark"] {
+      --cream: #181A13;
+      --card-bg: #22251C;
+      --ink: #F0EEE2;
+      --ink-soft: #AEB39C;
+      --olive: #2E8F5C;
+      --olive-dark: #1F7A4A;
+      --brick: #FF6B4A;
+      --line: #34362A;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      font-family: 'Work Sans', sans-serif;
+      color: var(--ink);
+      background: var(--cream);
+    }
+    a { color: var(--olive-dark); }
+    .top-nav {
+      position: sticky; top: 0; z-index: 20;
+      background: color-mix(in srgb, var(--cream) 92%, transparent);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 6vw;
+    }
+    .brand { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 24px; color: var(--olive-dark); }
+    .brand span { color: var(--brick); }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 48px 6vw 96px; }
+    .eyebrow { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--brick); font-weight: 600; margin-bottom: 12px; }
+    h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 34px; color: var(--olive-dark); margin-bottom: 6px; text-wrap: balance; }
+    .updated { color: var(--ink-soft); font-size: 13px; margin-bottom: 40px; }
+    h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; color: var(--ink); margin: 36px 0 12px; }
+    p, li { font-size: 14.5px; line-height: 1.7; color: var(--ink-soft); }
+    p { margin-bottom: 14px; }
+    ul { margin: 0 0 14px; padding-left: 22px; }
+    li { margin-bottom: 6px; }
+    strong { color: var(--ink); font-weight: 600; }
+    footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <a href="index.html" style="text-decoration:none;"><div class="brand">Cook<span>zer</span></div></a>
+  </nav>
+
+  <div class="wrap">
+    <div class="eyebrow">Legal</div>
+    <h1>Terms of Service</h1>
+    <p class="updated" id="policyUpdated">Last updated September 24, 2026</p>
+
+    <div id="policyBody">
+    <p>These terms govern your use of Cookzer ("we", "us") — the website and the Android and iOS apps, which are thin wrappers around the same website. By creating an account or using Cookzer, you agree to them.</p>
+
+    <h2>Your account</h2>
+    <ul>
+      <li>You must be 13 or older to use Cookzer.</li>
+      <li>You're responsible for keeping your password secure and for activity under your account.</li>
+      <li>Give us accurate information when you sign up — a display name that isn't meant to impersonate someone else, a real email address you control.</li>
+    </ul>
+
+    <h2>Your content</h2>
+    <p>You own what you post — recipes, photos, videos, comments, meal plans, and everything else you create on Cookzer. By posting it, you grant us a license to host, display, and distribute it as part of running the service (showing it in feeds, search, and to people you share it with). That license ends when you delete the content or your account, except for copies already shared by others (like a remade recipe) or kept briefly in backups.</p>
+    <p>Don't post anything you don't have the right to share, and don't post anything illegal, harassing, or that infringes someone else's rights.</p>
+
+    <h2>Acceptable use</h2>
+    <ul>
+      <li>No harassment, hate speech, or targeted abuse of other users.</li>
+      <li>No spam, scraping, or automated use of Cookzer outside its own app/API.</li>
+      <li>No impersonating another person or organization.</li>
+      <li>No content that sexualizes minors — we escalate this immediately and report it to the relevant authorities.</li>
+      <li>Follow any additional rules posted in a specific feature (like a Challenge or a Group).</li>
+    </ul>
+    <p>We may remove content, issue a warning or strike, mute, suspend, or ban an account that breaks these rules — see our moderation process in the app for how reports are reviewed.</p>
+
+    <h2>Termination</h2>
+    <p>You can delete your account at any time from Settings. We can suspend or terminate an account for violating these terms, or to comply with the law. Either of us can stop using/offering Cookzer at any time; the license and liability terms here survive that.</p>
+
+    <h2>Disclaimers</h2>
+    <p>Cookzer is provided "as is." Recipes, nutrition information, and AI-generated suggestions (like Cookzer+ chat responses) are for general guidance only — always use your own judgment about food safety, allergies, and dietary needs. We don't guarantee the accuracy of user-submitted content, including recipes, restaurant ratings, or reviews.</p>
+
+    <h2>Limitation of liability</h2>
+    <p>To the extent permitted by law, Cookzer isn't liable for indirect, incidental, or consequential damages arising from your use of the service, including anything related to food you make from a recipe posted by another user.</p>
+
+    <h2>Changes to these terms</h2>
+    <p>If we make material changes, we'll update the date at the top of this page and, where required, ask you to accept the new version.</p>
+
+    <h2>Governing law</h2>
+    <p>These terms are governed by the laws of the jurisdiction in which Cookzer is operated, without regard to conflict-of-law principles.</p>
+
+    <h2>Contact</h2>
+    <p>Questions about these terms? Email us at <a href="mailto:legal@cookzer.com">legal@cookzer.com</a>.</p>
+    </div>
+
+    <footer>
+      <a href="index.html">← Back to Cookzer</a>
+      <span style="margin: 0 8px;">·</span>
+      <a href="cookzer-privacy.html">Privacy Policy</a>
+    </footer>
+  </div>
+
+  <script>
+    // Same live-override pattern as cookzer-privacy.html: the markup
+    // above is the fallback shown until an admin publishes a version
+    // through the Governance & Policy admin view (migration 057).
+    (async function loadPublishedPolicy() {
+      try {
+        const { data } = await sb
+          .from('policy_documents')
+          .select('version, content, published_at')
+          .eq('type', 'terms')
+          .eq('is_current', true)
+          .maybeSingle();
+        if (!data) return;
+
+        const bodyEl = document.getElementById('policyBody');
+        const pre = document.createElement('div');
+        pre.style.whiteSpace = 'pre-wrap';
+        pre.style.fontSize = '14.5px';
+        pre.style.lineHeight = '1.7';
+        pre.style.color = 'var(--ink-soft)';
+        pre.textContent = data.content;
+        bodyEl.replaceWith(pre);
+        pre.id = 'policyBody';
+
+        document.getElementById('policyUpdated').textContent =
+          'Last updated ' + new Date(data.published_at).toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' }) + ' · v' + data.version;
+
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) {
+          sb.rpc('record_policy_consent', { p_type: 'terms', p_version: data.version }).catch(() => {});
+        }
+      } catch (e) { /* fallback content above stays as-is */ }
+    })();
+  </script>
+</body>
+</html>

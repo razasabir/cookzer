@@ -64,6 +64,7 @@ const TYPE_TITLES = {
   message: 'New message',
   review: 'New review',
   group_join: 'Someone joined your group',
+  admin_broadcast: 'Announcement',
 };
 
 let cachedAuth = null;
