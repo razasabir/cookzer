@@ -837,7 +837,15 @@
     }
 
     resultEl.classList.remove('unavailable');
-    valueEl.textContent = amount + ' ' + from + ' = ' + window.CookzerUnitConvert.formatAmount(converted) + ' ' + to;
+    // Spell out the unit names here instead of using raw codes like "l" —
+    // a lowercase "l" for liters sitting right after a number is visually
+    // near-identical to the digit "1" in this display font, misreading
+    // "104.22 l" as "104.221". The box below already spells units out;
+    // this just matches it.
+    const fromWord = unitWord(from, amount === 1 ? 1 : 2);
+    const toRounded = Math.round(converted * 100) / 100;
+    const toWord = unitWord(to, toRounded === 1 ? 1 : 2);
+    valueEl.textContent = amount + ' ' + fromWord + ' = ' + window.CookzerUnitConvert.formatAmount(converted) + ' ' + toWord;
     noteEl.textContent = (fromCat !== toCat && ingredient)
       ? 'Based on typical density for "' + ingredient + '" — exact weight varies by how it\'s packed/measured.'
       : '';
