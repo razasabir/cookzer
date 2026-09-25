@@ -37,7 +37,7 @@ test.describe('Convert page — fill graphic', () => {
     await page.fill('#convertAmount', '400');
     await page.selectOption('#convertFrom', 'g');
     await page.selectOption('#convertTo', 'kg');
-    await expect(page.locator('#convertResultValue')).toContainText('400 g = 0.4 kg');
+    await expect(page.locator('#convertResultValue')).toContainText('400 grams = 0.4 kilograms');
     await expect(page.locator('#fillGraphicWrap')).toBeHidden();
   });
 
