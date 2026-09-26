@@ -499,17 +499,57 @@
       color: inherit;
     }
 
-  .card-delete-btn {
-      margin-left: auto;
+  /* A single flag/bin icon sitting bare in the header read as clutter
+     and doesn't scale to more than one action — a "⋮" kebab menu is the
+     standard place for a post's secondary actions (delete for your own,
+     report for someone else's), anchored the same way .mention-dropdown
+     is: a relatively-positioned wrapper holding an absolutely-positioned
+     dropdown. */
+  .card-menu-anchor { position: relative; margin-left: auto; }
+
+  .card-menu-btn {
       background: none;
       border: none;
       color: var(--ink-faint);
-      font-size: 16px;
+      font-size: 18px;
       line-height: 1;
       cursor: pointer;
-      padding: 6px;
+      padding: 6px 8px;
       border-radius: 8px;
     }
+
+  .card-menu-btn:hover { background: var(--cream); color: var(--ink); }
+
+  .card-menu-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 4px;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      min-width: 160px;
+      overflow: hidden;
+      z-index: 20;
+    }
+
+  .card-menu-item {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+  .card-menu-item:hover { background: var(--cream); }
+
+  .card-menu-item.danger { color: var(--brick); }
 
   .comment-delete-btn {
       margin-left: auto;
@@ -560,11 +600,6 @@
     }
 
   .mention-row:hover { background: var(--cream); }
-
-  .card-delete-btn:hover {
-      background: var(--cream);
-      color: var(--brick);
-    }
 
   .card-name {
       font-size: 13px;
@@ -2336,22 +2371,8 @@
     authorLink.appendChild(meta);
     header.appendChild(authorLink);
 
-    if (currentUser && post.author_id === currentUser.id) {
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'card-delete-btn';
-      deleteBtn.title = 'Delete post';
-      deleteBtn.type = 'button';
-      deleteBtn.textContent = '🗑';
-      deleteBtn.addEventListener('click', () => deletePost(post.id, card));
-      header.appendChild(deleteBtn);
-    } else if (currentUser) {
-      const reportBtn = document.createElement('button');
-      reportBtn.className = 'card-delete-btn';
-      reportBtn.title = 'Report post';
-      reportBtn.type = 'button';
-      reportBtn.textContent = '🚩';
-      reportBtn.addEventListener('click', () => reportPost(post.id));
-      header.appendChild(reportBtn);
+    if (currentUser) {
+      header.appendChild(buildCardMenu(post, card));
     }
 
     card.appendChild(header);
@@ -2577,6 +2598,58 @@
     if (error) await CookzerModal.alert('Could not send report: ' + error.message);
     else await CookzerModal.alert('Thanks — this post has been reported for review.');
   }
+
+  // A "⋮" kebab menu in place of a bare flag/bin icon in the header —
+  // it's the one place a post's secondary action lives (delete for your
+  // own posts, report for anyone else's), and scales to more actions
+  // later without changing what the header looks like.
+  function buildCardMenu(post, card) {
+    const wrap = document.createElement('div');
+    wrap.className = 'card-menu-anchor';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'card-menu-btn';
+    btn.title = 'More options';
+    btn.setAttribute('aria-label', 'More options');
+    btn.textContent = '⋮';
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'card-menu-dropdown';
+    dropdown.hidden = true;
+
+    if (post.author_id === currentUser.id) {
+      const deleteItem = document.createElement('button');
+      deleteItem.type = 'button';
+      deleteItem.className = 'card-menu-item danger';
+      deleteItem.textContent = 'Delete post';
+      deleteItem.addEventListener('click', () => { dropdown.hidden = true; deletePost(post.id, card); });
+      dropdown.appendChild(deleteItem);
+    } else {
+      const reportItem = document.createElement('button');
+      reportItem.type = 'button';
+      reportItem.className = 'card-menu-item';
+      reportItem.textContent = 'Report post';
+      reportItem.addEventListener('click', () => { dropdown.hidden = true; reportPost(post.id); });
+      dropdown.appendChild(reportItem);
+    }
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.card-menu-dropdown').forEach((d) => { if (d !== dropdown) d.hidden = true; });
+      dropdown.hidden = !dropdown.hidden;
+    });
+
+    wrap.appendChild(btn);
+    wrap.appendChild(dropdown);
+    return wrap;
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.card-menu-anchor')) {
+      document.querySelectorAll('.card-menu-dropdown').forEach((d) => { d.hidden = true; });
+    }
+  });
 
   // Exactly one of the comment/share/save inline panels is open per card
   // at a time — opening one closes whichever of the other two was open.
