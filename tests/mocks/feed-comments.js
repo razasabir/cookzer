@@ -1,7 +1,9 @@
 window.__DELETED_COMMENT_IDS__ = [];
 window.__INSERTED_COMMENTS__ = [];
+window.__DELETED_POST_IDS__ = [];
+window.__INSERTED_REPORTS__ = [];
 
-const POSTS = [
+let POSTS = [
   { id: 'post-mine', author_id: 'me-1', kind: 'post', recipe_id: null, caption: 'My own post.', photo_path: null, video_uid: null, mood: null, restaurant_name: null, created_at: new Date().toISOString(), profiles: { display_name: 'Me', initials: 'ME' }, recipes: null },
   { id: 'post-other', author_id: 'user-2', kind: 'post', recipe_id: null, caption: "Someone else's post.", photo_path: null, video_uid: null, mood: null, restaurant_name: null, created_at: new Date().toISOString(), profiles: { display_name: 'Cook B', initials: 'CB' }, recipes: null },
 ];
@@ -66,6 +68,9 @@ function chain(table) {
           if (table === 'comments') {
             window.__DELETED_COMMENT_IDS__.push(val);
             comments = comments.filter((c) => c.id !== val);
+          } else if (table === 'posts') {
+            window.__DELETED_POST_IDS__.push(val);
+            POSTS = POSTS.filter((p) => p.id !== val);
           }
           return Promise.resolve({ data: null, error: null });
         },
@@ -77,6 +82,8 @@ function chain(table) {
         window.__INSERTED_COMMENTS__.push(payload);
         const row = { id: 'new-comment-1', ...payload, created_at: new Date().toISOString(), profiles: { display_name: 'Me', initials: 'ME' } };
         comments = comments.concat([row]);
+      } else if (table === 'reports') {
+        window.__INSERTED_REPORTS__.push(payload);
       }
       return Promise.resolve({ data: null, error: null });
     },
