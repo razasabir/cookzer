@@ -422,13 +422,17 @@
 
      A 2-column grid of full-size boxes used to dominate every card
      (often taller than the actual meal info above it, all boxes the
-     same visual weight whether empty or not). Now a horizontally
-     scrolling strip of compact chips — same data, same click targets,
-     far less vertical weight. */
+     same visual weight whether empty or not). A horizontally scrolling
+     strip of compact chips fixed that, but hid anyone beyond the first
+     2-3 people off-screen with no visible way back to them — reported
+     directly as "I should be able to see all members in one go." A
+     responsive grid instead: every person's chip is visible without
+     scrolling, wrapping to as many rows as the household needs (2
+     columns on a phone, more on a wider screen), so a household of 6
+     costs extra height, never a hidden swipe. */
   .planner-people-row {
-      display: flex;
-      flex-wrap: nowrap;
-      overflow-x: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
       gap: 8px;
       margin-top: 12px;
       padding-top: 12px;
@@ -436,8 +440,6 @@
     }
 
   .planner-person-col {
-      flex: 0 0 92px;
-      min-width: 92px;
       background: var(--cream);
       border-radius: 12px;
       padding: 8px 6px;
@@ -655,7 +657,7 @@
       .day-label { min-width: 48px; padding: 5px 6px; }
       .day-label-date { font-size: 12px; }
       .toolbar-pill { padding: 6px 11px; font-size: 12px; }
-      .planner-person-col { flex-basis: 80px; min-width: 80px; }
+      .planner-people-row { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
     }
   </style>
 </head>
