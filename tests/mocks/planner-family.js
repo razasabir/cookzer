@@ -54,7 +54,12 @@ function chain(table) {
       }
       // household_size: 3 with 1 named Family Profile (Emma) means the
       // planner shows You + Emma + one "ghost" placeholder column.
-      if (table === 'households') return Promise.resolve({ data: HOUSEHOLD, error: null });
+      // window.__TEST_HOUSEHOLD_SIZE__ (an extraInit script) overrides it
+      // for a dedicated test that needs a larger household.
+      if (table === 'households') {
+        const size = window.__TEST_HOUSEHOLD_SIZE__ || HOUSEHOLD.household_size;
+        return Promise.resolve({ data: { ...HOUSEHOLD, household_size: size }, error: null });
+      }
       return Promise.resolve({ data: null, error: null });
     },
     maybeSingle() {
