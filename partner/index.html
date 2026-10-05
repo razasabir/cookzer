@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookzer Partnership</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=Fredoka:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F7F2E9;
+    --paper: #FFFFFF;
+    --ink: #2B2620;
+    --ink-soft: #6B6255;
+    --ink-faint: #A69C89;
+    --line: #E7DFCF;
+    --green: #009C4A;
+    --green-deep: #045C2E;
+    --red: #E85659;
+    --gold: #D9A441;
+    --green-tint: rgba(0, 156, 74, 0.08);
+    --red-tint: rgba(232, 86, 89, 0.08);
+    --gold-tint: rgba(217, 164, 65, 0.12);
+    --chart-grid: #E7DFCF;
+    --shadow: 0 12px 32px rgba(43, 38, 32, 0.08);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --cream: #1C1815;
+      --paper: #262019;
+      --ink: #F2ECE2;
+      --ink-soft: #B3A99A;
+      --ink-faint: #7A7060;
+      --line: #3A3229;
+      --green: #2FD57E;
+      --green-deep: #7CF0AE;
+      --red: #FF8A8C;
+      --gold: #E8B865;
+      --green-tint: rgba(47, 213, 126, 0.1);
+      --red-tint: rgba(255, 138, 140, 0.1);
+      --gold-tint: rgba(232, 184, 101, 0.12);
+      --chart-grid: #3A3229;
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --cream: #1C1815;
+    --paper: #262019;
+    --ink: #F2ECE2;
+    --ink-soft: #B3A99A;
+    --ink-faint: #7A7060;
+    --line: #3A3229;
+    --green: #2FD57E;
+    --green-deep: #7CF0AE;
+    --red: #FF8A8C;
+    --gold: #E8B865;
+    --green-tint: rgba(47, 213, 126, 0.1);
+    --red-tint: rgba(255, 138, 140, 0.1);
+    --gold-tint: rgba(232, 184, 101, 0.12);
+    --chart-grid: #3A3229;
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: var(--green); color: #fff; }
+
+  h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; font-weight: 600; text-wrap: balance; color: var(--ink); margin: 0; }
+
+  p { margin: 0; max-width: 65ch; }
+
+  a { color: var(--green-deep); }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding-inline: 24px; }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    position: sticky; top: 0; z-index: 40;
+    background: color-mix(in srgb, var(--cream) 92%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-inner {
+    max-width: 1080px; margin: 0 auto; padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .brand-mark { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 19px; letter-spacing: -0.3px; }
+  .brand-mark .zer { color: var(--red); }
+  .topbar-tag { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-faint); }
+  .topbar-nav { display: flex; gap: 22px; font-size: 13px; color: var(--ink-soft); }
+  .topbar-nav a { color: var(--ink-soft); text-decoration: none; }
+  .topbar-nav a:hover { color: var(--green-deep); }
+  @media (max-width: 720px) { .topbar-nav { display: none; } }
+
+  /* ---------- Hero ---------- */
+  section.hero { padding: 72px 0 56px; }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11.5px; letter-spacing: 1.4px; text-transform: uppercase;
+    color: var(--green-deep); font-weight: 700; margin-bottom: 22px;
+  }
+  .hero-eyebrow::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  h1.thesis { font-size: clamp(34px, 5.2vw, 58px); line-height: 1.06; letter-spacing: -1px; max-width: 15ch; }
+  h1.thesis em { font-style: italic; color: var(--green-deep); }
+  .hero-sub { margin-top: 22px; font-size: 18px; color: var(--ink-soft); max-width: 58ch; }
+  .hero-live { margin-top: 32px; }
+  .hero-table-wrap { margin-top: 16px; }
+  table.hero-table th:first-child, table.hero-table td:first-child { white-space: nowrap; }
+
+  /* ---------- Section scaffolding ---------- */
+  section.block { padding: 64px 0; border-top: 1px solid var(--line); }
+  .section-kicker { font-size: 11.5px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--red); font-weight: 700; margin-bottom: 10px; }
+  .section-head { font-size: clamp(26px, 3.4vw, 36px); margin-bottom: 16px; max-width: 20ch; }
+  .section-dek { color: var(--ink-soft); font-size: 16px; max-width: 62ch; margin-bottom: 40px; }
+
+  /* ---------- Reframe (positioning) ---------- */
+  .reframe-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: start; }
+  @media (max-width: 820px) { .reframe-grid { grid-template-columns: 1fr; gap: 32px; } }
+  .analogy-row { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+  .analogy-item {
+    display: flex; align-items: baseline; gap: 14px;
+    padding: 16px 18px; background: var(--paper); border: 1px solid var(--line); border-radius: 14px;
+  }
+  .analogy-item .who { font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; min-width: 92px; }
+  .analogy-item .what { font-size: 14px; color: var(--ink-soft); }
+  .segment-list { display: flex; flex-direction: column; gap: 18px; }
+  .segment {
+    padding: 18px 20px; border-radius: 14px; background: var(--paper); border: 1px solid var(--line);
+    border-left: 3px solid var(--green);
+  }
+  .segment .seg-name { font-weight: 700; font-size: 14.5px; margin-bottom: 4px; }
+  .segment .seg-desc { font-size: 13.5px; color: var(--ink-soft); }
+
+  /* ---------- Inspiration / blueprint ---------- */
+  .inspiration-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 860px) { .inspiration-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .inspiration-grid { grid-template-columns: 1fr; } }
+  .inspiration-item {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px;
+    border-left: 3px solid var(--green);
+  }
+  .insp-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--ink-faint); font-weight: 700; margin-bottom: 6px; }
+  .insp-who { font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; color: var(--green-deep); margin-bottom: 6px; }
+  .insp-what { font-size: 13.5px; color: var(--ink-soft); }
+
+  /* ---------- Traction / built ---------- */
+  .built-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 780px) { .built-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 520px) { .built-grid { grid-template-columns: 1fr; } }
+  .built-item {
+    padding: 16px 18px; background: var(--paper); border: 1px solid var(--line); border-radius: 14px;
+    font-size: 13.5px; display: flex; align-items: flex-start; gap: 10px;
+  }
+  .built-item .tick {
+    flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; background: var(--green-tint);
+    color: var(--green-deep); display: flex; align-items: center; justify-content: center; font-size: 11px; margin-top: 1px;
+  }
+  .live-badge {
+    display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px;
+    background: var(--green-tint); color: var(--green-deep); padding: 8px 16px; border-radius: 999px;
+    font-size: 13px; font-weight: 700;
+  }
+  .live-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  @media (prefers-reduced-motion: reduce) { .live-badge .dot { animation: none; } }
+
+  /* ---------- Markets ---------- */
+  .chart-panel {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 28px;
+    margin-bottom: 40px;
+  }
+  .chart-panel-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .chart-panel-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; }
+  .chart-panel-cagr { font-size: 12.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .chart-panel-cagr b { color: var(--green-deep); font-weight: 700; }
+  svg text { font-family: 'Work Sans', sans-serif; fill: var(--ink-soft); }
+  svg .value-label { fill: var(--ink); font-weight: 700; }
+
+  .market-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 860px) { .market-grid { grid-template-columns: 1fr; } }
+  .market-card {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 24px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .market-flag { font-size: 26px; line-height: 1; }
+  .market-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; }
+  .market-tag { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+  .market-stat-row { display: flex; flex-direction: column; gap: 12px; }
+  .market-stat { border-top: 1px solid var(--line); padding-top: 12px; }
+  .market-stat:first-child { border-top: none; padding-top: 0; }
+  .market-stat .m-num { font-family: 'Fraunces', serif; font-weight: 600; font-size: 21px; font-variant-numeric: tabular-nums; }
+  .market-stat .m-lbl { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+  .market-note { font-size: 12.5px; color: var(--ink-soft); font-style: italic; border-top: 1px dashed var(--line); padding-top: 12px; }
+
+  /* ---------- Business model ---------- */
+  .revenue-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  @media (max-width: 780px) { .revenue-grid { grid-template-columns: 1fr; } }
+  .revenue-card {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 24px;
+    position: relative; overflow: hidden;
+  }
+  .revenue-num {
+    position: absolute; top: 16px; right: 20px; font-family: 'Fraunces', serif; font-size: 40px;
+    color: var(--line); font-weight: 600; line-height: 1;
+  }
+  .revenue-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; margin-bottom: 8px; max-width: 22ch; }
+  .revenue-desc { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 14px; }
+  .revenue-proof {
+    font-size: 12px; color: var(--green-deep); background: var(--green-tint);
+    padding: 8px 12px; border-radius: 10px; display: inline-block;
+  }
+  .future-streams-head { margin-top: 40px; margin-bottom: 4px; }
+  .future-streams-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; }
+  .future-streams-dek { font-size: 13px; color: var(--ink-soft); margin-bottom: 18px; max-width: 68ch; }
+  .future-grid { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 900px) { .future-grid { grid-template-columns: 1fr; } }
+  .revenue-card.future { border-style: dashed; background: var(--cream); }
+  .revenue-card.future .revenue-num { color: var(--ink-faint); }
+  .future-pill {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    background: var(--paper); color: var(--ink-soft); border: 1px solid var(--line);
+    padding: 3px 9px; border-radius: 10px; display: inline-block; margin-bottom: 10px;
+  }
+  .revenue-card.future .revenue-proof {
+    color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line);
+  }
+  /* ---------- Competitive ---------- */
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
+  table.compare { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13.5px; }
+  table.compare th {
+    text-align: left; padding: 14px 18px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--ink-faint); border-bottom: 2px solid var(--line);
+  }
+  table.compare td { padding: 14px 18px; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+  table.compare tr:last-child td { border-bottom: none; }
+  table.compare td.yes { color: var(--green-deep); font-weight: 700; }
+  table.compare td.no { color: var(--ink-faint); }
+  table.compare td:first-child { font-weight: 700; color: var(--ink); }
+  table.compare tr.us { background: var(--green-tint); }
+
+  /* ---------- Growth model ---------- */
+  .chart-legend { display: flex; gap: 22px; margin-top: 16px; font-size: 12.5px; color: var(--ink-soft); flex-wrap: wrap; }
+  .chart-legend .leg-item { display: flex; align-items: center; gap: 7px; }
+  .chart-legend .leg-swatch { width: 16px; height: 0; border-top-width: 2.5px; border-top-style: solid; }
+  .chart-legend .leg-swatch.dashed { border-top-style: dashed; }
+  .growth-note { font-size: 12.5px; color: var(--ink-soft); font-style: italic; margin-top: 18px; max-width: 68ch; }
+
+  .unit-econ-panel {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 18px;
+    padding: 24px; margin-top: 32px;
+  }
+  .unit-econ-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; margin-bottom: 4px; }
+  .unit-econ-sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 18px; max-width: 68ch; }
+  .unit-econ-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  @media (max-width: 780px) { .unit-econ-row { grid-template-columns: repeat(2, 1fr); } }
+  .unit-econ-row .market-stat { border-top: 1px solid var(--line); padding-top: 12px; }
+  table.compare tr.highlight { background: var(--green-tint); }
+  table.compare td.neg { color: var(--red); font-weight: 700; }
+  table.compare tr.subrow td { font-size: 12px; color: var(--ink-faint); font-style: italic; padding-top: 8px; padding-bottom: 8px; }
+  table.compare tr.subrow td:first-child { font-weight: 400; color: var(--ink-faint); padding-left: 32px; }
+
+  footer.cta {
+    padding: 64px 0 80px; text-align: center;
+  }
+  .cta-headline { font-size: clamp(26px, 3.6vw, 38px); max-width: 22ch; margin: 0 auto 18px; }
+  .cta-sub { color: var(--ink-soft); font-size: 15px; max-width: 50ch; margin: 0 auto 28px; }
+  .cta-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    padding: 14px 28px; border-radius: 12px; font-size: 14.5px; font-weight: 700; text-decoration: none;
+    display: inline-block; transition: transform 0.15s ease;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary { background: var(--green); color: #fff; }
+  .btn-secondary { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .foot-meta { margin-top: 48px; font-size: 12px; color: var(--ink-faint); }
+
+  @media (max-width: 480px) {
+    section.hero { padding: 48px 0 40px; }
+    section.block { padding: 48px 0; }
+  }
+
+  /* ---------- Feature map (appended) ---------- */
+  .feat-nav { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 32px; }
+  .feat-nav a {
+    font-size: 12px; font-weight: 600; color: var(--ink-soft); text-decoration: none;
+    padding: 6px 12px; border-radius: 20px; border: 1px solid var(--line); background: var(--paper);
+  }
+  .feat-nav a:hover { border-color: var(--green); color: var(--green-deep); }
+  .feat-module {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 18px;
+    padding: 22px 24px; margin-bottom: 16px; scroll-margin-top: 20px;
+  }
+  .feat-module-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .feat-module-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; }
+  .feat-module-path { font-size: 11px; color: var(--ink-faint); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .feat-module-desc { font-size: 13px; color: var(--ink-soft); margin: 4px 0 14px; }
+  .feat-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px) { .feat-cols { grid-template-columns: 1fr; } }
+  .feat-col-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;
+  }
+  .feat-col-label.today { color: var(--green-deep); }
+  .feat-col-label.next { color: var(--gold); }
+  ul.feat-ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  ul.feat-ul li { font-size: 13px; color: var(--ink-soft); padding-left: 18px; position: relative; line-height: 1.5; }
+  .feat-today li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; font-size: 11px; }
+  .feat-next { background: var(--gold-tint); border: 1px dashed var(--line); border-radius: 12px; padding: 12px 14px; }
+  .feat-next li::before { content: "→"; position: absolute; left: 0; color: var(--gold); font-weight: 700; font-size: 11px; }
+  .feat-parked { border-style: dashed; }
+  .feat-parked ul.feat-ul li::before { content: "⏸"; position: absolute; left: 0; color: var(--ink-faint); font-size: 10px; }
+  .feat-parked-note {
+    font-size: 12.5px; color: var(--ink-soft); background: var(--cream); border-radius: 10px;
+    padding: 10px 12px; margin-bottom: 14px; line-height: 1.55;
+  }
+</style>
+</head>
+<body>
+
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div>
+      <div class="brand-mark">Cook<span class="zer">zer</span></div>
+      <div class="topbar-tag">Product &amp; growth overview</div>
+    </div>
+    <nav class="topbar-nav">
+      <a href="#opportunity">Opportunity</a>
+      <a href="#inspiration">Blueprint</a>
+      <a href="#markets">Markets</a>
+      <a href="#growth">Growth</a>
+      <a href="#expenses">Expenses</a>
+      <a href="#model">Model</a>
+      <a href="#built">Built &amp; live</a>
+    </nav>
+  </div>
+</div>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-eyebrow">What's built, and where it's headed</div>
+    <h1 class="thesis">The social network for people who cook — <em>Facebook and LinkedIn, built for the kitchen.</em></h1>
+    <p class="hero-sub">Cookzer is a social platform built for people who cook — home cooks and food enthusiasts sharing what they made, saving what works, planning the week ahead, and following other cooks whose taste they trust. Every major platform treats cooking as content to scroll past; Cookzer is where cooks actually live, and it's already up and running.</p>
+
+    <div class="live-badge hero-live"><span class="dot"></span>6 product phases already shipped &amp; live at cookzer.com</div>
+
+    <div class="hero-table-wrap table-scroll">
+      <table class="compare hero-table">
+        <thead>
+          <tr><th>Market</th><th>Grocery</th><th>Cooking &amp; food culture</th><th>Advertisers &amp; ready-made meals</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>🇦🇺 Australia</td><td>$11.2B online grocery sales, 2025 (+8.2% YoY)</td><td>18.4% engagement rate for food creators — highest of any category on TikTok</td><td>AUD 2.84B ready-meals market, growing at 5.66% CAGR</td></tr>
+          <tr><td>🇵🇰 Pakistan</td><td>+25–30% online grocery growth projected for 2026</td><td>Deep home-cooking culture — an informal tiffin economy fills the gap packaged ready meals haven't</td><td>$413M platform food-delivery market by 2029 (+13.83% CAGR) — still forming</td></tr>
+          <tr><td>🌍 Global</td><td>$13.1T food &amp; grocery retail market, 2026</td><td>$1.66T social commerce market, 2026 (~25% of e-commerce)</td><td>$221.4B global ready-meals market, 2026 (10.3% CAGR)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="opportunity">
+  <div class="wrap">
+    <div class="section-kicker">The reframe</div>
+    <h2 class="section-head">This isn't a recipe app with a feed bolted on.</h2>
+    <p class="section-dek">It's a social network for an entire industry — home cooks, aspiring chefs, and hospitality professionals — that happens to start with recipes, the same way Facebook started with a directory and LinkedIn started with a résumé.</p>
+
+    <div class="reframe-grid">
+      <div>
+        <div class="analogy-row">
+          <div class="analogy-item"><span class="who">Facebook</span><span class="what">gave people a wall, a feed, and friends. Cookzer gives cooks a feed of what people actually made, real reactions, and a network that grows around shared taste.</span></div>
+          <div class="analogy-item"><span class="who">LinkedIn</span><span class="what">turned a résumé into a professional network. Cookzer's Kitchen CV turns a cooking history into a portfolio hospitality employers and brands can actually evaluate.</span></div>
+          <div class="analogy-item"><span class="who">Cookpad</span><span class="what">proved 60M+ people want a place for recipes — and validated that this category monetizes (65% subscription, 25% ads). It never built the social graph, messaging, or professional layer.</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="segment-list">
+          <div class="segment"><div class="seg-name">Home cooks</div><div class="seg-desc">Share what they cooked, get inspiration, save recipes that work, plan the week ahead.</div></div>
+          <div class="segment"><div class="seg-name">Aspiring &amp; semi-pro cooks</div><div class="seg-desc">Build a following, run weekly challenges, start turning cooking into a side business.</div></div>
+          <div class="segment"><div class="seg-name">Hospitality professionals</div><div class="seg-desc">A Kitchen CV mode turns a real cooking history into a portfolio — the "LinkedIn for chefs" half of the thesis.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="inspiration">
+  <div class="wrap">
+    <div class="section-kicker">The blueprint</div>
+    <h2 class="section-head">Nothing here is unprecedented — it's proven mechanics, remixed for cooking.</h2>
+    <p class="section-dek">Every piece of Cookzer borrows the part that already works somewhere else and builds it for a niche that's never had it.</p>
+
+    <div class="inspiration-grid">
+      <div class="inspiration-item">
+        <div class="insp-label">Feed</div>
+        <div class="insp-who">Facebook</div>
+        <div class="insp-what">A wall of what people actually made, real reactions, and a network that grows around shared taste.</div>
+      </div>
+      <div class="inspiration-item">
+        <div class="insp-label">Profiles</div>
+        <div class="insp-who">Instagram</div>
+        <div class="insp-what">A visual grid of a cook's history — every dish they've posted, browsable the way a profile grid already works.</div>
+      </div>
+      <div class="inspiration-item">
+        <div class="insp-label">Professional layer</div>
+        <div class="insp-who">LinkedIn</div>
+        <div class="insp-what">Built for one vertical instead of every industry — a Kitchen CV that's a real portfolio, not a résumé PDF.</div>
+      </div>
+      <div class="inspiration-item">
+        <div class="insp-label">Messenger</div>
+        <div class="insp-who">LinkedIn Messenger</div>
+        <div class="insp-what">Direct, professional-feeling messaging between cooks — not a chat app bolted on as an afterthought.</div>
+      </div>
+      <div class="inspiration-item">
+        <div class="insp-label">Recipe collections</div>
+        <div class="insp-who">Pinterest</div>
+        <div class="insp-what">Saveable, browsable boards of recipes that actually work — collected, not just scrolled past once.</div>
+      </div>
+      <div class="inspiration-item">
+        <div class="insp-label">Restaurant ratings</div>
+        <div class="insp-who">Foursquare</div>
+        <div class="insp-what">Check-in-style ratings — but every one is verified by an uploaded receipt or invoice, so it can't be faked.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="markets">
+  <div class="wrap">
+    <div class="section-kicker">Why now</div>
+    <h2 class="section-head">Three markets, one platform, compounding timing.</h2>
+    <p class="section-dek">The category is moving toward exactly what Cookzer already does: content that converts directly into a grocery cart, at a moment when two very different markets are both accelerating.</p>
+
+    <div class="chart-panel">
+      <div class="chart-panel-head">
+        <div class="chart-panel-title">Global online grocery market, 2025 → 2034</div>
+        <div class="chart-panel-cagr">Reported CAGR <b>25.9%</b></div>
+      </div>
+      <svg viewBox="0 0 900 260" style="width:100%; height:auto; max-height:260px;" role="img" aria-label="Global online grocery market growing from 909.6 billion dollars in 2025 to 7,644.8 billion dollars in 2034">
+        <line x1="60" y1="20" x2="60" y2="210" stroke="var(--chart-grid)" stroke-width="1"></line>
+        <line x1="60" y1="210" x2="860" y2="210" stroke="var(--chart-grid)" stroke-width="1"></line>
+        <line x1="60" y1="115" x2="860" y2="115" stroke="var(--chart-grid)" stroke-width="1" stroke-dasharray="3,4"></line>
+        <text x="52" y="214" text-anchor="end" font-size="11">$0</text>
+        <text x="52" y="119" text-anchor="end" font-size="11">$3.8T</text>
+        <text x="52" y="24" text-anchor="end" font-size="11">$7.6T</text>
+        <path d="M 90 205 C 300 200, 500 165, 620 120 C 720 90, 800 45, 830 26" fill="none" stroke="var(--green)" stroke-width="3.5" stroke-linecap="round"></path>
+        <path d="M 90 205 C 300 200, 500 165, 620 120 C 720 90, 800 45, 830 26 L 830 210 L 90 210 Z" fill="var(--green-tint)" stroke="none"></path>
+        <circle cx="90" cy="205" r="5.5" fill="var(--green)"></circle>
+        <circle cx="830" cy="26" r="5.5" fill="var(--green)"></circle>
+        <text x="90" y="232" text-anchor="middle" font-size="12">2025</text>
+        <text x="90" y="190" text-anchor="middle" font-size="12" class="value-label">$909.6B</text>
+        <text x="830" y="232" text-anchor="middle" font-size="12">2034</text>
+        <text x="800" y="44" text-anchor="end" font-size="12" class="value-label">$7,644.8B</text>
+      </svg>
+    </div>
+
+    <div class="market-grid">
+      <div class="market-card">
+        <div>
+          <div class="market-flag">🇦🇺</div>
+          <div class="market-name">Australia</div>
+          <div class="market-tag">Mature, high-ARPU launch market</div>
+        </div>
+        <div class="market-stat-row">
+          <div class="market-stat"><div class="m-num">$11.2B</div><div class="m-lbl">Online grocery sales, 2025 (+8.2% YoY)</div></div>
+          <div class="market-stat"><div class="m-num">21.0M</div><div class="m-lbl">Active social media users (77.7% of population)</div></div>
+          <div class="market-stat"><div class="m-num">18.4%</div><div class="m-lbl">Engagement rate for food/drink creators on TikTok — highest of any category</div></div>
+        </div>
+        <div class="market-note">49% of Australian TikTok users say food content directly drove a purchase decision.</div>
+      </div>
+
+      <div class="market-card">
+        <div>
+          <div class="market-flag">🇵🇰</div>
+          <div class="market-name">Pakistan</div>
+          <div class="market-tag">Frontier market, ground-floor timing</div>
+        </div>
+        <div class="market-stat-row">
+          <div class="market-stat"><div class="m-num">117M</div><div class="m-lbl">Internet users — only 45.6% penetration today</div></div>
+          <div class="market-stat"><div class="m-num">+25–30%</div><div class="m-lbl">Online grocery growth projected for 2026</div></div>
+          <div class="market-stat"><div class="m-num">$2.32B</div><div class="m-lbl">Restaurant delivery market size by 2028</div></div>
+        </div>
+        <div class="market-note">A young, mobile-first population with a deep home-cooking culture and almost no incumbent "social + food" platform.</div>
+      </div>
+
+      <div class="market-card">
+        <div>
+          <div class="market-flag">🌍</div>
+          <div class="market-name">Global</div>
+          <div class="market-tag">The category is already enormous</div>
+        </div>
+        <div class="market-stat-row">
+          <div class="market-stat"><div class="m-num">$13.1T</div><div class="m-lbl">Food &amp; grocery retail market, 2026</div></div>
+          <div class="market-stat"><div class="m-num">$1.66T</div><div class="m-lbl">Social commerce market, 2026 (~25% of e-commerce)</div></div>
+          <div class="market-stat"><div class="m-num">+3 items</div><div class="m-lbl">Average extra cart items when recipe content is involved</div></div>
+        </div>
+        <div class="market-note">Food &amp; beverage is ~9% of social commerce today — the fastest-growing wedge into a $13T category.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="growth">
+  <div class="wrap">
+    <div class="section-kicker">Where this goes</div>
+    <h2 class="section-head">A 10-year model, built off what's already proven.</h2>
+    <p class="section-dek">Modelled off the market growth rates cited above and Cookpad's real monetization mix at maturity — ads carrying the model early, Cookzer+ AI Assistant subscriptions layering in as that matures. A plan for what disciplined execution looks like, not a promise.</p>
+
+    <div class="chart-panel">
+      <div class="chart-panel-head">
+        <div class="chart-panel-title">Revenue vs. operating cost, Year 1 → 10 ($M)</div>
+        <div class="chart-panel-cagr">Modelled break-even: <b>Year 4–5</b></div>
+      </div>
+      <svg viewBox="0 0 900 260" style="width:100%; height:auto; max-height:260px;" role="img" aria-label="Modelled revenue growing from 25 thousand dollars in year 1 to 130 million dollars in year 10, crossing above operating cost around year 4 to 5">
+        <line x1="60" y1="20" x2="60" y2="210" stroke="var(--chart-grid)" stroke-width="1"></line>
+        <line x1="60" y1="210" x2="860" y2="210" stroke="var(--chart-grid)" stroke-width="1"></line>
+        <line x1="60" y1="115" x2="860" y2="115" stroke="var(--chart-grid)" stroke-width="1" stroke-dasharray="3,4"></line>
+        <text x="52" y="214" text-anchor="end" font-size="11">$0</text>
+        <text x="52" y="119" text-anchor="end" font-size="11">$70M</text>
+        <text x="52" y="24" text-anchor="end" font-size="11">$140M</text>
+
+        <line x1="346" y1="20" x2="346" y2="210" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2,4"></line>
+        <text x="346" y="14" text-anchor="middle" font-size="11" fill="var(--ink-faint)">Break-even</text>
+
+        <path d="M 90 210 L 172.2 209.7 L 254.4 208.1 L 336.7 204.3 L 418.9 195.1 L 501.1 180.1 L 583.3 153 L 665.6 117.7 L 747.8 81.1 L 830 33.6 L 830 210 L 90 210 Z" fill="var(--green-tint)" stroke="none"></path>
+        <path d="M 90 210 L 172.2 209.7 L 254.4 208.1 L 336.7 204.3 L 418.9 195.1 L 501.1 180.1 L 583.3 153 L 665.6 117.7 L 747.8 81.1 L 830 33.6" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+        <path d="M 90 209.8 L 172.2 209.1 L 254.4 207.2 L 336.7 203.8 L 418.9 199.1 L 501.1 191 L 583.3 173.4 L 665.6 155.7 L 747.8 131.3 L 830 108.2" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-dasharray="6,4" stroke-linecap="round" stroke-linejoin="round"></path>
+
+        <circle cx="830" cy="33.6" r="5" fill="var(--green)"></circle>
+        <circle cx="830" cy="108.2" r="4.5" fill="var(--ink-soft)"></circle>
+
+        <text x="90" y="228" text-anchor="middle" font-size="12">Yr 1</text>
+        <text x="336.7" y="228" text-anchor="middle" font-size="12">Yr 4</text>
+        <text x="418.9" y="228" text-anchor="middle" font-size="12">Yr 5</text>
+        <text x="583.3" y="228" text-anchor="middle" font-size="12">Yr 7</text>
+        <text x="830" y="228" text-anchor="middle" font-size="12">Yr 10</text>
+
+        <text x="797" y="26" text-anchor="end" font-size="12" class="value-label">Revenue $130M</text>
+        <text x="797" y="123" text-anchor="end" font-size="12" fill="var(--ink-soft)">Cost $75M</text>
+      </svg>
+      <div class="chart-legend">
+        <div class="leg-item"><span class="leg-swatch" style="border-color:var(--green);"></span>Revenue</div>
+        <div class="leg-item"><span class="leg-swatch dashed" style="border-color:var(--ink-soft);"></span>Operating cost</div>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table class="compare">
+        <thead>
+          <tr><th>Milestone</th><th>Monthly active users</th><th>Annual revenue</th><th>Operating cost</th><th>Net result</th><th>Blended ARPU</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Year 1 — Foundation</td><td>15K</td><td>$25K</td><td>$180K</td><td class="neg">–$155K</td><td>$1.67</td></tr>
+          <tr><td>Year 3 — Two markets live</td><td>350K</td><td>$1.4M</td><td>$2.1M</td><td class="neg">–$0.7M</td><td>$4.00</td></tr>
+          <tr class="highlight"><td>Year 5 — Profitable</td><td>2.1M</td><td>$11M</td><td>$8M</td><td class="yes">+$3M</td><td>$5.24</td></tr>
+          <tr><td>Year 7 — Scaling</td><td>6M</td><td>$42M</td><td>$27M</td><td class="yes">+$15M</td><td>$7.00</td></tr>
+          <tr><td>Year 10 — Category leader</td><td>15M</td><td>$130M</td><td>$75M</td><td class="yes">+$55M</td><td>$8.67</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="growth-note">Blended ARPU rises over time because the revenue mix rises with it — starting on ads alone, then layering in Cookzer+ AI Assistant subscriptions as that matures. Grocery-cart commissions, paid meal plans, and restaurant marketplace take-rate are proven models shown as future revenue streams below (see Commercial model) rather than folded into this model right now. These are our own working estimates, not third-party projections.</p>
+
+    <div class="unit-econ-panel">
+      <div class="unit-econ-title">Cookzer+ AI Assistant — the unit economics behind the subscription line</div>
+      <p class="unit-econ-sub">Cookzer+ is the first concrete product behind the "subscriptions" slice of the revenue mix above — the Annual Revenue and Operating Cost figures in the table already include it at every milestone; this doesn't add to those totals, it explains what's inside them.</p>
+      <div class="unit-econ-row">
+        <div class="market-stat"><div class="m-num">$5/mo</div><div class="m-lbl">Cookzer+ subscription price</div></div>
+        <div class="market-stat"><div class="m-num">500</div><div class="m-lbl">Messages included per month (Claude Haiku 4.5)</div></div>
+        <div class="market-stat"><div class="m-num">$1.45</div><div class="m-lbl">Worst-case LLM cost per subscriber/mo — full 500-message usage</div></div>
+        <div class="market-stat"><div class="m-num">$3.11</div><div class="m-lbl">Net profit per subscriber/mo after LLM cost + Stripe fees — ~62% margin</div></div>
+      </div>
+      <div class="table-scroll">
+        <table class="compare">
+          <thead>
+            <tr><th>Milestone</th><th>Cookzer+ subscribers</th><th>Attach rate</th><th>Cookzer+ revenue/yr</th><th>Share of Annual Revenue</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Year 1 — Foundation</td><td>0</td><td>—</td><td>$0</td><td>Pre-launch — waitlist stage only</td></tr>
+            <tr><td>Year 3 — Two markets live</td><td>2,000</td><td>0.6%</td><td>$120K</td><td>8.6%</td></tr>
+            <tr class="highlight"><td>Year 5 — Profitable</td><td>10,000</td><td>0.5%</td><td>$600K</td><td>5.5%</td></tr>
+            <tr><td>Year 7 — Scaling</td><td>40,000</td><td>0.7%</td><td>$2.4M</td><td>5.7%</td></tr>
+            <tr><td>Year 10 — Category leader</td><td>120,000</td><td>0.8%</td><td>$7.2M</td><td>5.5%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="growth-note">Deliberately conservative attach rates (under 1% of MAU throughout) so this stays inside the already-published revenue model rather than requiring it to grow — the real number could easily be higher once the feature ships; this is the floor, not the ceiling. Worst-case cost assumes every subscriber uses all 500 messages every month, which won't happen in practice — actual margin should run higher than the ~62% modelled here. Full assumptions and the per-message math: see the Cookzer+ AI Assistant card in Commercial model below.</p>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="expenses">
+  <div class="wrap">
+    <div class="section-kicker">Cost breakdown</div>
+    <h2 class="section-head">Where that operating cost actually goes.</h2>
+    <p class="section-dek">Every "Operating cost" figure in the 10-year model above, broken into the individual expense lines that add up to it, year by year.</p>
+    <div class="table-scroll">
+      <table class="compare">
+        <thead>
+          <tr><th>Expense line</th><th>Year 1</th><th>Year 3</th><th>Year 5</th><th>Year 7</th><th>Year 10</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Engineering &amp; product team</td><td>$120K</td><td>$1.1M</td><td>$3.8M</td><td>$11M</td><td>$28M</td></tr>
+          <tr><td>Marketing &amp; user acquisition</td><td>$15K</td><td>$450K</td><td>$2.0M</td><td>$8M</td><td>$24M</td></tr>
+          <tr><td>Customer support &amp; trust/safety</td><td>$10K</td><td>$180K</td><td>$700K</td><td>$2.5M</td><td>$7M</td></tr>
+          <tr><td>Infrastructure &amp; hosting</td><td>$8K</td><td>$120K</td><td>$500K</td><td>$2.2M</td><td>$7M</td></tr>
+          <tr class="subrow"><td>— of which Cookzer+ AI Assistant (LLM inference)</td><td>—</td><td>$35K</td><td>$174K</td><td>$696K</td><td>$2.09M</td></tr>
+          <tr><td>Payment processing &amp; delivery partner fees</td><td>$2K</td><td>$60K</td><td>$350K</td><td>$1.5M</td><td>$5M</td></tr>
+          <tr><td>Legal, compliance &amp; insurance</td><td>$15K</td><td>$90K</td><td>$300K</td><td>$900K</td><td>$2M</td></tr>
+          <tr><td>Office &amp; admin overhead</td><td>$10K</td><td>$100K</td><td>$350K</td><td>$900K</td><td>$2M</td></tr>
+          <tr class="highlight"><td>Total operating cost</td><td>$180K</td><td>$2.1M</td><td>$8M</td><td>$27M</td><td>$75M</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="growth-note">Year 1 is a founder-plus-one-or-two-contractors budget — infra runs on Supabase/Vercel/Bunny Stream paid tiers, not a data center, and marketing is mostly organic. Engineering &amp; product stays the largest line at every stage; marketing overtakes infrastructure once paid acquisition kicks in around Year 3, tracking the same market-growth assumptions used for the revenue model above. Cookzer+ AI Assistant's LLM inference (Claude Haiku 4.5, modelled at a conservative subscriber attach rate — see the Growth section above) is shown as its own line inside Infrastructure &amp; hosting rather than folded in invisibly: roughly 30–35% of that line at every stage once the feature is live, leaving the rest for the actual Supabase/Vercel/Bunny hosting that scales with users. It's already inside the Infrastructure &amp; hosting total above, not additional spend.</p>
+  </div>
+</section>
+
+<section class="block" id="model">
+  <div class="wrap">
+    <div class="section-kicker">Commercial model</div>
+    <h2 class="section-head">Two ways this makes money — the deliberate focus right now.</h2>
+    <p class="section-dek">Both ride on top of something already built and live: the feed for ads, and Pantry Challenge / Leftovers / Health for Cookzer+. Three more proven models sit below as deliberate future streams — not diluting focus across five at once, but not off the table either.</p>
+
+    <div class="revenue-grid">
+      <div class="revenue-card">
+        <div class="revenue-num">01</div>
+        <div class="revenue-title">Ads &amp; content sponsorships</div>
+        <div class="revenue-desc">Native sponsored posts and recipes from CPG and appliance brands in the feed, plus sponsored Weekly Challenges where a kitchenware or grocery brand underwrites the week's theme and prize — content people engage with, not a banner they scroll past. The revenue engine for every year of the model before Cookzer+ exists, and the larger of the two streams through Year 5.</div>
+        <div class="revenue-proof">Food creators see 18.4% engagement vs. typical feed content — brands spent ~$3B on creators in 2025, up 35% YoY. Modelled at Year 1's $1.67 blended ARPU (100% ads-driven that year), that implies roughly 17 sponsored impressions per user per month at an $8 CPM — under one every weekday, a conservative ad load. Holding that exact ad load flat all the way to Year 10's 15M MAU is already ~$25M/year from ads alone, before any increase in density or CPM as the creator ecosystem matures.</div>
+      </div>
+      <div class="revenue-card">
+        <div class="revenue-num">02</div>
+        <div class="revenue-title">Cookzer+ AI Assistant</div>
+        <div class="revenue-desc">A conversational assistant across the three highest-intent surfaces on the platform — Pantry Challenge, Leftovers, and Health — sold as a Cookzer+ monthly subscription. Ask it what to cook from what's on hand, what to do with leftovers before they're wasted, or how to hit a nutrition goal, grounded in the user's own real recipes and cook-in history rather than a generic model. The second stream, and the one with room to grow fastest once the backend exists.</div>
+        <div class="revenue-proof">$5/month, 500 messages included (Claude Haiku 4.5) — ~$3.11 net profit per subscriber/mo after LLM cost and Stripe fees, a ~62% margin even at worst-case full usage. No delivery partner cut, no inventory. Modelled at a conservative &lt;1% subscriber attach rate, it's already worth $7.2M/year by Year 10 inside the revenue model above (see Growth section) — live today as a waitlist-capture teaser on all three surfaces; the paid chat itself needs an LLM API integration and billing, both scoped, not yet built</div>
+      </div>
+    </div>
+
+    <div class="future-streams-head">
+      <div class="future-streams-title">Future revenue streams</div>
+      <p class="future-streams-dek">Real, proven models the platform already has the infrastructure to support — deliberately not the near-term focus while Ads and Cookzer+ prove out first, not because they don't work. Revisit once those two are running at scale.</p>
+    </div>
+    <div class="revenue-grid future-grid">
+      <div class="revenue-card future">
+        <div class="revenue-num">03</div>
+        <div class="future-pill">Future stream</div>
+        <div class="revenue-title">Grocery cart connection</div>
+        <div class="revenue-desc">An "Add ingredients to cart" button on any recipe or shopping list, integrated directly with major grocery retailers — Woolworths and Coles in Australia — down to independent local shops in markets the majors don't dominate. Cookzer takes a commission on every order it originates.</div>
+        <div class="revenue-proof">Recipe-driven carts average +3 items vs. non-recipe shopping. Needs a retailer integration per market — a BD/partnership motion, not a build call.</div>
+      </div>
+      <div class="revenue-card future">
+        <div class="revenue-num">04</div>
+        <div class="future-pill">Future stream</div>
+        <div class="revenue-title">Ready-made meal plans</div>
+        <div class="revenue-desc">A paid meal-plan tier in the vein of Youfoodz or Weight Watchers — personalized weekly plans paired with ready-made delivery or a guided cook-it-yourself track, sold directly through the app people already use to plan their week.</div>
+        <div class="revenue-proof">WW International alone guided ~$695–700M in 2025 revenue from meal-plan subscriptions. Needs a delivery/logistics partner (or enough planner maturity to sell the guided track alone).</div>
+      </div>
+      <div class="revenue-card future">
+        <div class="revenue-num">05</div>
+        <div class="future-pill">Future stream</div>
+        <div class="revenue-title">Restaurant delivery &amp; paid listings</div>
+        <div class="revenue-desc">Cookzer's receipt-verified restaurant module connects to delivery partners like Uber Eats and DoorDash for one-tap ordering — or, where that doesn't fit, restaurants pay directly for a featured menu placement in the directory.</div>
+        <div class="revenue-proof">Delivery marketplaces already charge restaurants 15–30% per order. Needs a delivery-partner integration or a direct restaurant sales motion — neither started.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <div class="section-kicker">Competitive landscape</div>
+    <h2 class="section-head">Nobody else owns this position.</h2>
+    <div class="table-scroll">
+      <table class="compare">
+        <thead>
+          <tr><th>Platform</th><th>Recipes &amp; feed</th><th>Real social graph</th><th>Messaging</th><th>Professional layer</th><th>Shoppable commerce</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Instagram / TikTok</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td></tr>
+          <tr><td>Cookpad / Yummly</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+          <tr><td>Pinterest</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="yes">Partial</td></tr>
+          <tr class="us"><td>Cookzer</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Roadmapped</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="built">
+  <div class="wrap">
+    <div class="section-kicker">Not a pitch deck idea — a live product</div>
+    <h2 class="section-head">Six phases shipped. It's running today.</h2>
+    <div class="live-badge"><span class="dot"></span>Live now at cookzer.com</div>
+    <p class="section-dek">This is the difference between "we have an idea" and "here's what we built while validating it." Every item below is real, working, and backed by a production Postgres database — not a mockup.</p>
+    <div class="built-grid">
+      <div class="built-item"><span class="tick">✓</span>Real accounts, auth &amp; sitewide login</div>
+      <div class="built-item"><span class="tick">✓</span>Social feed — posts, hearts, comments, cook-ins</div>
+      <div class="built-item"><span class="tick">✓</span>Full recipe engine — creation, scaling, ratings</div>
+      <div class="built-item"><span class="tick">✓</span>Cookbook folders &amp; a real meal planner</div>
+      <div class="built-item"><span class="tick">✓</span>Auto-generated shopping lists from planned meals</div>
+      <div class="built-item"><span class="tick">✓</span>Follow graph &amp; profiles with real stats</div>
+      <div class="built-item"><span class="tick">✓</span>Kitchen CV mode for hospitality professionals</div>
+      <div class="built-item"><span class="tick">✓</span>Weekly sponsor-ready challenges &amp; leaderboards</div>
+      <div class="built-item"><span class="tick">✓</span>Direct messaging with photo &amp; video sharing</div>
+      <div class="built-item"><span class="tick">✓</span>Short-form video posts (cook-along clips)</div>
+      <div class="built-item"><span class="tick">✓</span>Groups &amp; communities, Facebook-style</div>
+      <div class="built-item"><span class="tick">✓</span>Health &amp; nutrition tracking from real cook-ins</div>
+    </div>
+  </div>
+</section>
+
+<footer class="cta">
+  <div class="wrap">
+    <h2 class="cta-headline">Let's build the place where cooks actually live.</h2>
+    <p class="cta-sub">The product is live at cookzer.com — this is where it's headed next. Let's talk it through.</p>
+    <div class="cta-buttons">
+      <a class="btn btn-primary" href="https://cookzer.com" target="_blank" rel="noopener">See the live product →</a>
+    </div>
+    <div class="foot-meta">Cookzer — a social network for cooks. Shared privately, not for public distribution.</div>
+  </div>
+</footer>
+
+<section class="block" id="features">
+  <div class="wrap">
+    <div class="section-kicker">Appendix</div>
+    <h2 class="section-head">Feature map — every module, read straight from the codebase.</h2>
+    <p class="section-dek">Not a pitch summary — the actual current state of every part of the product, module by module, plus the near-term "next" for each. Generated from a direct codebase survey (26 app pages, 55 Supabase migrations, ~140 Playwright test files), not from an old planning doc.</p>
+
+    <div class="feat-nav">
+      <a href="#feat-feed">Feed</a>
+      <a href="#feat-recipes">Recipes &amp; Cookbook</a>
+      <a href="#feat-planner">Meal Planner</a>
+      <a href="#feat-challenges">Challenges</a>
+      <a href="#feat-groups">Groups</a>
+      <a href="#feat-restaurants">Restaurants</a>
+      <a href="#feat-profile">Profile</a>
+      <a href="#feat-friends">Friends</a>
+      <a href="#feat-messenger">Messenger</a>
+      <a href="#feat-convert">Measure &amp; Convert</a>
+      <a href="#feat-pantry">Pantry &amp; Leftovers</a>
+      <a href="#feat-health">Health &amp; Nutrition</a>
+      <a href="#feat-ai">AI Assistant</a>
+      <a href="#feat-lists">Lists</a>
+      <a href="#feat-settings">Settings</a>
+      <a href="#feat-notifications">Notifications</a>
+      <a href="#feat-auth">Sign up &amp; Login</a>
+      <a href="#feat-native">Native app</a>
+      <a href="#feat-landing">Landing page</a>
+      <a href="#feat-parked">Parked ideas</a>
+    </div>
+
+    <div class="feat-module" id="feat-feed">
+      <div class="feat-module-head"><span class="feat-module-title">Feed</span><span class="feat-module-path">cookzer-feed.html</span></div>
+      <p class="feat-module-desc">The main social surface — post, react, discover what the community is cooking this week.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Composer: caption with @mention autocomplete, photo or video upload with filters/vignette, Tip / Dining Out / Challenge-entry toggles, recipe shortcut</li>
+          <li>Six post kinds rendered distinctly: plain, recipe, tip, cook-in, reshare, dining-out</li>
+          <li>Heart, comments with @mentions, Share (reshare / to a group / external link), Save (as recipe / to planner / to device)</li>
+          <li>Filter bar (All/Recipes/Challenges/Dining out/Tips) + auto-generated tag chips, URL-addressable</li>
+          <li>Sidebar: live weekly Challenge banner, leaderboard, Top Recipes, Trending Ingredients, Top Contributors, birthdays, People You May Know, pantry search</li>
+          <li>Pull-to-refresh, first-visit welcome modal</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Threaded replies to comments, not just flat @mentions</li>
+          <li>Multi-photo carousel posts</li>
+          <li>Live countdown on the challenge banner</li>
+          <li>Post editing after publish, not just delete</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-recipes">
+      <div class="feat-module-head"><span class="feat-module-title">Recipes &amp; Cookbook</span><span class="feat-module-path">cookzer-cookbook.html · cookzer-recipe.html · cookzer-recipe-new.html</span></div>
+      <p class="feat-module-desc">Where a dish becomes a real, structured object — written, saved, scaled, and cooked from.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Cookbook: curatable Lists, saved recipes with personal notes + tags</li>
+          <li>5-step creation wizard incl. import-from-URL (parses schema.org recipe data)</li>
+          <li>Every photo cropped + filter/vignette picker with an auto-suggested filter</li>
+          <li>Auto tag suggestion from time/spice/ingredients/steps</li>
+          <li>Serving-size scaling live-multiplies every ingredient quantity</li>
+          <li>Inline unit converter popover on any quantity</li>
+          <li>Nutrition + cost-per-serving estimate; heart/save/comments/share; "Remake &amp; post"; print; add to planner</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Full-screen "cook mode" — step-by-step, screen-wake-lock</li>
+          <li>Star ratings/reviews on a recipe itself, separate from a Remake</li>
+          <li>Collaborative Lists co-curated with friends</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-planner">
+      <div class="feat-module-head"><span class="feat-module-title">Meal Planner</span><span class="feat-module-path">cookzer-planner.html</span></div>
+      <p class="feat-module-desc">The household's shared weekly plan — one plan per household, not per person.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Weekly grid, branded jump-to-date calendar, copy last week, drag-and-drop reordering</li>
+          <li>Per-person suggestion columns: You + household co-admins + Family Profiles</li>
+          <li>Shared household plan; Kid Mode integration; share a week to a group</li>
+          <li>Shopping list generator with estimated per-item cost; weekly nutrition summary</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Auto-fill a week from AI Assistant / pantry-aware suggestions</li>
+          <li>Recurring templates ("Taco Tuesday every week")</li>
+          <li>Calendar export (iCal)</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-challenges">
+      <div class="feat-module-head"><span class="feat-module-title">Challenges</span><span class="feat-module-path">cookzer-challenges.html</span></div>
+      <p class="feat-module-desc">Weekly, low-stakes competition — the thing that gives the feed a reason to check back.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Sitewide weekly challenge auto-seeded from 6 rotating themes, keyed by ISO week</li>
+          <li>User-created challenges; join + expandable heart-ranked leaderboard</li>
+          <li>Auto winner finalization; Past Challenges archive</li>
+          <li>Challenges can be scoped to a group</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Live "Ends in Xd Xh" countdown on cards</li>
+          <li>Streak/series challenges across consecutive weeks</li>
+          <li>Sponsored/branded challenges — needs a sales motion</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-groups">
+      <div class="feat-module-head"><span class="feat-module-title">Groups</span><span class="feat-module-path">cookzer-groups.html + group-*.html</span></div>
+      <p class="feat-module-desc">Smaller communities inside Cookzer — a cuisine, a diet, a household.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Create groups; private groups gated by an 8-char invite code</li>
+          <li>Creator + admin roles; own mini-feed scoped to the group; pin a post; transfer ownership</li>
+          <li>Events with 3-state RSVP; single-choice Polls with live vote bars</li>
+          <li>Group-scoped Challenges reusing the sitewide engine</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Group-level shared shopping list / meal plan</li>
+          <li>Group recipe collections</li>
+          <li>Recurring events</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-restaurants">
+      <div class="feat-module-head"><span class="feat-module-title">Restaurants</span><span class="feat-module-path">cookzer-restaurants.html · cookzer-restaurant.html · cookzer-restaurant-claims.html</span></div>
+      <p class="feat-module-desc">Cookzer's most built-out module — dining out, not just cooking in.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Recent / 🔥 Trending / ⚖️ Cookzer-vs-Google sort tabs</li>
+          <li>Cookzer Verified badge and time-boxed Featured placement</li>
+          <li>Dish-level star ratings with required receipt photo + client-side OCR sanity check</li>
+          <li>Foodie Score credibility badge; report a review</li>
+          <li>Claimed business profiles with an admin approval queue</li>
+          <li>Dining-out check-in via Cookzer's own listings or Google Places nearby search</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Real billing for Featured placement — schema &amp; UI exist, no processor yet</li>
+          <li>Menu-item level browsing</li>
+          <li>Reservation/booking integration</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-profile">
+      <div class="feat-module-head"><span class="feat-module-title">Profile</span><span class="feat-module-path">cookzer-profile.html · cookzer-profile-preview.html</span></div>
+      <p class="feat-module-desc">Identity — a home cook's page, or a chef's portfolio, on the same profile.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Raw stat tiles (deliberately not one composite score); cooking-streak heatmap</li>
+          <li>Pinned/featured recipe; Kitchen CV mode with endorsable skills + recommendations</li>
+          <li>Mutual friends, challenge-winner flair, mood-tag badges on posts</li>
+          <li>Profile-view analytics; public/logged-out preview with sign-up-gated actions</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>A real, persisted achievement/badge system beyond current stat tiles</li>
+          <li>Export Kitchen CV mode as a shareable PDF résumé</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-friends">
+      <div class="feat-module-head"><span class="feat-module-title">Friends</span><span class="feat-module-path">cookzer-friends.html</span></div>
+      <p class="feat-module-desc">Two relationship systems, on purpose: a lightweight follow graph and a mutual friend system.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Five tabs: Following, Followers, Friends, Requests, Blocked</li>
+          <li>Follow graph + separate mutual friend-request system</li>
+          <li>People You May Know, ranked by group overlap then 2nd-degree follows</li>
+          <li>Personal invite link with join-attribution and auto-follow</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Interest-based PYMK, not just graph proximity</li>
+          <li>A periodic friend-activity digest</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-messenger">
+      <div class="feat-module-head"><span class="feat-module-title">Messenger</span><span class="feat-module-path">cookzer-messenger.html</span></div>
+      <p class="feat-module-desc">Real-time, not a mock — the header's message icon actually goes somewhere.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Real-time 1:1 and group conversations over Supabase Realtime</li>
+          <li>Image attachments, 5-emoji reactions, typing indicator</li>
+          <li>Read receipts on 1:1 threads; deep-link from a profile's Message button</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Voice messages</li>
+          <li>Search within a conversation</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-convert">
+      <div class="feat-module-head"><span class="feat-module-title">Measure &amp; Convert</span><span class="feat-module-path">cookzer-convert.html</span></div>
+      <p class="feat-module-desc">A standalone kitchen-math utility — no account or recipe needed.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Unit converter with density-aware mass↔volume conversion, visual fill graphic</li>
+          <li>Pan/dish converter across 6 shapes with true-volume math</li>
+          <li>Oven temperature reference with live °F↔°C conversion</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Save favorite/custom conversions</li>
+          <li>Deep link from a recipe's scaled ingredient straight into the converter</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-pantry">
+      <div class="feat-module-head"><span class="feat-module-title">Pantry &amp; Leftovers</span><span class="feat-module-path">cookzer-pantry.html — Cookzer+</span></div>
+      <p class="feat-module-desc">"What can I make with what I already have" — matched against the real recipe database.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Pantry Challenge tab: ranks existing recipes by ingredient-list coverage</li>
+          <li>Leftovers tab: same engine, strips filler words ("leftover", "half-used")</li>
+          <li>Embeds the Cookzer+ AI Assistant</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>A persisted pantry inventory, not re-typed every visit</li>
+          <li>Barcode/receipt scan to populate it</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-health">
+      <div class="feat-module-head"><span class="feat-module-title">Health &amp; Nutrition</span><span class="feat-module-path">cookzer-health.html — Cookzer+</span></div>
+      <p class="feat-module-desc">A personal nutrition dashboard built entirely from your own cook-in history.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>7-day / 30-day range toggle; calories/protein/carbs/fat stat tiles</li>
+          <li>Sums from your own cook-in posts' recipes; calories-per-day chart</li>
+          <li>Embeds the Cookzer+ AI Assistant, scoped to nutrition Q&amp;A</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Real nutrition-database lookups (USDA/Edamam) instead of estimates</li>
+          <li>Calorie/macro goal-setting with progress vs. goal</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-ai">
+      <div class="feat-module-head"><span class="feat-module-title">AI Assistant</span><span class="feat-module-path">ai-assistant-chat.js · api/ai-chat.js — Cookzer+</span></div>
+      <p class="feat-module-desc">A real Claude-backed chat, not a waitlist teaser — embedded on Pantry and Health.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Server-side chat on Claude Haiku 4.5, page-specific pitch per surface</li>
+          <li>Capped at 500 messages/month per user, enforced server-side, free for every logged-in user</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Draft a full meal-planner week, not just answer one question</li>
+          <li>A higher cap on a future paid tier</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-lists">
+      <div class="feat-module-head"><span class="feat-module-title">Lists</span><span class="feat-module-path">cookzer-list.html</span></div>
+      <p class="feat-module-desc">Curatable, shareable recipe collections — identity through taste, Letterboxd-style.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>One named list, public or private</li>
+          <li>Owner: rename, delete, toggle visibility, search-to-add / remove recipes</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Follow another user's public List and get notified when it updates</li>
+          <li>Multi-owner collaborative Lists</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-settings">
+      <div class="feat-module-head"><span class="feat-module-title">Settings</span><span class="feat-module-path">cookzer-settings.html</span></div>
+      <p class="feat-module-desc">Account, household, and the controls that make Kid Mode and co-parenting a plan possible.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Household Co-Admins share Family Profiles + the Meal Planner</li>
+          <li>Kid Mode: per-profile PIN lock, restricts the device to Meal Planner only</li>
+          <li>8 notification-category toggles + email + push</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Self-service data export / account deletion</li>
+          <li>Two-factor authentication</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-notifications">
+      <div class="feat-module-head"><span class="feat-module-title">Notifications</span><span class="feat-module-path">cookzer-notifications.html</span></div>
+      <p class="feat-module-desc">Three real delivery channels behind one preferences page.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Full list + header-bell dropdown, non-destructive to read</li>
+          <li>Delivered via in-app, email (Resend), and push (Firebase) — off one Postgres webhook</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Grouped notifications ("Sarah and 4 others liked your post")</li>
+          <li>Daily/weekly digest mode</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-auth">
+      <div class="feat-module-head"><span class="feat-module-title">Sign up &amp; Login</span><span class="feat-module-path">cookzer-auth.html</span></div>
+      <p class="feat-module-desc">Getting in — on the web and inside the native app shell.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Email/password, plus Google and Facebook OAuth</li>
+          <li>Native-app OAuth opens the system browser and returns via a deep link</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Sign in with Apple</li>
+          <li>Passkey / WebAuthn support</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-native">
+      <div class="feat-module-head"><span class="feat-module-title">Native app</span><span class="feat-module-path">android/ · ios/ — Capacitor shell</span></div>
+      <p class="feat-module-desc">Wraps the live website — not a bundled offline copy — as a real installable app.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Android: sideloadable APK, downloadable from the homepage, auto-rebuilt on native-shell changes</li>
+          <li>Native push notifications sharing one FCM registration with web-push</li>
+          <li>Native OAuth handoff; WebView-specific status/nav-bar inset fixes</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Google Play Store listing (currently sideload-only)</li>
+          <li>Apple App Store submission</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module" id="feat-landing">
+      <div class="feat-module-head"><span class="feat-module-title">Landing page</span><span class="feat-module-path">index.html</span></div>
+      <p class="feat-module-desc">The public front door — signed-out visitors and the Android download.</p>
+      <div class="feat-cols">
+        <div><div class="feat-col-label today">Today</div><ul class="feat-ul feat-today">
+          <li>Hero, 3 audience segments, feature grid, auto-scrolling photo marquee</li>
+          <li>Direct APK download with an install-troubleshooting guide</li>
+        </ul></div>
+        <div><div class="feat-col-label next">Next</div><ul class="feat-ul feat-next">
+          <li>Real app-store badges once listed</li>
+          <li>A live activity strip instead of a static feature grid</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="feat-module feat-parked" id="feat-parked">
+      <div class="feat-module-head"><span class="feat-module-title">Parked — needs a business decision first</span></div>
+      <p class="feat-parked-note">Not a build-effort question. Each needs a call from the user before any implementation work starts — payments, a sales motion, or a pricing decision.</p>
+      <ul class="feat-ul">
+        <li>Home-cook marketplace — needs payments + delivery logistics</li>
+        <li>Sponsored/branded challenges — needs a sales motion</li>
+        <li>Real billing for Restaurants' Featured placement — schema/UI exist, no processor wired up</li>
+        <li>A premium/Pro tier — no pricing model decided</li>
+      </ul>
+    </div>
+
+    <p class="growth-note">Generated from a direct codebase survey on 2026-09-23. "Next" items are product judgment, not commitments.</p>
+  </div>
+</section>
+
+</body>
+</html>
